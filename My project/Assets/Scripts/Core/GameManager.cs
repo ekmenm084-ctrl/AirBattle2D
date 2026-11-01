@@ -77,7 +77,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // P2 mobil kontrollerini (Joystick ve Ateş butonu) aktif et
+        // Dokunmatik kontroller (Joystick ve Ateş butonu): Sadece 2 Oyunculu Online modda görünür
         var p2Joystick = FindObjectOfType<TwoPlayerInputRouter>();
         if (p2Joystick == null)
         {
@@ -87,6 +87,8 @@ public class GameManager : MonoBehaviour
         }
         if (p2Joystick != null)
             p2Joystick.SetTwoPlayerMode(isOnline);
+
+        MainMenuManager.SetTouchControlsVisibility(showP1Controls: true, showEnemyControls: isOnline);
 
         // Solo modda 1. uçaktan başla ve 3 can hakkı ver
         if (CurrentMode == GameMode.SoloVsAI)

@@ -13,7 +13,7 @@ public class TwoPlayerInputRouter : MonoBehaviour
     public static TwoPlayerInputRouter Instance { get; private set; }
 
     [Header("Görünürlük")]
-    public bool alwaysShowEnemyControls = true; // Düşman kontrolleri her zaman ekranda görünür!
+    public bool alwaysShowEnemyControls = false; // Sadece 2 oyunculu online modda görünür
 
     [Header("P2 UI Kökü")]
     public GameObject p2ControlsRoot;
@@ -52,13 +52,19 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         SetTwoPlayerMode(isOnline);
+    }
 
-        // Ana menü açıksa gizle, sadece savaş başlayınca göster
+    private void Update()
+    {
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
-        if (p2ControlsRoot != null)
+        bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online) ||
+                        (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
+
+        bool shouldShow = isOnline && !isMenuOpen;
+        if (p2ControlsRoot != null && p2ControlsRoot.activeSelf != shouldShow)
         {
-            p2ControlsRoot.SetActive(!isMenuOpen);
+            p2ControlsRoot.SetActive(shouldShow);
         }
     }
 
@@ -69,7 +75,6 @@ public class TwoPlayerInputRouter : MonoBehaviour
     {
         if (p2ControlsRoot != null && p2Joystick != null && p2FireButton != null)
         {
-            p2ControlsRoot.SetActive(true);
             return;
         }
 
@@ -95,7 +100,10 @@ public class TwoPlayerInputRouter : MonoBehaviour
             rootRt.offsetMax = Vector2.zero;
         }
 
-        p2ControlsRoot.SetActive(true);
+        bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+        p2ControlsRoot.SetActive(isOnline && !isMenuOpen);
 
         // 2. P2_Joystick Oluştur/Bul
         Transform existingJoy = p2ControlsRoot.transform.Find("P2_Joystick");
@@ -233,10 +241,13 @@ public class TwoPlayerInputRouter : MonoBehaviour
         EnsureP2UIHierarchy();
         FindPlane2Shooter();
 
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+
         if (p2ControlsRoot != null)
         {
-            // Düşman kontrolleri her zaman ekranda görünür olsun
-            p2ControlsRoot.SetActive(true);
+            // Yalnızca 2 oyunculu / online modda VE menü kapalıyken göster
+            p2ControlsRoot.SetActive(enabled && !isMenuOpen);
         }
     }
 

@@ -113,10 +113,10 @@ public class UpgradeSelectionUI : MonoBehaviour
         GameObject headerObj = new GameObject("HeaderContainer");
         headerObj.transform.SetParent(modalRoot.transform, false);
         RectTransform headerRt = headerObj.AddComponent<RectTransform>();
-        headerRt.anchorMin = new Vector2(0.5f, 0.88f);
-        headerRt.anchorMax = new Vector2(0.5f, 0.88f);
+        headerRt.anchorMin = new Vector2(0.5f, 0.89f);
+        headerRt.anchorMax = new Vector2(0.5f, 0.89f);
         headerRt.pivot = new Vector2(0.5f, 0.5f);
-        headerRt.sizeDelta = new Vector2(850f, 110f);
+        headerRt.sizeDelta = new Vector2(950f, 120f);
 
         // Başlık TMP
         GameObject titleObj = new GameObject("TitleText");
@@ -124,14 +124,14 @@ public class UpgradeSelectionUI : MonoBehaviour
         RectTransform titleRt = titleObj.AddComponent<RectTransform>();
         titleRt.anchorMin = new Vector2(0.5f, 0.65f);
         titleRt.anchorMax = new Vector2(0.5f, 0.65f);
-        titleRt.sizeDelta = new Vector2(850f, 50f);
+        titleRt.sizeDelta = new Vector2(950f, 55f);
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "HANGAR GÜÇLENDİRME PROTOKOLÜ";
-        titleTMP.fontSize = 30f;
+        titleTMP.text = "HANGAR GÜÇLENDİRME SEÇİMİ";
+        titleTMP.fontSize = 34f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.color = new Color(1f, 0.85f, 0.2f); // Altın Sarısı
+        titleTMP.color = new Color(1f, 0.85f, 0.2f); // Parlak Altın Sarısı
 
         // Alt Başlık TMP
         GameObject subObj = new GameObject("SubText");
@@ -139,25 +139,26 @@ public class UpgradeSelectionUI : MonoBehaviour
         RectTransform subRt = subObj.AddComponent<RectTransform>();
         subRt.anchorMin = new Vector2(0.5f, 0.2f);
         subRt.anchorMax = new Vector2(0.5f, 0.2f);
-        subRt.sizeDelta = new Vector2(850f, 40f);
+        subRt.sizeDelta = new Vector2(950f, 42f);
 
         TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
-        subTMP.text = "BOSS İMHA EDİLDİ! BİR YÜKSELTMEYLE UÇAĞINI DONAT VE SONRAKİ FİLOYLA SAVAŞ:";
-        subTMP.fontSize = 17f;
+        subTMP.text = "BOSS İMHA EDİLDİ! BİR YÜKSELTMEYLE UÇAĞINI DONAT VE SAVAŞA DEVAM ET:";
+        subTMP.fontSize = 18f;
+        subTMP.fontStyle = FontStyles.Bold;
         subTMP.alignment = TextAlignmentOptions.Center;
-        subTMP.color = new Color(0.2f, 0.9f, 1f); // Neon Cyan
+        subTMP.color = new Color(0.25f, 0.92f, 1f); // Neon Cyan
 
-        // 2. Kartlar Konteynırı
+        // 2. Kartlar Konteynırı (Genişletilmiş ve Ferah)
         GameObject cardsObj = new GameObject("CardsContainer");
         cardsObj.transform.SetParent(modalRoot.transform, false);
         RectTransform cardsRt = cardsObj.AddComponent<RectTransform>();
         cardsRt.anchorMin = new Vector2(0.5f, 0.44f);
         cardsRt.anchorMax = new Vector2(0.5f, 0.44f);
         cardsRt.pivot = new Vector2(0.5f, 0.5f);
-        cardsRt.sizeDelta = new Vector2(880f, 420f);
+        cardsRt.sizeDelta = new Vector2(1060f, 520f);
 
-        // 3 Kartı Yan Yana Yerleştir (-280, 0, +280)
-        float[] xPositions = new float[] { -290f, 0f, 290f };
+        // 3 Kartı Yan Yana Yerleştir (-350, 0, +350)
+        float[] xPositions = new float[] { -350f, 0f, 350f };
 
         for (int i = 0; i < options.Count && i < 3; i++)
         {
@@ -176,11 +177,15 @@ public class UpgradeSelectionUI : MonoBehaviour
         cardRt.anchorMax = new Vector2(0.5f, 0.5f);
         cardRt.pivot = new Vector2(0.5f, 0.5f);
         cardRt.anchoredPosition = new Vector2(xPos, 0f);
-        cardRt.sizeDelta = new Vector2(270f, 410f);
+        cardRt.sizeDelta = new Vector2(330f, 490f);
 
         // Kart Arka Planı (Koyu Şık Taktik Çerçeve)
         Image cardBg = card.AddComponent<Image>();
-        cardBg.color = new Color(0.08f, 0.12f, 0.18f, 0.97f);
+        cardBg.color = new Color(0.06f, 0.10f, 0.17f, 0.98f);
+
+        Outline cardOutline = card.AddComponent<Outline>();
+        cardOutline.effectColor = new Color(opt.themeColor.r, opt.themeColor.g, opt.themeColor.b, 0.75f);
+        cardOutline.effectDistance = new Vector2(2.5f, -2.5f);
 
         // Üst Renkli Aksan Şeridi
         GameObject accentObj = new GameObject("AccentBar");
@@ -189,7 +194,7 @@ public class UpgradeSelectionUI : MonoBehaviour
         accentRt.anchorMin = new Vector2(0f, 1f);
         accentRt.anchorMax = new Vector2(1f, 1f);
         accentRt.pivot = new Vector2(0.5f, 1f);
-        accentRt.sizeDelta = new Vector2(0f, 6f);
+        accentRt.sizeDelta = new Vector2(0f, 8f);
         accentRt.anchoredPosition = Vector2.zero;
 
         Image accentImg = accentObj.AddComponent<Image>();
@@ -199,13 +204,13 @@ public class UpgradeSelectionUI : MonoBehaviour
         GameObject badgeObj = new GameObject("Badge");
         badgeObj.transform.SetParent(card.transform, false);
         RectTransform badgeRt = badgeObj.AddComponent<RectTransform>();
-        badgeRt.anchorMin = new Vector2(0.5f, 0.90f);
-        badgeRt.anchorMax = new Vector2(0.5f, 0.90f);
-        badgeRt.sizeDelta = new Vector2(250f, 25f);
+        badgeRt.anchorMin = new Vector2(0.5f, 0.93f);
+        badgeRt.anchorMax = new Vector2(0.5f, 0.93f);
+        badgeRt.sizeDelta = new Vector2(300f, 30f);
 
         TextMeshProUGUI badgeTMP = badgeObj.AddComponent<TextMeshProUGUI>();
         badgeTMP.text = opt.badge;
-        badgeTMP.fontSize = 12f;
+        badgeTMP.fontSize = 16f;
         badgeTMP.fontStyle = FontStyles.Bold;
         badgeTMP.alignment = TextAlignmentOptions.Center;
         badgeTMP.color = opt.themeColor;
@@ -214,45 +219,46 @@ public class UpgradeSelectionUI : MonoBehaviour
         GameObject iconObj = new GameObject("Icon");
         iconObj.transform.SetParent(card.transform, false);
         RectTransform iconRt = iconObj.AddComponent<RectTransform>();
-        iconRt.anchorMin = new Vector2(0.5f, 0.74f);
-        iconRt.anchorMax = new Vector2(0.5f, 0.74f);
-        iconRt.sizeDelta = new Vector2(250f, 55f);
+        iconRt.anchorMin = new Vector2(0.5f, 0.80f);
+        iconRt.anchorMax = new Vector2(0.5f, 0.80f);
+        iconRt.sizeDelta = new Vector2(300f, 50f);
 
         TextMeshProUGUI iconTMP = iconObj.AddComponent<TextMeshProUGUI>();
         iconTMP.text = opt.icon;
-        iconTMP.fontSize = 20f;
+        iconTMP.fontSize = 28f;
         iconTMP.fontStyle = FontStyles.Bold;
         iconTMP.color = opt.themeColor;
         iconTMP.alignment = TextAlignmentOptions.Center;
 
-        // Başlık
+        // Başlık (Büyük ve Çok Okunabilir)
         GameObject titleObj = new GameObject("Title");
         titleObj.transform.SetParent(card.transform, false);
         RectTransform titleRt = titleObj.AddComponent<RectTransform>();
-        titleRt.anchorMin = new Vector2(0.5f, 0.57f);
-        titleRt.anchorMax = new Vector2(0.5f, 0.57f);
-        titleRt.sizeDelta = new Vector2(250f, 40f);
+        titleRt.anchorMin = new Vector2(0.5f, 0.65f);
+        titleRt.anchorMax = new Vector2(0.5f, 0.65f);
+        titleRt.sizeDelta = new Vector2(310f, 55f);
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.text = opt.title;
-        titleTMP.fontSize = 16f;
+        titleTMP.fontSize = 21f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = Color.white;
 
-        // Açıklama
+        // Açıklama (Net, Büyük ve Ferah Satır Aralığı)
         GameObject descObj = new GameObject("Desc");
         descObj.transform.SetParent(card.transform, false);
         RectTransform descRt = descObj.AddComponent<RectTransform>();
-        descRt.anchorMin = new Vector2(0.5f, 0.40f);
-        descRt.anchorMax = new Vector2(0.5f, 0.40f);
-        descRt.sizeDelta = new Vector2(240f, 65f);
+        descRt.anchorMin = new Vector2(0.5f, 0.44f);
+        descRt.anchorMax = new Vector2(0.5f, 0.44f);
+        descRt.sizeDelta = new Vector2(300f, 96f);
 
         TextMeshProUGUI descTMP = descObj.AddComponent<TextMeshProUGUI>();
         descTMP.text = opt.description;
-        descTMP.fontSize = 12.5f;
+        descTMP.fontSize = 16f;
         descTMP.alignment = TextAlignmentOptions.Center;
-        descTMP.color = new Color(0.8f, 0.85f, 0.9f);
+        descTMP.color = new Color(0.92f, 0.96f, 1f);
+        descTMP.lineSpacing = 6f;
         descTMP.textWrappingMode = TextWrappingModes.Normal;
 
         // Avantaj Kutusu (Stat Box)
@@ -261,7 +267,7 @@ public class UpgradeSelectionUI : MonoBehaviour
         RectTransform statRt = statBox.AddComponent<RectTransform>();
         statRt.anchorMin = new Vector2(0.5f, 0.23f);
         statRt.anchorMax = new Vector2(0.5f, 0.23f);
-        statRt.sizeDelta = new Vector2(245f, 36f);
+        statRt.sizeDelta = new Vector2(300f, 44f);
 
         Image statBg = statBox.AddComponent<Image>();
         statBg.color = new Color(0.04f, 0.08f, 0.14f, 0.95f);
@@ -276,18 +282,18 @@ public class UpgradeSelectionUI : MonoBehaviour
 
         TextMeshProUGUI statTMP = statTxtObj.AddComponent<TextMeshProUGUI>();
         statTMP.text = opt.statBenefit;
-        statTMP.fontSize = 12f;
+        statTMP.fontSize = 15.5f;
         statTMP.fontStyle = FontStyles.Bold;
         statTMP.alignment = TextAlignmentOptions.Center;
         statTMP.color = opt.themeColor;
 
-        // SEÇ & DONAT BUTONU
+        // SEÇ & DONAT BUTONU (Geniş, Yüksek ve Okunabilir)
         GameObject btnObj = new GameObject("SelectButton");
         btnObj.transform.SetParent(card.transform, false);
         RectTransform btnRt = btnObj.AddComponent<RectTransform>();
-        btnRt.anchorMin = new Vector2(0.5f, 0.09f);
-        btnRt.anchorMax = new Vector2(0.5f, 0.09f);
-        btnRt.sizeDelta = new Vector2(230f, 44f);
+        btnRt.anchorMin = new Vector2(0.5f, 0.08f);
+        btnRt.anchorMax = new Vector2(0.5f, 0.08f);
+        btnRt.sizeDelta = new Vector2(295f, 54f);
 
         Image btnImg = btnObj.AddComponent<Image>();
         btnImg.color = opt.themeColor;
@@ -311,10 +317,10 @@ public class UpgradeSelectionUI : MonoBehaviour
 
         TextMeshProUGUI btnTMP = btnTxtObj.AddComponent<TextMeshProUGUI>();
         btnTMP.text = "SEÇ VE DONAT";
-        btnTMP.fontSize = 15f;
+        btnTMP.fontSize = 20f;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;
-        btnTMP.color = new Color(0.05f, 0.07f, 0.1f); // Koyu okunabilir yazı
+        btnTMP.color = new Color(0.04f, 0.06f, 0.09f); // Koyu çok net okunabilir yazı
 
         // Tıklama Olayı
         UpgradeOption capturedOpt = opt;

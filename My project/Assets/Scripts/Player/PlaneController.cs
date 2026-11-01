@@ -73,11 +73,7 @@ public class PlaneController : MonoBehaviour
     private void FixedUpdate()
     {
         ApplyMovement();
-    }
-
-    private void LateUpdate()
-    {
-        ClampToScreen();
+        ClampPosition();
     }
 
     private void ReadInput()
@@ -89,12 +85,13 @@ public class PlaneController : MonoBehaviour
         {
             float horizontal = 0f;
 
-            // P1 Klavye: A - D tuşları (Solo ise Ok tuşları da çalışır)
+            // P1 Klavye: A - D ve Sol / Sağ Ok tuşları
             try
             {
                 if (Input.GetKey(KeyCode.A)) horizontal -= 1f;
                 if (Input.GetKey(KeyCode.D)) horizontal += 1f;
 
+                // Solo modda ok tuşları da P1'i kontrol eder
                 if (!isTwoPlayer)
                 {
                     if (Input.GetKey(KeyCode.LeftArrow)) horizontal -= 1f;
@@ -118,36 +115,37 @@ public class PlaneController : MonoBehaviour
         }
         else
         {
-            // OYUNCU 2 / DÜŞMAN KONTROLLERİ:
-            // Klavyeden Sol-Sağ ok tuşları VEYA ekrandaki Düşman Joystick'i ile kontrol edilir
-            float horizontal = 0f;
-
-            try
+            // OYUNCU 2: Yalnızca İkili Online modda klavye / joystick dinlenir.
+            // Solo modda AIController tek başına uçağı SetAIInput ile yönetir!
+            if (isTwoPlayer)
             {
-                if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.Keypad4) || Input.GetKey(KeyCode.J)) horizontal -= 1f;
-                if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.Keypad6) || Input.GetKey(KeyCode.L)) horizontal += 1f;
-            }
-            catch { }
+                float horizontal = 0f;
 
-            if (_p2Router == null)
-                _p2Router = FindObjectOfType<TwoPlayerInputRouter>();
+                try
+                {
+                    if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.Keypad4) || Input.GetKey(KeyCode.J)) horizontal -= 1f;
+                    if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.Keypad6) || Input.GetKey(KeyCode.L)) horizontal += 1f;
+                }
+                catch { }
 
-            Vector2 p2In = _p2Router != null ? _p2Router.GetP2Input() : Vector2.zero;
+                if (_p2Router == null)
+                    _p2Router = FindObjectOfType<TwoPlayerInputRouter>();
 
-            if (Mathf.Abs(horizontal) > 0.01f)
-            {
-                _inputDir = new Vector2(horizontal, 0f);
+                Vector2 p2In = _p2Router != null ? _p2Router.GetP2Input() : Vector2.zero;
+
+                if (Mathf.Abs(horizontal) > 0.01f)
+                {
+                    _inputDir = new Vector2(horizontal, 0f);
+                }
+                else if (Mathf.Abs(p2In.x) > 0.05f)
+                {
+                    _inputDir = new Vector2(p2In.x, 0f);
+                }
+                else
+                {
+                    _inputDir = Vector2.zero;
+                }
             }
-            else if (Mathf.Abs(p2In.x) > 0.05f)
-            {
-                // Ekrandaki Düşman joystick'ine dokunuluyorsa uçağı hareket ettir
-                _inputDir = new Vector2(p2In.x, 0f);
-            }
-            else if (isTwoPlayer)
-            {
-                _inputDir = Vector2.zero;
-            }
-            // Solo modda joystick serbestken Yapay Zeka (AIController) SetAIInput çağırarak yönlendirir
         }
     }
 
@@ -158,15 +156,21 @@ public class PlaneController : MonoBehaviour
 
     private void ApplyMovement()
     {
-        _rb.linearVelocity = new Vector2(_inputDir.x * moveSpeed, 0f);
+        float targetVx = _inputDir.x * moveSpeed;
+
+        // Ekran kenarlarında titreme olmadan yumuşak durdurma
+        if (transform.position.x <= minX && targetVx < 0f) targetVx = 0f;
+        if (transform.position.x >= maxX && targetVx > 0f) targetVx = 0f;
+
+        _rb.linearVelocity = new Vector2(targetVx, 0f);
     }
 
-    private void ClampToScreen()
+    private void ClampPosition()
     {
-        Vector3 pos = transform.position;
+        Vector2 pos = _rb.position;
         pos.x = Mathf.Clamp(pos.x, minX, maxX);
         pos.y = fixedY;
-        transform.position = pos;
+        _rb.position = pos;
     }
 
     public void FreezeMovement()

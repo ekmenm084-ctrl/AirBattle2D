@@ -73,6 +73,7 @@ public class MainMenuManager : MonoBehaviour
 
         OpenMainPanel();
         UpdateUIFeedback();
+        SetTouchControlsVisibility(false, false);
     }
 
     private void TryLoadBackgroundArt()
@@ -460,11 +461,8 @@ public class MainMenuManager : MonoBehaviour
         if (GameManager.Instance != null)
             GameManager.Instance.ApplyGameMode();
 
-        var p2Router = FindObjectOfType<TwoPlayerInputRouter>();
-        if (p2Router != null && p2Router.p2ControlsRoot != null)
-        {
-            p2Router.p2ControlsRoot.SetActive(true);
-        }
+        // Kendi uçağımızın joystick & ateş butonu açık, düşman uçağının kontrolleri sadece İkili Online modda açık
+        SetTouchControlsVisibility(showP1Controls: true, showEnemyControls: isOnline);
 
         var audioUI = FindObjectOfType<AudioSettingsUI>();
         if (audioUI != null && audioUI.soundButtonObj != null)
@@ -474,5 +472,46 @@ public class MainMenuManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateHealthBars();
+    }
+
+    /// <summary>
+    /// Ekrandaki dokunmatik kontrollerin (Joystick ve Ateş Butonları) görünürlüğünü yönetir:
+    /// - 1. Oyuncunun (Kendi uçağımızın) Joystick ve Ateş Butonu her zaman aktiftir.
+    /// - Düşman uçağının (2. Oyuncunun) kontrolleri YALNIZCA İkili Online modda açılır; Yapay Zeka (Solo) modunda kaldırılır.
+    /// </summary>
+    public static void SetTouchControlsVisibility(bool showP1Controls, bool showEnemyControls)
+    {
+        // 1. Düşman Kontrolleri (P2 Joystick & P2 Ateş Butonu)
+        var p2Router = FindObjectOfType<TwoPlayerInputRouter>();
+        if (p2Router != null && p2Router.p2ControlsRoot != null)
+        {
+            p2Router.p2ControlsRoot.SetActive(showEnemyControls);
+        }
+
+        // 2. Sanal Joystick'ler (Kendi uçağımız P1, düşman P2)
+        var joysticks = FindObjectsOfType<VirtualJoystick>(true);
+        foreach (var j in joysticks)
+        {
+            if (j != null)
+            {
+                if (j.isPlayer1)
+                    j.gameObject.SetActive(showP1Controls);
+                else
+                    j.gameObject.SetActive(showEnemyControls);
+            }
+        }
+
+        // 3. Ateş Butonları (Kendi uçağımız P1, düşman P2)
+        var fireButtons = FindObjectsOfType<FireButton>(true);
+        foreach (var fb in fireButtons)
+        {
+            if (fb != null)
+            {
+                if (fb.isPlayer1)
+                    fb.gameObject.SetActive(showP1Controls);
+                else
+                    fb.gameObject.SetActive(showEnemyControls);
+            }
+        }
     }
 }

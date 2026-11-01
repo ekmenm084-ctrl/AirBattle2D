@@ -24,8 +24,6 @@ public class PlaneShooter : MonoBehaviour
     private float _nextFireTime = 0f;
     private bool _fireRequested = false;
     private Coroutine _recoilCoroutine;
-    private Vector3 _originalLocalPos;
-    private bool _originalPosCached = false;
 
     public void RequestFire() => _fireRequested = true;
     public void FireManual() => TryFire();
@@ -112,67 +110,72 @@ public class PlaneShooter : MonoBehaviour
         // Dinamik Makineli Top Sesi
         AudioManager.Instance?.PlayGunfire(bulletsPerShot > 1);
 
-        // Geri tepme (recoil) animasyonu
+        // Namlu ateşleme görsel geri bildirimi (Sprite ölçek tepmesi)
         if (enableRecoil)
         {
             TriggerRecoil();
         }
     }
 
-    private void TriggerMuzzleFlash(Vector3 position, Quaternion rotation)
+    private GameObject _muzzleFlashObj;
+    private SpriteRenderer _muzzleFlashRenderer;
+    private Coroutine _flashCoroutine;
+
+    private void EnsureMuzzleFlashObject()
     {
+        if (_muzzleFlashObj != null) return;
+
         if (muzzleFlashSprite == null)
         {
             muzzleFlashSprite = Resources.Load<Sprite>("muzzle_flash");
         }
 
-        GameObject flashObj = new GameObject("MuzzleFlashFX");
-        flashObj.transform.position = position;
-        flashObj.transform.rotation = rotation;
-        flashObj.transform.Rotate(0f, 0f, Random.Range(-30f, 30f));
+        _muzzleFlashObj = new GameObject("MuzzleFlashFX");
+        _muzzleFlashObj.transform.SetParent(transform, false);
 
-        SpriteRenderer sr = flashObj.AddComponent<SpriteRenderer>();
-        if (muzzleFlashSprite != null) sr.sprite = muzzleFlashSprite;
-        sr.sortingOrder = 12; // Mermilerin ve uçağın üstünde parlar
+        Vector3 localOffset = firePoint != null ? transform.InverseTransformPoint(firePoint.position) : new Vector3(0f, 0.9f, 0f);
+        _muzzleFlashObj.transform.localPosition = localOffset;
+        _muzzleFlashObj.transform.localRotation = Quaternion.identity;
 
-        StartCoroutine(AnimateMuzzleFlashRoutine(flashObj, sr));
+        _muzzleFlashRenderer = _muzzleFlashObj.AddComponent<SpriteRenderer>();
+        if (muzzleFlashSprite != null) _muzzleFlashRenderer.sprite = muzzleFlashSprite;
+        _muzzleFlashRenderer.sortingOrder = 14;
+        _muzzleFlashObj.SetActive(false);
     }
 
-    private System.Collections.IEnumerator AnimateMuzzleFlashRoutine(GameObject flashObj, SpriteRenderer sr)
+    private void TriggerMuzzleFlash(Vector3 position, Quaternion rotation)
     {
-        float duration = 0.065f;
-        float elapsed = 0f;
-        Vector3 startScale = new Vector3(0.5f, 0.5f, 1f);
-        Vector3 peakScale = new Vector3(1.15f, 1.35f, 1f);
+        EnsureMuzzleFlashObject();
 
-        while (elapsed < duration)
+        if (_flashCoroutine != null)
+            StopCoroutine(_flashCoroutine);
+
+        _flashCoroutine = StartCoroutine(AnimateMuzzleFlashRoutine());
+    }
+
+    private System.Collections.IEnumerator AnimateMuzzleFlashRoutine()
+    {
+        if (_muzzleFlashObj != null)
         {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
-            if (flashObj != null)
+            _muzzleFlashObj.SetActive(true);
+            if (_muzzleFlashRenderer != null)
             {
-                flashObj.transform.localScale = Vector3.Lerp(startScale, peakScale, t);
-                if (sr != null)
-                {
-                    Color col = Color.Lerp(Color.white, new Color(1f, 0.6f, 0.1f, 0f), t);
-                    sr.color = col;
-                }
+                _muzzleFlashRenderer.color = Color.white;
             }
-            yield return null;
+            yield return new WaitForSeconds(0.045f);
+            if (_muzzleFlashObj != null)
+            {
+                _muzzleFlashObj.SetActive(false);
+            }
         }
-
-        if (flashObj != null)
-            Destroy(flashObj);
+        _flashCoroutine = null;
     }
 
     private void TriggerRecoil()
     {
-        if (!_originalPosCached)
-        {
-            _originalLocalPos = transform.localPosition;
-            _originalPosCached = true;
-        }
-
+        // Uçağın Transform veya Rigidbody konumunu ASLA sıfırlamıyoruz.
+        // Konumu sıfırlamak hareket halindeyken uçağın takılmasına ve titremesine sebep oluyordu.
+        // Yalnızca uçağın görsel Sprite'ına anlık hafif bir tepme hissi veriyoruz:
         if (_recoilCoroutine != null)
             StopCoroutine(_recoilCoroutine);
 
@@ -181,20 +184,17 @@ public class PlaneShooter : MonoBehaviour
 
     private System.Collections.IEnumerator RecoilRoutine()
     {
-        Vector3 kickOffset = -transform.up * 0.07f;
-        transform.localPosition = _originalLocalPos + kickOffset;
-
-        float duration = 0.055f;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
         {
-            elapsed += Time.deltaTime;
-            transform.localPosition = Vector3.Lerp(_originalLocalPos + kickOffset, _originalLocalPos, elapsed / duration);
-            yield return null;
+            Vector3 originalScale = sr.transform.localScale;
+            sr.transform.localScale = new Vector3(originalScale.x * 1.05f, originalScale.y * 0.93f, originalScale.z);
+            yield return new WaitForSeconds(0.045f);
+            if (sr != null)
+            {
+                sr.transform.localScale = originalScale;
+            }
         }
-
-        transform.localPosition = _originalLocalPos;
         _recoilCoroutine = null;
     }
 
@@ -206,6 +206,14 @@ public class PlaneShooter : MonoBehaviour
         {
             b.damage = bulletDamage;
             b.owner = gameObject;
+        }
+
+        // Merminin ateş eden uçağın collider'ına çarpıp uçağı takmasını/durdurmasını kesinlikle engelle
+        Collider2D planeCol = GetComponent<Collider2D>();
+        Collider2D bulletCol = bullet.GetComponent<Collider2D>();
+        if (planeCol != null && bulletCol != null)
+        {
+            Physics2D.IgnoreCollision(planeCol, bulletCol);
         }
     }
 }
