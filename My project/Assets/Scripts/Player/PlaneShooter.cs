@@ -12,6 +12,7 @@ public class PlaneShooter : MonoBehaviour
     public Transform firePoint;             // Merminin çıktığı nokta
     public float fireRate = 0.28f;          // Seri ateş hızı
     public float bulletDamage = 20f;        // Mermi hasarı
+    public float criticalChance = 0f;       // % Kritik Vuruş Şansı (2x Hasar)
 
     [Header("Çoklu / Boss Atış Sistemi")]
     public int bulletsPerShot = 1;          // 1: Tekli, 2: Çiftli, 3: Üçlü
@@ -24,9 +25,38 @@ public class PlaneShooter : MonoBehaviour
     private float _nextFireTime = 0f;
     private bool _fireRequested = false;
     private Coroutine _recoilCoroutine;
+    private Coroutine _overdriveCoroutine;
+    public bool isOverdriveActive { get; private set; } = false;
 
     public void RequestFire() => _fireRequested = true;
     public void FireManual() => TryFire();
+
+    /// <summary>
+    /// Ganimet kutusundan alınan aşırı yükleme ile uçağı geçici olarak süper seri 3'lü atış moduna geçirir.
+    /// </summary>
+    public void ActivateOverdrive(float duration)
+    {
+        if (_overdriveCoroutine != null)
+            StopCoroutine(_overdriveCoroutine);
+        _overdriveCoroutine = StartCoroutine(OverdriveRoutine(duration));
+    }
+
+    private System.Collections.IEnumerator OverdriveRoutine(float duration)
+    {
+        isOverdriveActive = true;
+        float originalRate = fireRate;
+        int originalBullets = bulletsPerShot;
+
+        fireRate = 0.12f; // Çok seri ateş hızı
+        bulletsPerShot = Mathf.Max(3, bulletsPerShot + 1); // En az 3 namlu
+
+        yield return new WaitForSeconds(duration);
+
+        fireRate = originalRate;
+        bulletsPerShot = originalBullets;
+        isOverdriveActive = false;
+        _overdriveCoroutine = null;
+    }
 
     private void Update()
     {
@@ -204,7 +234,9 @@ public class PlaneShooter : MonoBehaviour
         Bullet b = bullet.GetComponent<Bullet>();
         if (b != null)
         {
-            b.damage = bulletDamage;
+            bool isCrit = (Random.value < criticalChance);
+            b.isCritical = isCrit;
+            b.damage = bulletDamage * (isCrit ? 2.0f : 1.0f);
             b.owner = gameObject;
         }
 

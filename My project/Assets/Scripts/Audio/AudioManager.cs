@@ -139,6 +139,24 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Uçak veya Boss patladığında tok bir patlama sesi oynatır.
+    /// </summary>
+    public void PlayExplosion(bool isBoss = false)
+    {
+        if (isMuted || _sfxSource == null) return;
+
+        AudioClip clip = Resources.Load<AudioClip>("explosion");
+        if (clip == null) clip = gunfireClip;
+
+        if (clip != null)
+        {
+            _sfxSource.pitch = isBoss ? Random.Range(0.50f, 0.65f) : Random.Range(0.70f, 0.85f);
+            float vol = sfxVolume * (isBoss ? 1.0f : 0.88f);
+            _sfxSource.PlayOneShot(clip, vol);
+        }
+    }
+
+    /// <summary>
     /// Arka plan savaş müziğinin ses düzeyini ayarlar (0.0 - 1.0).
     /// </summary>
     public void SetMusicVolume(float volume)

@@ -46,6 +46,8 @@ public class GameUI : MonoBehaviour
 
         SetupWaveBadge();
         SetupWaveAlertObject();
+        SetupMissileButton();
+        SetupGoldHUD();
 
         UpdateHealthBars();
 
@@ -53,10 +55,17 @@ public class GameUI : MonoBehaviour
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
         if (isMenuOpen)
         {
-            if (_waveBadgeObj != null) _waveBadgeObj.SetActive(false);
-            if (plane1HealthBar != null) plane1HealthBar.gameObject.SetActive(false);
-            if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(false);
+            SetHUDVisibility(false);
         }
+    }
+
+    public void SetHUDVisibility(bool visible)
+    {
+        if (_waveBadgeObj != null) _waveBadgeObj.SetActive(visible);
+        if (plane1HealthBar != null) plane1HealthBar.gameObject.SetActive(visible);
+        if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(visible);
+        if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
+        if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
     }
 
     private void FindPlanesIfNull()
@@ -233,7 +242,14 @@ public class GameUI : MonoBehaviour
         _waveBadgeTMP.fontStyle = FontStyles.Bold;
         _waveBadgeTMP.alignment = TextAlignmentOptions.Center;
         _waveBadgeTMP.color = new Color(0.95f, 0.95f, 1f);
-        _waveBadgeTMP.text = "HAREKAT: 1 / 20";
+        
+        string initialDiffTag = GameSettings.SelectedDifficulty switch
+        {
+            GameSettings.Difficulty.Kolay => "<size=80%><color=#2ECC71>[KOLAY]</color></size>",
+            GameSettings.Difficulty.Zor   => "<size=80%><color=#E74C3C><b>[ZOR]</b></color></size>",
+            _                             => "<size=80%><color=#F39C12>[NORMAL]</color></size>"
+        };
+        _waveBadgeTMP.text = $"HAREKAT: 1 / 20 {initialDiffTag}";
     }
 
     private void SetupWaveAlertObject()
@@ -264,6 +280,116 @@ public class GameUI : MonoBehaviour
         _waveAlertTMP.raycastTarget = false;
 
         _waveAlertObj.SetActive(false);
+    }
+
+    private GameObject _goldHUDObj;
+    private TextMeshProUGUI _goldHUDTMP;
+    private Outline _goldHUDOutline;
+    private Coroutine _goldPulseCoroutine;
+
+    private void SetupGoldHUD()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        Transform existing = canvas.transform.Find("HUD_GoldBadge");
+        _goldHUDObj = existing != null ? existing.gameObject : new GameObject("HUD_GoldBadge");
+        _goldHUDObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform rt = _goldHUDObj.GetComponent<RectTransform>();
+        if (rt == null) rt = _goldHUDObj.AddComponent<RectTransform>();
+
+        // Sağ üst köşe, Pause butonunun hemen solu
+        rt.anchorMin = new Vector2(1f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(1f, 1f);
+        rt.anchoredPosition = new Vector2(-96f, -28f);
+        rt.sizeDelta = new Vector2(210f, 44f);
+
+        Image bg = _goldHUDObj.GetComponent<Image>();
+        if (bg == null) bg = _goldHUDObj.AddComponent<Image>();
+        bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
+
+        _goldHUDOutline = _goldHUDObj.GetComponent<Outline>();
+        if (_goldHUDOutline == null) _goldHUDOutline = _goldHUDObj.AddComponent<Outline>();
+        _goldHUDOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
+        _goldHUDOutline.effectDistance = new Vector2(2f, -2f);
+
+        Transform textChild = _goldHUDObj.transform.Find("Text");
+        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("Text");
+        textObj.transform.SetParent(_goldHUDObj.transform, false);
+
+        RectTransform textRt = textObj.GetComponent<RectTransform>();
+        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = Vector2.zero;
+        textRt.offsetMax = Vector2.zero;
+
+        _goldHUDTMP = textObj.GetComponent<TextMeshProUGUI>();
+        if (_goldHUDTMP == null) _goldHUDTMP = textObj.AddComponent<TextMeshProUGUI>();
+
+        _goldHUDTMP.fontSize = 20f;
+        _goldHUDTMP.fontStyle = FontStyles.Bold;
+        _goldHUDTMP.alignment = TextAlignmentOptions.Center;
+        _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
+
+        int currentGold = HangarManager.EnsureInstance().gold;
+        _goldHUDTMP.text = $"ALTIN: {currentGold:N0} G";
+    }
+
+    public void UpdateGoldHUD(int totalGold, int addedAmount = 0)
+    {
+        if (_goldHUDObj == null || _goldHUDTMP == null)
+            SetupGoldHUD();
+
+        if (_goldHUDTMP != null)
+        {
+            _goldHUDTMP.text = $"ALTIN: {totalGold:N0} G";
+
+            if (addedAmount > 0)
+            {
+                if (_goldPulseCoroutine != null)
+                    StopCoroutine(_goldPulseCoroutine);
+                _goldPulseCoroutine = StartCoroutine(GoldPulseRoutine());
+            }
+        }
+    }
+
+    private IEnumerator GoldPulseRoutine()
+    {
+        if (_goldHUDTMP == null || _goldHUDObj == null) yield break;
+
+        _goldHUDTMP.color = Color.white;
+        _goldHUDObj.transform.localScale = Vector3.one * 1.15f;
+
+        yield return new WaitForSecondsRealtime(0.18f);
+
+        _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
+        _goldHUDObj.transform.localScale = Vector3.one;
+        _goldPulseCoroutine = null;
+    }
+
+    private GameObject _missileBtnObj;
+
+    private void SetupMissileButton()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        Transform existing = canvas.transform.Find("MissileLauncherButton");
+        if (existing != null)
+        {
+            _missileBtnObj = existing.gameObject;
+        }
+        else
+        {
+            _missileBtnObj = new GameObject("MissileLauncherButton");
+            _missileBtnObj.transform.SetParent(canvas.transform, false);
+            _missileBtnObj.AddComponent<MissileLauncherButton>();
+        }
     }
 
     public void ShowWaveAlert(string message, Color color, float duration = 2.0f)
@@ -386,9 +512,10 @@ public class GameUI : MonoBehaviour
             }
             else
             {
-                // Solo Mod: 20 Uçaklık İlerleme
+                // Solo / Sonsuz / Boss Rush İlerleme Modu
                 int wave = GameManager.Instance != null ? GameManager.Instance.currentPlaneIndex : 1;
-                bool isBoss = GameManager.IsBossPlane(wave);
+                int totalPlanes = GameManager.Instance != null ? GameManager.Instance.GetTotalPlanesForMode() : 20;
+                bool isBoss = GameManager.Instance != null && GameManager.Instance.IsBossPlane(wave);
                 string title = GameManager.GetPlaneTitle(wave);
 
                 if (_p2TmpLabel != null)
@@ -400,7 +527,10 @@ public class GameUI : MonoBehaviour
                     }
                     else
                     {
-                        _p2TmpLabel.text = $"[{wave}/{GameManager.MaxPlanes}] {title}: %{hpInt}";
+                        string waveLabel = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Endless)
+                            ? $"DALGA {wave}"
+                            : $"[{wave}/{totalPlanes}]";
+                        _p2TmpLabel.text = $"{waveLabel} {title}: %{hpInt}";
                         _p2TmpLabel.color = new Color(1f, 0.45f, 0.45f);
                     }
                 }
@@ -416,19 +546,33 @@ public class GameUI : MonoBehaviour
                 switch (GameSettings.SelectedDifficulty)
                 {
                     case GameSettings.Difficulty.Kolay: diffTag = "<size=80%><color=#2ECC71>[KOLAY]</color></size>"; break;
-                    case GameSettings.Difficulty.Zor:   diffTag = "<size=80%><color=#E74C3C>[ZOR]</color></size>"; break;
+                    case GameSettings.Difficulty.Zor:   diffTag = "<size=80%><color=#E74C3C><b>[ZOR]</b></color></size>"; break;
                     default:                            diffTag = "<size=80%><color=#F39C12>[NORMAL]</color></size>"; break;
                 }
 
                 if (_waveBadgeTMP != null)
                 {
-                    if (isBoss)
+                    if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Endless)
                     {
-                        _waveBadgeTMP.text = $"<color=#F1C40F>BOSS: {wave} / {GameManager.MaxPlanes}</color> {diffTag}";
+                        int best = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+                        _waveBadgeTMP.text = isBoss
+                            ? $"<color=#F1C40F>SONSUZ BOSS: DALGA {wave}</color> {diffTag}"
+                            : $"SONSUZ İT DALAŞI: {wave} (REKOR: {best}) {diffTag}";
+                    }
+                    else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.BossRush)
+                    {
+                        _waveBadgeTMP.text = $"<color=#E74C3C>BOSS RUSH: {wave} / 4</color> {diffTag}";
                     }
                     else
                     {
-                        _waveBadgeTMP.text = $"HAREKAT: {wave} / {GameManager.MaxPlanes} {diffTag}";
+                        if (isBoss)
+                        {
+                            _waveBadgeTMP.text = $"<color=#F1C40F>BOSS: {wave} / {totalPlanes}</color> {diffTag}";
+                        }
+                        else
+                        {
+                            _waveBadgeTMP.text = $"HAREKAT: {wave} / {totalPlanes} {diffTag}";
+                        }
                     }
                 }
             }

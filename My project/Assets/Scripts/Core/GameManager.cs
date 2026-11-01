@@ -14,12 +14,15 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public enum GameMode { SoloVsAI, TwoPlayer }
+    public enum GameMode { SoloVsAI, TwoPlayer, Endless, BossRush }
     public GameMode CurrentMode { get; private set; } = GameMode.SoloVsAI;
 
     [Header("20 Uçaklık İlerleme Modu")]
     public int currentPlaneIndex = 1;
     public const int MaxPlanes = 20;
+
+    [Header("Seferde Kazanılan Altın")]
+    public int sessionGoldEarned = 0;
 
     [Header("Oyuncu Can Hakları (Solo Mod)")]
     public int player1Lives = 3;
@@ -61,14 +64,23 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Menüden seçilen Solo veya Online (İki Oyunculu) modunu sahneye uygular.
+    /// Menüden seçilen Modu (Solo, 2 Oyunculu, Sonsuz İt Dalaşı, Boss Rush) sahneye uygular.
     /// </summary>
     public void ApplyGameMode()
     {
         gameEnded = false;
+        sessionGoldEarned = 0;
+        GameSettings.LoadSettings();
 
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
-        CurrentMode = isOnline ? GameMode.TwoPlayer : GameMode.SoloVsAI;
+        if (isOnline)
+            CurrentMode = GameMode.TwoPlayer;
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.Endless)
+            CurrentMode = GameMode.Endless;
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.BossRush)
+            CurrentMode = GameMode.BossRush;
+        else
+            CurrentMode = GameMode.SoloVsAI;
 
         // Arka plan savaş müziğini ve ses ayar butonunu başlat
         AudioManager.EnsureInstance();
@@ -82,7 +94,7 @@ public class GameManager : MonoBehaviour
             var ai = plane2Health.GetComponent<AIController>();
             if (ai != null)
             {
-                ai.enabled = !isOnline; // Online ise AI kapalı, Solo ise açık
+                ai.enabled = !isOnline; // Online ise AI kapalı, diğer modlarda açık
             }
         }
 
@@ -99,23 +111,30 @@ public class GameManager : MonoBehaviour
 
         MainMenuManager.SetTouchControlsVisibility(showP1Controls: true, showEnemyControls: isOnline);
 
-        // Solo modda 1. uçaktan başla ve 3 can hakkı ver
-        if (CurrentMode == GameMode.SoloVsAI)
+        if (CurrentMode == GameMode.TwoPlayer)
+        {
+            ApplyEnemyWave(1);
+        }
+        else
         {
             player1Lives = MaxPlayerLives;
             currentPlaneIndex = 1;
             PlayerUpgradeManager.EnsureInstance();
             UpgradeSelectionUI.EnsureInstance();
 
-            // 1. Dalga öncesinde alt yazılı geçişli başlangıç hikayesini oynat!
-            StoryCampaignManager.EnsureInstance()?.PlayCampaignIntro(() =>
+            if (CurrentMode == GameMode.SoloVsAI)
             {
+                // Solo Seferde 1. Dalga öncesinde hikaye brifingini oynat
+                StoryCampaignManager.EnsureInstance()?.PlayCampaignIntro(() =>
+                {
+                    ApplyEnemyWave(currentPlaneIndex);
+                });
+            }
+            else
+            {
+                // Sonsuz İt Dalaşı veya Boss Rush doğrudan başlar
                 ApplyEnemyWave(currentPlaneIndex);
-            });
-        }
-        else
-        {
-            ApplyEnemyWave(1);
+            }
         }
 
         var gameUI = FindObjectOfType<GameUI>();
@@ -139,40 +158,83 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public static bool IsBossPlane(int index) => (index % 5 == 0);
-
-    public static string GetPlaneTitle(int index)
+    public int GetTotalPlanesForMode()
     {
-        return StoryCampaignManager.GetPlaneTitle(index);
+        if (CurrentMode == GameMode.BossRush) return 4;
+        if (CurrentMode == GameMode.Endless) return 999;
+        return MaxPlanes;
+    }
+
+    public int GetEffectiveWaveIndex(int index)
+    {
+        if (CurrentMode == GameMode.BossRush)
+        {
+            // Boss Rush: 1 -> 5, 2 -> 10, 3 -> 15, 4 -> 20
+            return Mathf.Clamp(index, 1, 4) * 5;
+        }
+        return index;
+    }
+
+    public bool IsBossPlane(int index)
+    {
+        if (CurrentMode == GameMode.BossRush) return true;
+        return (index % 5 == 0);
+    }
+
+    public string GetCurrentPlaneTitle(int index)
+    {
+        int effectiveIndex = GetEffectiveWaveIndex(index);
+        return StoryCampaignManager.GetPlaneTitle(effectiveIndex);
     }
 
     public static float GetDifficultyHealthMultiplier()
     {
         switch (GameSettings.SelectedDifficulty)
         {
-            case GameSettings.Difficulty.Kolay: return 0.75f; // Kolay modda %25 daha az can
-            case GameSettings.Difficulty.Zor:   return 1.30f; // Zor modda %30 daha fazla can
+            case GameSettings.Difficulty.Kolay: return 0.70f; // Kolay modda %30 daha az can
+            case GameSettings.Difficulty.Zor:   return 1.45f; // Zor modda %45 daha fazla can
             default:                            return 1.00f; // Normal mod
         }
     }
 
     /// <summary>
     /// Uçağın canını dalga numarasına VE seçilen menü zorluğuna (Kolay/Normal/Zor) göre hesaplar.
-    /// Boss canları 2 kademe kolaylaştırılmıştır.
     /// </summary>
-    public static float GetPlaneHealth(int index)
+    public float GetPlaneHealthForWave(int index)
     {
+        int eff = GetEffectiveWaveIndex(index);
         float baseHp = 0f;
-        switch (index)
+        switch (eff)
         {
-            case 5:  baseHp = 160f; break; // Boss 1 (Eski 260 HP yerine dengeli 160 HP)
-            case 10: baseHp = 240f; break; // Boss 2 (Eski 380 HP yerine dengeli 240 HP)
-            case 15: baseHp = 320f; break; // Boss 3 (Eski 480 HP yerine dengeli 320 HP)
-            case 20: baseHp = 420f; break; // Final Boss (Eski 650 HP yerine dengeli 420 HP)
-            default: baseHp = 70f + (index * 6f); break; // 1. uçak 76 HP -> 19. uçak 184 HP
+            case 5:  baseHp = 160f; break; // Boss 1
+            case 10: baseHp = 240f; break; // Boss 2
+            case 15: baseHp = 320f; break; // Boss 3
+            case 20: baseHp = 420f; break; // Final Boss
+            default:
+                if (eff > 20)
+                    baseHp = 220f + ((eff - 20) * 15f); // Sonsuz mod artışı
+                else
+                    baseHp = 70f + (eff * 6f);
+                break;
         }
 
         return Mathf.Round(baseHp * GetDifficultyHealthMultiplier());
+    }
+
+    public static float GetPlaneHealth(int index)
+    {
+        if (Instance != null)
+            return Instance.GetPlaneHealthForWave(index);
+
+        return Mathf.Round((70f + (index * 6f)) * GetDifficultyHealthMultiplier());
+    }
+
+    public static string GetPlaneTitle(int index)
+    {
+        if (Instance != null)
+            return Instance.GetCurrentPlaneTitle(index);
+
+        return StoryCampaignManager.GetPlaneTitle(index);
     }
 
     /// <summary>
@@ -182,8 +244,9 @@ public class GameManager : MonoBehaviour
     {
         if (plane2Health == null) return;
 
+        int effIndex = GetEffectiveWaveIndex(waveIndex);
         bool isBoss = IsBossPlane(waveIndex);
-        float hp = GetPlaneHealth(waveIndex);
+        float hp = GetPlaneHealthForWave(waveIndex);
 
         // Canı ve bileşenleri sıfırla
         plane2Health.ResetHealth(hp);
@@ -197,14 +260,14 @@ public class GameManager : MonoBehaviour
 
         if (isBoss)
         {
-            float scaleMultiplier = (waveIndex == 20) ? 1.55f : (waveIndex == 15 ? 1.45f : (waveIndex == 10 ? 1.38f : 1.28f));
+            float scaleMultiplier = (effIndex >= 20) ? 1.55f : (effIndex >= 15 ? 1.45f : (effIndex >= 10 ? 1.38f : 1.28f));
             planeTransform.localScale = _plane2OriginalScale * scaleMultiplier;
 
             if (sr != null)
             {
-                if (waveIndex == 5) sr.color = new Color(1f, 0.85f, 0.45f); // Altın Sarısı / Taktik
-                else if (waveIndex == 10) sr.color = new Color(0.9f, 0.45f, 1f); // Mor Gölge Phantom
-                else if (waveIndex == 15) sr.color = new Color(1f, 0.35f, 0.2f); // Kor Alev Lav
+                if (effIndex <= 5) sr.color = new Color(1f, 0.85f, 0.45f); // Altın Sarısı / Taktik
+                else if (effIndex <= 10) sr.color = new Color(0.9f, 0.45f, 1f); // Mor Gölge Phantom
+                else if (effIndex <= 15) sr.color = new Color(1f, 0.35f, 0.2f); // Kor Alev Lav
                 else sr.color = new Color(1f, 0.8f, 0.15f); // İmparatorluk Altını Final Boss
             }
         }
@@ -218,7 +281,7 @@ public class GameManager : MonoBehaviour
         var ai = plane2Health.GetComponent<AIController>();
         if (ai != null)
         {
-            ai.ConfigureWave(waveIndex, isBoss);
+            ai.ConfigureWave(effIndex, isBoss);
         }
 
         var gameUI = FindObjectOfType<GameUI>();
@@ -227,7 +290,7 @@ public class GameManager : MonoBehaviour
         // Boss dalgası ise geçişli cümleli Boss Tanıtım sinematiğini oynat
         if (isBoss)
         {
-            StoryCampaignManager.EnsureInstance()?.PlayBossIntro(waveIndex, null);
+            StoryCampaignManager.EnsureInstance()?.PlayBossIntro(effIndex, null);
         }
     }
 
@@ -250,7 +313,7 @@ public class GameManager : MonoBehaviour
                 return;
             }
 
-            // SOLO MOD CAN HAKKI KONTROLÜ (Toplam 3 Can Hakkı)
+            // CAN HAKKI KONTROLÜ (Toplam 3 Can Hakkı)
             player1Lives--;
 
             var gameUI = FindObjectOfType<GameUI>();
@@ -258,15 +321,37 @@ public class GameManager : MonoBehaviour
 
             if (player1Lives > 0)
             {
-                // Can hakkı hala var: Yeniden Doğuş!
                 gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives} / {MaxPlayerLives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
                 StartCoroutine(RespawnPlayer1Routine(1.2f));
             }
             else
             {
-                // 3 Can Hakkı da tükendi: Oyun biter, önceki gibi sıfırlanıp ana menüye atar!
+                // Can Hakkı tükendi: Oyun biter
                 gameEnded = true;
-                string defeatMsg = $"GÖREV BAŞARISIZ!\nTÜM CAN HAKLARI TÜKENDİ!\nİLERLEME: UÇAK {currentPlaneIndex} / {MaxPlanes}";
+                string defeatMsg = "";
+
+                if (CurrentMode == GameMode.Endless)
+                {
+                    int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+                    if (currentPlaneIndex > bestWave)
+                    {
+                        PlayerPrefs.SetInt("AirBattle_EndlessHighScore", currentPlaneIndex);
+                        PlayerPrefs.Save();
+                        defeatMsg = $"YENİ REKOR KIRILDI!\nSONSUZ MOD: DALGA {currentPlaneIndex}\nÖNCEKİ REKOR: {bestWave}";
+                    }
+                    else
+                    {
+                        defeatMsg = $"GÖREV BAŞARISIZ!\nSONSUZ MOD: DALGA {currentPlaneIndex}\nEN YÜKSEK REKOR: {bestWave}";
+                    }
+                }
+                else if (CurrentMode == GameMode.BossRush)
+                {
+                    defeatMsg = $"BOSS RUSH BAŞARISIZ!\nELENEN BOSS: {currentPlaneIndex - 1} / 4";
+                }
+                else
+                {
+                    defeatMsg = $"GÖREV BAŞARISIZ!\nTÜM CAN HAKLARI TÜKENDİ!\nİLERLEME: UÇAK {currentPlaneIndex} / {MaxPlanes}";
+                }
 
                 if (gameOverUI != null)
                     gameOverUI.Show(defeatMsg);
@@ -279,7 +364,6 @@ public class GameManager : MonoBehaviour
         // 2. DÜŞMAN (UÇAK 2) ÖLDÜĞÜNDE:
         if (CurrentMode == GameMode.TwoPlayer)
         {
-            // İki oyunculu modda tek rauntluk düello biter
             gameEnded = true;
             if (gameOverUI != null)
                 gameOverUI.Show("OYUNCU 1 KAZANDI!");
@@ -288,20 +372,31 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // SOLO MOD: 20 UÇAKLIK İLERLEME SİSTEMİ!
-            if (currentPlaneIndex >= MaxPlanes)
+            int totalPlanes = GetTotalPlanesForMode();
+
+            // BOSS RUSH VE SOLO MOD ZAFER KONTROLÜ
+            if (CurrentMode == GameMode.BossRush && currentPlaneIndex >= 4)
+            {
+                // BOSS RUSH TAMAMLANDI!
+                gameEnded = true;
+                int rushReward = 1500;
+                HangarManager.EnsureInstance()?.AddGold(rushReward);
+                sessionGoldEarned += rushReward;
+
+                if (gameOverUI != null)
+                    gameOverUI.Show($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!");
+
+                StartCoroutine(ReturnToMainMenuRoutine(2.5f));
+            }
+            else if (CurrentMode == GameMode.SoloVsAI && currentPlaneIndex >= MaxPlanes)
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
+                HangarManager.EnsureInstance()?.AddGold(1000);
+                sessionGoldEarned += 1000;
 
-                // 20 dalgalık sefer başarıyla bitti, bir sonraki senaryo seferini aktifleştir
                 StoryCampaignManager.AdvanceToNextCampaign();
-
-                // Sinematik Bitiş Ekranını ve Kahramanlık Cümlelerini Oynat!
-                StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() =>
-                {
-                    // Oyuncu bitiş modalındaki butonlarla devam edecek
-                });
+                StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() => { });
             }
             else
             {
@@ -310,15 +405,21 @@ public class GameManager : MonoBehaviour
 
                 if (wasBoss)
                 {
-                    // BOSS İMHA EDİLDİ! OYUNCUYA HANGAR GÜÇLENDİRME SEÇİMİ SUN!
+                    int bossReward = (CurrentMode == GameMode.BossRush) ? 350 : 250;
+                    HangarManager.EnsureInstance()?.AddGold(bossReward);
+                    sessionGoldEarned += bossReward;
+
                     var gameUI = FindObjectOfType<GameUI>();
-                    gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ!\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
+                    gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ! (+{bossReward}G)\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
 
                     StartCoroutine(OpenUpgradeHangarRoutine(justDefeated));
                 }
                 else
                 {
-                    // Standart düşman imha edildi: Oyuncuya +35 HP can tamiri ver
+                    int killReward = 25 + (justDefeated * 2);
+                    HangarManager.EnsureInstance()?.AddGold(killReward);
+                    sessionGoldEarned += killReward;
+
                     plane1Health?.Heal(35f);
 
                     var gameUI = FindObjectOfType<GameUI>();
@@ -327,14 +428,14 @@ public class GameManager : MonoBehaviour
 
                     if (nextIsBoss)
                     {
-                        gameUI?.ShowWaveAlert($"DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR!", new Color(1f, 0.3f, 0.2f), 2.2f);
+                        gameUI?.ShowWaveAlert($"DİKKAT! {GetCurrentPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR!", new Color(1f, 0.3f, 0.2f), 2.2f);
                     }
                     else
                     {
-                        gameUI?.ShowWaveAlert($"UÇAK [{justDefeated}/{MaxPlanes}] İMHA EDİLDİ!\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
+                        string waveLabel = (CurrentMode == GameMode.Endless) ? $"DALGA {justDefeated}" : $"UÇAK [{justDefeated}/{totalPlanes}]";
+                        gameUI?.ShowWaveAlert($"{waveLabel} İMHA EDİLDİ! (+{killReward}G)\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
                     }
 
-                    // 1.3 saniye sonra yeni düşman uçağını sahneye sok
                     StartCoroutine(SpawnNextEnemyRoutine(1.3f));
                 }
             }

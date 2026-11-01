@@ -51,6 +51,27 @@ public class PlayerUpgradeManager : MonoBehaviour
     public float maxShield = 75f;
     public float currentShield = 0f;
 
+    [Header("Para / Altın Kasası")]
+    public int gold = 0;
+    private const string PREF_GOLD = "AirBattle_Gold";
+
+    public void AddGold(int amount)
+    {
+        HangarManager.EnsureInstance()?.AddGold(amount);
+    }
+
+    public void GrantShield(float amount = 60f)
+    {
+        hasShield = true;
+        maxShield = Mathf.Max(maxShield, amount);
+        currentShield = Mathf.Min(maxShield, currentShield + amount);
+
+        if (_shieldVisualObj != null)
+            _shieldVisualObj.SetActive(true);
+        else
+            SetupShieldVisual();
+    }
+
     [Header("Yükseltme Seviyeleri")]
     public int weaponLevel = 1;        // 1: Tekli, 2: Çiftli, 3: Üçlü, 4+: Süper Üçlü
     public int armorLevel = 0;         // Her seviye +60 Max HP & Tamir

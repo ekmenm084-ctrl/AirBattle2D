@@ -48,6 +48,8 @@ public class StoryCampaignManager : MonoBehaviour
         CurrentCampaign = next;
     }
 
+    public bool IsBossWave => (GameManager.Instance != null && (GameManager.Instance.currentPlaneIndex % 5 == 0));
+
     [Header("Telsiz UI")]
     private GameObject _radioBannerObj;
     private TextMeshProUGUI _speakerTMP;

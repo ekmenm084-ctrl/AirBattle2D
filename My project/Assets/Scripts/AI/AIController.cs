@@ -53,12 +53,12 @@ public class AIController : MonoBehaviour
         switch (GameSettings.SelectedDifficulty)
         {
             case GameSettings.Difficulty.Kolay:
-                reactionSpeed = 0.40f;
-                fireInterval = 1.35f;
+                reactionSpeed = 0.45f;
+                fireInterval = 1.45f;
                 aimToleranceX = 0.5f;
-                dodgeChance = 0.10f;
-                if (_controller != null) _controller.moveSpeed = 3.8f;
-                if (_shooter != null) _shooter.bulletDamage = 12f;
+                dodgeChance = 0.08f;
+                if (_controller != null) _controller.moveSpeed = 3.5f;
+                if (_shooter != null) _shooter.bulletDamage = 10f;
                 break;
 
             case GameSettings.Difficulty.Normal:
@@ -71,12 +71,12 @@ public class AIController : MonoBehaviour
                 break;
 
             case GameSettings.Difficulty.Zor:
-                reactionSpeed = 0.10f;
-                fireInterval = 0.50f;
-                aimToleranceX = 1.1f;
-                dodgeChance = 0.50f;
-                if (_controller != null) _controller.moveSpeed = 7.5f;
-                if (_shooter != null) _shooter.bulletDamage = 20f;
+                reactionSpeed = 0.08f;
+                fireInterval = 0.45f;
+                aimToleranceX = 1.2f;
+                dodgeChance = 0.55f;
+                if (_controller != null) _controller.moveSpeed = 8.0f;
+                if (_shooter != null) _shooter.bulletDamage = 22f;
                 break;
         }
     }
@@ -103,11 +103,11 @@ public class AIController : MonoBehaviour
         switch (GameSettings.SelectedDifficulty)
         {
             case GameSettings.Difficulty.Kolay:
-                speedMod = 0.80f;     // %20 daha yavaş hareket
-                fireRateMod = 1.35f;  // %35 daha seyrek ateş (interval uzar)
-                reactionMod = 1.40f;  // %40 daha geç tepki
-                dodgeMod = 0.40f;     // Çok az kaçış manevrası
-                damageMod = 0.75f;    // %25 daha az mermi hasarı
+                speedMod = 0.72f;     // %28 daha yavaş hareket
+                fireRateMod = 1.45f;  // %45 daha seyrek ateş (interval uzar)
+                reactionMod = 1.50f;  // %50 daha geç tepki
+                dodgeMod = 0.20f;     // Çok nadir kaçış manevrası
+                damageMod = 0.70f;    // %30 daha az mermi hasarı
                 break;
 
             case GameSettings.Difficulty.Normal:
@@ -119,18 +119,18 @@ public class AIController : MonoBehaviour
                 break;
 
             case GameSettings.Difficulty.Zor:
-                speedMod = 1.20f;     // %20 daha hızlı hareket
-                fireRateMod = 0.80f;  // %20 daha seri ateş
-                reactionMod = 0.75f;  // %25 daha ani tepki
-                dodgeMod = 1.35f;     // Sık kaçış
-                damageMod = 1.20f;    // %20 daha fazla mermi hasarı
+                speedMod = 1.30f;     // %30 daha hızlı ve çevik hareket
+                fireRateMod = 0.65f;  // %35 daha seri ve acımasız ateş
+                reactionMod = 0.60f;  // %40 daha anlık ve keskin tepki
+                dodgeMod = 1.60f;     // Yüksek kaçış ve manevra
+                damageMod = 1.35f;    // %35 daha fazla mermi hasarı
                 break;
         }
 
-        // 2. BOSS VEYA STANDART UÇAK PARAMETRELERİ (2 Kademe Kolaylaştırılmış ve Dengeli)
+        // 2. BOSS VEYA STANDART UÇAK PARAMETRELERİ
         if (isBoss)
         {
-            // Bosslar dengelendi: Oyuncunun nefes alabileceği ve vurabileceği akıcı düello temposu
+            // Bosslar: Dengeli ama Zor modda gerçek bir ecel terleten savaş
             reactionSpeed = Mathf.Lerp(0.24f, 0.10f, progress) * reactionMod;
             fireInterval = Mathf.Lerp(0.90f, 0.45f, progress) * fireRateMod;
             aimToleranceX = Mathf.Lerp(0.85f, 1.25f, progress);
@@ -142,14 +142,14 @@ public class AIController : MonoBehaviour
             if (_shooter != null)
             {
                 _shooter.fireRate = fireInterval;
-                _shooter.bulletsPerShot = (wave >= 15) ? 3 : 2; // 15 ve 20. dalga 3'lü salvo
+                _shooter.bulletsPerShot = (wave >= 15 || GameSettings.SelectedDifficulty == GameSettings.Difficulty.Zor) ? 3 : 2;
                 _shooter.bulletSpread = 0.40f;
                 _shooter.bulletDamage = (wave >= 15 ? 12f : 14f) * damageMod;
             }
         }
         else
         {
-            // Standart Uçaklar: 1'den 20'ye doğru tatlı ve hissedilir bir yükseliş
+            // Standart Uçaklar
             reactionSpeed = Mathf.Lerp(0.38f, 0.12f, progress) * reactionMod;
             fireInterval = Mathf.Lerp(1.30f, 0.55f, progress) * fireRateMod;
             aimToleranceX = Mathf.Lerp(0.50f, 1.05f, progress);
@@ -161,7 +161,9 @@ public class AIController : MonoBehaviour
             if (_shooter != null)
             {
                 _shooter.fireRate = fireInterval;
-                _shooter.bulletsPerShot = 1;
+                // Zor modda 3. dalgadan sonra standart uçaklar da çiftli mermi atabilir!
+                _shooter.bulletsPerShot = (GameSettings.SelectedDifficulty == GameSettings.Difficulty.Zor && wave >= 3) ? 2 : 1;
+                _shooter.bulletSpread = 0.28f;
                 _shooter.bulletDamage = 14f * damageMod;
             }
         }

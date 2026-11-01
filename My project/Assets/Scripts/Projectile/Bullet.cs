@@ -11,6 +11,7 @@ public class Bullet : MonoBehaviour
     public float speed = 20f;          // Yüksek hızlı gerçekçi mermi hızı
     public float lifetime = 2f;
     public float damage = 20f;
+    public bool isCritical = false;    // 2 Kat Hasar veren altın kritik vuruş
 
     [HideInInspector]
     public GameObject owner;
@@ -40,6 +41,13 @@ public class Bullet : MonoBehaviour
 
     private void Start()
     {
+        if (isCritical)
+        {
+            transform.localScale = Vector3.one * 1.35f;
+            SpriteRenderer sr = GetComponent<SpriteRenderer>();
+            if (sr != null) sr.color = new Color(1f, 0.9f, 0.15f);
+        }
+
         _rb.linearVelocity = transform.up * speed;
         Destroy(gameObject, lifetime);
     }
@@ -69,6 +77,7 @@ public class Bullet : MonoBehaviour
         PlaneHealth health = target.GetComponent<PlaneHealth>();
         if (health != null)
         {
+            VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.9f, 0.2f));
             health.TakeDamage(damage);
             Destroy(gameObject);
         }

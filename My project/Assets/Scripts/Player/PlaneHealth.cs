@@ -24,25 +24,42 @@ public class PlaneHealth : MonoBehaviour
     private void Start()
     {
         currentHealth = maxHealth;
+
+        // Otomatik Görsel Efekt Bileşeni (Jet İzi, Hit Flash, Duman)
+        if (GetComponent<PlaneVisualEffects>() == null)
+            gameObject.AddComponent<PlaneVisualEffects>();
     }
 
     public void TakeDamage(float amount)
     {
         if (_isDead || isInvulnerable) return;
 
-        // Player 1 için aktif enerji kalkanı hasar soğurması
         PlaneController pc = GetComponent<PlaneController>();
+        PlaneVisualEffects pve = GetComponent<PlaneVisualEffects>();
+
+        // Player 1 için aktif enerji kalkanı hasar soğurması
         if (pc != null && pc.isPlayer1 && PlayerUpgradeManager.Instance != null)
         {
             amount = PlayerUpgradeManager.Instance.AbsorbDamage(amount);
             if (amount <= 0f)
             {
                 // Tüm darbe kalkan tarafından emildi! Can düşmez.
+                pve?.TriggerHitFlash(isShieldHit: true);
+                VFXManager.SpawnHitSparks(transform.position, Color.cyan);
+                CameraShake.ShakeHit();
+
                 GameUI uiShield = FindObjectOfType<GameUI>();
                 uiShield?.UpdateHealthBars();
                 return;
             }
         }
+
+        // Hasar alındı - Vuruş Flaş Efekti ve Mermi Kıvılcımı
+        pve?.TriggerHitFlash(isShieldHit: false);
+        VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.85f, 0.2f));
+
+        if (pc != null && pc.isPlayer1)
+            CameraShake.ShakeHit();
 
         currentHealth = Mathf.Max(0f, currentHealth - amount);
         onHealthChanged?.Invoke(currentHealth / maxHealth);
@@ -59,6 +76,18 @@ public class PlaneHealth : MonoBehaviour
         if (_isDead) return;
         _isDead = true;
 
+        PlaneController pc = GetComponent<PlaneController>();
+        bool isBoss = (pc != null && !pc.isPlayer1 && GameManager.Instance != null && (GameManager.Instance.currentPlaneIndex % 5 == 0));
+
+        // Sinematik Prosedürel Patlama & Sarsıntı
+        VFXManager.SpawnExplosion(transform.position, isBoss);
+
+        // Düşman uçağı düştüğünde ganimet (Loot) bırak
+        if (pc != null && !pc.isPlayer1)
+        {
+            LootDropManager.TryDropLoot(transform.position, isBoss);
+        }
+
         if (explosionPrefab != null)
             Instantiate(explosionPrefab, transform.position, Quaternion.identity);
 
@@ -66,7 +95,6 @@ public class PlaneHealth : MonoBehaviour
 
         GameManager.Instance?.OnPlaneDead(this);
 
-        PlaneController pc = GetComponent<PlaneController>();
         if (pc != null) pc.FreezeMovement();
 
         PlaneShooter ps = GetComponent<PlaneShooter>();
@@ -99,6 +127,8 @@ public class PlaneHealth : MonoBehaviour
 
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.enabled = true;
+
+        GetComponent<PlaneVisualEffects>()?.ResetVisuals();
 
         onHealthChanged?.Invoke(1f);
 
