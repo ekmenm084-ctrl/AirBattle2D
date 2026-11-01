@@ -30,6 +30,20 @@ public class PlaneHealth : MonoBehaviour
     {
         if (_isDead || isInvulnerable) return;
 
+        // Player 1 için aktif enerji kalkanı hasar soğurması
+        PlaneController pc = GetComponent<PlaneController>();
+        if (pc != null && pc.isPlayer1 && PlayerUpgradeManager.Instance != null)
+        {
+            amount = PlayerUpgradeManager.Instance.AbsorbDamage(amount);
+            if (amount <= 0f)
+            {
+                // Tüm darbe kalkan tarafından emildi! Can düşmez.
+                GameUI uiShield = FindObjectOfType<GameUI>();
+                uiShield?.UpdateHealthBars();
+                return;
+            }
+        }
+
         currentHealth = Mathf.Max(0f, currentHealth - amount);
         onHealthChanged?.Invoke(currentHealth / maxHealth);
 

@@ -325,7 +325,10 @@ public class GameUI : MonoBehaviour
                 {
                     int lives = GameManager.Instance != null ? GameManager.Instance.player1Lives : 3;
                     string hearts = GetHeartsDisplay(lives);
-                    _p1TmpLabel.text = $"🛡️ CAN: %{hpInt} | {hearts}";
+                    string shieldTxt = (PlayerUpgradeManager.Instance != null && PlayerUpgradeManager.Instance.currentShield > 0f)
+                        ? $" <color=#00E5FF>[🛡️{Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color>"
+                        : "";
+                    _p1TmpLabel.text = $"CAN: %{hpInt} ({rawHp} HP){shieldTxt} | {hearts}";
                 }
             }
         }

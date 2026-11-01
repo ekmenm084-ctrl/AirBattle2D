@@ -89,6 +89,8 @@ public class GameManager : MonoBehaviour
         {
             player1Lives = MaxPlayerLives;
             currentPlaneIndex = 1;
+            PlayerUpgradeManager.EnsureInstance();
+            UpgradeSelectionUI.EnsureInstance();
             ApplyEnemyWave(currentPlaneIndex);
         }
 
@@ -292,29 +294,65 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // Sonraki uçağa geçiş!
-                // Oyuncuya +35 HP can tamiri ver
-                plane1Health?.Heal(35f);
-
-                var gameUI = FindObjectOfType<GameUI>();
-
                 int justDefeated = currentPlaneIndex;
-                currentPlaneIndex++;
-                bool nextIsBoss = IsBossPlane(currentPlaneIndex);
+                bool wasBoss = IsBossPlane(justDefeated);
 
-                if (nextIsBoss)
+                if (wasBoss)
                 {
-                    gameUI?.ShowWaveAlert($"⚠️ DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR! ⚠️", new Color(1f, 0.3f, 0.2f), 2.2f);
+                    // BOSS İMHA EDİLDİ! OYUNCUYA HANGAR GÜÇLENDİRME SEÇİMİ SUN!
+                    var gameUI = FindObjectOfType<GameUI>();
+                    gameUI?.ShowWaveAlert($"💥 BOSS DÜŞÜRÜLDÜ!\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
+
+                    StartCoroutine(OpenUpgradeHangarRoutine(justDefeated));
                 }
                 else
                 {
-                    gameUI?.ShowWaveAlert($"🎯 UÇAK [{justDefeated}/{MaxPlanes}] İMHA EDİLDİ!\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
-                }
+                    // Standart düşman imha edildi: Oyuncuya +35 HP can tamiri ver
+                    plane1Health?.Heal(35f);
 
-                // 1.3 saniye sonra yeni düşman uçağını sahneye sok
-                StartCoroutine(SpawnNextEnemyRoutine(1.3f));
+                    var gameUI = FindObjectOfType<GameUI>();
+                    currentPlaneIndex++;
+                    bool nextIsBoss = IsBossPlane(currentPlaneIndex);
+
+                    if (nextIsBoss)
+                    {
+                        gameUI?.ShowWaveAlert($"⚠️ DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR! ⚠️", new Color(1f, 0.3f, 0.2f), 2.2f);
+                    }
+                    else
+                    {
+                        gameUI?.ShowWaveAlert($"🎯 UÇAK [{justDefeated}/{MaxPlanes}] İMHA EDİLDİ!\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
+                    }
+
+                    // 1.3 saniye sonra yeni düşman uçağını sahneye sok
+                    StartCoroutine(SpawnNextEnemyRoutine(1.3f));
+                }
             }
         }
+    }
+
+    private IEnumerator OpenUpgradeHangarRoutine(int justDefeated)
+    {
+        yield return new WaitForSeconds(1.0f);
+
+        UpgradeSelectionUI upgradeUI = UpgradeSelectionUI.EnsureInstance();
+        upgradeUI.ShowUpgradeSelection(() =>
+        {
+            // Oyuncu hangar seçimini yaptıktan sonra:
+            currentPlaneIndex++;
+            bool nextIsBoss = IsBossPlane(currentPlaneIndex);
+
+            var gameUI = FindObjectOfType<GameUI>();
+            if (nextIsBoss)
+            {
+                gameUI?.ShowWaveAlert($"⚠️ DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR! ⚠️", new Color(1f, 0.3f, 0.2f), 2.2f);
+            }
+            else
+            {
+                gameUI?.ShowWaveAlert($"🚀 GÜÇLENDİRİLMİŞ UÇAK SAVAŞA DÖNDÜ!\n<color=#00E5FF>HEDEF: UÇAK {currentPlaneIndex}/{MaxPlanes}</color>", new Color(0.2f, 0.9f, 1f), 2.0f);
+            }
+
+            StartCoroutine(SpawnNextEnemyRoutine(1.2f));
+        });
     }
 
     private IEnumerator SpawnNextEnemyRoutine(float delay)
