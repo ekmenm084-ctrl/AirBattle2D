@@ -32,6 +32,7 @@ public class GameUI : MonoBehaviour
     private TextMeshProUGUI _p2TmpLabel;
 
     private TextMeshProUGUI _waveBadgeTMP;
+    private GameObject _waveBadgeObj;
     private GameObject _waveAlertObj;
     private TextMeshProUGUI _waveAlertTMP;
     private Coroutine _alertCoroutine;
@@ -47,6 +48,15 @@ public class GameUI : MonoBehaviour
         SetupWaveAlertObject();
 
         UpdateHealthBars();
+
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+        if (isMenuOpen)
+        {
+            if (_waveBadgeObj != null) _waveBadgeObj.SetActive(false);
+            if (plane1HealthBar != null) plane1HealthBar.gameObject.SetActive(false);
+            if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(false);
+        }
     }
 
     private void FindPlanesIfNull()
@@ -185,6 +195,7 @@ public class GameUI : MonoBehaviour
         Transform existing = canvas.transform.Find("HUD_WaveBadge");
         GameObject badgeObj = existing != null ? existing.gameObject : new GameObject("HUD_WaveBadge");
         badgeObj.transform.SetParent(canvas.transform, false);
+        _waveBadgeObj = badgeObj;
 
         RectTransform rt = badgeObj.GetComponent<RectTransform>();
         if (rt == null) rt = badgeObj.AddComponent<RectTransform>();
@@ -285,6 +296,25 @@ public class GameUI : MonoBehaviour
 
     private void Update()
     {
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+
+        if (_waveBadgeObj != null && _waveBadgeObj.activeSelf == isMenuOpen)
+        {
+            _waveBadgeObj.SetActive(!isMenuOpen);
+        }
+
+        if (plane1HealthBar != null && plane1HealthBar.gameObject.activeSelf == isMenuOpen)
+        {
+            plane1HealthBar.gameObject.SetActive(!isMenuOpen);
+        }
+
+        if (plane2HealthBar != null && plane2HealthBar.gameObject.activeSelf == isMenuOpen)
+        {
+            plane2HealthBar.gameObject.SetActive(!isMenuOpen);
+        }
+
+        if (isMenuOpen) return;
         if (plane1HealthBar != null)
         {
             plane1HealthBar.value = Mathf.MoveTowards(plane1HealthBar.value, _targetP1Health, Time.deltaTime * 2.5f);

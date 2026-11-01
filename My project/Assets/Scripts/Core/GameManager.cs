@@ -48,6 +48,15 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         GameSettings.LoadSettings();
+
+        // Eğer sahnede Ana Menü açıksa oyunu ve alt yazıyı burada başlatma!
+        // Yalnızca oyuncu menüden "HAREKATA BAŞLA" butonuna bastığında ApplyGameMode() çalışacaktır.
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        if (menu != null && menu.gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
         ApplyGameMode();
     }
 
@@ -97,7 +106,16 @@ public class GameManager : MonoBehaviour
             currentPlaneIndex = 1;
             PlayerUpgradeManager.EnsureInstance();
             UpgradeSelectionUI.EnsureInstance();
-            ApplyEnemyWave(currentPlaneIndex);
+
+            // 1. Dalga öncesinde alt yazılı geçişli başlangıç hikayesini oynat!
+            StoryCampaignManager.EnsureInstance()?.PlayCampaignIntro(() =>
+            {
+                ApplyEnemyWave(currentPlaneIndex);
+            });
+        }
+        else
+        {
+            ApplyEnemyWave(1);
         }
 
         var gameUI = FindObjectOfType<GameUI>();
@@ -125,30 +143,7 @@ public class GameManager : MonoBehaviour
 
     public static string GetPlaneTitle(int index)
     {
-        switch (index)
-        {
-            case 1: return "DÜŞMAN KEŞİF JETİ";
-            case 2: return "HAFİF AVCI";
-            case 3: return "TAARRUZ AVCISI";
-            case 4: return "ÖNCÜ İT DALAŞÇISI";
-            case 5: return "BOSS 1: AĞIR TAARRUZ JETİ";
-            case 6: return "ÇİFT MOTORLU AVCI";
-            case 7: return "MİG İNTERSEPTÖR";
-            case 8: return "KOBRA JETİ";
-            case 9: return "HAYALET FİLO LİDERİ";
-            case 10: return "BOSS 2: HAYALET AVCI (PHANTOM)";
-            case 11: return "AĞIR SÜPERSONİK JET";
-            case 12: return "FIRTINA AVCI";
-            case 13: return "GECE AVCISI";
-            case 14: return "TİTANYUM PENÇE";
-            case 15: return "BOSS 3: CEHENNEM KUŞU (FIREBIRD)";
-            case 16: return "SİBER CELLAT";
-            case 17: return "PLAZMA AVCI";
-            case 18: return "HAVA HAKİMİYET JETİ";
-            case 19: return "KARA DUL PROTO TİPİ";
-            case 20: return "FİNAL BOSS: GÖK HAKİMİ";
-            default: return $"DÜŞMAN JETİ #{index}";
-        }
+        return StoryCampaignManager.GetPlaneTitle(index);
     }
 
     public static float GetDifficultyHealthMultiplier()
@@ -228,6 +223,12 @@ public class GameManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateHealthBars();
+
+        // Boss dalgası ise geçişli cümleli Boss Tanıtım sinematiğini oynat
+        if (isBoss)
+        {
+            StoryCampaignManager.EnsureInstance()?.PlayBossIntro(waveIndex, null);
+        }
     }
 
     public void OnPlaneDead(PlaneHealth deadPlane)
@@ -293,10 +294,14 @@ public class GameManager : MonoBehaviour
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
 
-                if (gameOverUI != null)
-                    gameOverUI.Show("BÜYÜK HAREKAT ZAFERİ!\n20 DÜŞMAN UÇAĞI VE TÜM BOSS'LAR İMHA EDİLDİ!");
+                // 20 dalgalık sefer başarıyla bitti, bir sonraki senaryo seferini aktifleştir
+                StoryCampaignManager.AdvanceToNextCampaign();
 
-                StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+                // Sinematik Bitiş Ekranını ve Kahramanlık Cümlelerini Oynat!
+                StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() =>
+                {
+                    // Oyuncu bitiş modalındaki butonlarla devam edecek
+                });
             }
             else
             {

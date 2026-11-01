@@ -30,6 +30,11 @@ public class MainMenuManager : MonoBehaviour
     public Button backFromModesButton;
     public TextMeshProUGUI selectedModeTMP;
 
+    private Button _campaign1Button;
+    private Button _campaign2Button;
+    private Button _campaign3Button;
+    private TextMeshProUGUI _briefingTMP;
+
     [Header("Ayarlar Paneli (Rütbeler)")]
     public Button easyButton;           // Acemi Pilot
     public Button normalButton;         // Yüzbaşı
@@ -49,21 +54,28 @@ public class MainMenuManager : MonoBehaviour
         Time.timeScale = 0f;
     }
 
+    private void Update()
+    {
+        // Menü aktifken oyun içi dokunmatik kontrollerin ve sinematik alt yazıların ekrana sızmasını kesin olarak engelle
+        SetTouchControlsVisibility(false, false);
+        StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen();
+    }
+
     private void Start()
     {
         GameSettings.LoadSettings();
         AudioManager.EnsureInstance();
+        StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen();
 
         TryLoadBackgroundArt();
         SetupAviationHeader();
         FormatMilitaryButtons();
+        SetupCampaignSelectionUI();
 
         if (playButton != null) playButton.onClick.AddListener(OnPlayClicked);
         if (modesButton != null) modesButton.onClick.AddListener(OpenModesPanel);
         if (settingsButton != null) settingsButton.onClick.AddListener(OpenSettingsPanel);
 
-        if (soloButton != null) soloButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Solo));
-        if (onlineButton != null) onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
         if (backFromModesButton != null) backFromModesButton.onClick.AddListener(OpenMainPanel);
 
         if (easyButton != null) easyButton.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Kolay));
@@ -219,6 +231,129 @@ public class MainMenuManager : MonoBehaviour
 
         // Efekt Satırı (Y: -35f)
         CreateMenuVolumeRow(_soundControlsContainer.transform, "MERMİ & EFEKT", -35f, isMusic: false);
+    }
+
+    private void SetupCampaignSelectionUI()
+    {
+        if (modesPanel == null) return;
+
+        // 1. Kampanya 1 (Mevcut soloButton)
+        if (soloButton != null)
+        {
+            _campaign1Button = soloButton;
+            FormatBtn(_campaign1Button, 130f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.45f, 0.28f), 430f, 50f);
+            _campaign1Button.onClick.RemoveAllListeners();
+            _campaign1Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.OperationBlackDawn));
+        }
+
+        // 2. Kampanya 2: Proje Kimeras
+        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 72f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.15f, 0.35f, 0.60f), 430f, 50f);
+        _campaign2Button.onClick.RemoveAllListeners();
+        _campaign2Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.ProjectChimera));
+
+        // 3. Kampanya 3: Gökyüzü Paralı Askeri
+        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 14f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(0.55f, 0.22f, 0.15f), 430f, 50f);
+        _campaign3Button.onClick.RemoveAllListeners();
+        _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
+
+        // 4. Online 2 Oyunculu Düello
+        if (onlineButton != null)
+        {
+            FormatBtn(onlineButton, -44f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.28f, 0.20f, 0.45f), 430f, 50f);
+            onlineButton.onClick.RemoveAllListeners();
+            onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
+        }
+
+        // 5. Taktik Sefer Brifing Kartı
+        SetupCampaignBriefingBox();
+
+        // 6. Geri Dön Butonu
+        if (backFromModesButton != null)
+        {
+            FormatBtn(backFromModesButton, -195f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 240f, 40f);
+        }
+    }
+
+    private Button CreateOrFindModesButton(string objName, float posY, string text, Color color, float width, float height)
+    {
+        Transform existing = modesPanel.transform.Find(objName);
+        GameObject btnObj = existing != null ? existing.gameObject : null;
+
+        if (btnObj == null)
+        {
+            btnObj = new GameObject(objName);
+            btnObj.transform.SetParent(modesPanel.transform, false);
+
+            RectTransform rt = btnObj.AddComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+
+            btnObj.AddComponent<Image>();
+            btnObj.AddComponent<Button>();
+
+            GameObject textObj = new GameObject("Text");
+            textObj.transform.SetParent(btnObj.transform, false);
+            RectTransform textRt = textObj.AddComponent<RectTransform>();
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = Vector2.zero;
+            textRt.offsetMax = Vector2.zero;
+            textObj.AddComponent<TextMeshProUGUI>();
+        }
+
+        Button btn = btnObj.GetComponent<Button>();
+        FormatBtn(btn, posY, text, color, width, height);
+        return btn;
+    }
+
+    private void SetupCampaignBriefingBox()
+    {
+        Transform existing = modesPanel.transform.Find("CampaignBriefingBox");
+        GameObject boxObj = existing != null ? existing.gameObject : new GameObject("CampaignBriefingBox");
+        boxObj.transform.SetParent(modesPanel.transform, false);
+
+        RectTransform rt = boxObj.GetComponent<RectTransform>();
+        if (rt == null) rt = boxObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0f, -125f);
+        rt.sizeDelta = new Vector2(450f, 85f);
+
+        Image bg = boxObj.GetComponent<Image>();
+        if (bg == null) bg = boxObj.AddComponent<Image>();
+        bg.color = new Color(0.06f, 0.10f, 0.16f, 0.90f);
+
+        Outline outline = boxObj.GetComponent<Outline>();
+        if (outline == null) outline = boxObj.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0.85f, 1f, 0.6f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        Transform textChild = boxObj.transform.Find("BriefingText");
+        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("BriefingText");
+        textObj.transform.SetParent(boxObj.transform, false);
+
+        RectTransform textRt = textObj.GetComponent<RectTransform>();
+        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = new Vector2(10f, 6f);
+        textRt.offsetMax = new Vector2(-10f, -6f);
+
+        _briefingTMP = textObj.GetComponent<TextMeshProUGUI>();
+        if (_briefingTMP == null) _briefingTMP = textObj.AddComponent<TextMeshProUGUI>();
+        _briefingTMP.fontSize = 11.5f;
+        _briefingTMP.alignment = TextAlignmentOptions.Center;
+        _briefingTMP.color = Color.white;
+        _briefingTMP.raycastTarget = false;
+    }
+
+    public void SetCampaign(StoryCampaignManager.CampaignType campaign)
+    {
+        StoryCampaignManager.CurrentCampaign = campaign;
+        GameSettings.SetMode(GameSettings.GameMode.Solo);
+        UpdateUIFeedback();
     }
 
     private void CreateMenuVolumeRow(Transform parent, string title, float localY, bool isMusic)
@@ -411,8 +546,63 @@ public class MainMenuManager : MonoBehaviour
         Highlight(normalButton, GameSettings.SelectedDifficulty == GameSettings.Difficulty.Normal);
         Highlight(hardButton, GameSettings.SelectedDifficulty == GameSettings.Difficulty.Zor);
 
-        Highlight(soloButton, GameSettings.SelectedMode == GameSettings.GameMode.Solo);
-        Highlight(onlineButton, GameSettings.SelectedMode == GameSettings.GameMode.Online);
+        bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
+        var activeCamp = StoryCampaignManager.CurrentCampaign;
+
+        Highlight(_campaign1Button, !isOnline && activeCamp == StoryCampaignManager.CampaignType.OperationBlackDawn);
+        Highlight(_campaign2Button, !isOnline && activeCamp == StoryCampaignManager.CampaignType.ProjectChimera);
+        Highlight(_campaign3Button, !isOnline && activeCamp == StoryCampaignManager.CampaignType.SkyMercenary);
+        Highlight(onlineButton, isOnline);
+
+        UpdateBriefingText();
+
+        // Ana Menüdeki "HAREKATA BAŞLA" butonuna seçili modu/seferi yansıt
+        if (playButton != null)
+        {
+            TextMeshProUGUI playTMP = playButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (playTMP != null)
+            {
+                if (isOnline)
+                    playTMP.text = "HAREKATA BAŞLA\n<size=65%><color=#D1C4E9>[ONLINE: 2 OYUNCULU DÜELLO]</color></size>";
+                else
+                    playTMP.text = $"HAREKATA BAŞLA\n<size=65%><color=#FFE082>[{StoryCampaignManager.GetCampaignName(activeCamp)}]</color></size>";
+            }
+        }
+    }
+
+    private void UpdateBriefingText()
+    {
+        if (_briefingTMP == null) return;
+
+        bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
+        if (isOnline)
+        {
+            _briefingTMP.text = "<color=#9B59B6><b>[2 OYUNCULU TAKTİK DÜELLO]</b></color>\n" +
+                                "<size=90%>Aynı cihazda iki pilot karşı karşıya! 1. Pilot (Alt ekran) vs 2. Pilot (Üst ekran 180° ters).</size>";
+        }
+        else
+        {
+            var camp = StoryCampaignManager.CurrentCampaign;
+            string campName = StoryCampaignManager.GetCampaignName(camp);
+            string slogan = StoryCampaignManager.GetCampaignSlogan(camp);
+            string bossInfo = "";
+
+            switch (camp)
+            {
+                case StoryCampaignManager.CampaignType.OperationBlackDawn:
+                    bossInfo = "<color=#2ECC71><b>Hedef:</b> Vatan Savunması (20 Dalga) | <b>Boss:</b> DİRENİŞ AVCI, FİREBİRD, TİTAN-X, CEHENNEM MELEĞİ</color>";
+                    break;
+                case StoryCampaignManager.CampaignType.ProjectChimera:
+                    bossInfo = "<color=#3498DB><b>Hedef:</b> Siber Harp & AI İsyanı | <b>Boss:</b> A.P.E.X. PROTOKOLÜ, SİBER HAYALET, SÜPER BEYİN</color>";
+                    break;
+                case StoryCampaignManager.CampaignType.SkyMercenary:
+                    bossInfo = "<color=#E67E22><b>Hedef:</b> Karanlık Kontratlar & Aslar | <b>Boss:</b> DEMİR YÜREK, GÖLGE PENÇE, SAVAŞ LORU VOLK</color>";
+                    break;
+            }
+
+            _briefingTMP.text = $"<color=#F1C40F><b>[{campName}]</b></color>\n" +
+                                $"<size=88%>{slogan}\n{bossInfo}</size>";
+        }
     }
 
     private void Highlight(Button btn, bool isSelected)

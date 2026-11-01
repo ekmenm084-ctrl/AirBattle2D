@@ -212,7 +212,7 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
         // Menü arkasında kalmaması için en öne getir
         p2ControlsRoot.transform.SetAsLastSibling();
-        p2ControlsRoot.SetActive(true);
+        p2ControlsRoot.SetActive(isOnline && !isMenuOpen);
     }
 
     private void FindPlane2Shooter()
