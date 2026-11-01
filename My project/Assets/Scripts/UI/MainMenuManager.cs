@@ -52,6 +52,7 @@ public class MainMenuManager : MonoBehaviour
     private void Start()
     {
         GameSettings.LoadSettings();
+        AudioManager.EnsureInstance();
 
         TryLoadBackgroundArt();
         SetupAviationHeader();
@@ -109,7 +110,7 @@ public class MainMenuManager : MonoBehaviour
         rt.anchoredPosition = new Vector2(0f, 210f);
 
         TextMeshProUGUI tmp = _titleObject.AddComponent<TextMeshProUGUI>();
-        tmp.text = "✈️ AIR BATTLE 2D ✈️\n<size=40%><color=#F1C40F>★ İT DALAŞI HAREKATI ★</color></size>";
+        tmp.text = "AIR BATTLE 2D\n<size=40%><color=#F1C40F>- IT DALASI HAREKATI -</color></size>";
         tmp.fontSize = 46f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -118,18 +119,18 @@ public class MainMenuManager : MonoBehaviour
 
     private void FormatMilitaryButtons()
     {
-        FormatBtn(playButton, 60f, "✈️ HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 320f, 65f);
-        FormatBtn(modesButton, -20f, "🎯 OYUN MODLARI", new Color(0.15f, 0.40f, 0.65f), 320f, 60f);
-        FormatBtn(settingsButton, -95f, "⚙️ UÇUŞ AYARLARI", new Color(0.30f, 0.35f, 0.42f), 320f, 60f);
+        FormatBtn(playButton, 60f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 320f, 65f);
+        FormatBtn(modesButton, -20f, "OYUN MODLARI", new Color(0.15f, 0.40f, 0.65f), 320f, 60f);
+        FormatBtn(settingsButton, -95f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 320f, 60f);
 
-        FormatBtn(soloButton, 55f, "👤 SOLO: 20 UÇAKLIK SEFER (BOSS)", new Color(0.15f, 0.50f, 0.70f), 390f, 60f);
-        FormatBtn(onlineButton, -25f, "🌐 ONLINE: 2 OYUNCULU DÜELLO", new Color(0.20f, 0.30f, 0.45f), 390f, 60f);
-        FormatBtn(backFromModesButton, -110f, "← GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 260f, 50f);
+        FormatBtn(soloButton, 55f, "SOLO: 20 UÇAKLIK SEFER", new Color(0.15f, 0.50f, 0.70f), 390f, 60f);
+        FormatBtn(onlineButton, -25f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.20f, 0.30f, 0.45f), 390f, 60f);
+        FormatBtn(backFromModesButton, -110f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 260f, 50f);
 
-        FormatBtn(easyButton, 85f, "🟢 ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 360f, 55f);
-        FormatBtn(normalButton, 20f, "🟡 YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), 360f, 55f);
-        FormatBtn(hardButton, -45f, "🔴 AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), 360f, 55f);
-        FormatBtn(backFromSettingsButton, -125f, "← GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 260f, 50f);
+        FormatBtn(easyButton, 120f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 350f, 44f);
+        FormatBtn(normalButton, 70f, "YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), 350f, 44f);
+        FormatBtn(hardButton, 20f, "AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), 350f, 44f);
+        FormatBtn(backFromSettingsButton, -140f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 260f, 44f);
     }
 
     private void FormatBtn(Button btn, float posY, string text, Color color, float width, float height)
@@ -180,8 +181,212 @@ public class MainMenuManager : MonoBehaviour
     {
         if (mainPanel != null) mainPanel.SetActive(false);
         if (modesPanel != null) modesPanel.SetActive(false);
-        if (settingsPanel != null) settingsPanel.SetActive(true);
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(true);
+            SetupMenuSoundControls();
+        }
         UpdateUIFeedback();
+    }
+
+    private GameObject _soundControlsContainer;
+
+    private void SetupMenuSoundControls()
+    {
+        if (settingsPanel == null) return;
+        if (_soundControlsContainer != null) return;
+
+        Transform existing = settingsPanel.transform.Find("MenuSoundControls");
+        if (existing != null)
+        {
+            _soundControlsContainer = existing.gameObject;
+            return;
+        }
+
+        _soundControlsContainer = new GameObject("MenuSoundControls");
+        _soundControlsContainer.transform.SetParent(settingsPanel.transform, false);
+
+        RectTransform rootRt = _soundControlsContainer.AddComponent<RectTransform>();
+        rootRt.anchorMin = new Vector2(0.5f, 0.5f);
+        rootRt.anchorMax = new Vector2(0.5f, 0.5f);
+        rootRt.pivot = new Vector2(0.5f, 0.5f);
+        rootRt.sizeDelta = new Vector2(380f, 120f);
+        rootRt.anchoredPosition = new Vector2(0f, -55f);
+
+        // Müzik Satırı (Y: 20f)
+        CreateMenuVolumeRow(_soundControlsContainer.transform, "SAVAŞ MÜZİĞİ", 20f, isMusic: true);
+
+        // Efekt Satırı (Y: -35f)
+        CreateMenuVolumeRow(_soundControlsContainer.transform, "MERMİ & EFEKT", -35f, isMusic: false);
+    }
+
+    private void CreateMenuVolumeRow(Transform parent, string title, float localY, bool isMusic)
+    {
+        GameObject row = new GameObject("Row_" + (isMusic ? "Music" : "SFX"));
+        row.transform.SetParent(parent, false);
+
+        RectTransform rRt = row.AddComponent<RectTransform>();
+        rRt.anchorMin = new Vector2(0.5f, 0.5f);
+        rRt.anchorMax = new Vector2(0.5f, 0.5f);
+        rRt.sizeDelta = new Vector2(360f, 45f);
+        rRt.anchoredPosition = new Vector2(0f, localY);
+
+        // Başlık TMP
+        GameObject lblObj = new GameObject("Label");
+        lblObj.transform.SetParent(row.transform, false);
+        RectTransform lblRt = lblObj.AddComponent<RectTransform>();
+        lblRt.anchorMin = new Vector2(0f, 0.55f);
+        lblRt.anchorMax = new Vector2(0.6f, 0.55f);
+        lblRt.pivot = new Vector2(0f, 0.5f);
+        lblRt.sizeDelta = new Vector2(0f, 20f);
+
+        TextMeshProUGUI lblTMP = lblObj.AddComponent<TextMeshProUGUI>();
+        lblTMP.text = title;
+        lblTMP.fontSize = 12f;
+        lblTMP.fontStyle = FontStyles.Bold;
+        lblTMP.color = new Color(0.2f, 0.9f, 1f);
+
+        // Yüzde Metni
+        GameObject valObj = new GameObject("ValText");
+        valObj.transform.SetParent(row.transform, false);
+        RectTransform valRt = valObj.AddComponent<RectTransform>();
+        valRt.anchorMin = new Vector2(0.6f, 0.55f);
+        valRt.anchorMax = new Vector2(1f, 0.55f);
+        valRt.pivot = new Vector2(1f, 0.5f);
+        valRt.sizeDelta = new Vector2(0f, 20f);
+
+        TextMeshProUGUI valTMP = valObj.AddComponent<TextMeshProUGUI>();
+        valTMP.fontSize = 12f;
+        valTMP.fontStyle = FontStyles.Bold;
+        valTMP.alignment = TextAlignmentOptions.Right;
+        valTMP.color = Color.white;
+
+        // [-] Butonu
+        GameObject minusObj = new GameObject("MinusBtn");
+        minusObj.transform.SetParent(row.transform, false);
+        RectTransform mRt = minusObj.AddComponent<RectTransform>();
+        mRt.anchorMin = new Vector2(0f, 0.1f);
+        mRt.anchorMax = new Vector2(0f, 0.1f);
+        mRt.pivot = new Vector2(0f, 0.5f);
+        mRt.sizeDelta = new Vector2(32f, 24f);
+
+        Image mImg = minusObj.AddComponent<Image>();
+        mImg.color = new Color(0.18f, 0.25f, 0.35f);
+        Button mBtn = minusObj.AddComponent<Button>();
+
+        GameObject mTxtObj = new GameObject("Text");
+        mTxtObj.transform.SetParent(minusObj.transform, false);
+        RectTransform mTxtRt = mTxtObj.AddComponent<RectTransform>();
+        mTxtRt.anchorMin = Vector2.zero;
+        mTxtRt.anchorMax = Vector2.one;
+        mTxtRt.offsetMin = Vector2.zero;
+        mTxtRt.offsetMax = Vector2.zero;
+        TextMeshProUGUI mTMP = mTxtObj.AddComponent<TextMeshProUGUI>();
+        mTMP.text = "-";
+        mTMP.fontSize = 20f;
+        mTMP.fontStyle = FontStyles.Bold;
+        mTMP.alignment = TextAlignmentOptions.Center;
+        mTMP.color = Color.white;
+
+        // [+] Butonu
+        GameObject plusObj = new GameObject("PlusBtn");
+        plusObj.transform.SetParent(row.transform, false);
+        RectTransform pRt = plusObj.AddComponent<RectTransform>();
+        pRt.anchorMin = new Vector2(1f, 0.1f);
+        pRt.anchorMax = new Vector2(1f, 0.1f);
+        pRt.pivot = new Vector2(1f, 0.5f);
+        pRt.sizeDelta = new Vector2(32f, 24f);
+
+        Image pImg = plusObj.AddComponent<Image>();
+        pImg.color = new Color(0.18f, 0.25f, 0.35f);
+        Button pBtn = plusObj.AddComponent<Button>();
+
+        GameObject pTxtObj = new GameObject("Text");
+        pTxtObj.transform.SetParent(plusObj.transform, false);
+        RectTransform pTxtRt = pTxtObj.AddComponent<RectTransform>();
+        pTxtRt.anchorMin = Vector2.zero;
+        pTxtRt.anchorMax = Vector2.one;
+        pTxtRt.offsetMin = Vector2.zero;
+        pTxtRt.offsetMax = Vector2.zero;
+        TextMeshProUGUI pTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
+        pTMP.text = "+";
+        pTMP.fontSize = 18f;
+        pTMP.fontStyle = FontStyles.Bold;
+        pTMP.alignment = TextAlignmentOptions.Center;
+        pTMP.color = Color.white;
+
+        // Slider
+        GameObject sObj = new GameObject("Slider");
+        sObj.transform.SetParent(row.transform, false);
+        RectTransform sRt = sObj.AddComponent<RectTransform>();
+        sRt.anchorMin = new Vector2(0.5f, 0.1f);
+        sRt.anchorMax = new Vector2(0.5f, 0.1f);
+        sRt.pivot = new Vector2(0.5f, 0.5f);
+        sRt.sizeDelta = new Vector2(240f, 18f);
+
+        Slider s = sObj.AddComponent<Slider>();
+        s.minValue = 0f;
+        s.maxValue = 1f;
+
+        GameObject bgObj = new GameObject("Background");
+        bgObj.transform.SetParent(sObj.transform, false);
+        RectTransform bgRt = bgObj.AddComponent<RectTransform>();
+        bgRt.anchorMin = Vector2.zero;
+        bgRt.anchorMax = Vector2.one;
+        bgRt.offsetMin = Vector2.zero;
+        bgRt.offsetMax = Vector2.zero;
+        Image bgImg = bgObj.AddComponent<Image>();
+        bgImg.color = new Color(0.1f, 0.15f, 0.22f);
+
+        GameObject faObj = new GameObject("Fill Area");
+        faObj.transform.SetParent(sObj.transform, false);
+        RectTransform faRt = faObj.AddComponent<RectTransform>();
+        faRt.anchorMin = Vector2.zero;
+        faRt.anchorMax = Vector2.one;
+        faRt.offsetMin = Vector2.zero;
+        faRt.offsetMax = Vector2.zero;
+
+        GameObject fObj = new GameObject("Fill");
+        fObj.transform.SetParent(faObj.transform, false);
+        RectTransform fRt = fObj.AddComponent<RectTransform>();
+        fRt.anchorMin = Vector2.zero;
+        fRt.anchorMax = Vector2.one;
+        fRt.offsetMin = Vector2.zero;
+        fRt.offsetMax = Vector2.zero;
+        Image fImg = fObj.AddComponent<Image>();
+        fImg.color = new Color(0f, 0.85f, 1f);
+
+        s.fillRect = fRt;
+        s.targetGraphic = fImg;
+
+        float initVal = isMusic
+            ? (AudioManager.Instance != null ? AudioManager.Instance.musicVolume : 0.70f)
+            : (AudioManager.Instance != null ? AudioManager.Instance.sfxVolume : 0.85f);
+
+        s.value = initVal;
+        valTMP.text = $"%{(int)(initVal * 100)}";
+
+        s.onValueChanged.AddListener((val) =>
+        {
+            if (isMusic)
+                AudioManager.Instance?.SetMusicVolume(val);
+            else
+                AudioManager.Instance?.SetSFXVolume(val);
+
+            valTMP.text = $"%{(int)(val * 100)}";
+        });
+
+        mBtn.onClick.AddListener(() =>
+        {
+            s.value = Mathf.Clamp01(s.value - 0.10f);
+            if (!isMusic) AudioManager.Instance?.PlayGunfire(false);
+        });
+
+        pBtn.onClick.AddListener(() =>
+        {
+            s.value = Mathf.Clamp01(s.value + 0.10f);
+            if (!isMusic) AudioManager.Instance?.PlayGunfire(false);
+        });
     }
 
     public void SetMode(GameSettings.GameMode mode)
@@ -254,6 +459,18 @@ public class MainMenuManager : MonoBehaviour
 
         if (GameManager.Instance != null)
             GameManager.Instance.ApplyGameMode();
+
+        var p2Router = FindObjectOfType<TwoPlayerInputRouter>();
+        if (p2Router != null && p2Router.p2ControlsRoot != null)
+        {
+            p2Router.p2ControlsRoot.SetActive(true);
+        }
+
+        var audioUI = FindObjectOfType<AudioSettingsUI>();
+        if (audioUI != null && audioUI.soundButtonObj != null)
+        {
+            audioUI.soundButtonObj.SetActive(true);
+        }
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateHealthBars();

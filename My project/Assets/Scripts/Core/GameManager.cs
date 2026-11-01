@@ -61,6 +61,10 @@ public class GameManager : MonoBehaviour
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         CurrentMode = isOnline ? GameMode.TwoPlayer : GameMode.SoloVsAI;
 
+        // Arka plan savaş müziğini ve ses ayar butonunu başlat
+        AudioManager.EnsureInstance();
+        AudioSettingsUI.EnsureInstance();
+
         FindPlanesIfNull();
 
         if (plane2Health != null)
@@ -125,22 +129,22 @@ public class GameManager : MonoBehaviour
             case 2: return "HAFİF AVCI";
             case 3: return "TAARRUZ AVCISI";
             case 4: return "ÖNCÜ İT DALAŞÇISI";
-            case 5: return "⚔️ BOSS 1: AĞIR TAARRUZ JETİ";
+            case 5: return "BOSS 1: AĞIR TAARRUZ JETİ";
             case 6: return "ÇİFT MOTORLU AVCI";
             case 7: return "MİG İNTERSEPTÖR";
             case 8: return "KOBRA JETİ";
             case 9: return "HAYALET FİLO LİDERİ";
-            case 10: return "☠️ BOSS 2: HAYALET AVCI (PHANTOM)";
+            case 10: return "BOSS 2: HAYALET AVCI (PHANTOM)";
             case 11: return "AĞIR SÜPERSONİK JET";
             case 12: return "FIRTINA AVCI";
             case 13: return "GECE AVCISI";
             case 14: return "TİTANYUM PENÇE";
-            case 15: return "🔥 BOSS 3: CEHENNEM KUŞU (FIREBIRD)";
+            case 15: return "BOSS 3: CEHENNEM KUŞU (FIREBIRD)";
             case 16: return "SİBER CELLAT";
             case 17: return "PLAZMA AVCI";
             case 18: return "HAVA HAKİMİYET JETİ";
             case 19: return "KARA DUL PROTO TİPİ";
-            case 20: return "👑 FİNAL BOSS: ASLARIN ASİ GÖK HAKİMİ";
+            case 20: return "FİNAL BOSS: GÖK HAKİMİ";
             default: return $"DÜŞMAN JETİ #{index}";
         }
     }
@@ -252,7 +256,7 @@ public class GameManager : MonoBehaviour
             if (player1Lives > 0)
             {
                 // Can hakkı hala var: Yeniden Doğuş!
-                gameUI?.ShowWaveAlert($"💥 UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives} / {MaxPlayerLives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
+                gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives} / {MaxPlayerLives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
                 StartCoroutine(RespawnPlayer1Routine(1.2f));
             }
             else
@@ -288,7 +292,7 @@ public class GameManager : MonoBehaviour
                 gameEnded = true;
 
                 if (gameOverUI != null)
-                    gameOverUI.Show("🏆 BÜYÜK HAREKAT ZAFERİ! 🏆\n20 DÜŞMAN UÇAĞI VE TÜM BOSS'LAR İMHA EDİLDİ!");
+                    gameOverUI.Show("BÜYÜK HAREKAT ZAFERİ!\n20 DÜŞMAN UÇAĞI VE TÜM BOSS'LAR İMHA EDİLDİ!");
 
                 StartCoroutine(ReturnToMainMenuRoutine(3.0f));
             }
@@ -301,7 +305,7 @@ public class GameManager : MonoBehaviour
                 {
                     // BOSS İMHA EDİLDİ! OYUNCUYA HANGAR GÜÇLENDİRME SEÇİMİ SUN!
                     var gameUI = FindObjectOfType<GameUI>();
-                    gameUI?.ShowWaveAlert($"💥 BOSS DÜŞÜRÜLDÜ!\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
+                    gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ!\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
 
                     StartCoroutine(OpenUpgradeHangarRoutine(justDefeated));
                 }
@@ -316,11 +320,11 @@ public class GameManager : MonoBehaviour
 
                     if (nextIsBoss)
                     {
-                        gameUI?.ShowWaveAlert($"⚠️ DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR! ⚠️", new Color(1f, 0.3f, 0.2f), 2.2f);
+                        gameUI?.ShowWaveAlert($"DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR!", new Color(1f, 0.3f, 0.2f), 2.2f);
                     }
                     else
                     {
-                        gameUI?.ShowWaveAlert($"🎯 UÇAK [{justDefeated}/{MaxPlanes}] İMHA EDİLDİ!\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
+                        gameUI?.ShowWaveAlert($"UÇAK [{justDefeated}/{MaxPlanes}] İMHA EDİLDİ!\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
                     }
 
                     // 1.3 saniye sonra yeni düşman uçağını sahneye sok
@@ -344,11 +348,11 @@ public class GameManager : MonoBehaviour
             var gameUI = FindObjectOfType<GameUI>();
             if (nextIsBoss)
             {
-                gameUI?.ShowWaveAlert($"⚠️ DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR! ⚠️", new Color(1f, 0.3f, 0.2f), 2.2f);
+                gameUI?.ShowWaveAlert($"DİKKAT! {GetPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR!", new Color(1f, 0.3f, 0.2f), 2.2f);
             }
             else
             {
-                gameUI?.ShowWaveAlert($"🚀 GÜÇLENDİRİLMİŞ UÇAK SAVAŞA DÖNDÜ!\n<color=#00E5FF>HEDEF: UÇAK {currentPlaneIndex}/{MaxPlanes}</color>", new Color(0.2f, 0.9f, 1f), 2.0f);
+                gameUI?.ShowWaveAlert($"GÜÇLENDİRİLMİŞ UÇAK SAVAŞA DÖNDÜ!\n<color=#00E5FF>HEDEF: UÇAK {currentPlaneIndex}/{MaxPlanes}</color>", new Color(0.2f, 0.9f, 1f), 2.0f);
             }
 
             StartCoroutine(SpawnNextEnemyRoutine(1.2f));

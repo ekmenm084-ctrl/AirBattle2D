@@ -103,7 +103,8 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         TextMeshProUGUI tmp = GetComponentInChildren<TextMeshProUGUI>();
         if (tmp != null)
         {
-            tmp.text = "🔥\n<size=50%>ATEŞ</size>";
+            tmp.text = "ATEŞ";
+            tmp.fontSize = 24f;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;

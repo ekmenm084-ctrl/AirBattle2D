@@ -222,7 +222,7 @@ public class GameUI : MonoBehaviour
         _waveBadgeTMP.fontStyle = FontStyles.Bold;
         _waveBadgeTMP.alignment = TextAlignmentOptions.Center;
         _waveBadgeTMP.color = new Color(0.95f, 0.95f, 1f);
-        _waveBadgeTMP.text = "🎯 HAREKAT İLERLEMESİ: 1 / 20";
+        _waveBadgeTMP.text = "HAREKAT: 1 / 20";
     }
 
     private void SetupWaveAlertObject()
@@ -319,14 +319,14 @@ public class GameUI : MonoBehaviour
             {
                 if (isTwoPlayer)
                 {
-                    _p1TmpLabel.text = $"🛡️ OYUNCU 1: %{hpInt} ({rawHp} HP)";
+                    _p1TmpLabel.text = $"OYUNCU 1: %{hpInt} ({rawHp} HP)";
                 }
                 else
                 {
                     int lives = GameManager.Instance != null ? GameManager.Instance.player1Lives : 3;
                     string hearts = GetHeartsDisplay(lives);
                     string shieldTxt = (PlayerUpgradeManager.Instance != null && PlayerUpgradeManager.Instance.currentShield > 0f)
-                        ? $" <color=#00E5FF>[🛡️{Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color>"
+                        ? $" <color=#00E5FF>[KALKAN: {Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color>"
                         : "";
                     _p1TmpLabel.text = $"CAN: %{hpInt} ({rawHp} HP){shieldTxt} | {hearts}";
                 }
@@ -346,12 +346,12 @@ public class GameUI : MonoBehaviour
             {
                 if (_p2TmpLabel != null)
                 {
-                    _p2TmpLabel.text = $"👤 OYUNCU 2: %{hpInt} ({rawHp} HP)";
+                    _p2TmpLabel.text = $"OYUNCU 2: %{hpInt} ({rawHp} HP)";
                     _p2TmpLabel.color = new Color(1f, 0.6f, 0.2f);
                 }
                 if (_waveBadgeTMP != null)
                 {
-                    _waveBadgeTMP.text = "⚔️ 2 OYUNCULU DÜELLO ⚔️";
+                    _waveBadgeTMP.text = "2 OYUNCULU DUELLO";
                 }
             }
             else
@@ -370,7 +370,7 @@ public class GameUI : MonoBehaviour
                     }
                     else
                     {
-                        _p2TmpLabel.text = $"⚠️ [{wave}/{GameManager.MaxPlanes}] {title}: %{hpInt}";
+                        _p2TmpLabel.text = $"[{wave}/{GameManager.MaxPlanes}] {title}: %{hpInt}";
                         _p2TmpLabel.color = new Color(1f, 0.45f, 0.45f);
                     }
                 }
@@ -394,11 +394,11 @@ public class GameUI : MonoBehaviour
                 {
                     if (isBoss)
                     {
-                        _waveBadgeTMP.text = $"👑 <color=#F1C40F>BOSS: {wave} / {GameManager.MaxPlanes}</color> {diffTag}";
+                        _waveBadgeTMP.text = $"<color=#F1C40F>BOSS: {wave} / {GameManager.MaxPlanes}</color> {diffTag}";
                     }
                     else
                     {
-                        _waveBadgeTMP.text = $"🎯 HAREKAT: {wave} / {GameManager.MaxPlanes} {diffTag}";
+                        _waveBadgeTMP.text = $"HAREKAT: {wave} / {GameManager.MaxPlanes} {diffTag}";
                     }
                 }
             }
@@ -409,10 +409,10 @@ public class GameUI : MonoBehaviour
     {
         switch (lives)
         {
-            case 3: return "<color=#FF3366>❤️ ❤️ ❤️</color>";
-            case 2: return "<color=#FF3366>❤️ ❤️</color> <color=#444444>🖤</color>";
-            case 1: return "<color=#FF3366>❤️</color> <color=#444444>🖤 🖤</color>";
-            default: return "<color=#444444>🖤 🖤 🖤</color>";
+            case 3: return "<color=#FF3366>[3 CAN]</color>";
+            case 2: return "<color=#F39C12>[2 CAN]</color>";
+            case 1: return "<color=#E74C3C>[SON CAN]</color>";
+            default: return "<color=#888888>[CAN YOK]</color>";
         }
     }
 }

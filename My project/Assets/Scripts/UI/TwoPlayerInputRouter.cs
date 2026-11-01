@@ -53,10 +53,12 @@ public class TwoPlayerInputRouter : MonoBehaviour
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         SetTwoPlayerMode(isOnline);
 
-        // Düşman kontrolleri her zaman ekranda görünsün
+        // Ana menü açıksa gizle, sadece savaş başlayınca göster
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
         if (p2ControlsRoot != null)
         {
-            p2ControlsRoot.SetActive(true);
+            p2ControlsRoot.SetActive(!isMenuOpen);
         }
     }
 
@@ -177,7 +179,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             textRt.offsetMax = Vector2.zero;
 
             TextMeshProUGUI tmp = textObj.AddComponent<TextMeshProUGUI>();
-            tmp.text = "🔥\n<size=50%>ATEŞ</size>";
+            tmp.text = "ATEŞ";
+            tmp.fontSize = 22f;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;

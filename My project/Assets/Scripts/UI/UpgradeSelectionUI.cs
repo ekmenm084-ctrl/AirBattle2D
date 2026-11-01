@@ -127,8 +127,8 @@ public class UpgradeSelectionUI : MonoBehaviour
         titleRt.sizeDelta = new Vector2(850f, 50f);
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "★ HANGAR GÜÇLENDİRME PROTOKOLÜ ★";
-        titleTMP.fontSize = 32f;
+        titleTMP.text = "HANGAR GÜÇLENDİRME PROTOKOLÜ";
+        titleTMP.fontSize = 30f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(1f, 0.85f, 0.2f); // Altın Sarısı
@@ -220,7 +220,9 @@ public class UpgradeSelectionUI : MonoBehaviour
 
         TextMeshProUGUI iconTMP = iconObj.AddComponent<TextMeshProUGUI>();
         iconTMP.text = opt.icon;
-        iconTMP.fontSize = 44f;
+        iconTMP.fontSize = 20f;
+        iconTMP.fontStyle = FontStyles.Bold;
+        iconTMP.color = opt.themeColor;
         iconTMP.alignment = TextAlignmentOptions.Center;
 
         // Başlık
@@ -308,7 +310,7 @@ public class UpgradeSelectionUI : MonoBehaviour
         btnTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI btnTMP = btnTxtObj.AddComponent<TextMeshProUGUI>();
-        btnTMP.text = "SEÇ VE DONAT ⚡";
+        btnTMP.text = "SEÇ VE DONAT";
         btnTMP.fontSize = 15f;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;

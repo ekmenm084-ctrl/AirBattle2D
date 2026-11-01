@@ -264,7 +264,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 "[SİLAH SİSTEMİ]",
                 "Uçağa ikinci bir paralel lazer namlusu monte eder. Mermi sayısını ve ateş alanını 2 katına çıkarır!",
                 "Aynı anda 2 paralel mermi fırlatır",
-                "⚔️",
+                "[ÇİFT SİLAH]",
                 new Color(0.95f, 0.3f, 0.2f)
             ));
         }
@@ -276,7 +276,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 "[AĞIR SİLAH]",
                 "Gövdeye 3. bir ana namlu ekler! Önündeki tüm hava sahasını mermi yağmuruna tutar.",
                 "Aynı anda 3 mermi fırlatır",
-                "🔱",
+                "[ÜÇLÜ SALVO]",
                 new Color(1f, 0.45f, 0.1f)
             ));
         }
@@ -288,7 +288,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 "[SÜPER SİLAH]",
                 "Ağır plazma mermileri! Mermi hasarını kalıcı olarak büyük oranda artırır.",
                 "+12 Mermi Hasarı & Genişletilmiş Namlu",
-                "⚡",
+                "[PLAZMA]",
                 new Color(0.8f, 0.2f, 1f)
             ));
         }
@@ -302,7 +302,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 "[DEFANS SİSTEMİ]",
                 "Uçağın etrafında 75 HP hasar emen koruyucu bir enerji kubbesi açar. Doğrudan isabetleri engeller!",
                 "+75 HP Koruyucu Plazma Kalkanı",
-                "🛡️",
+                "[KALKAN]",
                 new Color(0f, 0.9f, 1f)
             ));
         }
@@ -314,7 +314,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 "[KALKAN ŞARJI]",
                 "Mevcut kalkanı anında %100 doldurur ve azami kalkan kapasitesini +50 HP daha artırır!",
                 "Tam Kalkan Şarjı & +50 Kapasite",
-                "💠",
+                "[ŞARJ]",
                 new Color(0.2f, 0.8f, 1f)
             ));
         }
@@ -326,7 +326,7 @@ public class PlayerUpgradeManager : MonoBehaviour
             "[DAYANIKLILIK]",
             "Uçağın gövdesini titanyum alaşımla kaplar. Azami canı kalıcı +60 artırır ve canı anında %100 doldurur!",
             "+60 Azami Can & Anında Tam Tamir",
-            "❤️",
+            "[ZIRH]",
             new Color(0.2f, 0.9f, 0.4f)
         ));
 
@@ -337,7 +337,7 @@ public class PlayerUpgradeManager : MonoBehaviour
             "[SALDIRI HIZI]",
             "Mermi namlu döngüsünü hızlandırır (%30 daha seri ateş) ve her mermiye +6 ilave hasar ekler.",
             "%30 Daha Hızlı Ateş & +6 Hasar",
-            "⚡",
+            "[SERİ ATEŞ]",
             new Color(1f, 0.85f, 0.15f)
         ));
 
@@ -348,7 +348,7 @@ public class PlayerUpgradeManager : MonoBehaviour
             "[MANEVRA & HIZ]",
             "Uçağın kaçış ve manevra hızını +3.0 birim artırır. Düşman mermilerinden ve füzelerden sıyrılmayı çok kolaylaştırır!",
             "+3.0 Manevra Hızı",
-            "🚀",
+            "[MOTOR]",
             new Color(0.3f, 0.6f, 1f)
         ));
 
@@ -358,8 +358,8 @@ public class PlayerUpgradeManager : MonoBehaviour
             "YEDEK SAVAŞ JETİ (+1 CAN)",
             "[HAYATTA KALMA]",
             "Filoya ilave 1 yedek uçak kazandırır! Düşsen bile bir can hakkı daha elde edersin.",
-            "+1 Yedek Can Hakkı (❤️)",
-            "💖",
+            "+1 Yedek Can Hakkı",
+            "[+1 CAN]",
             new Color(1f, 0.35f, 0.65f)
         ));
 
@@ -403,19 +403,19 @@ public class PlayerUpgradeManager : MonoBehaviour
                     {
                         _playerShooter.bulletsPerShot = 2;
                         _playerShooter.bulletSpread = 0.35f;
-                        upgradeTitle = "⚔️ ÇİFT NAMLULU VULCAN DONATILDI!";
+                        upgradeTitle = "[SİLAH] ÇİFT NAMLULU VULCAN DONATILDI!";
                     }
                     else if (weaponLevel == 3)
                     {
                         _playerShooter.bulletsPerShot = 3;
                         _playerShooter.bulletSpread = 0.40f;
-                        upgradeTitle = "🔱 ÜÇLÜ SALVO SİSTEMİ AKTİF!";
+                        upgradeTitle = "[SALVO] ÜÇLÜ SALVO SİSTEMİ AKTİF!";
                     }
                     else
                     {
                         _playerShooter.bulletsPerShot = 3;
                         _playerShooter.bulletDamage += 12f;
-                        upgradeTitle = "⚡ PLAZMA ÇEKİRDEK TOPU AKTİF (+12 HASAR)!";
+                        upgradeTitle = "[PLAZMA] ÇEKİRDEK TOPU AKTİF (+12 HASAR)!";
                     }
                 }
                 break;
@@ -426,13 +426,13 @@ public class PlayerUpgradeManager : MonoBehaviour
                 {
                     maxShield = 75f;
                     currentShield = 75f;
-                    upgradeTitle = "🛡️ PLAZMA ENERJİ KALKANI AKTİF EDİLDİ!";
+                    upgradeTitle = "[DEFANS] PLAZMA ENERJİ KALKANI AKTİF EDİLDİ!";
                 }
                 else
                 {
                     maxShield += 50f;
                     currentShield = maxShield;
-                    upgradeTitle = "💠 KALKAN AŞIRI YÜKLENDİ (%100 ŞARJ)!";
+                    upgradeTitle = "[ŞARJ] KALKAN AŞIRI YÜKLENDİ (%100 ŞARJ)!";
                 }
                 SetupShieldVisual();
                 if (_shieldVisualObj != null)
@@ -445,7 +445,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 {
                     _playerHealth.maxHealth += 60f;
                     _playerHealth.Heal(_playerHealth.maxHealth); // Anında tamir
-                    upgradeTitle = $"❤️ GÖVDE ZIRHI TAHKİM EDİLDİ (AZAMİ CAN: {_playerHealth.maxHealth} HP)!";
+                    upgradeTitle = $"[ZIRH] GÖVDE TAHKİM EDİLDİ (AZAMİ CAN: {_playerHealth.maxHealth} HP)!";
                 }
                 break;
 
@@ -455,7 +455,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 {
                     _playerShooter.fireRate = Mathf.Max(0.10f, _playerShooter.fireRate * 0.70f);
                     _playerShooter.bulletDamage += 6f;
-                    upgradeTitle = "⚡ SERİ ATEŞ AŞIRI YÜKLENDİ (+%30 HIZ & +6 HASAR)!";
+                    upgradeTitle = "[HIZ] SERİ ATEŞ AŞIRI YÜKLENDİ (+%30 HIZ & +6 HASAR)!";
                 }
                 break;
 
@@ -464,7 +464,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 if (_playerController != null)
                 {
                     _playerController.moveSpeed += 3.0f;
-                    upgradeTitle = $"🚀 PLAZMA İTİCİLER AKTİF (HIZ: {_playerController.moveSpeed:F1})!";
+                    upgradeTitle = $"[MOTOR] PLAZMA İTİCİLER AKTİF (HIZ: {_playerController.moveSpeed:F1})!";
                 }
                 break;
 
@@ -473,7 +473,7 @@ public class PlayerUpgradeManager : MonoBehaviour
                 if (GameManager.Instance != null)
                 {
                     GameManager.Instance.player1Lives++;
-                    upgradeTitle = $"💖 YEDEK UÇAK KAZANILDI (CAN HAKKI: {GameManager.Instance.player1Lives})!";
+                    upgradeTitle = $"[CAN] YEDEK UÇAK KAZANILDI (CAN HAKKI: {GameManager.Instance.player1Lives})!";
                 }
                 break;
         }
@@ -483,3 +483,4 @@ public class PlayerUpgradeManager : MonoBehaviour
         gameUI?.ShowWaveAlert(upgradeTitle, new Color(0.2f, 1f, 0.8f), 2.5f);
     }
 }
+
