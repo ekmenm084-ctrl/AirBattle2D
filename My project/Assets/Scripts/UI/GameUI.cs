@@ -89,7 +89,7 @@ public class GameUI : MonoBehaviour
                 rt.anchorMax = new Vector2(0f, 0f);
                 rt.pivot = new Vector2(0f, 0f);
                 rt.anchoredPosition = new Vector2(60f, 310f);
-                rt.sizeDelta = new Vector2(260f, 22f);
+                rt.sizeDelta = new Vector2(300f, 26f);
             }
             else
             {
@@ -97,7 +97,7 @@ public class GameUI : MonoBehaviour
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0f, 1f);
                 rt.anchoredPosition = new Vector2(60f, -40f);
-                rt.sizeDelta = new Vector2(280f, 22f);
+                rt.sizeDelta = new Vector2(320f, 26f);
             }
         }
 
@@ -163,12 +163,12 @@ public class GameUI : MonoBehaviour
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(0.5f, 0f);
         rt.anchoredPosition = new Vector2(0f, 4f);
-        rt.sizeDelta = new Vector2(0f, 20f);
+        rt.sizeDelta = new Vector2(0f, 26f);
 
         TextMeshProUGUI tmp = labelObj.GetComponent<TextMeshProUGUI>();
         if (tmp == null) tmp = labelObj.AddComponent<TextMeshProUGUI>();
 
-        tmp.fontSize = 14f;
+        tmp.fontSize = 18f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Left;
 
@@ -204,7 +204,7 @@ public class GameUI : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = new Vector2(0f, -25f);
-        rt.sizeDelta = new Vector2(360f, 38f);
+        rt.sizeDelta = new Vector2(440f, 48f);
 
         Image bg = badgeObj.GetComponent<Image>();
         if (bg == null) bg = badgeObj.AddComponent<Image>();
@@ -229,7 +229,7 @@ public class GameUI : MonoBehaviour
         _waveBadgeTMP = textObj.GetComponent<TextMeshProUGUI>();
         if (_waveBadgeTMP == null) _waveBadgeTMP = textObj.AddComponent<TextMeshProUGUI>();
 
-        _waveBadgeTMP.fontSize = 17f;
+        _waveBadgeTMP.fontSize = 22f;
         _waveBadgeTMP.fontStyle = FontStyles.Bold;
         _waveBadgeTMP.alignment = TextAlignmentOptions.Center;
         _waveBadgeTMP.color = new Color(0.95f, 0.95f, 1f);
@@ -253,12 +253,12 @@ public class GameUI : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = new Vector2(0f, 80f);
-        rt.sizeDelta = new Vector2(750f, 100f);
+        rt.sizeDelta = new Vector2(850f, 120f);
 
         _waveAlertTMP = _waveAlertObj.GetComponent<TextMeshProUGUI>();
         if (_waveAlertTMP == null) _waveAlertTMP = _waveAlertObj.AddComponent<TextMeshProUGUI>();
 
-        _waveAlertTMP.fontSize = 28f;
+        _waveAlertTMP.fontSize = 36f;
         _waveAlertTMP.fontStyle = FontStyles.Bold;
         _waveAlertTMP.alignment = TextAlignmentOptions.Center;
         _waveAlertTMP.raycastTarget = false;

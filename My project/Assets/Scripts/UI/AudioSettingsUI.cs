@@ -139,8 +139,8 @@ public class AudioSettingsUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-22f, -22f);
-        rt.sizeDelta = new Vector2(46f, 46f);
+        rt.anchoredPosition = new Vector2(-26f, -26f);
+        rt.sizeDelta = new Vector2(56f, 56f);
 
         Image btnBg = soundButtonObj.GetComponent<Image>();
         if (btnBg == null) btnBg = soundButtonObj.AddComponent<Image>();
@@ -208,7 +208,7 @@ public class AudioSettingsUI : MonoBehaviour
         panelRt.anchorMax = new Vector2(0.5f, 0.5f);
         panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
-        panelRt.sizeDelta = new Vector2(600f, 620f);
+        panelRt.sizeDelta = new Vector2(680f, 700f);
 
         Image bg = settingsPanelObj.AddComponent<Image>();
         bg.color = new Color(0.04f, 0.07f, 0.13f, 0.98f);
@@ -221,37 +221,39 @@ public class AudioSettingsUI : MonoBehaviour
         GameObject titleObj = new GameObject("PanelTitle");
         titleObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform titleRt = titleObj.AddComponent<RectTransform>();
-        titleRt.anchorMin = new Vector2(0.5f, 0.91f);
-        titleRt.anchorMax = new Vector2(0.5f, 0.91f);
-        titleRt.sizeDelta = new Vector2(560f, 48f);
+        titleRt.anchorMin = new Vector2(0.5f, 0.92f);
+        titleRt.anchorMax = new Vector2(0.5f, 0.92f);
+        titleRt.sizeDelta = new Vector2(640f, 58f);
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.text = "OYUN DURDURULDU";
-        titleTMP.fontSize = 36f;
+        titleTMP.fontSize = 48f; // Büyütüldü
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(1f, 0.85f, 0.2f); // Parlak Altın Sarısı
+        titleTMP.extraPadding = true;
 
         // Alt Başlık: Hava sahası duraklatıldı
         GameObject subObj = new GameObject("PanelSubtitle");
         subObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform subRt = subObj.AddComponent<RectTransform>();
-        subRt.anchorMin = new Vector2(0.5f, 0.84f);
-        subRt.anchorMax = new Vector2(0.5f, 0.84f);
-        subRt.sizeDelta = new Vector2(560f, 32f);
+        subRt.anchorMin = new Vector2(0.5f, 0.85f);
+        subRt.anchorMax = new Vector2(0.5f, 0.85f);
+        subRt.sizeDelta = new Vector2(640f, 38f);
 
         TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
         subTMP.text = "Hava Sahasi ve Operasyon Duraklatildi";
-        subTMP.fontSize = 19f;
+        subTMP.fontSize = 26f; // Büyütüldü
         subTMP.fontStyle = FontStyles.Bold;
         subTMP.alignment = TextAlignmentOptions.Center;
         subTMP.color = new Color(0.35f, 0.9f, 1f);
+        subTMP.extraPadding = true;
 
         // 1. Savaş Müziği Satırı: [-]  Slider  [+]
-        _musicSlider = CreateVolumeRow("SAVAS MUZIGI", 0.70f, isMusic: true, out _musicValTMP);
+        _musicSlider = CreateVolumeRow("SAVAS MUZIGI", 0.71f, isMusic: true, out _musicValTMP);
 
         // 2. Mermi / Efekt Sesi Satırı: [-]  Slider  [+]
-        _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 0.54f, isMusic: false, out _sfxValTMP);
+        _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 0.53f, isMusic: false, out _sfxValTMP);
 
         // 3. Mute Butonu
         GameObject muteBtnObj = new GameObject("MuteButton");
@@ -259,7 +261,7 @@ public class AudioSettingsUI : MonoBehaviour
         RectTransform muteRt = muteBtnObj.AddComponent<RectTransform>();
         muteRt.anchorMin = new Vector2(0.5f, 0.38f);
         muteRt.anchorMax = new Vector2(0.5f, 0.38f);
-        muteRt.sizeDelta = new Vector2(340f, 46f);
+        muteRt.sizeDelta = new Vector2(440f, 60f);
 
         Image muteBg = muteBtnObj.AddComponent<Image>();
         muteBg.color = new Color(0.12f, 0.20f, 0.30f, 0.95f);
@@ -281,10 +283,11 @@ public class AudioSettingsUI : MonoBehaviour
         muteTxtRt.offsetMax = Vector2.zero;
 
         _muteBtnTMP = muteTxtObj.AddComponent<TextMeshProUGUI>();
-        _muteBtnTMP.fontSize = 19f;
+        _muteBtnTMP.fontSize = 27f; // Büyütüldü
         _muteBtnTMP.fontStyle = FontStyles.Bold;
         _muteBtnTMP.alignment = TextAlignmentOptions.Center;
         _muteBtnTMP.color = Color.white;
+        _muteBtnTMP.extraPadding = true;
         _muteBtnTMP.raycastTarget = false;
 
         // 4. DEVAM ET BUTONU (Büyük Yeşil Buton)
@@ -293,7 +296,7 @@ public class AudioSettingsUI : MonoBehaviour
         RectTransform resumeRt = resumeBtnObj.AddComponent<RectTransform>();
         resumeRt.anchorMin = new Vector2(0.5f, 0.23f);
         resumeRt.anchorMax = new Vector2(0.5f, 0.23f);
-        resumeRt.sizeDelta = new Vector2(440f, 64f);
+        resumeRt.sizeDelta = new Vector2(500f, 78f);
 
         Image resumeBg = resumeBtnObj.AddComponent<Image>();
         resumeBg.color = new Color(0.12f, 0.58f, 0.32f, 0.98f);
@@ -316,10 +319,11 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI resumeTMP = resumeTxtObj.AddComponent<TextMeshProUGUI>();
         resumeTMP.text = "DEVAM ET";
-        resumeTMP.fontSize = 26f;
+        resumeTMP.fontSize = 34f; // Büyütüldü
         resumeTMP.fontStyle = FontStyles.Bold;
         resumeTMP.alignment = TextAlignmentOptions.Center;
         resumeTMP.color = Color.white;
+        resumeTMP.extraPadding = true;
         resumeTMP.raycastTarget = false;
 
         // 5. ANA SAYFAYA DÖN BUTONU (Kırmızı / Lacivert Buton)
@@ -328,7 +332,7 @@ public class AudioSettingsUI : MonoBehaviour
         RectTransform homeRt = homeBtnObj.AddComponent<RectTransform>();
         homeRt.anchorMin = new Vector2(0.5f, 0.09f);
         homeRt.anchorMax = new Vector2(0.5f, 0.09f);
-        homeRt.sizeDelta = new Vector2(440f, 54f);
+        homeRt.sizeDelta = new Vector2(500f, 66f);
 
         Image homeBg = homeBtnObj.AddComponent<Image>();
         homeBg.color = new Color(0.68f, 0.18f, 0.18f, 0.98f);
@@ -351,10 +355,11 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI homeTMP = homeTxtObj.AddComponent<TextMeshProUGUI>();
         homeTMP.text = "ANA SAYFAYA DON";
-        homeTMP.fontSize = 22f;
+        homeTMP.fontSize = 29f; // Büyütüldü
         homeTMP.fontStyle = FontStyles.Bold;
         homeTMP.alignment = TextAlignmentOptions.Center;
         homeTMP.color = Color.white;
+        homeTMP.extraPadding = true;
         homeTMP.raycastTarget = false;
 
         settingsPanelObj.SetActive(false);
@@ -366,13 +371,13 @@ public class AudioSettingsUI : MonoBehaviour
         GameObject headerObj = new GameObject(label + "_Header");
         headerObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform hRt = headerObj.AddComponent<RectTransform>();
-        hRt.anchorMin = new Vector2(0.08f, yAnchor + 0.065f);
-        hRt.anchorMax = new Vector2(0.92f, yAnchor + 0.065f);
-        hRt.sizeDelta = new Vector2(0f, 32f);
+        hRt.anchorMin = new Vector2(0.08f, yAnchor + 0.075f);
+        hRt.anchorMax = new Vector2(0.92f, yAnchor + 0.075f);
+        hRt.sizeDelta = new Vector2(0f, 36f);
 
         TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
         titleTMP.text = label;
-        titleTMP.fontSize = 21f;
+        titleTMP.fontSize = 30f; // Büyütüldü (30f Bold)
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.color = new Color(0.2f, 0.9f, 1f);
         titleTMP.alignment = TextAlignmentOptions.Left;
@@ -381,12 +386,12 @@ public class AudioSettingsUI : MonoBehaviour
         GameObject valObj = new GameObject(label + "_ValText");
         valObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform valRt = valObj.AddComponent<RectTransform>();
-        valRt.anchorMin = new Vector2(0.65f, yAnchor + 0.065f);
-        valRt.anchorMax = new Vector2(0.92f, yAnchor + 0.065f);
-        valRt.sizeDelta = new Vector2(0f, 32f);
+        valRt.anchorMin = new Vector2(0.65f, yAnchor + 0.075f);
+        valRt.anchorMax = new Vector2(0.92f, yAnchor + 0.075f);
+        valRt.sizeDelta = new Vector2(0f, 36f);
 
         valueTMP = valObj.AddComponent<TextMeshProUGUI>();
-        valueTMP.fontSize = 21f;
+        valueTMP.fontSize = 30f; // Büyütüldü (30f Bold)
         valueTMP.fontStyle = FontStyles.Bold;
         valueTMP.color = Color.white;
         valueTMP.alignment = TextAlignmentOptions.Right;
@@ -398,7 +403,7 @@ public class AudioSettingsUI : MonoBehaviour
         minusRt.anchorMin = new Vector2(0.08f, yAnchor);
         minusRt.anchorMax = new Vector2(0.08f, yAnchor);
         minusRt.pivot = new Vector2(0f, 0.5f);
-        minusRt.sizeDelta = new Vector2(50f, 40f);
+        minusRt.sizeDelta = new Vector2(58f, 46f);
 
         Image minusBg = minusBtnObj.AddComponent<Image>();
         minusBg.color = new Color(0.15f, 0.24f, 0.36f);
@@ -416,7 +421,7 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI minusTMP = minusTxtObj.AddComponent<TextMeshProUGUI>();
         minusTMP.text = "-";
-        minusTMP.fontSize = 28f;
+        minusTMP.fontSize = 34f; // 28f -> 34f
         minusTMP.fontStyle = FontStyles.Bold;
         minusTMP.alignment = TextAlignmentOptions.Center;
         minusTMP.color = Color.white;
@@ -429,7 +434,7 @@ public class AudioSettingsUI : MonoBehaviour
         plusRt.anchorMin = new Vector2(0.92f, yAnchor);
         plusRt.anchorMax = new Vector2(0.92f, yAnchor);
         plusRt.pivot = new Vector2(1f, 0.5f);
-        plusRt.sizeDelta = new Vector2(50f, 40f);
+        plusRt.sizeDelta = new Vector2(58f, 46f);
 
         Image plusBg = plusBtnObj.AddComponent<Image>();
         plusBg.color = new Color(0.15f, 0.24f, 0.36f);
@@ -447,7 +452,7 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI plusTMP = plusTxtObj.AddComponent<TextMeshProUGUI>();
         plusTMP.text = "+";
-        plusTMP.fontSize = 26f;
+        plusTMP.fontSize = 32f; // 26f -> 32f
         plusTMP.fontStyle = FontStyles.Bold;
         plusTMP.alignment = TextAlignmentOptions.Center;
         plusTMP.color = Color.white;
@@ -460,7 +465,7 @@ public class AudioSettingsUI : MonoBehaviour
         sRt.anchorMin = new Vector2(0.5f, yAnchor);
         sRt.anchorMax = new Vector2(0.5f, yAnchor);
         sRt.pivot = new Vector2(0.5f, 0.5f);
-        sRt.sizeDelta = new Vector2(320f, 26f);
+        sRt.sizeDelta = new Vector2(360f, 30f);
 
         Slider slider = sliderObj.AddComponent<Slider>();
         slider.minValue = 0f;

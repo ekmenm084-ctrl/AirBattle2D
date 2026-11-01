@@ -573,43 +573,49 @@ public class StoryCampaignManager : MonoBehaviour
         _subtitlePanel.anchorMin = new Vector2(0.5f, 0f);
         _subtitlePanel.anchorMax = new Vector2(0.5f, 0f);
         _subtitlePanel.pivot = new Vector2(0.5f, 0f);
-        _subtitlePanel.anchoredPosition = new Vector2(0f, 95f);
-        _subtitlePanel.sizeDelta = new Vector2(980f, 185f); // Panel genişletildi
+        _subtitlePanel.anchoredPosition = new Vector2(0f, 92f);
+        _subtitlePanel.sizeDelta = new Vector2(1180f, 225f); // Daha büyük, orantılı ve ferah
 
         Image panelBg = panelObj.AddComponent<Image>();
-        panelBg.color = new Color(0.03f, 0.07f, 0.12f, 0.95f);
+        panelBg.color = new Color(0.02f, 0.05f, 0.10f, 0.98f);
 
         Outline panelOutline = panelObj.AddComponent<Outline>();
-        panelOutline.effectColor = new Color(0f, 0.85f, 1f, 0.8f);
-        panelOutline.effectDistance = new Vector2(2f, -2f);
+        panelOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
+        panelOutline.effectDistance = new Vector2(2.5f, -2.5f);
 
         // 4.a Başlık / Konuşan Birim
         GameObject spkObj = new GameObject("Speaker");
         spkObj.transform.SetParent(panelObj.transform, false);
         RectTransform spkRt = spkObj.AddComponent<RectTransform>();
-        spkRt.anchorMin = new Vector2(0.03f, 0.72f);
+        spkRt.anchorMin = new Vector2(0.03f, 0.74f);
         spkRt.anchorMax = new Vector2(0.68f, 0.98f);
         spkRt.offsetMin = Vector2.zero;
         spkRt.offsetMax = Vector2.zero;
         _cinematicSpeakerTMP = spkObj.AddComponent<TextMeshProUGUI>();
-        _cinematicSpeakerTMP.fontSize = 25f; // 17f -> 25f (+3 kademe)
+        _cinematicSpeakerTMP.fontSize = 32f; // Büyütüldü
         _cinematicSpeakerTMP.fontStyle = FontStyles.Bold;
         _cinematicSpeakerTMP.alignment = TextAlignmentOptions.Left;
-        _cinematicSpeakerTMP.color = new Color(0.2f, 0.9f, 1f);
+        _cinematicSpeakerTMP.color = new Color(0.2f, 0.92f, 1f);
+        _cinematicSpeakerTMP.extraPadding = true;
+        _cinematicSpeakerTMP.outlineWidth = 0.22f;
+        _cinematicSpeakerTMP.outlineColor = Color.black;
 
         // 4.b Sayfa Göstergesi [1 / 4]
         GameObject pageObj = new GameObject("PageIndicator");
         pageObj.transform.SetParent(panelObj.transform, false);
         RectTransform pageRt = pageObj.AddComponent<RectTransform>();
-        pageRt.anchorMin = new Vector2(0.68f, 0.72f);
+        pageRt.anchorMin = new Vector2(0.68f, 0.74f);
         pageRt.anchorMax = new Vector2(0.83f, 0.98f);
         pageRt.offsetMin = Vector2.zero;
         pageRt.offsetMax = Vector2.zero;
         _pageIndicatorTMP = pageObj.AddComponent<TextMeshProUGUI>();
-        _pageIndicatorTMP.fontSize = 20f; // 13.5f -> 20f
+        _pageIndicatorTMP.fontSize = 24f; // Büyütüldü
         _pageIndicatorTMP.fontStyle = FontStyles.Bold;
         _pageIndicatorTMP.alignment = TextAlignmentOptions.Right;
         _pageIndicatorTMP.color = new Color(1f, 0.85f, 0.3f);
+        _pageIndicatorTMP.extraPadding = true;
+        _pageIndicatorTMP.outlineWidth = 0.20f;
+        _pageIndicatorTMP.outlineColor = Color.black;
 
         // 4.c [GEÇ >>] Butonu
         GameObject skipObj = new GameObject("SkipButton");
@@ -633,45 +639,50 @@ public class StoryCampaignManager : MonoBehaviour
         skipTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI skipTMP = skipTxtObj.AddComponent<TextMeshProUGUI>();
         skipTMP.text = "GEÇ >>";
-        skipTMP.fontSize = 17f; // 12f -> 17f
+        skipTMP.fontSize = 20f; // Büyütüldü
         skipTMP.fontStyle = FontStyles.Bold;
         skipTMP.alignment = TextAlignmentOptions.Center;
         skipTMP.color = Color.white;
+        skipTMP.extraPadding = true;
 
         // 4.d Alt Yazı Cümle Metni
         GameObject subTextObj = new GameObject("SubtitleSentenceText");
         subTextObj.transform.SetParent(panelObj.transform, false);
         RectTransform subRt = subTextObj.AddComponent<RectTransform>();
-        subRt.anchorMin = new Vector2(0.02f, 0.28f);
-        subRt.anchorMax = new Vector2(0.98f, 0.72f);
+        subRt.anchorMin = new Vector2(0.02f, 0.18f);
+        subRt.anchorMax = new Vector2(0.98f, 0.74f);
         subRt.offsetMin = Vector2.zero;
         subRt.offsetMax = Vector2.zero;
         _subtitleTextTMP = subTextObj.AddComponent<TextMeshProUGUI>();
-        _subtitleTextTMP.fontSize = 26f; // 18f -> 26f (+3 kademe)
+        _subtitleTextTMP.fontSize = 34f; // 28f -> 34f (Büyük, net ve keskin)
         _subtitleTextTMP.fontStyle = FontStyles.Bold;
         _subtitleTextTMP.alignment = TextAlignmentOptions.Center;
         _subtitleTextTMP.color = Color.white;
-        _subtitleTextTMP.lineSpacing = 4f;
+        _subtitleTextTMP.lineSpacing = 5.5f;
         _subtitleTextTMP.textWrappingMode = TextWrappingModes.Normal;
+        _subtitleTextTMP.extraPadding = true;
+        _subtitleTextTMP.outlineWidth = 0.22f;
+        _subtitleTextTMP.outlineColor = Color.black;
 
         // 4.e Alt İpucu Metni
         GameObject hintObj = new GameObject("HintText");
         hintObj.transform.SetParent(panelObj.transform, false);
         RectTransform hintRt = hintObj.AddComponent<RectTransform>();
-        hintRt.anchorMin = new Vector2(0.03f, 0.04f);
-        hintRt.anchorMax = new Vector2(0.78f, 0.25f);
+        hintRt.anchorMin = new Vector2(0.03f, 0.03f);
+        hintRt.anchorMax = new Vector2(0.78f, 0.22f);
         hintRt.offsetMin = Vector2.zero;
         hintRt.offsetMax = Vector2.zero;
         TextMeshProUGUI hintTMP = hintObj.AddComponent<TextMeshProUGUI>();
-        hintTMP.text = "<size=80%><color=#7FA8C0>Ekrana dokunarak veya 'İlerle'ye basarak bir sonraki cümleye geçebilirsiniz.</color></size>";
-        hintTMP.fontSize = 16f; // 12f -> 16f
+        hintTMP.text = "<size=85%><color=#8AB4F8>Ekrana dokunarak veya 'İlerle'ye basarak sonraki cümleye geçebilirsiniz.</color></size>";
+        hintTMP.fontSize = 19f; // 18f -> 19f
         hintTMP.alignment = TextAlignmentOptions.Left;
+        hintTMP.extraPadding = true;
 
-        // 4.f [İLERLE ▶] Butonu
+        // 4.f [İLERLE >>] Butonu
         GameObject nextObj = new GameObject("NextButton");
         nextObj.transform.SetParent(panelObj.transform, false);
         RectTransform nextRt = nextObj.AddComponent<RectTransform>();
-        nextRt.anchorMin = new Vector2(0.82f, 0.04f);
+        nextRt.anchorMin = new Vector2(0.81f, 0.04f);
         nextRt.anchorMax = new Vector2(0.98f, 0.26f);
         nextRt.offsetMin = Vector2.zero;
         nextRt.offsetMax = Vector2.zero;
@@ -689,7 +700,11 @@ public class StoryCampaignManager : MonoBehaviour
         nextTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.text = "İLERLE >>";
-        nextTMP.fontSize = 19f; // 13f -> 19f
+        nextTMP.fontSize = 21f; // 19f -> 21f
+        nextTMP.fontStyle = FontStyles.Bold;
+        nextTMP.alignment = TextAlignmentOptions.Center;
+        nextTMP.color = Color.white;
+        nextTMP.extraPadding = true;
         nextTMP.fontStyle = FontStyles.Bold;
         nextTMP.alignment = TextAlignmentOptions.Center;
         nextTMP.color = Color.white;
@@ -1186,14 +1201,14 @@ public class StoryCampaignManager : MonoBehaviour
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
             rt.anchoredPosition = new Vector2(0f, -65f); // Skor rozetinin hemen altında
-            rt.sizeDelta = new Vector2(720f, 85f);
+            rt.sizeDelta = new Vector2(980f, 130f);
 
             Image bg = _radioBannerObj.AddComponent<Image>();
-            bg.color = new Color(0.03f, 0.07f, 0.12f, 0.95f);
+            bg.color = new Color(0.02f, 0.05f, 0.10f, 0.98f);
 
             Outline outline = _radioBannerObj.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0.85f, 1f, 0.75f);
-            outline.effectDistance = new Vector2(2f, -2f);
+            outline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
+            outline.effectDistance = new Vector2(2.5f, -2.5f);
 
             _canvasGroup = _radioBannerObj.AddComponent<CanvasGroup>();
 
@@ -1203,8 +1218,8 @@ public class StoryCampaignManager : MonoBehaviour
             RectTransform hRt = headerObj.AddComponent<RectTransform>();
             hRt.anchorMin = new Vector2(0f, 0.65f);
             hRt.anchorMax = new Vector2(1f, 1f);
-            hRt.offsetMin = new Vector2(18f, 0f);
-            hRt.offsetMax = new Vector2(-18f, -4f);
+            hRt.offsetMin = new Vector2(20f, 0f);
+            hRt.offsetMax = new Vector2(-20f, -4f);
 
             GameObject spkObj = new GameObject("SpeakerText");
             spkObj.transform.SetParent(headerObj.transform, false);
@@ -1215,9 +1230,12 @@ public class StoryCampaignManager : MonoBehaviour
             spkRt.offsetMax = Vector2.zero;
 
             _speakerTMP = spkObj.AddComponent<TextMeshProUGUI>();
-            _speakerTMP.fontSize = 17f;
+            _speakerTMP.fontSize = 28f; // Büyütüldü
             _speakerTMP.fontStyle = FontStyles.Bold;
             _speakerTMP.alignment = TextAlignmentOptions.Left;
+            _speakerTMP.extraPadding = true;
+            _speakerTMP.outlineWidth = 0.22f;
+            _speakerTMP.outlineColor = Color.black;
 
             GameObject frqObj = new GameObject("FreqText");
             frqObj.transform.SetParent(headerObj.transform, false);
@@ -1228,9 +1246,11 @@ public class StoryCampaignManager : MonoBehaviour
             frqRt.offsetMax = Vector2.zero;
 
             _freqTMP = frqObj.AddComponent<TextMeshProUGUI>();
-            _freqTMP.fontSize = 13f;
+            _freqTMP.fontSize = 22f; // Büyütüldü
+            _freqTMP.fontStyle = FontStyles.Bold;
             _freqTMP.alignment = TextAlignmentOptions.Right;
-            _freqTMP.color = new Color(0.5f, 0.8f, 0.9f, 0.75f);
+            _freqTMP.color = new Color(0.5f, 0.85f, 1f, 0.9f);
+            _freqTMP.extraPadding = true;
 
             // 2. Alt Satır: Mesaj Metni
             GameObject msgObj = new GameObject("MessageText");
@@ -1238,15 +1258,18 @@ public class StoryCampaignManager : MonoBehaviour
             RectTransform msgRt = msgObj.AddComponent<RectTransform>();
             msgRt.anchorMin = new Vector2(0f, 0f);
             msgRt.anchorMax = new Vector2(1f, 0.65f);
-            msgRt.offsetMin = new Vector2(18f, 6f);
-            msgRt.offsetMax = new Vector2(-18f, 0f);
+            msgRt.offsetMin = new Vector2(20f, 8f);
+            msgRt.offsetMax = new Vector2(-20f, 0f);
 
             _messageTMP = msgObj.AddComponent<TextMeshProUGUI>();
-            _messageTMP.fontSize = 17f;
-            _messageTMP.fontStyle = FontStyles.Normal;
+            _messageTMP.fontSize = 28f; // Büyütüldü
+            _messageTMP.fontStyle = FontStyles.Bold;
             _messageTMP.alignment = TextAlignmentOptions.Left;
             _messageTMP.color = Color.white;
-            _messageTMP.lineSpacing = 4f;
+            _messageTMP.lineSpacing = 5f;
+            _messageTMP.extraPadding = true;
+            _messageTMP.outlineWidth = 0.22f;
+            _messageTMP.outlineColor = Color.black;
         }
 
         _canvasGroup = _radioBannerObj.GetComponent<CanvasGroup>();

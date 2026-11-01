@@ -119,31 +119,34 @@ public class MainMenuManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(700f, 130f);
-        rt.anchoredPosition = new Vector2(0f, 210f);
+        rt.sizeDelta = new Vector2(850f, 150f);
+        rt.anchoredPosition = new Vector2(0f, 225f);
 
         TextMeshProUGUI tmp = _titleObject.AddComponent<TextMeshProUGUI>();
-        tmp.text = "AIR BATTLE 2D\n<size=40%><color=#F1C40F>- IT DALASI HAREKATI -</color></size>";
-        tmp.fontSize = 46f;
+        tmp.text = "AIR BATTLE 2D\n<size=42%><color=#F1C40F>- İT DALAŞI HAREKATI -</color></size>";
+        tmp.fontSize = 58f; // 46f -> 58f (+12f)
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = new Color(0.95f, 0.95f, 1f);
+        tmp.extraPadding = true;
+        tmp.outlineWidth = 0.22f;
+        tmp.outlineColor = Color.black;
     }
 
     private void FormatMilitaryButtons()
     {
-        FormatBtn(playButton, 60f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 320f, 65f);
-        FormatBtn(modesButton, -20f, "OYUN MODLARI", new Color(0.15f, 0.40f, 0.65f), 320f, 60f);
-        FormatBtn(settingsButton, -95f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 320f, 60f);
+        FormatBtn(playButton, 60f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 460f, 74f);
+        FormatBtn(modesButton, -25f, "OYUN MODLARI", new Color(0.15f, 0.40f, 0.65f), 460f, 68f);
+        FormatBtn(settingsButton, -108f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 460f, 68f);
 
-        FormatBtn(soloButton, 55f, "SOLO: 20 UÇAKLIK SEFER", new Color(0.15f, 0.50f, 0.70f), 390f, 60f);
-        FormatBtn(onlineButton, -25f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.20f, 0.30f, 0.45f), 390f, 60f);
-        FormatBtn(backFromModesButton, -110f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 260f, 50f);
+        FormatBtn(soloButton, 55f, "SOLO: 20 UÇAKLIK SEFER", new Color(0.15f, 0.50f, 0.70f), 480f, 60f);
+        FormatBtn(onlineButton, -25f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.20f, 0.30f, 0.45f), 480f, 60f);
+        FormatBtn(backFromModesButton, -110f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 300f, 52f);
 
-        FormatBtn(easyButton, 120f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 350f, 44f);
-        FormatBtn(normalButton, 70f, "YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), 350f, 44f);
-        FormatBtn(hardButton, 20f, "AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), 350f, 44f);
-        FormatBtn(backFromSettingsButton, -140f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 260f, 44f);
+        FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 440f, 54f);
+        FormatBtn(normalButton, 75f, "YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), 440f, 54f);
+        FormatBtn(hardButton, 15f, "AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), 440f, 54f);
+        FormatBtn(backFromSettingsButton, -185f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 300f, 48f);
     }
 
     private void FormatBtn(Button btn, float posY, string text, Color color, float width, float height)
@@ -167,10 +170,13 @@ public class MainMenuManager : MonoBehaviour
         if (tmp != null)
         {
             tmp.text = text;
-            tmp.fontSize = 20f;
+            tmp.fontSize = 25f; // 21f -> 25f (+4f orantılı büyüme)
             tmp.fontStyle = FontStyles.Bold;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
+            tmp.extraPadding = true;
+            tmp.outlineWidth = 0.20f;
+            tmp.outlineColor = Color.black;
         }
     }
 
@@ -223,14 +229,14 @@ public class MainMenuManager : MonoBehaviour
         rootRt.anchorMin = new Vector2(0.5f, 0.5f);
         rootRt.anchorMax = new Vector2(0.5f, 0.5f);
         rootRt.pivot = new Vector2(0.5f, 0.5f);
-        rootRt.sizeDelta = new Vector2(380f, 120f);
-        rootRt.anchoredPosition = new Vector2(0f, -55f);
+        rootRt.sizeDelta = new Vector2(540f, 175f); // Geniş ve ferah
+        rootRt.anchoredPosition = new Vector2(0f, -75f);
 
-        // Müzik Satırı (Y: 20f)
-        CreateMenuVolumeRow(_soundControlsContainer.transform, "SAVAŞ MÜZİĞİ", 20f, isMusic: true);
+        // Müzik Satırı (Y: 34f)
+        CreateMenuVolumeRow(_soundControlsContainer.transform, "SAVAŞ MÜZİĞİ", 34f, isMusic: true);
 
-        // Efekt Satırı (Y: -35f)
-        CreateMenuVolumeRow(_soundControlsContainer.transform, "MERMİ & EFEKT", -35f, isMusic: false);
+        // Efekt Satırı (Y: -44f)
+        CreateMenuVolumeRow(_soundControlsContainer.transform, "MERMİ & EFEKT", -44f, isMusic: false);
     }
 
     private void SetupCampaignSelectionUI()
@@ -241,36 +247,36 @@ public class MainMenuManager : MonoBehaviour
         if (soloButton != null)
         {
             _campaign1Button = soloButton;
-            FormatBtn(_campaign1Button, 130f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.45f, 0.28f), 430f, 50f);
+            FormatBtn(_campaign1Button, 150f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.45f, 0.28f), 540f, 56f);
             _campaign1Button.onClick.RemoveAllListeners();
             _campaign1Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.OperationBlackDawn));
         }
 
         // 2. Kampanya 2: Proje Kimeras
-        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 72f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.15f, 0.35f, 0.60f), 430f, 50f);
+        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 88f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.15f, 0.35f, 0.60f), 540f, 56f);
         _campaign2Button.onClick.RemoveAllListeners();
         _campaign2Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.ProjectChimera));
 
         // 3. Kampanya 3: Gökyüzü Paralı Askeri
-        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 14f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(0.55f, 0.22f, 0.15f), 430f, 50f);
+        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 26f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(0.55f, 0.22f, 0.15f), 540f, 56f);
         _campaign3Button.onClick.RemoveAllListeners();
         _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
 
         // 4. Online 2 Oyunculu Düello
         if (onlineButton != null)
         {
-            FormatBtn(onlineButton, -44f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.28f, 0.20f, 0.45f), 430f, 50f);
+            FormatBtn(onlineButton, -36f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.28f, 0.20f, 0.45f), 540f, 56f);
             onlineButton.onClick.RemoveAllListeners();
             onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
         }
 
-        // 5. Taktik Sefer Brifing Kartı
+        // 5. Taktik Sefer Brifing Kartı (Butonlarla tam aynı genişlikte: 540f)
         SetupCampaignBriefingBox();
 
         // 6. Geri Dön Butonu
         if (backFromModesButton != null)
         {
-            FormatBtn(backFromModesButton, -195f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 240f, 40f);
+            FormatBtn(backFromModesButton, -222f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 300f, 48f);
         }
     }
 
@@ -318,16 +324,16 @@ public class MainMenuManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, -125f);
-        rt.sizeDelta = new Vector2(450f, 85f);
+        rt.anchoredPosition = new Vector2(0f, -130f);
+        rt.sizeDelta = new Vector2(540f, 126f); // Butonlarla tam orantılı ve eşit genişlik (540px)
 
         Image bg = boxObj.GetComponent<Image>();
         if (bg == null) bg = boxObj.AddComponent<Image>();
-        bg.color = new Color(0.06f, 0.10f, 0.16f, 0.90f);
+        bg.color = new Color(0.03f, 0.07f, 0.12f, 0.96f);
 
         Outline outline = boxObj.GetComponent<Outline>();
         if (outline == null) outline = boxObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.6f);
+        outline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
         outline.effectDistance = new Vector2(2f, -2f);
 
         Transform textChild = boxObj.transform.Find("BriefingText");
@@ -338,14 +344,24 @@ public class MainMenuManager : MonoBehaviour
         if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
         textRt.anchorMin = Vector2.zero;
         textRt.anchorMax = Vector2.one;
-        textRt.offsetMin = new Vector2(10f, 6f);
-        textRt.offsetMax = new Vector2(-10f, -6f);
+        textRt.offsetMin = new Vector2(14f, 8f);
+        textRt.offsetMax = new Vector2(-14f, -8f);
 
         _briefingTMP = textObj.GetComponent<TextMeshProUGUI>();
         if (_briefingTMP == null) _briefingTMP = textObj.AddComponent<TextMeshProUGUI>();
-        _briefingTMP.fontSize = 11.5f;
+        _briefingTMP.enableAutoSizing = true;
+        _briefingTMP.fontSizeMin = 14f;
+        _briefingTMP.fontSizeMax = 21f;
+        _briefingTMP.fontSize = 20f; // Büyütüldü
+        _briefingTMP.fontStyle = FontStyles.Bold;
         _briefingTMP.alignment = TextAlignmentOptions.Center;
         _briefingTMP.color = Color.white;
+        _briefingTMP.lineSpacing = 3f;
+        _briefingTMP.textWrappingMode = TextWrappingModes.Normal;
+        _briefingTMP.overflowMode = TextOverflowModes.Truncate;
+        _briefingTMP.extraPadding = true;
+        _briefingTMP.outlineWidth = 0.20f;
+        _briefingTMP.outlineColor = Color.black;
         _briefingTMP.raycastTarget = false;
     }
 
@@ -364,7 +380,7 @@ public class MainMenuManager : MonoBehaviour
         RectTransform rRt = row.AddComponent<RectTransform>();
         rRt.anchorMin = new Vector2(0.5f, 0.5f);
         rRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rRt.sizeDelta = new Vector2(360f, 45f);
+        rRt.sizeDelta = new Vector2(500f, 64f);
         rRt.anchoredPosition = new Vector2(0f, localY);
 
         // Başlık TMP
@@ -374,13 +390,14 @@ public class MainMenuManager : MonoBehaviour
         lblRt.anchorMin = new Vector2(0f, 0.55f);
         lblRt.anchorMax = new Vector2(0.6f, 0.55f);
         lblRt.pivot = new Vector2(0f, 0.5f);
-        lblRt.sizeDelta = new Vector2(0f, 20f);
+        lblRt.sizeDelta = new Vector2(0f, 30f);
 
         TextMeshProUGUI lblTMP = lblObj.AddComponent<TextMeshProUGUI>();
         lblTMP.text = title;
-        lblTMP.fontSize = 12f;
+        lblTMP.fontSize = 22f; // Büyütüldü
         lblTMP.fontStyle = FontStyles.Bold;
         lblTMP.color = new Color(0.2f, 0.9f, 1f);
+        lblTMP.extraPadding = true;
 
         // Yüzde Metni
         GameObject valObj = new GameObject("ValText");
@@ -389,13 +406,14 @@ public class MainMenuManager : MonoBehaviour
         valRt.anchorMin = new Vector2(0.6f, 0.55f);
         valRt.anchorMax = new Vector2(1f, 0.55f);
         valRt.pivot = new Vector2(1f, 0.5f);
-        valRt.sizeDelta = new Vector2(0f, 20f);
+        valRt.sizeDelta = new Vector2(0f, 30f);
 
         TextMeshProUGUI valTMP = valObj.AddComponent<TextMeshProUGUI>();
-        valTMP.fontSize = 12f;
+        valTMP.fontSize = 22f; // Büyütüldü
         valTMP.fontStyle = FontStyles.Bold;
         valTMP.alignment = TextAlignmentOptions.Right;
         valTMP.color = Color.white;
+        valTMP.extraPadding = true;
 
         // [-] Butonu
         GameObject minusObj = new GameObject("MinusBtn");
@@ -404,7 +422,7 @@ public class MainMenuManager : MonoBehaviour
         mRt.anchorMin = new Vector2(0f, 0.1f);
         mRt.anchorMax = new Vector2(0f, 0.1f);
         mRt.pivot = new Vector2(0f, 0.5f);
-        mRt.sizeDelta = new Vector2(32f, 24f);
+        mRt.sizeDelta = new Vector2(52f, 38f);
 
         Image mImg = minusObj.AddComponent<Image>();
         mImg.color = new Color(0.18f, 0.25f, 0.35f);
@@ -419,10 +437,11 @@ public class MainMenuManager : MonoBehaviour
         mTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI mTMP = mTxtObj.AddComponent<TextMeshProUGUI>();
         mTMP.text = "-";
-        mTMP.fontSize = 20f;
+        mTMP.fontSize = 28f;
         mTMP.fontStyle = FontStyles.Bold;
         mTMP.alignment = TextAlignmentOptions.Center;
         mTMP.color = Color.white;
+        mTMP.extraPadding = true;
 
         // [+] Butonu
         GameObject plusObj = new GameObject("PlusBtn");
@@ -431,7 +450,7 @@ public class MainMenuManager : MonoBehaviour
         pRt.anchorMin = new Vector2(1f, 0.1f);
         pRt.anchorMax = new Vector2(1f, 0.1f);
         pRt.pivot = new Vector2(1f, 0.5f);
-        pRt.sizeDelta = new Vector2(32f, 24f);
+        pRt.sizeDelta = new Vector2(52f, 38f);
 
         Image pImg = plusObj.AddComponent<Image>();
         pImg.color = new Color(0.18f, 0.25f, 0.35f);
@@ -446,10 +465,11 @@ public class MainMenuManager : MonoBehaviour
         pTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI pTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
         pTMP.text = "+";
-        pTMP.fontSize = 18f;
+        pTMP.fontSize = 26f;
         pTMP.fontStyle = FontStyles.Bold;
         pTMP.alignment = TextAlignmentOptions.Center;
         pTMP.color = Color.white;
+        pTMP.extraPadding = true;
 
         // Slider
         GameObject sObj = new GameObject("Slider");
@@ -458,7 +478,7 @@ public class MainMenuManager : MonoBehaviour
         sRt.anchorMin = new Vector2(0.5f, 0.1f);
         sRt.anchorMax = new Vector2(0.5f, 0.1f);
         sRt.pivot = new Vector2(0.5f, 0.5f);
-        sRt.sizeDelta = new Vector2(240f, 18f);
+        sRt.sizeDelta = new Vector2(330f, 26f);
 
         Slider s = sObj.AddComponent<Slider>();
         s.minValue = 0f;
@@ -577,31 +597,33 @@ public class MainMenuManager : MonoBehaviour
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         if (isOnline)
         {
-            _briefingTMP.text = "<color=#9B59B6><b>[2 OYUNCULU TAKTİK DÜELLO]</b></color>\n" +
-                                "<size=90%>Aynı cihazda iki pilot karşı karşıya! 1. Pilot (Alt ekran) vs 2. Pilot (Üst ekran 180° ters).</size>";
+            _briefingTMP.text = "<color=#B388FF><b>[2 OYUNCULU TAKTİK DÜELLO]</b></color>\n" +
+                                "Aynı cihazda iki pilot karşı karşıya!\n" +
+                                "<size=90%><color=#A0C4DF>1. Pilot (Alt ekran) vs 2. Pilot (Üst ekran 180° ters)</color></size>";
         }
         else
         {
             var camp = StoryCampaignManager.CurrentCampaign;
-            string campName = StoryCampaignManager.GetCampaignName(camp);
             string slogan = StoryCampaignManager.GetCampaignSlogan(camp);
-            string bossInfo = "";
+            string missionInfo = "";
 
             switch (camp)
             {
                 case StoryCampaignManager.CampaignType.OperationBlackDawn:
-                    bossInfo = "<color=#2ECC71><b>Hedef:</b> Vatan Savunması (20 Dalga) | <b>Boss:</b> DİRENİŞ AVCI, FİREBİRD, TİTAN-X, CEHENNEM MELEĞİ</color>";
+                    missionInfo = "<color=#2ECC71><b>Hedef:</b> Vatan Savunması (20 Dalga & 4 Boss Filosu)</color>\n" +
+                                  "<size=88%><color=#A0C4DF>Direniş Avcı, Firebird, Titan-X, Cehennem Meleği</color></size>";
                     break;
                 case StoryCampaignManager.CampaignType.ProjectChimera:
-                    bossInfo = "<color=#3498DB><b>Hedef:</b> Siber Harp & AI İsyanı | <b>Boss:</b> A.P.E.X. PROTOKOLÜ, SİBER HAYALET, SÜPER BEYİN</color>";
+                    missionInfo = "<color=#3498DB><b>Hedef:</b> Siber Harp & AI İsyanı (20 Dalga & 4 Boss Filosu)</color>\n" +
+                                  "<size=88%><color=#A0C4DF>Nano-Jet, Siber Cellat, Kimeras Proto-9</color></size>";
                     break;
                 case StoryCampaignManager.CampaignType.SkyMercenary:
-                    bossInfo = "<color=#E67E22><b>Hedef:</b> Karanlık Kontratlar & Aslar | <b>Boss:</b> DEMİR YÜREK, GÖLGE PENÇE, SAVAŞ LORU VOLK</color>";
+                    missionInfo = "<color=#E67E22><b>Hedef:</b> Korsan Kartel Avı (20 Dalga & 4 Boss Filosu)</color>\n" +
+                                  "<size=88%><color=#A0C4DF>Demir Yürek, Gölge Pençe, Savaş Lordu Volk</color></size>";
                     break;
             }
 
-            _briefingTMP.text = $"<color=#F1C40F><b>[{campName}]</b></color>\n" +
-                                $"<size=88%>{slogan}\n{bossInfo}</size>";
+            _briefingTMP.text = $"<color=#F1C40F><b>{slogan}</b></color>\n{missionInfo}";
         }
     }
 
