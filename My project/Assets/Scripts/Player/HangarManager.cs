@@ -95,9 +95,9 @@ public class HangarManager : MonoBehaviour
     public static readonly int[] DroneUpgradeCosts = { 150, 300, 500, 800 }; // 1->2, 2->3, 3->4, 4->5
 
     // Sandık Maliyetleri
-    public const int CRATE_BRONZE_COST = 150;
-    public const int CRATE_SILVER_COST = 450;
-    public const int CRATE_GOLD_COST = 1100;
+    public const int CRATE_BRONZE_COST = 500;
+    public const int CRATE_SILVER_COST = 2000;
+    public const int CRATE_GOLD_COST = 6000;
 
     private void Awake()
     {
@@ -459,7 +459,7 @@ public class HangarManager : MonoBehaviour
         {
             if (roll < 0.40f)
             {
-                int goldWon = UnityEngine.Random.Range(20, 45);
+                int goldWon = UnityEngine.Random.Range(100, 250);
                 gold += goldWon;
                 reward.title = "BRONZ KASA İKRAMİYESİ!";
                 reward.description = $"+{goldWon} Altın kasaya aktarıldı!";
@@ -485,7 +485,7 @@ public class HangarManager : MonoBehaviour
         {
             if (roll < 0.40f)
             {
-                int goldWon = UnityEngine.Random.Range(60, 120);
+                int goldWon = UnityEngine.Random.Range(400, 900);
                 gold += goldWon;
                 reward.title = "GÜMÜŞ KASA BÜYÜK ÖDÜL!";
                 reward.description = $"+{goldWon} Altın kasaya aktarıldı!";
@@ -520,7 +520,7 @@ public class HangarManager : MonoBehaviour
         {
             if (roll < 0.35f)
             {
-                int goldWon = UnityEngine.Random.Range(180, 350);
+                int goldWon = UnityEngine.Random.Range(1200, 2500);
                 gold += goldWon;
                 reward.title = "EFSANEVİ BÜYÜK İKRAMİYE!";
                 reward.description = $"+{goldWon} Altın doğrudan kasaya aktarıldı!";

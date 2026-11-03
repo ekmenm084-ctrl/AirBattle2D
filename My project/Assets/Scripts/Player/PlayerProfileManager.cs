@@ -81,7 +81,7 @@ public class PlayerProfileManager : MonoBehaviour
     public static int GetExpRequiredForLevel(int lvl)
     {
         int l = Mathf.Max(1, lvl);
-        return 100 + (l - 1) * 120;
+        return (int)(150 + (l - 1) * 120 + Mathf.Pow(l - 1, 1.6f) * 35f);
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public class PlayerProfileManager : MonoBehaviour
         totalKills++;
         if (isBoss) totalBosses++;
 
-        int expGain = isBoss ? 250 : (isElite ? 75 : 35);
+        int expGain = isBoss ? 80 : (isElite ? 25 : 10);
         string tag = isBoss ? "BOSS İMHA EDİLDİ" : (isElite ? "ELİT DÜŞMAN" : "DÜŞMAN İMHA");
         AddExp(expGain, tag);
     }
@@ -166,7 +166,7 @@ public class PlayerProfileManager : MonoBehaviour
     public void RecordWaveCleared(int wave)
     {
         totalWavesCleared++;
-        int expGain = 80 + (wave * 5);
+        int expGain = 20 + (wave * 2);
         AddExp(expGain, $"DALGA {wave} GEÇİLDİ");
     }
 
