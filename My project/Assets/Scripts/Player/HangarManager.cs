@@ -57,7 +57,7 @@ public class HangarManager : MonoBehaviour
 
     [Header("Mevcut Durum")]
     public AircraftType activeAircraft = AircraftType.F16Viper;
-    public int gold = 150; // Başlangıç hoş geldin hediyesi
+    public int gold = 25; // Başlangıç hoş geldin hediyesi
     public int totalCratesOpened = 0;
 
     [Header("Kalıcı Atölye Seviyeleri (Maks 5)")]
@@ -126,7 +126,7 @@ public class HangarManager : MonoBehaviour
 
     public void LoadHangarData()
     {
-        gold = PlayerPrefs.GetInt(PREF_GOLD, 150);
+        gold = PlayerPrefs.GetInt(PREF_GOLD, 25);
         activeAircraft = (AircraftType)PlayerPrefs.GetInt(PREF_ACTIVE_PLANE, (int)AircraftType.F16Viper);
 
         armorLevel = Mathf.Clamp(PlayerPrefs.GetInt(PREF_LVL_ARMOR, 0), 0, MAX_UPGRADE_LEVEL);
@@ -459,7 +459,7 @@ public class HangarManager : MonoBehaviour
         {
             if (roll < 0.40f)
             {
-                int goldWon = UnityEngine.Random.Range(180, 320);
+                int goldWon = UnityEngine.Random.Range(20, 45);
                 gold += goldWon;
                 reward.title = "BRONZ KASA İKRAMİYESİ!";
                 reward.description = $"+{goldWon} Altın kasaya aktarıldı!";
@@ -485,7 +485,7 @@ public class HangarManager : MonoBehaviour
         {
             if (roll < 0.40f)
             {
-                int goldWon = UnityEngine.Random.Range(500, 1100);
+                int goldWon = UnityEngine.Random.Range(60, 120);
                 gold += goldWon;
                 reward.title = "GÜMÜŞ KASA BÜYÜK ÖDÜL!";
                 reward.description = $"+{goldWon} Altın kasaya aktarıldı!";
@@ -520,7 +520,7 @@ public class HangarManager : MonoBehaviour
         {
             if (roll < 0.35f)
             {
-                int goldWon = UnityEngine.Random.Range(1400, 2800);
+                int goldWon = UnityEngine.Random.Range(180, 350);
                 gold += goldWon;
                 reward.title = "EFSANEVİ BÜYÜK İKRAMİYE!";
                 reward.description = $"+{goldWon} Altın doğrudan kasaya aktarıldı!";

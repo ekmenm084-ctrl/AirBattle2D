@@ -397,7 +397,7 @@ public class GameManager : MonoBehaviour
             {
                 // BOSS RUSH TAMAMLANDI!
                 gameEnded = true;
-                int rushReward = 1500;
+                int rushReward = 150;
                 HangarManager.EnsureInstance()?.AddGold(rushReward);
                 sessionGoldEarned += rushReward;
 
@@ -413,8 +413,8 @@ public class GameManager : MonoBehaviour
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
-                HangarManager.EnsureInstance()?.AddGold(1000);
-                sessionGoldEarned += 1000;
+                HangarManager.EnsureInstance()?.AddGold(100);
+                sessionGoldEarned += 100;
 
                 PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
                 PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(20);
@@ -429,7 +429,7 @@ public class GameManager : MonoBehaviour
 
                 if (wasBoss)
                 {
-                    int bossReward = (CurrentMode == GameMode.BossRush) ? 350 : 250;
+                    int bossReward = (CurrentMode == GameMode.BossRush) ? 35 : 25;
                     HangarManager.EnsureInstance()?.AddGold(bossReward);
                     sessionGoldEarned += bossReward;
 
@@ -443,7 +443,7 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    int killReward = 25 + (justDefeated * 2);
+                    int killReward = 2 + (justDefeated / 4);
                     HangarManager.EnsureInstance()?.AddGold(killReward);
                     sessionGoldEarned += killReward;
 

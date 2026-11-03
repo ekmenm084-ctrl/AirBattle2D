@@ -79,7 +79,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         string rankTitle = PlayerProfileManager.GetRankTitle(newLevel);
-        string msg = $"🎖️ <b>RÜTBE YÜKSELDİ! SEVİYE {newLevel}</b>\n<color=#F1C40F>YENİ RÜTBE: {rankTitle.ToUpper()} (+{goldReward}G)</color>";
+        string msg = $"<b>[TERFİ] RÜTBE YÜKSELDİ! SEVİYE {newLevel}</b>\n<color=#F1C40F>YENİ RÜTBE: {rankTitle.ToUpper()} (+{goldReward}G)</color>";
         gameUI?.ShowWaveAlert(msg, new Color(1f, 0.85f, 0.2f), 3.0f);
     }
 
