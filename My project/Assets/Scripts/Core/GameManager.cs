@@ -88,6 +88,24 @@ public class GameManager : MonoBehaviour
 
         FindPlanesIfNull();
 
+        if (plane1Health != null)
+        {
+            var p1Controller = plane1Health.GetComponent<PlaneController>();
+            if (p1Controller != null)
+            {
+                HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p1Controller);
+            }
+            DroneManager.EnsureInstance()?.SpawnDronesForPlayer(plane1Health.transform);
+        }
+
+        Canvas mainCanvas = FindObjectOfType<Canvas>();
+        if (mainCanvas != null)
+        {
+            PlayerProfileUI.EnsureUI()?.SetupHUDProfileBadge(mainCanvas.transform);
+            PlayerProfileUI.Instance?.SetHUDBadgeActive(true);
+            PlayerProfileUI.Instance?.SetBadgeActive(false);
+        }
+
         if (plane2Health != null)
         {
             _plane2OriginalScale = plane2Health.transform.localScale;
@@ -383,6 +401,9 @@ public class GameManager : MonoBehaviour
                 HangarManager.EnsureInstance()?.AddGold(rushReward);
                 sessionGoldEarned += rushReward;
 
+                PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
+                PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(4);
+
                 if (gameOverUI != null)
                     gameOverUI.Show($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!");
 
@@ -394,6 +415,9 @@ public class GameManager : MonoBehaviour
                 gameEnded = true;
                 HangarManager.EnsureInstance()?.AddGold(1000);
                 sessionGoldEarned += 1000;
+
+                PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
+                PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(20);
 
                 StoryCampaignManager.AdvanceToNextCampaign();
                 StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() => { });
@@ -409,6 +433,9 @@ public class GameManager : MonoBehaviour
                     HangarManager.EnsureInstance()?.AddGold(bossReward);
                     sessionGoldEarned += bossReward;
 
+                    PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
+                    PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(justDefeated);
+
                     var gameUI = FindObjectOfType<GameUI>();
                     gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ! (+{bossReward}G)\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
 
@@ -419,6 +446,10 @@ public class GameManager : MonoBehaviour
                     int killReward = 25 + (justDefeated * 2);
                     HangarManager.EnsureInstance()?.AddGold(killReward);
                     sessionGoldEarned += killReward;
+
+                    bool isElite = (justDefeated % 5 == 4);
+                    PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: false, isElite: isElite);
+                    PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(justDefeated);
 
                     plane1Health?.Heal(35f);
 
@@ -490,6 +521,9 @@ public class GameManager : MonoBehaviour
             plane1Health.ResetHealth(100f);
             plane1Health.TriggerInvulnerability(1.8f);
 
+            // Destek dronelarını yeniden kanatlara yerleştir
+            DroneManager.EnsureInstance()?.SpawnDronesForPlayer(plane1Health.transform);
+
             var gameUI = FindObjectOfType<GameUI>();
             gameUI?.UpdateHealthBars();
         }
@@ -509,18 +543,24 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
 
+        DroneManager.EnsureInstance()?.ClearDrones();
+        PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void RestartGame()
     {
+        DroneManager.EnsureInstance()?.ClearDrones();
+        PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void GoToMainMenu()
     {
+        DroneManager.EnsureInstance()?.ClearDrones();
+        PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }

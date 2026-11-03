@@ -11,6 +11,8 @@ using TMPro;
 /// </summary>
 public class MainMenuManager : MonoBehaviour
 {
+    public static MainMenuManager Instance { get; private set; }
+
     [Header("Paneller")]
     public GameObject mainPanel;        // Ana Menü
     public GameObject modesPanel;       // Mod Seçimi
@@ -54,10 +56,25 @@ public class MainMenuManager : MonoBehaviour
 
     private GameObject _titleObject;
     private Button _hangarButton;
+    private Button _cratesButton;
     private Button _quickDiffButton;
+
+    public static void MakeFullScreenRect(RectTransform rt)
+    {
+        if (rt == null) return;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = Vector2.zero;
+        rt.localScale = Vector3.one;
+    }
 
     private void Awake()
     {
+        Instance = this;
         Time.timeScale = 0f;
     }
 
@@ -74,10 +91,25 @@ public class MainMenuManager : MonoBehaviour
         AudioManager.EnsureInstance();
         StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen();
 
+        MakeFullScreenRect(mainPanel?.GetComponent<RectTransform>());
+        MakeFullScreenRect(modesPanel?.GetComponent<RectTransform>());
+        MakeFullScreenRect(settingsPanel?.GetComponent<RectTransform>());
+
         TryLoadBackgroundArt();
         SetupAviationHeader();
         FormatMilitaryButtons();
+        SetupMainPanelQuitButton();
+        SetupModesHeader();
+        SetupSettingsHeader();
         SetupCampaignSelectionUI();
+
+        PlayerProfileUI.EnsureUI()?.SetupMainMenuProfileBadge(mainPanel != null ? mainPanel.transform : transform);
+
+        if (playButton == null && mainPanel != null)
+        {
+            Transform pBtn = mainPanel.transform.Find("playButton") ?? mainPanel.transform.Find("PlayButton");
+            if (pBtn != null) playButton = pBtn.GetComponent<Button>();
+        }
 
         if (playButton != null)
         {
@@ -174,30 +206,37 @@ public class MainMenuManager : MonoBehaviour
 
     private void FormatMilitaryButtons()
     {
-        FormatBtn(playButton, 115f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 500f, 70f);
+        FormatBtn(playButton, 130f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 68f);
 
-        _hangarButton = CreateOrFindMainButton("HangarButton", 46f, "🛩️ HANGAR & ATÖLYE", new Color(0.72f, 0.48f, 0.12f), 500f, 58f);
+        _hangarButton = CreateOrFindMainButton("HangarButton", 64f, "HANGAR VE TEKNİK ATÖLYE", new Color(0.18f, 0.48f, 0.72f), 520f, 54f);
         if (_hangarButton != null)
         {
             _hangarButton.onClick.RemoveAllListeners();
             _hangarButton.onClick.AddListener(OpenHangarPanel);
         }
 
-        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -20f, "⚡ ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 500f, 58f);
+        _cratesButton = CreateOrFindMainButton("CratesButton", 2f, "İKMAL VE GANİMET SANDIKLARI", new Color(0.72f, 0.48f, 0.12f), 520f, 54f);
+        if (_cratesButton != null)
+        {
+            _cratesButton.onClick.RemoveAllListeners();
+            _cratesButton.onClick.AddListener(OpenCratesPanel);
+        }
+
+        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -60f, "ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 520f, 54f);
         if (_quickDiffButton != null)
         {
             _quickDiffButton.onClick.RemoveAllListeners();
             _quickDiffButton.onClick.AddListener(CycleDifficulty);
         }
 
-        FormatBtn(modesButton, -86f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 500f, 58f);
-        FormatBtn(settingsButton, -152f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 500f, 58f);
+        FormatBtn(modesButton, -122f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 520f, 54f);
+        FormatBtn(settingsButton, -184f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 520f, 54f);
 
         // Ayarlar Paneli Zorluk Butonları (Kolay, Normal, Zor)
         FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 480f, 52f);
         FormatBtn(normalButton, 75f, "YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), 480f, 52f);
         FormatBtn(hardButton, 15f, "AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), 480f, 52f);
-        FormatBtn(backFromSettingsButton, -210f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 300f, 46f);
+        FormatBottomLeftBackBtn(backFromSettingsButton);
     }
 
     private void CycleDifficulty()
@@ -252,7 +291,30 @@ public class MainMenuManager : MonoBehaviour
         if (modesPanel != null) modesPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (_titleObject != null) _titleObject.SetActive(false);
+        if (backgroundImage != null) backgroundImage.enabled = true;
+
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+
         HangarUI.EnsureUI()?.OpenHangar();
+    }
+
+    public void OpenCratesPanel()
+    {
+        if (mainPanel != null) mainPanel.SetActive(false);
+        if (modesPanel != null) modesPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (_titleObject != null) _titleObject.SetActive(false);
+        if (backgroundImage != null) backgroundImage.enabled = true;
+
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+
+        CratesUI.EnsureUI()?.OpenCratesPanel(() => OpenMainPanel());
     }
 
     private void FormatBtn(Button btn, float posY, string text, Color color, float width, float height, float posX = 0f)
@@ -286,12 +348,159 @@ public class MainMenuManager : MonoBehaviour
         }
     }
 
+    private void FormatBottomLeftBackBtn(Button btn)
+    {
+        if (btn == null) return;
+        RectTransform rt = btn.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.zero;
+            rt.pivot = Vector2.zero;
+            rt.anchoredPosition = new Vector2(40f, 25f);
+            rt.sizeDelta = new Vector2(260f, 54f);
+        }
+        btn.transform.SetAsLastSibling();
+
+        Image img = btn.GetComponent<Image>();
+        if (img != null)
+        {
+            img.color = new Color(0.30f, 0.32f, 0.36f);
+        }
+
+        Outline outline = btn.GetComponent<Outline>();
+        if (outline == null) outline = btn.gameObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0.55f, 0.60f, 0.68f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp != null)
+        {
+            tmp.text = "< GERİ DÖN";
+            tmp.fontSize = 22f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.color = Color.white;
+            tmp.alignment = TextAlignmentOptions.Center;
+        }
+    }
+
+    private void SetupMainPanelQuitButton()
+    {
+        if (mainPanel == null) return;
+        Transform existing = mainPanel.transform.Find("QuitButton");
+        GameObject btnObj = existing != null ? existing.gameObject : new GameObject("QuitButton");
+        btnObj.transform.SetParent(mainPanel.transform, false);
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
+        if (rt == null) rt = btnObj.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = Vector2.zero;
+        rt.anchoredPosition = new Vector2(40f, 25f);
+        rt.sizeDelta = new Vector2(260f, 54f);
+        btnObj.transform.SetAsLastSibling();
+
+        Image img = btnObj.GetComponent<Image>();
+        if (img == null) img = btnObj.AddComponent<Image>();
+        img.color = new Color(0.30f, 0.32f, 0.36f);
+
+        Outline outline = btnObj.GetComponent<Outline>();
+        if (outline == null) outline = btnObj.AddComponent<Outline>();
+        outline.effectColor = new Color(0.55f, 0.60f, 0.68f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        Button btn = btnObj.GetComponent<Button>();
+        if (btn == null) btn = btnObj.AddComponent<Button>();
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(() =>
+        {
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+            #else
+            Application.Quit();
+            #endif
+        });
+
+        Transform textChild = btnObj.transform.Find("Text");
+        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("Text");
+        textObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform textRt = textObj.GetComponent<RectTransform>();
+        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = Vector2.zero;
+        textRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
+        if (tmp == null) tmp = textObj.AddComponent<TextMeshProUGUI>();
+        tmp.text = "< OYUNDAN ÇIK";
+        tmp.fontSize = 22f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.color = Color.white;
+        tmp.alignment = TextAlignmentOptions.Center;
+    }
+
+    private void SetupModesHeader()
+    {
+        if (modesPanel == null) return;
+        Transform existing = modesPanel.transform.Find("ModesHeaderTitle");
+        GameObject titleObj = existing != null ? existing.gameObject : new GameObject("ModesHeaderTitle");
+        titleObj.transform.SetParent(modesPanel.transform, false);
+
+        RectTransform rt = titleObj.GetComponent<RectTransform>();
+        if (rt == null) rt = titleObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -22f);
+        rt.sizeDelta = new Vector2(900f, 65f);
+
+        TextMeshProUGUI tmp = titleObj.GetComponent<TextMeshProUGUI>();
+        if (tmp == null) tmp = titleObj.AddComponent<TextMeshProUGUI>();
+        tmp.text = "<b>OYUN MODLARI VE KAMPANYA SEFERİ</b>\n<size=55%><color=#8AB4F8>Hava muharebesi senaryosu veya sınırsız it dalaşı seçin.</color></size>";
+        tmp.fontSize = 26f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+    }
+
+    private void SetupSettingsHeader()
+    {
+        if (settingsPanel == null) return;
+        Transform existing = settingsPanel.transform.Find("SettingsHeaderTitle");
+        GameObject titleObj = existing != null ? existing.gameObject : new GameObject("SettingsHeaderTitle");
+        titleObj.transform.SetParent(settingsPanel.transform, false);
+
+        RectTransform rt = titleObj.GetComponent<RectTransform>();
+        if (rt == null) rt = titleObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -22f);
+        rt.sizeDelta = new Vector2(900f, 65f);
+
+        TextMeshProUGUI tmp = titleObj.GetComponent<TextMeshProUGUI>();
+        if (tmp == null) tmp = titleObj.AddComponent<TextMeshProUGUI>();
+        tmp.text = "<b>UÇUŞ VE SES AYARLARI</b>\n<size=55%><color=#8AB4F8>Pilot rütbesi ve kokpit ses seviyelerini ayarlayın.</color></size>";
+        tmp.fontSize = 26f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+    }
+
     public void OpenMainPanel()
     {
+        if (backgroundImage != null) backgroundImage.enabled = true;
         if (mainPanel != null) mainPanel.SetActive(true);
         if (modesPanel != null) modesPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (_titleObject != null) _titleObject.SetActive(true);
+
+        PlayerProfileUI.Instance?.SetBadgeActive(true);
+        PlayerProfileUI.Instance?.RefreshBadgeVisuals();
+
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
     }
 
     public void OpenModesPanel()
@@ -299,6 +508,14 @@ public class MainMenuManager : MonoBehaviour
         if (mainPanel != null) mainPanel.SetActive(false);
         if (modesPanel != null) modesPanel.SetActive(true);
         if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (_titleObject != null) _titleObject.SetActive(false);
+
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+
         UpdateUIFeedback();
     }
 
@@ -311,6 +528,14 @@ public class MainMenuManager : MonoBehaviour
             settingsPanel.SetActive(true);
             SetupMenuSoundControls();
         }
+        if (_titleObject != null) _titleObject.SetActive(false);
+
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+
         UpdateUIFeedback();
     }
 
@@ -395,7 +620,7 @@ public class MainMenuManager : MonoBehaviour
         // 9. Geri Dön Butonu
         if (backFromModesButton != null)
         {
-            FormatBtn(backFromModesButton, -232f, "GERİ DÖN", new Color(0.35f, 0.35f, 0.35f), 300f, 44f);
+            FormatBottomLeftBackBtn(backFromModesButton);
         }
     }
 
@@ -886,6 +1111,10 @@ public class MainMenuManager : MonoBehaviour
 
         // Menüyü kapat ve savaşı başlat
         gameObject.SetActive(false);
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
 
         if (inGameUI != null) inGameUI.SetActive(true);
 
@@ -914,15 +1143,29 @@ public class MainMenuManager : MonoBehaviour
 
         if (GameManager.Instance != null)
             GameManager.Instance.ApplyGameMode();
+        else
+        {
+            var gm = FindObjectOfType<GameManager>();
+            gm?.ApplyGameMode();
+        }
 
         // Kendi uçağımızın joystick & ateş butonu açık, düşman uçağının kontrolleri sadece İkili Online modda açık
         SetTouchControlsVisibility(showP1Controls: true, showEnemyControls: isOnline);
 
-        var audioUI = FindObjectOfType<AudioSettingsUI>();
-        if (audioUI != null && audioUI.soundButtonObj != null)
+        // Pause / Durdur Butonunu Kesin Olarak Başlat ve En Öne Al
+        var audioUI = AudioSettingsUI.EnsureInstance();
+        if (audioUI != null)
         {
-            audioUI.soundButtonObj.SetActive(true);
+            audioUI.EnsureUI();
+            if (audioUI.soundButtonObj != null)
+            {
+                audioUI.soundButtonObj.SetActive(true);
+                audioUI.soundButtonObj.transform.SetAsLastSibling();
+            }
         }
+
+        // Ateş Butonunu Kesinleştir ve En Öne Al
+        FireButton.EnsureP1FireButton();
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.SetHUDVisibility(true);
@@ -968,23 +1211,37 @@ public class MainMenuManager : MonoBehaviour
             if (j != null)
             {
                 if (j.isPlayer1)
+                {
                     j.gameObject.SetActive(showP1Controls);
+                    if (showP1Controls) j.transform.SetAsLastSibling();
+                }
                 else
+                {
                     j.gameObject.SetActive(showEnemyControls);
+                }
             }
         }
 
         // 3. Ateş Butonları (Kendi uçağımız P1, düşman P2)
-        var fireButtons = FindObjectsOfType<FireButton>(true);
-        foreach (var fb in fireButtons)
+        if (showP1Controls)
         {
-            if (fb != null)
+            FireButton.EnsureP1FireButton();
+        }
+        else
+        {
+            var fireButtons = FindObjectsOfType<FireButton>(true);
+            foreach (var fb in fireButtons)
             {
-                if (fb.isPlayer1)
-                    fb.gameObject.SetActive(showP1Controls);
-                else
-                    fb.gameObject.SetActive(showEnemyControls);
+                if (fb != null && fb.isPlayer1)
+                    fb.gameObject.SetActive(false);
             }
+        }
+
+        var p2FireButtons = FindObjectsOfType<FireButton>(true);
+        foreach (var fb in p2FireButtons)
+        {
+            if (fb != null && !fb.isPlayer1)
+                fb.gameObject.SetActive(showEnemyControls);
         }
 
         // 4. Füze Butonu (P1 Özel Yeteneği)

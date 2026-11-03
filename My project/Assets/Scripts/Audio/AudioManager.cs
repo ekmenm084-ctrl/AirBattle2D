@@ -157,6 +157,27 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Seviye atlandığında veya büyük ödül kazanıldığında zafer fanfarı sesi oynatır.
+    /// </summary>
+    public void PlayRewardFanfare()
+    {
+        if (isMuted || _sfxSource == null) return;
+
+        AudioClip clip = Resources.Load<AudioClip>("reward_fanfare");
+        if (clip == null) clip = Resources.Load<AudioClip>("fanfare");
+        if (clip != null)
+        {
+            _sfxSource.pitch = 1.0f;
+            _sfxSource.PlayOneShot(clip, sfxVolume);
+        }
+        else if (gunfireClip != null)
+        {
+            _sfxSource.pitch = 1.85f;
+            _sfxSource.PlayOneShot(gunfireClip, sfxVolume * 0.75f);
+        }
+    }
+
+    /// <summary>
     /// Arka plan savaş müziğinin ses düzeyini ayarlar (0.0 - 1.0).
     /// </summary>
     public void SetMusicVolume(float volume)

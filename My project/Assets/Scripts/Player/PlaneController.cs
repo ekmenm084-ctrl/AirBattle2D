@@ -63,6 +63,11 @@ public class PlaneController : MonoBehaviour
                 }
             }
         }
+
+        if (isPlayer1)
+        {
+            HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(this);
+        }
     }
 
     private void Update()

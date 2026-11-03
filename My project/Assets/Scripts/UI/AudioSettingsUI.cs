@@ -53,9 +53,12 @@ public class AudioSettingsUI : MonoBehaviour
 
     private void Update()
     {
-        // Ana menü açıkken durdurma butonunu gizle, sadece savaşta sağ üstte göster
+        // Ana menü veya alt menüler açıkken durdurma butonunu gizle, sadece savaşta sağ üstte göster
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
-        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy) ||
+                          (HangarUI.Instance != null && HangarUI.Instance.gameObject.activeInHierarchy) ||
+                          (CratesUI.Instance != null && CratesUI.Instance.gameObject.activeInHierarchy) ||
+                          (InventoryUI.Instance != null && InventoryUI.Instance.gameObject.activeInHierarchy);
 
         if (soundButtonObj != null)
         {
@@ -63,6 +66,10 @@ public class AudioSettingsUI : MonoBehaviour
             if (soundButtonObj.activeSelf != shouldShow)
             {
                 soundButtonObj.SetActive(shouldShow);
+                if (shouldShow)
+                {
+                    soundButtonObj.transform.SetAsLastSibling();
+                }
             }
         }
 
@@ -118,7 +125,7 @@ public class AudioSettingsUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        // 1. Sağ Üst Köşe Şeffaf Pause İkon Butonu
+        // 1. Sağ Üst Köşe Orijinal Şeffaf Pause İkon Butonu
         if (soundButtonObj == null)
         {
             Transform existingBtn = transform.Find("SoundToggleButton");
@@ -133,7 +140,9 @@ public class AudioSettingsUI : MonoBehaviour
             }
         }
 
-        // Buton boyutunu ve konumunu şeffaf pause ikonuna göre ayarla (46x46 piksel)
+        soundButtonObj.SetActive(true);
+
+        // İkon boyutunu ve konumunu şık ve orijinal pause ikonuna göre ayarla
         RectTransform rt = soundButtonObj.GetComponent<RectTransform>();
         if (rt == null) rt = soundButtonObj.AddComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
@@ -150,17 +159,21 @@ public class AudioSettingsUI : MonoBehaviour
         {
             btnBg.sprite = pauseSprite;
             btnBg.color = Color.white;
-        }
-        else
-        {
-            btnBg.color = new Color(0f, 0.85f, 1f, 0.85f);
+            btnBg.preserveAspect = true;
         }
 
-        // Varsa eski kutu outline'ını kaldır (ikonun kendi neon ışıması var)
+        // Varsa kutu outline'ını kaldır (ikonun kendi şık neon ışıması vardır)
         Outline outline = soundButtonObj.GetComponent<Outline>();
         if (outline != null)
         {
             Destroy(outline);
+        }
+
+        // Varsa yazı objesini kaldır (sadece profesyonel grafik ikon gözüksün)
+        Transform iconChild = soundButtonObj.transform.Find("IconText");
+        if (iconChild != null)
+        {
+            Destroy(iconChild.gameObject);
         }
 
         Button btn = soundButtonObj.GetComponent<Button>();
@@ -176,12 +189,7 @@ public class AudioSettingsUI : MonoBehaviour
         colors.selectedColor = Color.white;
         btn.colors = colors;
 
-        // Varsa eski "|| DURDUR" yazı objesini kaldır
-        Transform iconChild = soundButtonObj.transform.Find("IconText");
-        if (iconChild != null)
-        {
-            Destroy(iconChild.gameObject);
-        }
+        soundButtonObj.transform.SetAsLastSibling();
 
         // 2. Durdurma & Ses Paneli
         if (settingsPanelObj == null)

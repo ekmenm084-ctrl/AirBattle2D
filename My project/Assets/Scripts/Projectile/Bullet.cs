@@ -74,6 +74,16 @@ public class Bullet : MonoBehaviour
     {
         if (target == owner) return;
 
+        // Drona çarptı mı? (Düşman mermisi dronu vurup hasar verebilir)
+        DroneCompanion drone = target.GetComponent<DroneCompanion>();
+        if (drone != null && drone.GetPlayer() != null && drone.GetPlayer().gameObject != owner)
+        {
+            VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.7f, 0.2f));
+            drone.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
+
         PlaneHealth health = target.GetComponent<PlaneHealth>();
         if (health != null)
         {
