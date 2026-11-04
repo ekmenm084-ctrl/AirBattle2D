@@ -176,11 +176,11 @@ public class PlayerProfileManager : MonoBehaviour
     public float GetDroneDamageMultiplier()
     {
         float bonus = 1.0f;
-        if (level >= 20) bonus += 0.10f; // +%10 (MK-1 İzci Açılışı)
-        if (level >= 30) bonus += 0.15f; // +%15 (MK-2 Avcı Açılışı)
-        if (level >= 50) bonus += 0.25f; // +%25 (MK-3 Taarruz Açılışı)
-        if (level >= 75) bonus += 0.35f; // +%35 (MK-4 Valkyrie Açılışı)
-        if (level >= 100) bonus += 0.50f; // +%50 (MK-5 Titan Aegis Açılışı)
+        if (level >= 1)  bonus += 0.05f; // +%5  (MK-1 İzci Açılışı - Seviye 1+)
+        if (level >= 20) bonus += 0.10f; // +%10 (MK-2 Avcı Açılışı - Seviye 20+)
+        if (level >= 30) bonus += 0.15f; // +%15 (MK-3 Taarruz Açılışı - Seviye 30+)
+        if (level >= 50) bonus += 0.25f; // +%25 (MK-4 Valkyrie Açılışı - Seviye 50+)
+        if (level >= 75) bonus += 0.40f; // +%40 (MK-5 Titan Aegis Açılışı - Seviye 75+)
         return bonus;
     }
 

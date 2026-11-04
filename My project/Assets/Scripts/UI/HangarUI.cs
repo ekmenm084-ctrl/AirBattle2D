@@ -18,21 +18,16 @@ public class HangarUI : MonoBehaviour
     private GameObject _panelRoot;
     private TextMeshProUGUI _goldTMP;
 
-    // 3 Ferah Sekme
-    public enum HangarTab { Planes, Workshop, Drones }
+    // 2 Ferah Sekme (Uçak Filosu & Destek Droneları)
+    public enum HangarTab { Planes, Drones }
     private HangarTab _currentTab = HangarTab.Planes;
 
-    private Button _tabPlanesBtn, _tabWorkshopBtn, _tabDronesBtn;
-    private GameObject _planesContainer, _workshopContainer, _dronesContainer;
+    private Button _tabPlanesBtn, _tabDronesBtn;
+    private GameObject _planesContainer, _dronesContainer;
 
     // Tab 1: Uçak Filosu
     private Button _f16Btn, _a10Btn, _f22Btn;
     private TextMeshProUGUI _f16BtnTMP, _a10BtnTMP, _f22BtnTMP;
-
-    // Tab 2: Atölye Geliştirmeleri
-    private TextMeshProUGUI _armorLvlTMP, _damageLvlTMP, _speedLvlTMP, _critLvlTMP;
-    private Button _armorUpgBtn, _damageUpgBtn, _speedUpgBtn, _critUpgBtn;
-    private TextMeshProUGUI _armorCostTMP, _damageCostTMP, _speedCostTMP, _critCostTMP;
 
     // Tab 3: Destek Droneları (5 Aşamalı Model & Can/Dayanıklılık)
     private TextMeshProUGUI _droneSlotsStatusTMP;
@@ -152,11 +147,9 @@ public class HangarUI : MonoBehaviour
         _currentTab = tab;
 
         if (_planesContainer != null) _planesContainer.SetActive(tab == HangarTab.Planes);
-        if (_workshopContainer != null) _workshopContainer.SetActive(tab == HangarTab.Workshop);
         if (_dronesContainer != null) _dronesContainer.SetActive(tab == HangarTab.Drones);
 
         UpdateTabButtonVisual(_tabPlanesBtn, "UÇAK FİLOSU", tab == HangarTab.Planes);
-        UpdateTabButtonVisual(_tabWorkshopBtn, "ATÖLYE GELİŞTİRMELERİ", tab == HangarTab.Workshop);
         UpdateTabButtonVisual(_tabDronesBtn, "DESTEK DRONELARI", tab == HangarTab.Drones);
 
         RefreshAllVisuals();
@@ -192,13 +185,7 @@ public class HangarUI : MonoBehaviour
         UpdatePlaneCard(HangarManager.AircraftType.A10TankBuster, _a10Btn, _a10BtnTMP, HangarManager.A10_UNLOCK_COST);
         UpdatePlaneCard(HangarManager.AircraftType.F22Raptor, _f22Btn, _f22BtnTMP, HangarManager.F22_UNLOCK_COST);
 
-        // 3. Tab 2: Atölye
-        UpdateUpgradeRow("ZIRH", hm.armorLevel, HangarManager.ArmorCosts, _armorLvlTMP, _armorUpgBtn, _armorCostTMP, hm.gold);
-        UpdateUpgradeRow("HASAR", hm.damageLevel, HangarManager.DamageCosts, _damageLvlTMP, _damageUpgBtn, _damageCostTMP, hm.gold);
-        UpdateUpgradeRow("HIZ", hm.speedLevel, HangarManager.SpeedCosts, _speedLvlTMP, _speedUpgBtn, _speedCostTMP, hm.gold);
-        UpdateUpgradeRow("KRİTİK", hm.criticalLevel, HangarManager.CritCosts, _critLvlTMP, _critUpgBtn, _critCostTMP, hm.gold);
-
-        // 4. Tab 3: Destek Droneları
+        // 3. Tab 2: Destek Droneları
         RefreshDroneTabVisuals(hm);
     }
 
@@ -338,30 +325,6 @@ public class HangarUI : MonoBehaviour
         }
     }
 
-    private void UpdateUpgradeRow(string label, int level, int[] costs, TextMeshProUGUI lvlTMP, Button upgBtn, TextMeshProUGUI costTMP, int currentGold)
-    {
-        if (lvlTMP != null)
-            lvlTMP.text = (level >= HangarManager.MAX_UPGRADE_LEVEL) ? "[MAKS SEVİYE]" : $"[SEVİYE: {level} / {HangarManager.MAX_UPGRADE_LEVEL}]";
-
-        if (upgBtn != null && costTMP != null)
-        {
-            if (level >= HangarManager.MAX_UPGRADE_LEVEL)
-            {
-                costTMP.text = "MAKS SEVİYE";
-                upgBtn.interactable = false;
-                upgBtn.GetComponent<Image>().color = new Color(0.28f, 0.28f, 0.28f);
-            }
-            else
-            {
-                int cost = costs[level];
-                costTMP.text = $"GELİŞTİR ({cost}G)";
-                bool canAfford = (currentGold >= cost);
-                upgBtn.interactable = canAfford;
-                upgBtn.GetComponent<Image>().color = canAfford ? new Color(0.18f, 0.55f, 0.32f) : new Color(0.32f, 0.22f, 0.22f);
-            }
-        }
-    }
-
     private void BuildUI()
     {
         Canvas canvas = GetComponentInParent<Canvas>();
@@ -382,16 +345,13 @@ public class HangarUI : MonoBehaviour
         // 1. ÜST PANEL & ALTIN ROZETİ
         BuildHeader();
 
-        // 2. SEKME BUTONLARI (4 SEKMELİ FERAH YERLEŞİM)
+        // 2. SEKME BUTONLARI (UÇAKLAR & DRONELAR)
         BuildTabsHeader();
 
         // 3. Tab 1 Container (Uçak Filosu)
         BuildPlanesContainer();
 
-        // 4. Tab 2 Container (Atölye Geliştirmeleri)
-        BuildWorkshopContainer();
-
-        // 5. Tab 3 Container (Destek Droneları)
+        // 4. Tab 2 Container (Destek Droneları)
         BuildDronesContainer();
 
         // 6. ALT NAVİGASYON (GERİ DÖN, ENVANTER & İKMAL SANDIKLARI)
@@ -412,7 +372,7 @@ public class HangarUI : MonoBehaviour
         hRt.sizeDelta = new Vector2(1000f, 50f);
 
         TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "<b>ASKERİ HANGAR VE TEKNİK ATÖLYE</b>";
+        titleTMP.text = "<b>ASKERİ HANGAR</b>";
         titleTMP.fontSize = 30f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
@@ -496,13 +456,12 @@ public class HangarUI : MonoBehaviour
         tRt.anchorMax = new Vector2(0.5f, 1f);
         tRt.pivot = new Vector2(0.5f, 1f);
         tRt.anchoredPosition = new Vector2(0f, -80f);
-        tRt.sizeDelta = new Vector2(1500f, 50f);
+        tRt.sizeDelta = new Vector2(1200f, 50f);
 
-        float tabWidth = 440f;
-        float spacing = 470f;
+        float tabWidth = 520f;
+        float spacing = 280f;
 
         _tabPlanesBtn = CreateTabButton(tabsObj.transform, -spacing, "UÇAK FİLOSU", () => SwitchTab(HangarTab.Planes), tabWidth);
-        _tabWorkshopBtn = CreateTabButton(tabsObj.transform, 0f, "ATÖLYE GELİŞTİRMELERİ", () => SwitchTab(HangarTab.Workshop), tabWidth);
         _tabDronesBtn = CreateTabButton(tabsObj.transform, spacing, "DESTEK DRONELARI", () => SwitchTab(HangarTab.Drones), tabWidth);
     }
 
@@ -542,7 +501,7 @@ public class HangarUI : MonoBehaviour
         return btn;
     }
 
-    // ==================== TAB 1: UÇAK FİLOSU (FERAH VE GENİŞ) ====================
+    // ==================== TAB 1: UÇAK FİLOSU (KENDİNE HAS GÖRSELLER & FERAH VİTRİN) ====================
     private void BuildPlanesContainer()
     {
         _planesContainer = new GameObject("PlanesContainer");
@@ -554,13 +513,17 @@ public class HangarUI : MonoBehaviour
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
-        float cardY = 20f;
-        float spacingX = 490f;
+        float cardY = 15f;
+        float spacingX = 480f;
 
         CreatePlaneCard("F16_Card", -spacingX, cardY,
             "F-16 VIPER",
-            "DENGELİ TAKTİK AVCI",
-            "Gövde Sağlığı: 100 HP\n\nUçuş Hızı: 8.0 Mach\n\nNamlular: Tekli Taktik Top\n\nMermi Hasarı: 20 DMG\n\nÖzellik: Yüksek manevra kabiliyeti",
+            "DENGELİ ÇEVİK AVCI",
+            "HAVA ÜSTÜNLÜĞÜ JETİ",
+            "<b>Gövde Zırhı:</b> <color=#2ECC71>100 HP</color>  |  <b>Hız:</b> <color=#00E5FF>8.0 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#FFE082>Tekli Taktik Top (20 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Hassas Nokta Atışı Taktik Mermi\n" +
+            "<b>Taktik Üstünlük:</b> Yüksek Çeviklik & İt Dalaşı Hâkimiyeti",
             new Color(0.25f, 0.55f, 0.85f),
             HangarManager.AircraftType.F16Viper,
             out _f16Btn, out _f16BtnTMP);
@@ -568,21 +531,29 @@ public class HangarUI : MonoBehaviour
         CreatePlaneCard("A10_Card", 0f, cardY,
             "A-10 TANK BUSTER",
             "AĞIR ZIRHLI TAARRUZ JETİ",
-            "Gövde Sağlığı: 160 HP\n\nUçuş Hızı: 6.2 Mach\n\nNamlular: 30mm GAU-8 Avenger\n\nMermi Hasarı: 28 DMG\n\nÖzellik: Yüksek dayanıklılık ve ateş gücü",
+            "30MM GAU-8 AVENGER GATLING",
+            "<b>Gövde Zırhı:</b> <color=#2ECC71>160 HP (Titanyum Küvet)</color>  |  <b>Hız:</b> <color=#00E5FF>6.2 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#FF5252>30mm Ağır Döner Top (28 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Ağır Kinetik Zırh Delici Mermi\n" +
+            "<b>Taktik Üstünlük:</b> Yüksek Dayanıklılık & Ağır Ateş Gücü",
             new Color(0.25f, 0.65f, 0.40f),
             HangarManager.AircraftType.A10TankBuster,
             out _a10Btn, out _a10BtnTMP);
 
         CreatePlaneCard("F22_Card", spacingX, cardY,
             "F-22 RAPTOR",
-            "HAYALET SÜPERSONİK JET",
-            "Gövde Sağlığı: 80 HP\n\nUçuş Hızı: 10.5 Mach\n\nNamlular: Çiftli Vulcan Salvosu\n\nMermi Hasarı: 22 x 2 DMG\n\nÖzellik: Çift mermi atışı & süpersonik hız",
+            "5. NESİL HAYALET JET",
+            "SÜPERSONİK ÇİFT VULCAN SALVOSU",
+            "<b>Gövde Zırhı:</b> <color=#E74C3C>80 HP (Hafif Karbon)</color>  |  <b>Hız:</b> <color=#00E5FF>10.5 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#BD10E0>Çift Namlulu Vulcan (22 x 2 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Çift Mermi Salvosu ile Yüksek DPS\n" +
+            "<b>Taktik Üstünlük:</b> Görünmezlik & Yıldırım Baskını",
             new Color(0.60f, 0.35f, 0.75f),
             HangarManager.AircraftType.F22Raptor,
             out _f22Btn, out _f22BtnTMP);
     }
 
-    private void CreatePlaneCard(string objName, float posX, float posY, string name, string subtitle, string stats, Color borderColor, HangarManager.AircraftType type, out Button actionBtn, out TextMeshProUGUI actionBtnTMP)
+    private void CreatePlaneCard(string objName, float posX, float posY, string name, string subtitle, string badgeTag, string stats, Color borderColor, HangarManager.AircraftType type, out Button actionBtn, out TextMeshProUGUI actionBtnTMP)
     {
         GameObject cardObj = new GameObject(objName);
         cardObj.transform.SetParent(_planesContainer.transform, false);
@@ -592,7 +563,7 @@ public class HangarUI : MonoBehaviour
         cRt.anchorMax = new Vector2(0.5f, 0.5f);
         cRt.pivot = new Vector2(0.5f, 0.5f);
         cRt.anchoredPosition = new Vector2(posX, posY);
-        cRt.sizeDelta = new Vector2(440f, 530f);
+        cRt.sizeDelta = new Vector2(440f, 560f);
 
         Image cardBg = cardObj.AddComponent<Image>();
         cardBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
@@ -601,43 +572,89 @@ public class HangarUI : MonoBehaviour
         outline.effectColor = borderColor;
         outline.effectDistance = new Vector2(3f, -3f);
 
-        // Başlık
+        // 1. Başlık & Model Tanımı
         GameObject titleObj = new GameObject("CardTitle");
         titleObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(titleObj);
-        tRt.anchorMin = new Vector2(0f, 0.80f);
+        tRt.anchorMin = new Vector2(0f, 0.86f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.offsetMin = Vector2.zero;
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        tTMP.text = $"<b>{name}</b>\n<size=72%><color=#8AB4F8>{subtitle}</color></size>";
-        tTMP.fontSize = 24f;
+        tTMP.text = $"<b>{name}</b>\n<size=70%><color=#8AB4F8>{subtitle}</color></size>";
+        tTMP.fontSize = 22f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = Color.white;
 
-        // Özellikler
+        // 2. UÇAK GÖRSEL VİTRİNİ (HANGAR PİSTİ & KENDİNE HAS JET GÖRSELİ)
+        GameObject showcaseObj = new GameObject("PlaneVisualShowcase");
+        showcaseObj.transform.SetParent(cardObj.transform, false);
+        RectTransform scRt = GetRect(showcaseObj);
+        scRt.anchorMin = new Vector2(0.06f, 0.51f);
+        scRt.anchorMax = new Vector2(0.94f, 0.85f);
+        scRt.offsetMin = Vector2.zero;
+        scRt.offsetMax = Vector2.zero;
+
+        Image scBg = showcaseObj.AddComponent<Image>();
+        scBg.color = new Color(0.02f, 0.05f, 0.10f, 0.95f);
+
+        Outline scOutline = showcaseObj.AddComponent<Outline>();
+        scOutline.effectColor = new Color(borderColor.r, borderColor.g, borderColor.b, 0.65f);
+        scOutline.effectDistance = new Vector2(2f, -2f);
+
+        // Uçak Resmi (Kendine has detaylı piksel model)
+        GameObject planeImgObj = new GameObject("PlaneSpriteImage");
+        planeImgObj.transform.SetParent(showcaseObj.transform, false);
+        RectTransform imgRt = GetRect(planeImgObj);
+        imgRt.anchorMin = new Vector2(0.5f, 0.5f);
+        imgRt.anchorMax = new Vector2(0.5f, 0.5f);
+        imgRt.pivot = new Vector2(0.5f, 0.5f);
+        imgRt.anchoredPosition = new Vector2(0f, 12f);
+        imgRt.sizeDelta = new Vector2(145f, 145f);
+
+        Image planeImg = planeImgObj.AddComponent<Image>();
+        planeImg.sprite = HangarManager.GetAircraftSprite(type);
+        planeImg.preserveAspect = true;
+
+        // Model Rol Rozeti
+        GameObject tagObj = new GameObject("PlaneTag");
+        tagObj.transform.SetParent(showcaseObj.transform, false);
+        RectTransform tagRt = GetRect(tagObj);
+        tagRt.anchorMin = new Vector2(0f, 0f);
+        tagRt.anchorMax = new Vector2(1f, 0.22f);
+        tagRt.offsetMin = Vector2.zero;
+        tagRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tagTMP = tagObj.AddComponent<TextMeshProUGUI>();
+        tagTMP.text = $"[ {badgeTag} ]";
+        tagTMP.fontSize = 13f;
+        tagTMP.fontStyle = FontStyles.Bold;
+        tagTMP.alignment = TextAlignmentOptions.Center;
+        tagTMP.color = borderColor;
+
+        // 3. Teknik Özellikler
         GameObject statObj = new GameObject("Stats");
         statObj.transform.SetParent(cardObj.transform, false);
         RectTransform sRt = GetRect(statObj);
-        sRt.anchorMin = new Vector2(0.06f, 0.18f);
-        sRt.anchorMax = new Vector2(0.94f, 0.78f);
+        sRt.anchorMin = new Vector2(0.06f, 0.17f);
+        sRt.anchorMax = new Vector2(0.94f, 0.49f);
         sRt.offsetMin = Vector2.zero;
         sRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI sTMP = statObj.AddComponent<TextMeshProUGUI>();
         sTMP.text = stats;
-        sTMP.fontSize = 20f;
-        sTMP.lineSpacing = 5f;
+        sTMP.fontSize = 17f;
+        sTMP.lineSpacing = 3f;
         sTMP.alignment = TextAlignmentOptions.Center;
         sTMP.color = new Color(0.9f, 0.95f, 1f);
 
-        // Aksiyon Butonu
+        // 4. Göreve Seç / Kilidi Aç Butonu
         GameObject btnObj = new GameObject("ActionButton");
         btnObj.transform.SetParent(cardObj.transform, false);
         RectTransform bRt = GetRect(btnObj);
-        bRt.anchorMin = new Vector2(0.08f, 0.04f);
-        bRt.anchorMax = new Vector2(0.92f, 0.16f);
+        bRt.anchorMin = new Vector2(0.08f, 0.035f);
+        bRt.anchorMax = new Vector2(0.92f, 0.145f);
         bRt.offsetMin = Vector2.zero;
         bRt.offsetMax = Vector2.zero;
 
@@ -675,148 +692,7 @@ public class HangarUI : MonoBehaviour
         actionBtnTMP.color = Color.white;
     }
 
-    // ==================== TAB 2: ATÖLYE GELİŞTİRMELERİ (GENİŞ VE FERAH) ====================
-    private void BuildWorkshopContainer()
-    {
-        _workshopContainer = new GameObject("WorkshopContainer");
-        _workshopContainer.transform.SetParent(_panelRoot.transform, false);
-
-        RectTransform rt = GetRect(_workshopContainer);
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-
-        float startY = 160f;
-        float rowSpacing = 95f;
-
-        CreateUpgradeRow("[ZIRH] TİTANYUM GÖVDE VE BALİSTİK KORUMA (+15 HP)", startY,
-            out _armorLvlTMP, out _armorUpgBtn, out _armorCostTMP,
-            () => { if (HangarManager.Instance.TryUpgradeArmor()) RefreshAllVisuals(); });
-
-        CreateUpgradeRow("[HASAR] PLAZMA AŞIRI YÜKLEMELİ NAMLULAR (+3 DMG)", startY - rowSpacing,
-            out _damageLvlTMP, out _damageUpgBtn, out _damageCostTMP,
-            () => { if (HangarManager.Instance.TryUpgradeDamage()) RefreshAllVisuals(); });
-
-        CreateUpgradeRow("[HIZ] ARTIK YAKICILI TURBO İTİCİLER (+0.6 HIZ)", startY - rowSpacing * 2,
-            out _speedLvlTMP, out _speedUpgBtn, out _speedCostTMP,
-            () => { if (HangarManager.Instance.TryUpgradeSpeed()) RefreshAllVisuals(); });
-
-        CreateUpgradeRow("[KRİTİK] HİPER GELİŞMİŞ NİŞANGAH SİSTEMİ (+%6)", startY - rowSpacing * 3,
-            out _critLvlTMP, out _critUpgBtn, out _critCostTMP,
-            () => { if (HangarManager.Instance.TryUpgradeCritical()) RefreshAllVisuals(); });
-
-        // Bilgi Kartı
-        GameObject infoObj = new GameObject("WorkshopInfoBox");
-        infoObj.transform.SetParent(_workshopContainer.transform, false);
-        RectTransform iRt = GetRect(infoObj);
-        iRt.anchorMin = new Vector2(0.5f, 0.5f);
-        iRt.anchorMax = new Vector2(0.5f, 0.5f);
-        iRt.pivot = new Vector2(0.5f, 0.5f);
-        iRt.anchoredPosition = new Vector2(0f, -220f);
-        iRt.sizeDelta = new Vector2(1400f, 65f);
-
-        Image iBg = infoObj.AddComponent<Image>();
-        iBg.color = new Color(0.06f, 0.10f, 0.17f, 0.90f);
-
-        GameObject infoTxt = new GameObject("Text");
-        infoTxt.transform.SetParent(infoObj.transform, false);
-        RectTransform itRt = GetRect(infoTxt);
-        itRt.anchorMin = Vector2.zero;
-        itRt.anchorMax = Vector2.one;
-        itRt.offsetMin = Vector2.zero;
-        itRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI iTMP = infoTxt.AddComponent<TextMeshProUGUI>();
-        iTMP.text = "<color=#F1C40F><b>BİLGİ:</b></color> Atölyede yapılan tüm kalıcı yükseltmeler filonuzdaki tüm uçaklara ve açacağınız yeni jetlere kalıcı olarak eklenir.";
-        iTMP.fontSize = 20f;
-        iTMP.alignment = TextAlignmentOptions.Center;
-        iTMP.color = new Color(0.85f, 0.92f, 1f);
-    }
-
-    private void CreateUpgradeRow(string title, float posY, out TextMeshProUGUI lvlTMP, out Button upgBtn, out TextMeshProUGUI costTMP, UnityEngine.Events.UnityAction onUpgrade)
-    {
-        GameObject rowObj = new GameObject("UpgRow_" + title);
-        rowObj.transform.SetParent(_workshopContainer.transform, false);
-
-        RectTransform rRt = GetRect(rowObj);
-        rRt.anchorMin = new Vector2(0.5f, 0.5f);
-        rRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rRt.pivot = new Vector2(0.5f, 0.5f);
-        rRt.anchoredPosition = new Vector2(0f, posY);
-        rRt.sizeDelta = new Vector2(1400f, 72f);
-
-        Image rBg = rowObj.AddComponent<Image>();
-        rBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
-
-        Outline rOutline = rowObj.AddComponent<Outline>();
-        rOutline.effectColor = new Color(0.2f, 0.35f, 0.55f);
-        rOutline.effectDistance = new Vector2(2f, -2f);
-
-        // Başlık
-        GameObject tObj = new GameObject("Title");
-        tObj.transform.SetParent(rowObj.transform, false);
-        RectTransform tRt = GetRect(tObj);
-        tRt.anchorMin = new Vector2(0f, 0f);
-        tRt.anchorMax = new Vector2(0.54f, 1f);
-        tRt.offsetMin = new Vector2(25f, 0f);
-        tRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI tmp = tObj.AddComponent<TextMeshProUGUI>();
-        tmp.text = title;
-        tmp.fontSize = 21f;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.alignment = TextAlignmentOptions.MidlineLeft;
-        tmp.color = Color.white;
-
-        // Seviye
-        GameObject lObj = new GameObject("Level");
-        lObj.transform.SetParent(rowObj.transform, false);
-        RectTransform lRt = GetRect(lObj);
-        lRt.anchorMin = new Vector2(0.54f, 0f);
-        lRt.anchorMax = new Vector2(0.74f, 1f);
-        lRt.offsetMin = Vector2.zero;
-        lRt.offsetMax = Vector2.zero;
-
-        lvlTMP = lObj.AddComponent<TextMeshProUGUI>();
-        lvlTMP.text = "[SEVİYE: 0 / 5]";
-        lvlTMP.fontSize = 21f;
-        lvlTMP.fontStyle = FontStyles.Bold;
-        lvlTMP.alignment = TextAlignmentOptions.Center;
-        lvlTMP.color = new Color(0f, 0.9f, 1f);
-
-        // Yükselt Butonu
-        GameObject bObj = new GameObject("UpgradeBtn");
-        bObj.transform.SetParent(rowObj.transform, false);
-        RectTransform bRt = GetRect(bObj);
-        bRt.anchorMin = new Vector2(0.76f, 0.10f);
-        bRt.anchorMax = new Vector2(0.98f, 0.90f);
-        bRt.offsetMin = Vector2.zero;
-        bRt.offsetMax = Vector2.zero;
-
-        Image bImg = bObj.AddComponent<Image>();
-        bImg.color = new Color(0.18f, 0.55f, 0.32f);
-
-        upgBtn = bObj.AddComponent<Button>();
-        upgBtn.onClick.AddListener(onUpgrade);
-
-        GameObject cObj = new GameObject("CostText");
-        cObj.transform.SetParent(bObj.transform, false);
-        RectTransform cRt = GetRect(cObj);
-        cRt.anchorMin = Vector2.zero;
-        cRt.anchorMax = Vector2.one;
-        cRt.offsetMin = Vector2.zero;
-        cRt.offsetMax = Vector2.zero;
-
-        costTMP = cObj.AddComponent<TextMeshProUGUI>();
-        costTMP.text = "GELİŞTİR (100G)";
-        costTMP.fontSize = 20f;
-        costTMP.fontStyle = FontStyles.Bold;
-        costTMP.alignment = TextAlignmentOptions.Center;
-        costTMP.color = Color.white;
-    }
-
-    // ==================== TAB 3: DESTEK DRONELARI (5 AŞAMALI GÜÇ DÜZEYİ & DAYANIKLILIK) ====================
+    // ==================== TAB 2: DESTEK DRONELARI (5 AŞAMALI GÜÇ DÜZEYİ & DAYANIKLILIK) ====================
     private void BuildDronesContainer()
     {
         _dronesContainer = new GameObject("DronesContainer");
@@ -855,7 +731,7 @@ public class HangarUI : MonoBehaviour
             "Hasar: 5 DMG\nAtış Aralığı: 0.65s\nÖzellik: Seri Hafif Atış",
             new Color(0.2f, 0.95f, 0.42f),
             DroneCompanion.DroneType.MK1_Scout,
-            "KADEME 1 (SEV. 20+)");
+            "KADEME 1 (SEV. 1+)");
 
         CreateDroneCard("MK2InterceptorCard", -1f * spacingX, cardY,
             "MK-2 AVCI",
@@ -863,7 +739,7 @@ public class HangarUI : MonoBehaviour
             "Hasar: 8 DMG\nAtış: Çift Namlu 0.45s\nÖzellik: Keskin Siber Lazer",
             new Color(0.0f, 0.85f, 1f),
             DroneCompanion.DroneType.MK2_Interceptor,
-            "KADEME 2 (SEV. 30+)");
+            "KADEME 2 (SEV. 20+)");
 
         CreateDroneCard("MK3StrikerCard", 0f, cardY,
             "MK-3 TAARRUZ",
@@ -871,7 +747,7 @@ public class HangarUI : MonoBehaviour
             "Hasar: 14 DMG\nAtış Aralığı: 0.70s\nÖzellik: Zırh Delici Mermi",
             new Color(0.95f, 0.25f, 0.2f),
             DroneCompanion.DroneType.MK3_Striker,
-            "KADEME 3 (SEV. 50+)");
+            "KADEME 3 (SEV. 30+)");
 
         CreateDroneCard("MK4MissileCard", 1f * spacingX, cardY,
             "MK-4 VALKYRIE",
@@ -879,7 +755,7 @@ public class HangarUI : MonoBehaviour
             "Hasar: 26 DMG\nAtış: Isı Güdümlü 2.2s\nÖzellik: Düşmanı Takip Eder",
             new Color(1f, 0.55f, 0.12f),
             DroneCompanion.DroneType.MK4_Missile,
-            "KADEME 4 (SEV. 75+)");
+            "KADEME 4 (SEV. 50+)");
 
         CreateDroneCard("MK5TitanCard", 2f * spacingX, cardY,
             "MK-5 TİTAN AEGIS",
@@ -887,7 +763,7 @@ public class HangarUI : MonoBehaviour
             "Hasar: 18 DMG Plazma\nBariyer: 1.55m Savunma\nÖzellik: Mermileri Yutar",
             new Color(0.75f, 0.35f, 1f),
             DroneCompanion.DroneType.MK5_TitanAegis,
-            "KADEME 5 (SEV. 100+)");
+            "KADEME 5 (SEV. 75+)");
     }
 
     private void CreateDroneCard(string objName, float posX, float posY, string title, string subtitle, string description, Color accentColor, DroneCompanion.DroneType type, string tierBadge)

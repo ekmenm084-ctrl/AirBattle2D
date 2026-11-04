@@ -208,7 +208,7 @@ public class MainMenuManager : MonoBehaviour
     {
         FormatBtn(playButton, 130f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 68f);
 
-        _hangarButton = CreateOrFindMainButton("HangarButton", 64f, "HANGAR VE TEKNİK ATÖLYE", new Color(0.18f, 0.48f, 0.72f), 520f, 54f);
+        _hangarButton = CreateOrFindMainButton("HangarButton", 64f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 54f);
         if (_hangarButton != null)
         {
             _hangarButton.onClick.RemoveAllListeners();

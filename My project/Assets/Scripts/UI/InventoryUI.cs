@@ -175,10 +175,10 @@ public class InventoryUI : MonoBehaviour
             float baseDmg = hm.activeAircraft switch { HangarManager.AircraftType.A10TankBuster => 28f, HangarManager.AircraftType.F22Raptor => 22f, _ => 20f };
             float baseSpd = hm.activeAircraft switch { HangarManager.AircraftType.A10TankBuster => 6.2f, HangarManager.AircraftType.F22Raptor => 10.5f, _ => 8.0f };
 
-            float totalHp = baseHp + (hm.armorLevel * 15f) + hm.chipBonusHealth;
-            float totalDmg = baseDmg + (hm.damageLevel * 3f) + hm.chipBonusDamage;
-            float totalSpd = baseSpd + (hm.speedLevel * 0.6f);
-            float totalCrit = hm.criticalLevel * 6f;
+            float totalHp = baseHp + hm.chipBonusHealth;
+            float totalDmg = baseDmg + hm.chipBonusDamage;
+            float totalSpd = baseSpd;
+            float totalCrit = 0f;
 
             int ratingScore = (int)((totalHp * 1.5f) + (totalDmg * 12f) + (totalSpd * 18f) + (totalCrit * 10f));
 

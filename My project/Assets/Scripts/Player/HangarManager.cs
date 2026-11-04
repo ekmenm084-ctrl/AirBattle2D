@@ -129,15 +129,44 @@ public class HangarManager : MonoBehaviour
         gold = PlayerPrefs.GetInt(PREF_GOLD, 25);
         activeAircraft = (AircraftType)PlayerPrefs.GetInt(PREF_ACTIVE_PLANE, (int)AircraftType.F16Viper);
 
-        armorLevel = Mathf.Clamp(PlayerPrefs.GetInt(PREF_LVL_ARMOR, 0), 0, MAX_UPGRADE_LEVEL);
-        damageLevel = Mathf.Clamp(PlayerPrefs.GetInt(PREF_LVL_DAMAGE, 0), 0, MAX_UPGRADE_LEVEL);
-        speedLevel = Mathf.Clamp(PlayerPrefs.GetInt(PREF_LVL_SPEED, 0), 0, MAX_UPGRADE_LEVEL);
-        criticalLevel = Mathf.Clamp(PlayerPrefs.GetInt(PREF_LVL_CRIT, 0), 0, MAX_UPGRADE_LEVEL);
+        armorLevel = 0;
+        damageLevel = 0;
+        speedLevel = 0;
+        criticalLevel = 0;
 
         leftDroneType = (DroneCompanion.DroneType)PlayerPrefs.GetInt(PREF_DRONE_LEFT, (int)DroneCompanion.DroneType.None);
         rightDroneType = (DroneCompanion.DroneType)PlayerPrefs.GetInt(PREF_DRONE_RIGHT, (int)DroneCompanion.DroneType.None);
 
-        // Canı bitmiş veya alınmamış drone takılı kalamaz
+        // 1. Drone (MK-1 İzci) öncelikli olarak oyuncunun ilk başlangıç drone'u olarak kullanıma açılır
+        const string PREF_FIRST_DRONE_INIT = "AirBattle_Drone_Priority_V3";
+        if (PlayerPrefs.GetInt(PREF_FIRST_DRONE_INIT, 0) == 0)
+        {
+            PlayerPrefs.SetInt(PREF_FIRST_DRONE_INIT, 1);
+            PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)DroneCompanion.DroneType.MK1_Scout, 1);
+            PlayerPrefs.SetFloat(PREF_DRONE_HP_PREFIX + (int)DroneCompanion.DroneType.MK1_Scout, GetDroneMaxHealth(DroneCompanion.DroneType.MK1_Scout));
+
+            // Eğer oyuncu seviyesi 20'nin altındaysa, eski hatalı kayıttan kalan MK-2'yi kitle
+            int curLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+            if (curLvl < GetDroneRequiredLevel(DroneCompanion.DroneType.MK2_Interceptor))
+            {
+                PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)DroneCompanion.DroneType.MK2_Interceptor, 0);
+                PlayerPrefs.SetFloat(PREF_DRONE_HP_PREFIX + (int)DroneCompanion.DroneType.MK2_Interceptor, 0f);
+            }
+
+            // Sol kanada 1. drone olan MK-1'i otomatik tak
+            if (leftDroneType == DroneCompanion.DroneType.None || leftDroneType == DroneCompanion.DroneType.MK2_Interceptor)
+            {
+                leftDroneType = DroneCompanion.DroneType.MK1_Scout;
+                PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
+            }
+            if (rightDroneType == DroneCompanion.DroneType.MK2_Interceptor)
+            {
+                rightDroneType = DroneCompanion.DroneType.None;
+                PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
+            }
+        }
+
+        // Seviye şartı karşılanmayan veya canı bitmiş drone takılı kalamaz
         if (leftDroneType != DroneCompanion.DroneType.None && !IsDroneUnlocked(leftDroneType))
         {
             leftDroneType = DroneCompanion.DroneType.None;
@@ -185,6 +214,355 @@ public class HangarManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateGoldHUD(gold, amount);
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<AircraftType, Sprite> _aircraftSpriteCache 
+        = new System.Collections.Generic.Dictionary<AircraftType, Sprite>();
+
+    public static Sprite GetAircraftSprite(AircraftType type)
+    {
+        if (_aircraftSpriteCache.TryGetValue(type, out Sprite cached) && cached != null)
+            return cached;
+
+        // 1. Önce gerçek askeri model dosyasını (Assets/Sprites/plane_*.png) yükle
+        string fileName = type switch
+        {
+            AircraftType.F16Viper      => "plane_f16.png",
+            AircraftType.A10TankBuster => "plane_a10.png",
+            AircraftType.F22Raptor     => "plane_f22.png",
+            _                          => "plane_f16.png"
+        };
+
+        // Düşman uçağı boyutu (~1.83 birim) ve ekran oranlarına göre her uçağa özel dengeli ölçekleme:
+        // F-16: Çevik & hafif kompakt avcı (~1.70 birim boy) -> 560 PPU
+        // A-10: Geniş kanatlı ağır taarruz jeti (~1.82 birim boy, 1.86 birim en) -> 520 PPU
+        // F-22: Uzun stealth hava üstünlüğü jeti (~1.91 birim boy, 1.60 birim en) -> 500 PPU
+        float ppu = type switch
+        {
+            AircraftType.F16Viper      => 560f,
+            AircraftType.A10TankBuster => 520f,
+            AircraftType.F22Raptor     => 500f,
+            _                          => 540f
+        };
+
+        string fullPath = System.IO.Path.Combine(Application.dataPath, "Sprites", fileName);
+        if (System.IO.File.Exists(fullPath))
+        {
+            try
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+                Texture2D loadedTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (loadedTex.LoadImage(bytes))
+                {
+                    loadedTex.filterMode = FilterMode.Bilinear;
+                    loadedTex.wrapMode = TextureWrapMode.Clamp;
+                    Sprite loadedSpr = Sprite.Create(loadedTex, new Rect(0, 0, loadedTex.width, loadedTex.height), new Vector2(0.5f, 0.5f), ppu);
+                    _aircraftSpriteCache[type] = loadedSpr;
+                    return loadedSpr;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("[HangarManager] Uçak görseli yüklenemedi: " + ex.Message);
+            }
+        }
+
+        // 2. Dosya bulunamazsa yedek usulü oluştur
+        int size = 128;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Point;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        Color clear = new Color(0f, 0f, 0f, 0f);
+        Color[] clearBlock = new Color[size * size];
+        for (int i = 0; i < clearBlock.Length; i++) clearBlock[i] = clear;
+        tex.SetPixels(clearBlock);
+
+        float center = (size - 1) * 0.5f;
+
+        if (type == AircraftType.F16Viper)
+        {
+            // F-16 VIPER: Çevik Deniz Kuvvetleri Gri & Kobalt Mavi Taktik Avcı
+            Color cBody = new Color(0.47f, 0.57f, 0.69f, 1f);       // Naval Slate Blue-Grey
+            Color cBodyDark = new Color(0.33f, 0.43f, 0.55f, 1f);   // Gölgelendirme
+            Color cBodyLight = new Color(0.65f, 0.75f, 0.86f, 1f);  // Panel Işığı
+            Color cAccent = new Color(0.0f, 0.82f, 1.0f, 1f);       // Siber Mavi Şerit
+            Color cCockpit = new Color(0.06f, 0.12f, 0.20f, 1f);    // Kokpit Camı
+            Color cCanopyGlint = new Color(0.22f, 0.74f, 0.97f, 1f);// Cam Parıltısı
+            Color cMissile = new Color(0.92f, 0.94f, 0.96f, 1f);    // Sidewinder Beyaz
+            Color cMissileTip = new Color(0.94f, 0.27f, 0.27f, 1f); // Kızıl Arayıcı Başlık
+            Color cNozzle = new Color(0.22f, 0.25f, 0.32f, 1f);     // Titanyum Egzoz
+            Color cBurner = new Color(1.0f, 0.55f, 0.0f, 1f);       // Art Yakıcı Alevi
+            Color cBurnerCore = new Color(1.0f, 1.0f, 0.78f, 1f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Abs(x - center);
+
+                    // Art Yakıcı Egzoz Alevi (y: 8..24)
+                    if (y >= 8 && y <= 24 && dx <= (y - 8) * 0.45f + 1.0f)
+                    {
+                        tex.SetPixel(x, y, (dx <= 2f && y <= 18) ? cBurnerCore : cBurner);
+                        continue;
+                    }
+
+                    // Egzoz Nozülü (y: 20..28)
+                    if (y >= 20 && y <= 28 && dx <= 7.0f)
+                    {
+                        tex.SetPixel(x, y, cNozzle);
+                        continue;
+                    }
+
+                    // Yatay Arka Kanatçıklar (Stabilators y: 18..36)
+                    if (y >= 18 && y <= 36 && dx <= (36 - y) * 1.1f + 8.0f)
+                    {
+                        tex.SetPixel(x, y, dx > 15f ? cBodyDark : cBody);
+                        continue;
+                    }
+
+                    // Delta Ana Kanatlar (y: 38..78)
+                    float wingMaxDx = (78 - y) * 1.15f + 10.0f;
+                    if (y >= 38 && y <= 78 && dx <= wingMaxDx && dx >= 8.0f)
+                    {
+                        if (dx >= wingMaxDx - 2.5f)
+                            tex.SetPixel(x, y, cBodyDark);
+                        else if (dx >= 38f && dx <= 41f && y >= 44 && y <= 72)
+                            tex.SetPixel(x, y, y >= 68 ? cMissileTip : cMissile);
+                        else if (y >= 54 && y <= 57 && dx <= 32f)
+                            tex.SetPixel(x, y, cAccent);
+                        else
+                            tex.SetPixel(x, y, dx < 22f ? cBodyLight : cBody);
+                        continue;
+                    }
+
+                    // Ana Gövde (y: 26..95)
+                    float fuseW = (y < 40) ? 6.0f : ((y < 75) ? 8.5f : 6.5f);
+                    if (y >= 26 && y <= 95 && dx <= fuseW)
+                    {
+                        if (y >= 72 && y <= 92 && dx <= 4.0f)
+                        {
+                            tex.SetPixel(x, y, (dx <= 1.5f && y >= 76 && y <= 88) ? cCanopyGlint : cCockpit);
+                        }
+                        else if (y >= 55 && y <= 68 && dx <= 1.5f)
+                        {
+                            tex.SetPixel(x, y, cAccent);
+                        }
+                        else
+                        {
+                            tex.SetPixel(x, y, dx <= 3.0f ? cBodyLight : cBody);
+                        }
+                        continue;
+                    }
+
+                    // İğne Burun Konisi (y: 95..122)
+                    if (y >= 95 && y <= 122 && dx <= (122 - y) * 0.25f + 0.8f)
+                    {
+                        tex.SetPixel(x, y, y >= 115 ? new Color(0.12f, 0.16f, 0.23f, 1f) : (dx <= 1.0f ? cBodyLight : cBody));
+                        continue;
+                    }
+                }
+            }
+        }
+        else if (type == AircraftType.A10TankBuster)
+        {
+            // A-10 TANK BUSTER: Ağır Askeri Kamuflaj, Çift Üst Motor & GAU-8 30mm Döner Top
+            Color cCamo1 = new Color(0.29f, 0.41f, 0.22f, 1f);      // Heavy Olive Drab
+            Color cCamo2 = new Color(0.22f, 0.31f, 0.16f, 1f);      // Dark Woodland
+            Color cCamoLight = new Color(0.43f, 0.57f, 0.31f, 1f);  // Işık Alan Zırh
+            Color cArmorDark = new Color(0.14f, 0.18f, 0.12f, 1f);  // Zırh Paneli Kenarı
+            Color cCockpit = new Color(0.85f, 0.47f, 0.02f, 1f);    // Titanyum Küvet Kokpit
+            Color cCanopyCore = new Color(0.99f, 0.83f, 0.30f, 1f); // Altın Zırhlı Cam Yansıması
+            Color cEngineIntake = new Color(0.06f, 0.09f, 0.16f, 1f);// Fan Girişi
+            Color cEngineRim = new Color(0.58f, 0.64f, 0.72f, 1f);   // Titanyum Gövde Kılıfı
+            Color cGatling = new Color(0.08f, 0.08f, 0.09f, 1f);     // 30mm GAU-8 Avenger
+            Color cGatlingTip = new Color(0.96f, 0.62f, 0.04f, 1f);  // Namlu Ucu Pirinç Halka
+            Color cBomb = new Color(0.71f, 0.33f, 0.04f, 1f);        // Ağır Bomba Pylonları
+            Color cBombFin = new Color(0.96f, 0.62f, 0.04f, 1f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Abs(x - center);
+
+                    // Çift Üst Monteli Turbofan Motorlar (y: 38..65, dx: 13..27)
+                    if (y >= 38 && y <= 65 && dx >= 13.0f && dx <= 27.0f)
+                    {
+                        float edx = Mathf.Abs(dx - 20.0f);
+                        if (edx <= 6.5f)
+                        {
+                            if (y >= 61)
+                                tex.SetPixel(x, y, edx <= 4.5f ? cEngineIntake : cEngineRim);
+                            else if (y <= 41)
+                                tex.SetPixel(x, y, edx <= 3.5f ? new Color(1f, 0.39f, 0f, 1f) : cEngineRim);
+                            else
+                                tex.SetPixel(x, y, edx >= 5.0f ? cEngineRim : cCamo2);
+                            continue;
+                        }
+                    }
+
+                    // Çift Dikey Kuyruk Kanatçıkları (y: 10..32, dx: 31..37)
+                    if (y >= 10 && y <= 32 && dx >= 31.0f && dx <= 37.0f)
+                    {
+                        tex.SetPixel(x, y, dx >= 35.0f ? cCamo2 : cCamo1);
+                        continue;
+                    }
+
+                    // Yatay Kuyruk Kanadı (y: 16..28, dx <= 33)
+                    if (y >= 16 && y <= 28 && dx <= 33.0f)
+                    {
+                        tex.SetPixel(x, y, cCamo1);
+                        continue;
+                    }
+
+                    // GAU-8 Avenger 30mm Ağır Döner Top (y: 112..125, dx <= 3.5)
+                    if (y >= 112 && y <= 125 && dx <= 3.5f)
+                    {
+                        tex.SetPixel(x, y, y >= 122 ? cGatlingTip : cGatling);
+                        continue;
+                    }
+
+                    // Düz Geniş Ağır Kanatlar (y: 48..74, dx <= 56)
+                    if (y >= 48 && y <= 74 && dx <= 56.0f)
+                    {
+                        if (dx >= 53.0f)
+                        {
+                            tex.SetPixel(x, y, cArmorDark);
+                        }
+                        else if (y >= 50 && y <= 68 && (Mathf.Abs(dx - 36.0f) <= 2.0f || Mathf.Abs(dx - 46.0f) <= 2.0f))
+                        {
+                            tex.SetPixel(x, y, y >= 64 ? cBombFin : cBomb);
+                        }
+                        else
+                        {
+                            if ((x + y) % 18 < 8) tex.SetPixel(x, y, cCamo2);
+                            else if ((x * 2 - y) % 22 < 6) tex.SetPixel(x, y, cCamoLight);
+                            else tex.SetPixel(x, y, cCamo1);
+                        }
+                        continue;
+                    }
+
+                    // Ağır Titanyum Zırhlı Gövde (y: 24..112)
+                    float fuseW = (y < 50) ? 8.5f : ((y < 90) ? 11.0f : (9.5f - (y - 90) * 0.25f));
+                    if (y >= 24 && y <= 112 && dx <= fuseW)
+                    {
+                        if (y >= 75 && y <= 96 && dx <= 6.0f)
+                        {
+                            tex.SetPixel(x, y, (dx <= 2.5f && y >= 79 && y <= 92) ? cCanopyCore : cCockpit);
+                        }
+                        else if (y >= 98)
+                        {
+                            tex.SetPixel(x, y, dx >= fuseW - 2.0f ? cArmorDark : cCamo1);
+                        }
+                        else
+                        {
+                            if (dx >= fuseW - 1.5f || y % 14 == 0)
+                                tex.SetPixel(x, y, cArmorDark);
+                            else
+                                tex.SetPixel(x, y, cCamo1);
+                        }
+                        continue;
+                    }
+                }
+            }
+        }
+        else // F-22 RAPTOR
+        {
+            // F-22 RAPTOR: 5. Nesil Hayalet Geometrisi, Mat Karbon & Çift Vektör Nozul
+            Color cStealth = new Color(0.18f, 0.22f, 0.28f, 1f);     // Radar Soğurucu Mat Gri
+            Color cStealthLight = new Color(0.33f, 0.39f, 0.49f, 1f);// Elmas Faset Yansıması
+            Color cStealthDark = new Color(0.10f, 0.13f, 0.18f, 1f); // Gölge Faset
+            Color cEdge = new Color(0.58f, 0.64f, 0.72f, 1f);        // Düşük Görünürlük Gümüş Kenar
+            Color cCanopy = new Color(0.58f, 0.20f, 0.92f, 1f);      // İridyum Hayalet Mor Cam
+            Color cCanopyGold = new Color(0.96f, 0.62f, 0.04f, 1f);  // Altın İndiyum Stealth Kaplama
+            Color cReheat = new Color(0.75f, 0.52f, 0.99f, 1f);      // Plazma Vektör Egzozu
+            Color cReheatCore = new Color(1.0f, 1.0f, 1.0f, 1f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Abs(x - center);
+
+                    // Çift 2D Düz Vektör Stealth Egzoz Nozülü (y: 8..26, dx: 3..17)
+                    if (y >= 8 && y <= 26 && dx >= 3.0f && dx <= 17.0f)
+                    {
+                        float ndx = Mathf.Abs(dx - 10.0f);
+                        if (ndx <= 5.5f)
+                        {
+                            if (y <= 16)
+                                tex.SetPixel(x, y, ndx <= 2.0f ? cReheatCore : cReheat);
+                            else
+                                tex.SetPixel(x, y, ndx <= 4.0f ? new Color(0.06f, 0.09f, 0.16f, 1f) : cEdge);
+                            continue;
+                        }
+                    }
+
+                    // Dışa Açılı Çift Dikey Kuyruk Kanadı (y: 16..42)
+                    float finCenter = 14.0f + (y - 16) * 0.55f;
+                    if (y >= 16 && y <= 42 && Mathf.Abs(dx - finCenter) <= 3.0f)
+                    {
+                        tex.SetPixel(x, y, dx > finCenter ? cStealthLight : cStealthDark);
+                        continue;
+                    }
+
+                    // Yatay Stealth Arka Kanatçıklar (y: 14..36)
+                    float stabW = (36 - y) * 0.95f + 16.0f;
+                    if (y >= 14 && y <= 36 && dx <= stabW && dx >= 10.0f)
+                    {
+                        tex.SetPixel(x, y, dx >= stabW - 2.0f ? cStealthDark : cStealth);
+                        continue;
+                    }
+
+                    // 48 Derece Açılı Trapezoid Stealth Kanatlar (y: 38..82)
+                    float wingMaxDx = (82 - y) * 1.05f + 14.0f;
+                    float wingMinY = 38.0f + (dx - 14.0f) * 0.15f;
+                    if (y >= wingMinY && y <= 82 && dx <= wingMaxDx && dx >= 11.0f)
+                    {
+                        if (dx >= wingMaxDx - 2.0f)
+                            tex.SetPixel(x, y, cEdge);
+                        else if (dx >= 28.0f && dx <= 30.0f && y >= 50 && y <= 68)
+                            tex.SetPixel(x, y, cCanopy);
+                        else
+                            tex.SetPixel(x, y, ((x < center && y > 60) || (x > center && y < 60)) ? cStealthLight : cStealth);
+                        continue;
+                    }
+
+                    // Elmas Kesim Gövde (y: 26..96)
+                    float fuseW = (y < 45) ? 7.0f : (14.0f - Mathf.Abs(y - 65) * 0.18f);
+                    if (y >= 26 && y <= 96 && dx <= fuseW)
+                    {
+                        if (y >= 72 && y <= 96 && dx <= 5.5f)
+                        {
+                            tex.SetPixel(x, y, (dx <= 2.0f && y >= 78 && y <= 90) ? cCanopyGold : cCanopy);
+                        }
+                        else if (y >= 50 && y <= 68 && Mathf.Abs(dx - 5.5f) <= 1.0f)
+                        {
+                            tex.SetPixel(x, y, cStealthDark);
+                        }
+                        else
+                        {
+                            tex.SetPixel(x, y, dx <= 3.0f ? cStealthLight : cStealth);
+                        }
+                        continue;
+                    }
+
+                    // Bıçak Sırtı Stealth Burun Konisi (y: 96..124)
+                    if (y >= 96 && y <= 124 && dx <= (124 - y) * 0.28f + 0.6f)
+                    {
+                        tex.SetPixel(x, y, y >= 118 ? cEdge : (dx <= 1.5f ? cStealthLight : cStealth));
+                        continue;
+                    }
+                }
+            }
+        }
+
+        tex.Apply();
+        Sprite spr = Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 32f);
+        _aircraftSpriteCache[type] = spr;
+        return spr;
     }
 
     public bool IsAircraftUnlocked(AircraftType type)
@@ -276,12 +654,12 @@ public class HangarManager : MonoBehaviour
     {
         return type switch
         {
-            DroneCompanion.DroneType.MK1_Scout       => 20,
-            DroneCompanion.DroneType.MK2_Interceptor => 30,
-            DroneCompanion.DroneType.MK3_Striker     => 50,
-            DroneCompanion.DroneType.MK4_Missile     => 75,
-            DroneCompanion.DroneType.MK5_TitanAegis  => 100,
-            _ => 20
+            DroneCompanion.DroneType.MK1_Scout       => 1,
+            DroneCompanion.DroneType.MK2_Interceptor => 20,
+            DroneCompanion.DroneType.MK3_Striker     => 30,
+            DroneCompanion.DroneType.MK4_Missile     => 50,
+            DroneCompanion.DroneType.MK5_TitanAegis  => 75,
+            _ => 1
         };
     }
 
@@ -289,12 +667,12 @@ public class HangarManager : MonoBehaviour
     {
         return type switch
         {
-            DroneCompanion.DroneType.MK1_Scout       => 1000,
-            DroneCompanion.DroneType.MK2_Interceptor => 5000,
-            DroneCompanion.DroneType.MK3_Striker     => 15000,
-            DroneCompanion.DroneType.MK4_Missile     => 40000,
-            DroneCompanion.DroneType.MK5_TitanAegis  => 100000,
-            _ => 1000
+            DroneCompanion.DroneType.MK1_Scout       => 400,
+            DroneCompanion.DroneType.MK2_Interceptor => 2500,
+            DroneCompanion.DroneType.MK3_Striker     => 7500,
+            DroneCompanion.DroneType.MK4_Missile     => 20000,
+            DroneCompanion.DroneType.MK5_TitanAegis  => 50000,
+            _ => 400
         };
     }
 
@@ -315,12 +693,12 @@ public class HangarManager : MonoBehaviour
     {
         return type switch
         {
-            DroneCompanion.DroneType.MK1_Scout       => 200,
-            DroneCompanion.DroneType.MK2_Interceptor => 1000,
-            DroneCompanion.DroneType.MK3_Striker     => 3000,
-            DroneCompanion.DroneType.MK4_Missile     => 8000,
-            DroneCompanion.DroneType.MK5_TitanAegis  => 20000,
-            _ => 200
+            DroneCompanion.DroneType.MK1_Scout       => 80,
+            DroneCompanion.DroneType.MK2_Interceptor => 500,
+            DroneCompanion.DroneType.MK3_Striker     => 1500,
+            DroneCompanion.DroneType.MK4_Missile     => 4000,
+            DroneCompanion.DroneType.MK5_TitanAegis  => 10000,
+            _ => 80
         };
     }
 
@@ -340,6 +718,11 @@ public class HangarManager : MonoBehaviour
     public bool IsDroneUnlocked(DroneCompanion.DroneType type)
     {
         if (type == DroneCompanion.DroneType.None) return false;
+
+        // Seviye şartı karşılanmıyorsa drone kesinlikle kilitlidir
+        int playerLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+        if (playerLvl < GetDroneRequiredLevel(type)) return false;
+
         return PlayerPrefs.GetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0) == 1 && GetDroneHealth(type) > 0f;
     }
 
@@ -494,11 +877,19 @@ public class HangarManager : MonoBehaviour
             }
             else if (roll < 0.70f)
             {
-                if (IsDroneUnlocked(DroneCompanion.DroneType.MK2_Interceptor))
+                DroneCompanion.DroneType droneToRepair = (leftDroneType != DroneCompanion.DroneType.None && GetDroneHealth(leftDroneType) < GetDroneMaxHealth(leftDroneType))
+                    ? leftDroneType
+                    : (rightDroneType != DroneCompanion.DroneType.None && GetDroneHealth(rightDroneType) < GetDroneMaxHealth(rightDroneType))
+                        ? rightDroneType
+                        : (IsDroneUnlocked(DroneCompanion.DroneType.MK1_Scout) && GetDroneHealth(DroneCompanion.DroneType.MK1_Scout) < GetDroneMaxHealth(DroneCompanion.DroneType.MK1_Scout))
+                            ? DroneCompanion.DroneType.MK1_Scout
+                            : DroneCompanion.DroneType.None;
+
+                if (droneToRepair != DroneCompanion.DroneType.None)
                 {
-                    TryRepairDrone(DroneCompanion.DroneType.MK2_Interceptor);
+                    TryRepairDrone(droneToRepair);
                     reward.title = "İHA ONARIM KİTİ!";
-                    reward.description = "MK-2 Avcı Dronu tamir edildi ve dayanıklılığı yenilendi!";
+                    reward.description = $"{GetDroneDisplayName(droneToRepair)} tamir edildi ve dayanıklılığı yenilendi!";
                 }
                 else
                 {
@@ -620,11 +1011,11 @@ public class HangarManager : MonoBehaviour
                 break;
         }
 
-        // Atölye ve Sandık kalıcı çip bonusları eklenir
-        float finalHp = baseHp + (armorLevel * 15f) + chipBonusHealth;
-        float finalSpd = baseSpd + (speedLevel * 0.6f);
-        float finalDmg = baseDmg + (damageLevel * 3f) + chipBonusDamage;
-        float finalCrit = criticalLevel * 0.06f; // Seviye başına +%6
+        // Sandık kalıcı çip bonusları eklenir
+        float finalHp = baseHp + chipBonusHealth;
+        float finalSpd = baseSpd;
+        float finalDmg = baseDmg + chipBonusDamage;
+        float finalCrit = 0f;
 
         pc.moveSpeed = finalSpd;
 
@@ -640,9 +1031,13 @@ public class HangarManager : MonoBehaviour
             shooter.criticalChance = finalCrit;
         }
 
+        // Uçak ölçeğini düşman uçağı ve ekranla kusursuz uyumlu kıl
+        pc.transform.localScale = Vector3.one;
+
         if (sr != null)
         {
-            sr.color = planeTint;
+            sr.sprite = GetAircraftSprite(activeAircraft);
+            sr.color = Color.white;
         }
 
         // Destek Droneları'nı Kanatlara Tak
