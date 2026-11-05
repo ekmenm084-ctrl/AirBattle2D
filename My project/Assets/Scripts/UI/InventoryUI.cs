@@ -143,17 +143,29 @@ public class InventoryUI : MonoBehaviour
         // 2. Destek Drone Hangarı Kartı
         if (_dronesContentTMP != null)
         {
+            int curLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+
             string GetDroneStat(DroneCompanion.DroneType dt)
             {
-                if (!hm.IsDroneUnlocked(dt))
+                if (!hm.IsDroneOwned(dt))
                 {
                     int reqLvl = HangarManager.GetDroneRequiredLevel(dt);
-                    return $"<color=#888888>KİLİTLİ (SEVİYE {reqLvl})</color>";
+                    if (curLvl < reqLvl) return $"<color=#888888>KİLİTLİ (SEVİYE {reqLvl})</color>";
+                    return "<color=#FF5252>TAMAMEN İMHA OLDU (0/2 Hak)</color>";
                 }
+
                 float hp = hm.GetDroneHealth(dt);
                 float maxHp = HangarManager.GetDroneMaxHealth(dt);
+                int deaths = hm.GetDroneDeaths(dt);
+
+                if (hp <= 0f)
+                {
+                    return "<color=#FFA000>AĞIR HASARLI / ENKAZ (1/2 Hak - Onarılabilir)</color>";
+                }
+
                 string slot = (hm.leftDroneType == dt) ? "Sol Kanatta" : (hm.rightDroneType == dt) ? "Sağ Kanatta" : "Hangarda";
-                return $"<color=#00E5FF>{hp:0}/{maxHp:0} HP</color> ({slot})";
+                int livesLeft = Mathf.Max(1, 2 - deaths);
+                return $"<color=#00E5FF>{hp:0}/{maxHp:0} HP</color> ({slot} - {livesLeft}/2 Hak)";
             }
 
             _dronesContentTMP.text =
@@ -165,7 +177,7 @@ public class InventoryUI : MonoBehaviour
                 $"• MK-5 Titan Aegis: {GetDroneStat(DroneCompanion.DroneType.MK5_TitanAegis)}\n\n" +
                 $"• Aktif Kanatlar:\n" +
                 $"  Sol: <color=#00E5FF>{HangarManager.GetDroneDisplayName(hm.leftDroneType)}</color> | Sağ: <color=#00E5FF>{HangarManager.GetDroneDisplayName(hm.rightDroneType)}</color>\n\n" +
-                $"<size=80%><color=#8AB4F8><i>Dronlar çatışmada hasar alır. Canı bitince Hangar'dan tekrar satın alınabilir.</i></color></size>";
+                $"<size=80%><color=#8AB4F8><i>Dronlar 2 can hakkına sahiptir. İlk ölümden sonra Hangarda onarılabilir, 2. ölümde tamamen sıfırlanır.</i></color></size>";
         }
 
         // 3. Filo Muharebe Gücü ve Skoru

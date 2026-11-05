@@ -208,7 +208,9 @@ public class HangarUI : MonoBehaviour
 
         foreach (var card in _droneCards)
         {
+            bool isOwned = hm.IsDroneOwned(card.type);
             bool isUnlocked = hm.IsDroneUnlocked(card.type);
+            int deaths = hm.GetDroneDeaths(card.type);
             float currentHp = hm.GetDroneHealth(card.type);
             float maxHp = HangarManager.GetDroneMaxHealth(card.type);
             int cost = HangarManager.GetDroneCost(card.type);
@@ -219,78 +221,141 @@ public class HangarUI : MonoBehaviour
             bool isLeft = (hm.leftDroneType == card.type);
             bool isRight = (hm.rightDroneType == card.type);
 
+            bool isWreck = isOwned && currentHp <= 0f;
+
             // Dayanıklılık Barı & Metni
             if (card.hpFillImg != null)
             {
                 float pct = Mathf.Clamp01(currentHp / Mathf.Max(1f, maxHp));
-                card.hpFillImg.fillAmount = isUnlocked ? pct : 0f;
+                card.hpFillImg.fillAmount = (isUnlocked) ? pct : 0f;
                 card.hpFillImg.color = pct > 0.5f ? Color.Lerp(Color.yellow, new Color(0.15f, 0.95f, 0.35f), (pct - 0.5f) * 2f)
                                                   : Color.Lerp(Color.red, Color.yellow, pct * 2f);
             }
             if (card.hpTextTMP != null)
             {
-                if (isLevelLocked) card.hpTextTMP.text = $"<color=#FF5252>SEVİYE {reqLvl} KİLİDİ</color>";
-                else if (!isUnlocked && currentHp <= 0f) card.hpTextTMP.text = "<color=#FF5252>İMHA OLDU / TÜKENDİ</color>";
-                else if (!isUnlocked) card.hpTextTMP.text = $"DAYANIKLILIK: {maxHp:0} HP";
-                else card.hpTextTMP.text = $"DAYANIKLILIK: {currentHp:0} / {maxHp:0} HP";
+                if (isLevelLocked)
+                {
+                    card.hpTextTMP.text = $"<color=#FF5252>SEVİYE {reqLvl} KİLİDİ</color>";
+                }
+                else if (isWreck)
+                {
+                    card.hpTextTMP.text = "<color=#FFA000>AĞIR HASARLI / ENKAZ (1/2 HAK)</color>";
+                }
+                else if (!isOwned)
+                {
+                    card.hpTextTMP.text = "<color=#FF5252>TAMAMEN İMHA OLDU (0/2 HAK)</color>";
+                }
+                else
+                {
+                    card.hpTextTMP.text = $"DAYANIKLILIK: {currentHp:0} / {maxHp:0} HP";
+                }
             }
 
             // Rozet Başlığı
             if (card.tagTMP != null)
             {
-                if (isLevelLocked) card.tagTMP.text = $"[ KİLİTLİ: SEV. {reqLvl} ]";
-                else card.tagTMP.text = $"[ {card.defaultTag} ]";
-            }
-
-            // Satın Alma Butonu (Kilitliyken veya canı bitince görünür)
-            if (card.buyBtn != null && card.buyTMP != null)
-            {
-                card.buyBtn.gameObject.SetActive(!isUnlocked);
-                if (!isUnlocked)
+                if (isLevelLocked)
                 {
-                    if (isLevelLocked)
-                    {
-                        card.buyTMP.text = $"SEV. {reqLvl} KİLİDİ ({cost:N0}G)";
-                        card.buyBtn.interactable = false;
-                        card.buyBtn.GetComponent<Image>().color = new Color(0.24f, 0.18f, 0.20f);
-                    }
-                    else
-                    {
-                        card.buyTMP.text = (currentHp <= 0f && PlayerPrefs.GetInt(HangarManager.PREF_DRONE_UNLOCKED_PREFIX + (int)card.type, 0) == 0)
-                            ? $"TEKRAR AL ({cost:N0}G)"
-                            : $"SATIN AL ({cost:N0}G)";
-                        bool canAfford = (hm.gold >= cost);
-                        card.buyBtn.interactable = canAfford;
-                        card.buyBtn.GetComponent<Image>().color = canAfford ? new Color(0.15f, 0.65f, 0.32f) : new Color(0.35f, 0.25f, 0.22f);
-                    }
+                    card.tagTMP.text = $"[ KİLİTLİ: SEV. {reqLvl} ]";
+                }
+                else if (isWreck)
+                {
+                    card.tagTMP.text = "[ ONARILABİLİR: 1/2 HAK ]";
+                }
+                else if (!isOwned)
+                {
+                    card.tagTMP.text = "[ 0/2 HAK - TEKRAR AL ]";
+                }
+                else
+                {
+                    int livesLeft = Mathf.Max(1, 2 - deaths);
+                    card.tagTMP.text = $"[ {card.defaultTag} ({livesLeft}/2 HAK) ]";
                 }
             }
 
-            // Kuşanma Butonları (Açık ve canı varsa görünür)
-            if (card.equipLBtn != null)
+            // Buton Görünürlükleri ve Konumlandırmaları
+            if (isLevelLocked)
             {
-                card.equipLBtn.gameObject.SetActive(isUnlocked);
-                if (card.equipLTMP != null) card.equipLTMP.text = isLeft ? "[AKTİF] SOL" : "SOL TAK";
-                card.equipLBtn.GetComponent<Image>().color = isLeft ? new Color(0.18f, 0.65f, 0.35f) : new Color(0.20f, 0.35f, 0.50f);
-            }
-
-            if (card.equipRBtn != null)
-            {
-                card.equipRBtn.gameObject.SetActive(isUnlocked);
-                if (card.equipRTMP != null) card.equipRTMP.text = isRight ? "[AKTİF] SAĞ" : "SAĞ TAK";
-                card.equipRBtn.GetComponent<Image>().color = isRight ? new Color(0.18f, 0.65f, 0.35f) : new Color(0.20f, 0.35f, 0.50f);
-            }
-
-            // Onarım Butonu (Hasar almışsa görünür)
-            if (card.repairBtn != null)
-            {
-                bool needsRepair = isUnlocked && currentHp < maxHp && currentHp > 0f;
-                card.repairBtn.gameObject.SetActive(needsRepair);
-                if (needsRepair && card.repairTMP != null)
+                if (card.buyBtn != null && card.buyTMP != null)
                 {
-                    card.repairTMP.text = $"ONAR ({repCost:N0}G)";
-                    card.repairBtn.interactable = (hm.gold >= repCost);
-                    card.repairBtn.GetComponent<Image>().color = (hm.gold >= repCost) ? new Color(0.18f, 0.52f, 0.70f) : new Color(0.3f, 0.3f, 0.3f);
+                    card.buyBtn.gameObject.SetActive(true);
+                    card.buyTMP.text = $"SEV. {reqLvl} KİLİDİ ({cost:N0}G)";
+                    card.buyBtn.interactable = false;
+                    card.buyBtn.GetComponent<Image>().color = new Color(0.24f, 0.18f, 0.20f);
+                }
+                if (card.equipLBtn != null) card.equipLBtn.gameObject.SetActive(false);
+                if (card.equipRBtn != null) card.equipRBtn.gameObject.SetActive(false);
+                if (card.repairBtn != null) card.repairBtn.gameObject.SetActive(false);
+            }
+            else if (isWreck)
+            {
+                // 1. Ölüm sonrası: Satın alma butonu kapalı, Ağır Hasarı Onar butonu açık
+                if (card.buyBtn != null) card.buyBtn.gameObject.SetActive(false);
+                if (card.equipLBtn != null) card.equipLBtn.gameObject.SetActive(false);
+                if (card.equipRBtn != null) card.equipRBtn.gameObject.SetActive(false);
+
+                if (card.repairBtn != null && card.repairTMP != null)
+                {
+                    card.repairBtn.gameObject.SetActive(true);
+                    RectTransform repRt = card.repairBtn.GetComponent<RectTransform>();
+                    repRt.anchorMin = new Vector2(0.06f, 0.04f);
+                    repRt.anchorMax = new Vector2(0.94f, 0.28f);
+
+                    card.repairTMP.text = $"AĞIR HASARI ONAR\n<size=85%><color=#FFE082>({repCost:N0} ALTIN)</color></size>";
+                    bool canAfford = (hm.gold >= repCost);
+                    card.repairBtn.interactable = canAfford;
+                    card.repairBtn.GetComponent<Image>().color = canAfford ? new Color(0.85f, 0.50f, 0.10f) : new Color(0.35f, 0.25f, 0.20f);
+                }
+            }
+            else if (!isOwned)
+            {
+                // 2. Ölüm sonrası (Sıfırlanmış): Tekrar Satın Al butonu açık
+                if (card.buyBtn != null && card.buyTMP != null)
+                {
+                    card.buyBtn.gameObject.SetActive(true);
+                    card.buyTMP.text = $"TEKRAR SATIN AL\n<size=85%><color=#FFE082>({cost:N0} ALTIN)</color></size>";
+                    bool canAfford = (hm.gold >= cost);
+                    card.buyBtn.interactable = canAfford;
+                    card.buyBtn.GetComponent<Image>().color = canAfford ? new Color(0.15f, 0.65f, 0.32f) : new Color(0.35f, 0.25f, 0.22f);
+                }
+                if (card.equipLBtn != null) card.equipLBtn.gameObject.SetActive(false);
+                if (card.equipRBtn != null) card.equipRBtn.gameObject.SetActive(false);
+                if (card.repairBtn != null) card.repairBtn.gameObject.SetActive(false);
+            }
+            else // isUnlocked (Operasyonel)
+            {
+                if (card.buyBtn != null) card.buyBtn.gameObject.SetActive(false);
+
+                if (card.equipLBtn != null)
+                {
+                    card.equipLBtn.gameObject.SetActive(true);
+                    if (card.equipLTMP != null) card.equipLTMP.text = isLeft ? "[AKTİF] SOL" : "SOL TAK";
+                    card.equipLBtn.GetComponent<Image>().color = isLeft ? new Color(0.18f, 0.65f, 0.35f) : new Color(0.20f, 0.35f, 0.50f);
+                }
+
+                if (card.equipRBtn != null)
+                {
+                    card.equipRBtn.gameObject.SetActive(true);
+                    if (card.equipRTMP != null) card.equipRTMP.text = isRight ? "[AKTİF] SAĞ" : "SAĞ TAK";
+                    card.equipRBtn.GetComponent<Image>().color = isRight ? new Color(0.18f, 0.65f, 0.35f) : new Color(0.20f, 0.35f, 0.50f);
+                }
+
+                if (card.repairBtn != null)
+                {
+                    bool needsRepair = (currentHp < maxHp);
+                    card.repairBtn.gameObject.SetActive(needsRepair);
+
+                    if (needsRepair && card.repairTMP != null)
+                    {
+                        RectTransform repRt = card.repairBtn.GetComponent<RectTransform>();
+                        repRt.anchorMin = new Vector2(0.06f, 0.03f);
+                        repRt.anchorMax = new Vector2(0.94f, 0.14f);
+
+                        card.repairTMP.text = $"ONAR ({repCost:N0}G)";
+                        bool canAfford = (hm.gold >= repCost);
+                        card.repairBtn.interactable = canAfford;
+                        card.repairBtn.GetComponent<Image>().color = canAfford ? new Color(0.18f, 0.52f, 0.70f) : new Color(0.3f, 0.3f, 0.3f);
+                    }
                 }
             }
         }
@@ -824,7 +889,7 @@ public class HangarUI : MonoBehaviour
         iconRt.anchorMax = new Vector2(0.5f, 0.5f);
         iconRt.pivot = new Vector2(0.5f, 0.5f);
         iconRt.anchoredPosition = new Vector2(0f, 8f);
-        iconRt.sizeDelta = new Vector2(64f, 64f);
+        iconRt.sizeDelta = new Vector2(105f, 105f);
 
         Image iconImg = iconObj.AddComponent<Image>();
         iconImg.sprite = DroneCompanion.GetDroneSprite(type);

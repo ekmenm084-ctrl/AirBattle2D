@@ -49,6 +49,8 @@ public class HangarManager : MonoBehaviour
     public const string PREF_DRONE_RIGHT = "AirBattle_Drone_Right";
     public const string PREF_DRONE_UNLOCKED_PREFIX = "AirBattle_Drone_Unl_";
     public const string PREF_DRONE_HP_PREFIX = "AirBattle_Drone_HP_";
+    public const string PREF_DRONE_DEATHS_PREFIX = "AirBattle_Drone_Deaths_";
+    public const int MAX_DRONE_DEATHS = 2;
 
     // Kalıcı Çip Bonusları
     private const string PREF_CHIP_BONUS_DMG = "AirBattle_Chip_Bonus_Dmg";
@@ -715,7 +717,7 @@ public class HangarManager : MonoBehaviour
         };
     }
 
-    public bool IsDroneUnlocked(DroneCompanion.DroneType type)
+    public bool IsDroneOwned(DroneCompanion.DroneType type)
     {
         if (type == DroneCompanion.DroneType.None) return false;
 
@@ -723,7 +725,26 @@ public class HangarManager : MonoBehaviour
         int playerLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
         if (playerLvl < GetDroneRequiredLevel(type)) return false;
 
-        return PlayerPrefs.GetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0) == 1 && GetDroneHealth(type) > 0f;
+        return PlayerPrefs.GetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0) == 1;
+    }
+
+    public bool IsDroneUnlocked(DroneCompanion.DroneType type)
+    {
+        // Operasyonel ve savaşa hazır: Sahip olunmalı ve canı 0'dan büyük olmalı
+        return IsDroneOwned(type) && GetDroneHealth(type) > 0f;
+    }
+
+    public int GetDroneDeaths(DroneCompanion.DroneType type)
+    {
+        if (type == DroneCompanion.DroneType.None) return 0;
+        return PlayerPrefs.GetInt(PREF_DRONE_DEATHS_PREFIX + (int)type, 0);
+    }
+
+    public void SetDroneDeaths(DroneCompanion.DroneType type, int deaths)
+    {
+        if (type == DroneCompanion.DroneType.None) return;
+        PlayerPrefs.SetInt(PREF_DRONE_DEATHS_PREFIX + (int)type, Mathf.Clamp(deaths, 0, MAX_DRONE_DEATHS));
+        PlayerPrefs.Save();
     }
 
     public float GetDroneHealth(DroneCompanion.DroneType type)
@@ -741,8 +762,7 @@ public class HangarManager : MonoBehaviour
 
         if (clamped <= 0f)
         {
-            // Canı bitti! Drone parçalandı, kanattan çıkar ve kilidi kapat (yeniden satın alınabilsin)
-            PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0);
+            // Canı bitti! Savaş kanadından düşer
             if (leftDroneType == type) leftDroneType = DroneCompanion.DroneType.None;
             if (rightDroneType == type) rightDroneType = DroneCompanion.DroneType.None;
             SaveHangarData();
@@ -764,6 +784,7 @@ public class HangarManager : MonoBehaviour
         {
             gold -= cost;
             PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 1);
+            SetDroneDeaths(type, 0); // Yeni satın alımda can hakkı sıfırlanır (2 hak hazır)
             SetDroneHealth(type, GetDroneMaxHealth(type));
 
             // Otomatik boş kanada kuşan
@@ -780,7 +801,7 @@ public class HangarManager : MonoBehaviour
 
     public bool TryRepairDrone(DroneCompanion.DroneType type)
     {
-        if (!IsDroneUnlocked(type)) return false;
+        if (!IsDroneOwned(type)) return false;
         float currentHp = GetDroneHealth(type);
         float maxHp = GetDroneMaxHealth(type);
         if (currentHp >= maxHp) return false;
@@ -800,7 +821,27 @@ public class HangarManager : MonoBehaviour
 
     public void OnDroneDestroyed(DroneCompanion.DroneType type)
     {
+        if (type == DroneCompanion.DroneType.None) return;
+
         SetDroneHealth(type, 0f);
+
+        int deaths = GetDroneDeaths(type) + 1;
+        SetDroneDeaths(type, deaths);
+
+        if (deaths >= MAX_DRONE_DEATHS)
+        {
+            // 2. İmha: Drone tamamen sıfırlanır, tekrar satın alınmalı (0/2 hak)
+            PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0);
+            SetDroneDeaths(type, 0);
+            Debug.Log($"[HangarManager] {type} 2. kez imha oldu! Tamamen sıfırlandı ve kilitlendi.");
+        }
+        else
+        {
+            // 1. İmha: Drone ağır hasarlı/enkaz durumunda Hangar'da onarım bekler (1/2 hak)
+            Debug.Log($"[HangarManager] {type} 1. kez imha oldu! Hangar'da altın karşılığı onarılabilir.");
+        }
+
+        SaveHangarData();
     }
 
     // Geriye dönük uyumluluk yardımcıları

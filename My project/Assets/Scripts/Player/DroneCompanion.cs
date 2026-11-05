@@ -84,8 +84,64 @@ public class DroneCompanion : MonoBehaviour
         }
     }
 
+    private static readonly System.Collections.Generic.Dictionary<DroneType, Sprite> _droneSpriteCache 
+        = new System.Collections.Generic.Dictionary<DroneType, Sprite>();
+
     public static Sprite GetDroneSprite(DroneType type)
     {
+        if (_droneSpriteCache.TryGetValue(type, out Sprite cached) && cached != null)
+            return cached;
+
+        // 1. Önce gerçek askeri İHA/SİHA model dosyasını (Assets/Sprites/drone_*.png) yükle
+        string fileName = type switch
+        {
+            DroneType.MK1_Scout       => "drone_mk1.png",
+            DroneType.MK2_Interceptor => "drone_mk2.png",
+            DroneType.MK3_Striker     => "drone_mk3.png",
+            DroneType.MK4_Missile     => "drone_mk4.png",
+            DroneType.MK5_TitanAegis  => "drone_mk5.png",
+            _                         => "drone_mk1.png"
+        };
+
+        // Her drone modeline özel orantılı ölçekleme (Uçaklar ~1.8 units, Dronelar ~0.78 - 0.95 units kanat desteği):
+        // MK-1 İzci: Kompakt keşif İHA (~0.78 units boy) -> 1200 PPU
+        // MK-2 Avcı: Çevik Loyal Wingman refakatçi (~0.82 units boy) -> 1100 PPU
+        // MK-3 Taarruz: Ağır SİHA (~0.86 units boy) -> 1100 PPU
+        // MK-4 Valkyrie: Hayalet UCAV uçan kanat (~0.77 units boy, 1.00 en) -> 1000 PPU
+        // MK-5 Titan: Ağır Apex hayalet platform (~0.88 units boy, 1.05 en) -> 960 PPU
+        float ppu = type switch
+        {
+            DroneType.MK1_Scout       => 1200f,
+            DroneType.MK2_Interceptor => 1100f,
+            DroneType.MK3_Striker     => 1100f,
+            DroneType.MK4_Missile     => 1000f,
+            DroneType.MK5_TitanAegis  => 960f,
+            _                         => 1100f
+        };
+
+        string fullPath = System.IO.Path.Combine(Application.dataPath, "Sprites", fileName);
+        if (System.IO.File.Exists(fullPath))
+        {
+            try
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+                Texture2D loadedTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (loadedTex.LoadImage(bytes))
+                {
+                    loadedTex.filterMode = FilterMode.Bilinear;
+                    loadedTex.wrapMode = TextureWrapMode.Clamp;
+                    Sprite loadedSpr = Sprite.Create(loadedTex, new Rect(0, 0, loadedTex.width, loadedTex.height), new Vector2(0.5f, 0.5f), ppu);
+                    _droneSpriteCache[type] = loadedSpr;
+                    return loadedSpr;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("[DroneCompanion] Gerçek drone görseli yüklenirken hata: " + ex.Message);
+            }
+        }
+
+        // 2. Dosya bulunamazsa yedek usulü oluştur
         int size = 48;
         Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
         tex.filterMode = FilterMode.Point;
@@ -262,7 +318,7 @@ public class DroneCompanion : MonoBehaviour
 
         _sr.sprite = GetDroneSprite(droneType);
         _sr.sortingOrder = 5;
-        transform.localScale = Vector3.one * 0.95f;
+        transform.localScale = Vector3.one;
     }
 
     private void CreateThrusterVisual()
@@ -382,7 +438,18 @@ public class DroneCompanion : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         string modelName = HangarManager.GetDroneDisplayName(droneType);
-        gameUI?.ShowWaveAlert($"⚠️ <b>[DESTEK İHA İMHA OLDU!]</b>\n<color=#FF5252>{modelName.ToUpper()} KANATTAN DÜŞTÜ</color>", Color.red, 3f);
+
+        int currentDeaths = (HangarManager.Instance != null ? HangarManager.Instance.GetDroneDeaths(droneType) : 0) + 1;
+        int maxDeaths = HangarManager.MAX_DRONE_DEATHS;
+
+        if (currentDeaths >= maxDeaths)
+        {
+            gameUI?.ShowWaveAlert($"💥 <b>[{modelName.ToUpper()} TAMAMEN İMHA OLDU!]</b>\n<color=#FF5252>2/2 Can Hakkı Tükendi - Hangardan Tekrar Satın Alınmalı!</color>", Color.red, 3.5f);
+        }
+        else
+        {
+            gameUI?.ShowWaveAlert($"⚠️ <b>[{modelName.ToUpper()} AĞIR HASAR ALDI!]</b>\n<color=#FFA000>Kanattan Düştü (1/{maxDeaths} Hak Kalan) - Hangarda Onarılabilir!</color>", new Color(1f, 0.65f, 0f), 3.5f);
+        }
 
         HangarManager.Instance?.OnDroneDestroyed(droneType);
         Destroy(gameObject);
