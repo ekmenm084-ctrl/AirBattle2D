@@ -183,27 +183,55 @@ public class InventoryUI : MonoBehaviour
         // 3. Filo Muharebe Gücü ve Skoru
         if (_combatContentTMP != null)
         {
-            float baseHp = hm.activeAircraft switch { HangarManager.AircraftType.A10TankBuster => 160f, HangarManager.AircraftType.F22Raptor => 80f, _ => 100f };
-            float baseDmg = hm.activeAircraft switch { HangarManager.AircraftType.A10TankBuster => 28f, HangarManager.AircraftType.F22Raptor => 22f, _ => 20f };
-            float baseSpd = hm.activeAircraft switch { HangarManager.AircraftType.A10TankBuster => 6.2f, HangarManager.AircraftType.F22Raptor => 10.5f, _ => 8.0f };
+            float baseHp = hm.activeAircraft switch
+            {
+                HangarManager.AircraftType.A10TankBuster => 180f,
+                HangarManager.AircraftType.F22Raptor     => 120f,
+                HangarManager.AircraftType.Su57Felon     => 160f,
+                HangarManager.AircraftType.F35Lightning  => 150f,
+                HangarManager.AircraftType.KaanApex      => 220f,
+                _                                        => 100f
+            };
+
+            float baseDmg = hm.activeAircraft switch
+            {
+                HangarManager.AircraftType.A10TankBuster => 32f,
+                HangarManager.AircraftType.F22Raptor     => 24f,
+                HangarManager.AircraftType.Su57Felon     => 28f,
+                HangarManager.AircraftType.F35Lightning  => 22f,
+                HangarManager.AircraftType.KaanApex      => 34f,
+                _                                        => 20f
+            };
+
+            float baseSpd = hm.activeAircraft switch
+            {
+                HangarManager.AircraftType.A10TankBuster => 6.2f,
+                HangarManager.AircraftType.F22Raptor     => 10.5f,
+                HangarManager.AircraftType.Su57Felon     => 9.8f,
+                HangarManager.AircraftType.F35Lightning  => 11.2f,
+                HangarManager.AircraftType.KaanApex      => 12.0f,
+                _                                        => 8.0f
+            };
+
+            float baseCrit = hm.activeAircraft switch
+            {
+                HangarManager.AircraftType.Su57Felon     => 15f,
+                HangarManager.AircraftType.F35Lightning  => 10f,
+                HangarManager.AircraftType.KaanApex      => 25f,
+                _                                        => 0f
+            };
 
             float totalHp = baseHp + hm.chipBonusHealth;
             float totalDmg = baseDmg + hm.chipBonusDamage;
             float totalSpd = baseSpd;
-            float totalCrit = 0f;
+            float totalCrit = baseCrit;
 
             int ratingScore = (int)((totalHp * 1.5f) + (totalDmg * 12f) + (totalSpd * 18f) + (totalCrit * 10f));
-
-            string planeName = hm.activeAircraft switch
-            {
-                HangarManager.AircraftType.A10TankBuster => "A-10 TANK BUSTER",
-                HangarManager.AircraftType.F22Raptor     => "F-22 RAPTOR",
-                _                                        => "F-16 VIPER"
-            };
+            string planeName = HangarManager.GetAircraftDisplayName(hm.activeAircraft);
 
             _combatContentTMP.text =
                 $"<b>[AKTİF MUHAREBE GÜCÜ]</b>\n\n" +
-                $"• Görev Uçağı: <color=#FFE082>{planeName}</color>\n\n" +
+                $"• Görev Uçağı: <color=#FFE082>{planeName.ToUpper()}</color>\n\n" +
                 $"• Toplam Can: <color=#2ECC71>{totalHp:0} HP</color>\n\n" +
                 $"• Mermi Hasarı: <color=#E74C3C>{totalDmg:0.0} DMG</color>\n\n" +
                 $"• Uçuş Hızı: <color=#3498DB>{totalSpd:0.0} Mach</color>\n\n" +

@@ -13,9 +13,12 @@ public class HangarManager : MonoBehaviour
 
     public enum AircraftType
     {
-        F16Viper,       // Dengeli Taktik Avcı
-        A10TankBuster,  // Ağır Zırhlı Taarruz Uçağı
-        F22Raptor       // Görünmez Hayalet Süpersonik Jet
+        F16Viper,       // Kademe 1: Dengeli Taktik Avcı (Seviye 1+)
+        A10TankBuster,  // Kademe 2: Ağır Zırhlı Taarruz Uçağı (Seviye 15+)
+        F22Raptor,      // Kademe 3: 5. Nesil Hayalet Süpersonik Jet (Seviye 30+)
+        Su57Felon,      // Kademe 4: 5. Nesil Süper-Manevra Ağır Avcı (Seviye 50+)
+        F35Lightning,   // Kademe 5: 5. Nesil Çok Amaçlı Üçlü Salvo Jeti (Seviye 70+)
+        KaanApex        // Kademe 6: 5.+ Nesil Hava Hâkimiyeti Zirvesi (Seviye 90+)
     }
 
     public enum CrateType
@@ -38,6 +41,9 @@ public class HangarManager : MonoBehaviour
     private const string PREF_ACTIVE_PLANE = "AirBattle_ActivePlane";
     private const string PREF_UNLOCKED_A10 = "AirBattle_Unlocked_A10";
     private const string PREF_UNLOCKED_F22 = "AirBattle_Unlocked_F22";
+    private const string PREF_UNLOCKED_SU57 = "AirBattle_Unlocked_Su57";
+    private const string PREF_UNLOCKED_F35 = "AirBattle_Unlocked_F35";
+    private const string PREF_UNLOCKED_KAAN = "AirBattle_Unlocked_Kaan";
 
     private const string PREF_LVL_ARMOR = "AirBattle_Lvl_Armor";
     private const string PREF_LVL_DAMAGE = "AirBattle_Lvl_Damage";
@@ -87,8 +93,11 @@ public class HangarManager : MonoBehaviour
     public static readonly int[] SpeedCosts = { 90, 180, 300, 450, 650 };
     public static readonly int[] CritCosts = { 150, 300, 500, 750, 1000 };
 
-    public const int A10_UNLOCK_COST = 400;
-    public const int F22_UNLOCK_COST = 900;
+    public const int A10_UNLOCK_COST = 1500;
+    public const int F22_UNLOCK_COST = 5000;
+    public const int SU57_UNLOCK_COST = 15000;
+    public const int F35_UNLOCK_COST = 35000;
+    public const int KAAN_UNLOCK_COST = 75000;
 
     // Drone Maliyetleri
     public const int DRONE_LASER_COST = 350;
@@ -232,6 +241,9 @@ public class HangarManager : MonoBehaviour
             AircraftType.F16Viper      => "plane_f16.png",
             AircraftType.A10TankBuster => "plane_a10.png",
             AircraftType.F22Raptor     => "plane_f22.png",
+            AircraftType.Su57Felon     => "plane_su57.png",
+            AircraftType.F35Lightning  => "plane_f35.png",
+            AircraftType.KaanApex      => "plane_kaan.png",
             _                          => "plane_f16.png"
         };
 
@@ -239,12 +251,18 @@ public class HangarManager : MonoBehaviour
         // F-16: Çevik & hafif kompakt avcı (~1.70 birim boy) -> 560 PPU
         // A-10: Geniş kanatlı ağır taarruz jeti (~1.82 birim boy, 1.86 birim en) -> 520 PPU
         // F-22: Uzun stealth hava üstünlüğü jeti (~1.91 birim boy, 1.60 birim en) -> 500 PPU
+        // Su-57: Geniş gövdeli ağır hayalet avcı (~1.96 birim boy) -> 490 PPU
+        // F-35: Kompakt tek motorlu çok rollü taarruz jeti (~1.78 birim boy) -> 530 PPU
+        // KAAN: Zirve çift motorlu milli hava hâkimiyeti jeti (~2.05 birim boy) -> 470 PPU
         float ppu = type switch
         {
             AircraftType.F16Viper      => 560f,
             AircraftType.A10TankBuster => 520f,
             AircraftType.F22Raptor     => 500f,
-            _                          => 540f
+            AircraftType.Su57Felon     => 490f,
+            AircraftType.F35Lightning  => 530f,
+            AircraftType.KaanApex      => 470f,
+            _                          => 520f
         };
 
         string fullPath = System.IO.Path.Combine(Application.dataPath, "Sprites", fileName);
@@ -567,28 +585,88 @@ public class HangarManager : MonoBehaviour
         return spr;
     }
 
+    public static int GetAircraftRequiredLevel(AircraftType type)
+    {
+        return type switch
+        {
+            AircraftType.F16Viper       => 1,   // Başlangıç Jeti
+            AircraftType.A10TankBuster  => 15,  // Ağır Zırhlı Taarruz
+            AircraftType.F22Raptor      => 30,  // 5. Nesil Hayalet Vulcan
+            AircraftType.Su57Felon      => 50,  // 5. Nesil Süper-Manevra Plazma
+            AircraftType.F35Lightning   => 70,  // 5. Nesil 3'lü Taktik Salvo
+            AircraftType.KaanApex       => 90,  // 5.+ Nesil Hava Hâkimiyeti Zirvesi
+            _ => 1
+        };
+    }
+
+    public static int GetAircraftUnlockCost(AircraftType type)
+    {
+        return type switch
+        {
+            AircraftType.F16Viper       => 0,
+            AircraftType.A10TankBuster  => A10_UNLOCK_COST,
+            AircraftType.F22Raptor      => F22_UNLOCK_COST,
+            AircraftType.Su57Felon      => SU57_UNLOCK_COST,
+            AircraftType.F35Lightning   => F35_UNLOCK_COST,
+            AircraftType.KaanApex       => KAAN_UNLOCK_COST,
+            _ => 0
+        };
+    }
+
+    public static string GetAircraftDisplayName(AircraftType type)
+    {
+        return type switch
+        {
+            AircraftType.F16Viper       => "F-16 Viper",
+            AircraftType.A10TankBuster  => "A-10 Tank Buster",
+            AircraftType.F22Raptor      => "F-22 Raptor",
+            AircraftType.Su57Felon      => "Su-57 Felon",
+            AircraftType.F35Lightning   => "F-35 Lightning II",
+            AircraftType.KaanApex       => "KAAN Apex Fighter",
+            _ => "Bilinmeyen Jet"
+        };
+    }
+
     public bool IsAircraftUnlocked(AircraftType type)
     {
-        switch (type)
+        if (type == AircraftType.F16Viper) return true;
+
+        return type switch
         {
-            case AircraftType.F16Viper: return true;
-            case AircraftType.A10TankBuster: return PlayerPrefs.GetInt(PREF_UNLOCKED_A10, 0) == 1;
-            case AircraftType.F22Raptor: return PlayerPrefs.GetInt(PREF_UNLOCKED_F22, 0) == 1;
-            default: return false;
-        }
+            AircraftType.A10TankBuster => PlayerPrefs.GetInt(PREF_UNLOCKED_A10, 0) == 1,
+            AircraftType.F22Raptor     => PlayerPrefs.GetInt(PREF_UNLOCKED_F22, 0) == 1,
+            AircraftType.Su57Felon     => PlayerPrefs.GetInt(PREF_UNLOCKED_SU57, 0) == 1,
+            AircraftType.F35Lightning  => PlayerPrefs.GetInt(PREF_UNLOCKED_F35, 0) == 1,
+            AircraftType.KaanApex      => PlayerPrefs.GetInt(PREF_UNLOCKED_KAAN, 0) == 1,
+            _ => false
+        };
     }
 
     public bool TryUnlockAircraft(AircraftType type)
     {
-        int cost = (type == AircraftType.A10TankBuster) ? A10_UNLOCK_COST : F22_UNLOCK_COST;
+        if (type == AircraftType.F16Viper) return true;
+
+        int playerLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+        int reqLvl = GetAircraftRequiredLevel(type);
+        if (playerLvl < reqLvl) return false;
+
+        int cost = GetAircraftUnlockCost(type);
         if (gold >= cost && !IsAircraftUnlocked(type))
         {
             gold -= cost;
-            if (type == AircraftType.A10TankBuster) PlayerPrefs.SetInt(PREF_UNLOCKED_A10, 1);
-            if (type == AircraftType.F22Raptor) PlayerPrefs.SetInt(PREF_UNLOCKED_F22, 1);
+            switch (type)
+            {
+                case AircraftType.A10TankBuster: PlayerPrefs.SetInt(PREF_UNLOCKED_A10, 1); break;
+                case AircraftType.F22Raptor:     PlayerPrefs.SetInt(PREF_UNLOCKED_F22, 1); break;
+                case AircraftType.Su57Felon:     PlayerPrefs.SetInt(PREF_UNLOCKED_SU57, 1); break;
+                case AircraftType.F35Lightning:  PlayerPrefs.SetInt(PREF_UNLOCKED_F35, 1); break;
+                case AircraftType.KaanApex:      PlayerPrefs.SetInt(PREF_UNLOCKED_KAAN, 1); break;
+            }
 
             activeAircraft = type;
             SaveHangarData();
+            var gameUI = FindObjectOfType<GameUI>();
+            gameUI?.UpdateGoldHUD(gold, -cost);
             return true;
         }
         return false;
@@ -973,6 +1051,18 @@ public class HangarManager : MonoBehaviour
                     reward.title = "F-22 RAPTOR AÇILDI!";
                     reward.description = "Süpersonik Hayalet F-22 uçağının kilidi ücretsiz açıldı!";
                 }
+                else if (!IsAircraftUnlocked(AircraftType.Su57Felon))
+                {
+                    PlayerPrefs.SetInt(PREF_UNLOCKED_SU57, 1);
+                    reward.title = "SU-57 FELON AÇILDI!";
+                    reward.description = "5. Nesil Süper-Manevra Su-57 Felon jetinin kilidi açıldı!";
+                }
+                else if (!IsAircraftUnlocked(AircraftType.F35Lightning))
+                {
+                    PlayerPrefs.SetInt(PREF_UNLOCKED_F35, 1);
+                    reward.title = "F-35 LIGHTNING II AÇILDI!";
+                    reward.description = "5. Nesil Çok Amaçlı F-35 Lightning II jetinin kilidi açıldı!";
+                }
                 else
                 {
                     chipBonusDamage += 5.0f;
@@ -1023,24 +1113,52 @@ public class HangarManager : MonoBehaviour
         float baseSpd = 8.0f;
         float baseDmg = 20f;
         int baseBullets = 1;
+        float baseCrit = 0f;
         Color planeTint = Color.white;
 
         switch (activeAircraft)
         {
             case AircraftType.A10TankBuster:
-                baseHp = 160f;
+                baseHp = 180f;
                 baseSpd = 6.2f;
-                baseDmg = 28f;
+                baseDmg = 32f;
                 baseBullets = 1;
                 planeTint = new Color(0.68f, 0.82f, 0.60f); // Kamuflaj Yeşili
                 break;
 
             case AircraftType.F22Raptor:
-                baseHp = 80f;
+                baseHp = 120f;
                 baseSpd = 10.5f;
-                baseDmg = 22f;
-                baseBullets = 2; // Çift Namlu
+                baseDmg = 24f;
+                baseBullets = 2; // Çift Namlu Vulcan Topu
                 planeTint = new Color(0.55f, 0.68f, 0.88f); // Hayalet Mavi-Gri
+                break;
+
+            case AircraftType.Su57Felon:
+                baseHp = 160f;
+                baseSpd = 9.8f;
+                baseDmg = 28f;
+                baseBullets = 2; // Çift Ağır Plazma Topu
+                baseCrit = 15f; // %15 Kritik Vuruş Şansı
+                planeTint = new Color(0.45f, 0.60f, 0.75f); // Rus Dijital Kamuflaj
+                break;
+
+            case AircraftType.F35Lightning:
+                baseHp = 150f;
+                baseSpd = 11.2f;
+                baseDmg = 22f;
+                baseBullets = 3; // Üçlü Taktik Yaylım Atışı
+                baseCrit = 10f; // %10 Kritik Vuruş Şansı
+                planeTint = new Color(0.40f, 0.45f, 0.55f); // Karbon Hayalet Gri
+                break;
+
+            case AircraftType.KaanApex:
+                baseHp = 220f;
+                baseSpd = 12.0f;
+                baseDmg = 34f;
+                baseBullets = 3; // Üçlü Ağır Plazma & Merkez Ağır Salvo
+                baseCrit = 25f; // %25 Kritik Vuruş Şansı
+                planeTint = new Color(0.50f, 0.55f, 0.65f); // Milli As Titanyum
                 break;
 
             default: // F-16 Viper
@@ -1048,6 +1166,7 @@ public class HangarManager : MonoBehaviour
                 baseSpd = 8.0f;
                 baseDmg = 20f;
                 baseBullets = 1;
+                baseCrit = 0f;
                 planeTint = Color.white;
                 break;
         }
@@ -1056,7 +1175,7 @@ public class HangarManager : MonoBehaviour
         float finalHp = baseHp + chipBonusHealth;
         float finalSpd = baseSpd;
         float finalDmg = baseDmg + chipBonusDamage;
-        float finalCrit = 0f;
+        float finalCrit = baseCrit;
 
         pc.moveSpeed = finalSpd;
 

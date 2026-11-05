@@ -25,9 +25,16 @@ public class HangarUI : MonoBehaviour
     private Button _tabPlanesBtn, _tabDronesBtn;
     private GameObject _planesContainer, _dronesContainer;
 
-    // Tab 1: Uçak Filosu
-    private Button _f16Btn, _a10Btn, _f22Btn;
-    private TextMeshProUGUI _f16BtnTMP, _a10BtnTMP, _f22BtnTMP;
+    // Tab 1: Uçak Filosu (6 İleri Düzey Askeri Jet)
+    private class PlaneCardRef
+    {
+        public HangarManager.AircraftType type;
+        public Button actionBtn;
+        public TextMeshProUGUI actionBtnTMP;
+    }
+    private readonly System.Collections.Generic.List<PlaneCardRef> _planeCards = new System.Collections.Generic.List<PlaneCardRef>();
+    private TextMeshProUGUI _fleetStatusTMP;
+    private ScrollRect _planesScrollRect;
 
     // Tab 3: Destek Droneları (5 Aşamalı Model & Can/Dayanıklılık)
     private TextMeshProUGUI _droneSlotsStatusTMP;
@@ -181,9 +188,7 @@ public class HangarUI : MonoBehaviour
             _goldTMP.text = $"ALTIN: {hm.gold:N0} G";
 
         // 2. Tab 1: Uçaklar
-        UpdatePlaneCard(HangarManager.AircraftType.F16Viper, _f16Btn, _f16BtnTMP, 0);
-        UpdatePlaneCard(HangarManager.AircraftType.A10TankBuster, _a10Btn, _a10BtnTMP, HangarManager.A10_UNLOCK_COST);
-        UpdatePlaneCard(HangarManager.AircraftType.F22Raptor, _f22Btn, _f22BtnTMP, HangarManager.F22_UNLOCK_COST);
+        RefreshPlaneTabVisuals(hm);
 
         // 3. Tab 2: Destek Droneları
         RefreshDroneTabVisuals(hm);
@@ -360,33 +365,60 @@ public class HangarUI : MonoBehaviour
             }
         }
     }
-    private void UpdatePlaneCard(HangarManager.AircraftType type, Button btn, TextMeshProUGUI btnTMP, int unlockCost)
+    private void RefreshPlaneTabVisuals(HangarManager hm)
     {
-        if (btn == null || btnTMP == null) return;
-
-        HangarManager hm = HangarManager.EnsureInstance();
-        bool isUnlocked = hm.IsAircraftUnlocked(type);
-        bool isSelected = (hm.activeAircraft == type);
-
-        Image bg = btn.GetComponent<Image>();
-
-        if (isSelected)
+        if (_fleetStatusTMP != null)
         {
-            btnTMP.text = "✓ GÖREVDE";
-            btnTMP.color = Color.white;
-            if (bg != null) bg.color = new Color(0.18f, 0.55f, 0.32f);
+            string activeName = HangarManager.GetAircraftDisplayName(hm.activeAircraft);
+            _fleetStatusTMP.text = $"<b>[HAVA KUVVETLERİ FİLOSU]</b> Seçili Görev Jeti: <color=#00E5FF>{activeName.ToUpper()}</color>  |  Filo Envanteri: 6 Muharip Jet";
         }
-        else if (isUnlocked)
+
+        int playerLevel = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+
+        foreach (var card in _planeCards)
         {
-            btnTMP.text = "GÖREVE SEÇ";
-            btnTMP.color = Color.white;
-            if (bg != null) bg.color = new Color(0.18f, 0.45f, 0.72f);
-        }
-        else
-        {
-            btnTMP.text = $"KİLİDİ AÇ ({unlockCost}G)";
-            btnTMP.color = (hm.gold >= unlockCost) ? Color.yellow : new Color(0.85f, 0.5f, 0.5f);
-            if (bg != null) bg.color = new Color(0.38f, 0.22f, 0.15f);
+            if (card.actionBtn == null || card.actionBtnTMP == null) continue;
+
+            bool isUnlocked = hm.IsAircraftUnlocked(card.type);
+            bool isSelected = (hm.activeAircraft == card.type);
+            int reqLvl = HangarManager.GetAircraftRequiredLevel(card.type);
+            int unlockCost = HangarManager.GetAircraftUnlockCost(card.type);
+            bool isLevelLocked = (playerLevel < reqLvl);
+
+            Image bg = card.actionBtn.GetComponent<Image>();
+
+            if (isSelected)
+            {
+                card.actionBtnTMP.text = "✓ GÖREVDE";
+                card.actionBtnTMP.color = Color.white;
+                card.actionBtn.interactable = true;
+                if (bg != null) bg.color = new Color(0.18f, 0.55f, 0.32f);
+            }
+            else if (isUnlocked)
+            {
+                card.actionBtnTMP.text = "GÖREVE SEÇ";
+                card.actionBtnTMP.color = Color.white;
+                card.actionBtn.interactable = true;
+                if (bg != null) bg.color = new Color(0.18f, 0.45f, 0.72f);
+            }
+            else
+            {
+                if (isLevelLocked)
+                {
+                    card.actionBtnTMP.text = $"SEV. {reqLvl} KİLİDİ ({unlockCost:N0}G)";
+                    card.actionBtnTMP.color = new Color(0.85f, 0.5f, 0.5f);
+                    card.actionBtn.interactable = false;
+                    if (bg != null) bg.color = new Color(0.24f, 0.18f, 0.20f);
+                }
+                else
+                {
+                    card.actionBtnTMP.text = $"KİLİDİ AÇ ({unlockCost:N0}G)";
+                    bool canAfford = (hm.gold >= unlockCost);
+                    card.actionBtnTMP.color = canAfford ? Color.yellow : new Color(0.85f, 0.5f, 0.5f);
+                    card.actionBtn.interactable = canAfford;
+                    if (bg != null) bg.color = canAfford ? new Color(0.38f, 0.25f, 0.15f) : new Color(0.25f, 0.20f, 0.20f);
+                }
+            }
         }
     }
 
@@ -566,7 +598,7 @@ public class HangarUI : MonoBehaviour
         return btn;
     }
 
-    // ==================== TAB 1: UÇAK FİLOSU (KENDİNE HAS GÖRSELLER & FERAH VİTRİN) ====================
+    // ==================== TAB 1: UÇAK FİLOSU (6 İLERİ DÜZEY ASKERİ JET) ====================
     private void BuildPlanesContainer()
     {
         _planesContainer = new GameObject("PlanesContainer");
@@ -578,86 +610,224 @@ public class HangarUI : MonoBehaviour
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
-        float cardY = 15f;
-        float spacingX = 480f;
+        // 1. Filo Durum Başlığı
+        GameObject statusObj = new GameObject("FleetStatus");
+        statusObj.transform.SetParent(_planesContainer.transform, false);
+        RectTransform sRt = GetRect(statusObj);
+        sRt.anchorMin = new Vector2(0.5f, 1f);
+        sRt.anchorMax = new Vector2(0.5f, 1f);
+        sRt.pivot = new Vector2(0.5f, 1f);
+        sRt.anchoredPosition = new Vector2(0f, -145f);
+        sRt.sizeDelta = new Vector2(1440f, 45f);
 
-        CreatePlaneCard("F16_Card", -spacingX, cardY,
+        _fleetStatusTMP = statusObj.AddComponent<TextMeshProUGUI>();
+        _fleetStatusTMP.fontSize = 22f;
+        _fleetStatusTMP.alignment = TextAlignmentOptions.Center;
+        _fleetStatusTMP.color = Color.white;
+
+        // 2. Yatay ScrollView (6 Jet Vitrini)
+        GameObject scrollObj = new GameObject("PlanesScrollView");
+        scrollObj.transform.SetParent(_planesContainer.transform, false);
+        RectTransform scRt = GetRect(scrollObj);
+        scRt.anchorMin = new Vector2(0.5f, 0.5f);
+        scRt.anchorMax = new Vector2(0.5f, 0.5f);
+        scRt.pivot = new Vector2(0.5f, 0.5f);
+        scRt.anchoredPosition = new Vector2(0f, 15f);
+        scRt.sizeDelta = new Vector2(1500f, 580f);
+
+        scrollObj.AddComponent<RectMask2D>();
+        _planesScrollRect = scrollObj.AddComponent<ScrollRect>();
+        _planesScrollRect.horizontal = true;
+        _planesScrollRect.vertical = false;
+        _planesScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        _planesScrollRect.scrollSensitivity = 35f;
+
+        // Scroll Content
+        GameObject contentObj = new GameObject("PlanesContent");
+        contentObj.transform.SetParent(scrollObj.transform, false);
+        RectTransform cRt = GetRect(contentObj);
+        cRt.anchorMin = new Vector2(0f, 0.5f);
+        cRt.anchorMax = new Vector2(0f, 0.5f);
+        cRt.pivot = new Vector2(0f, 0.5f);
+        cRt.anchoredPosition = Vector2.zero;
+
+        float cardW = 370f;
+        float cardH = 560f;
+        float spacing = 22f;
+        float startX = 15f;
+        int totalPlanes = 6;
+        float totalWidth = startX + totalPlanes * (cardW + spacing) + 20f;
+        cRt.sizeDelta = new Vector2(totalWidth, cardH + 20f);
+        _planesScrollRect.content = cRt;
+
+        _planeCards.Clear();
+
+        // 6 Kartın Oluşturulması
+        float curX = startX + cardW * 0.5f;
+
+        CreatePlaneCard("F16_Card", contentObj.transform, curX, 0f, cardW, cardH,
             "F-16 VIPER",
             "DENGELİ ÇEVİK AVCI",
-            "HAVA ÜSTÜNLÜĞÜ JETİ",
+            "KADEME 1 (SEV. 1+)",
             "<b>Gövde Zırhı:</b> <color=#2ECC71>100 HP</color>  |  <b>Hız:</b> <color=#00E5FF>8.0 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#FFE082>Tekli Taktik Top (20 DMG)</color>\n" +
-            "<b>Mühimmat:</b> Hassas Nokta Atışı Taktik Mermi\n" +
-            "<b>Taktik Üstünlük:</b> Yüksek Çeviklik & İt Dalaşı Hâkimiyeti",
+            "<b>Ana Silah:</b> <color=#FFE082>20mm Taktik Top (20 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Tekli Hassas Mermi Salvosu\n" +
+            "<b>Taktik Üstünlük:</b> Çevik İt Dalaşı & Standart Manevra",
             new Color(0.25f, 0.55f, 0.85f),
-            HangarManager.AircraftType.F16Viper,
-            out _f16Btn, out _f16BtnTMP);
+            HangarManager.AircraftType.F16Viper);
+        curX += cardW + spacing;
 
-        CreatePlaneCard("A10_Card", 0f, cardY,
+        CreatePlaneCard("A10_Card", contentObj.transform, curX, 0f, cardW, cardH,
             "A-10 TANK BUSTER",
             "AĞIR ZIRHLI TAARRUZ JETİ",
-            "30MM GAU-8 AVENGER GATLING",
-            "<b>Gövde Zırhı:</b> <color=#2ECC71>160 HP (Titanyum Küvet)</color>  |  <b>Hız:</b> <color=#00E5FF>6.2 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#FF5252>30mm Ağır Döner Top (28 DMG)</color>\n" +
+            "KADEME 2 (SEV. 15+)",
+            "<b>Gövde Zırhı:</b> <color=#2ECC71>180 HP (Titanyum)</color>  |  <b>Hız:</b> <color=#00E5FF>6.2 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#FF5252>30mm GAU-8 Avenger (32 DMG)</color>\n" +
             "<b>Mühimmat:</b> Ağır Kinetik Zırh Delici Mermi\n" +
-            "<b>Taktik Üstünlük:</b> Yüksek Dayanıklılık & Ağır Ateş Gücü",
+            "<b>Taktik Üstünlük:</b> Yüksek Zırh & Yıkıcı Ateş Gücü",
             new Color(0.25f, 0.65f, 0.40f),
-            HangarManager.AircraftType.A10TankBuster,
-            out _a10Btn, out _a10BtnTMP);
+            HangarManager.AircraftType.A10TankBuster);
+        curX += cardW + spacing;
 
-        CreatePlaneCard("F22_Card", spacingX, cardY,
+        CreatePlaneCard("F22_Card", contentObj.transform, curX, 0f, cardW, cardH,
             "F-22 RAPTOR",
             "5. NESİL HAYALET JET",
-            "SÜPERSONİK ÇİFT VULCAN SALVOSU",
-            "<b>Gövde Zırhı:</b> <color=#E74C3C>80 HP (Hafif Karbon)</color>  |  <b>Hız:</b> <color=#00E5FF>10.5 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#BD10E0>Çift Namlulu Vulcan (22 x 2 DMG)</color>\n" +
-            "<b>Mühimmat:</b> Çift Mermi Salvosu ile Yüksek DPS\n" +
-            "<b>Taktik Üstünlük:</b> Görünmezlik & Yıldırım Baskını",
+            "KADEME 3 (SEV. 30+)",
+            "<b>Gövde Zırhı:</b> <color=#E74C3C>120 HP (Karbon)</color>  |  <b>Hız:</b> <color=#00E5FF>10.5 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#BD10E0>Çift Vulcan (24 x 2 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Çift Paralel Salvo ile Yüksek DPS\n" +
+            "<b>Taktik Üstünlük:</b> Radar Görünmezliği & Süperseyir",
             new Color(0.60f, 0.35f, 0.75f),
-            HangarManager.AircraftType.F22Raptor,
-            out _f22Btn, out _f22BtnTMP);
+            HangarManager.AircraftType.F22Raptor);
+        curX += cardW + spacing;
+
+        CreatePlaneCard("Su57_Card", contentObj.transform, curX, 0f, cardW, cardH,
+            "SU-57 FELON",
+            "5. NESİL SÜPER-MANEVRA",
+            "KADEME 4 (SEV. 50+)",
+            "<b>Gövde Zırhı:</b> <color=#2ECC71>160 HP (Plazma)</color>  |  <b>Hız:</b> <color=#00E5FF>9.8 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#00E5FF>Çift 30mm Plazma Top (28 x 2 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Çift Salvo & <color=#F1C40F>%15 Kritik Şansı</color>\n" +
+            "<b>Taktik Üstünlük:</b> 3D Vektör İtme & Kritik Darbe",
+            new Color(0.15f, 0.75f, 0.85f),
+            HangarManager.AircraftType.Su57Felon);
+        curX += cardW + spacing;
+
+        CreatePlaneCard("F35_Card", contentObj.transform, curX, 0f, cardW, cardH,
+            "F-35 LIGHTNING II",
+            "5. NESİL ÇOK AMAÇLI HAYALET",
+            "KADEME 5 (SEV. 70+)",
+            "<b>Gövde Zırhı:</b> <color=#2ECC71>150 HP (Grafen)</color>  |  <b>Hız:</b> <color=#00E5FF>11.2 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#FFA000>Üçlü Akıllı Salvo (22 x 3 DMG)</color>\n" +
+            "<b>Mühimmat:</b> 3 Namlulu Yaylım & <color=#F1C40F>%10 Kritik</color>\n" +
+            "<b>Taktik Üstünlük:</b> Elektro-Optik Hedefleme & Geniş Alan",
+            new Color(1.0f, 0.65f, 0.15f),
+            HangarManager.AircraftType.F35Lightning);
+        curX += cardW + spacing;
+
+        CreatePlaneCard("Kaan_Card", contentObj.transform, curX, 0f, cardW, cardH,
+            "KAAN APEX FIGHTER",
+            "5.+ NESİL HAVA HÂKİMİYETİ",
+            "KADEME 6 (SEV. 90+)",
+            "<b>Gövde Zırhı:</b> <color=#2ECC71>220 HP (Nano-Seramik)</color>  |  <b>Hız:</b> <color=#00E5FF>12.0 Mach</color>\n" +
+            "<b>Ana Silah:</b> <color=#FF1744>3'lü Termal Batarya (34 x 3 DMG)</color>\n" +
+            "<b>Mühimmat:</b> 3 Namlu Ağır Darbe & <color=#F1C40F>%25 Kritik</color>\n" +
+            "<b>Taktik Üstünlük:</b> Mutlak Hava Hâkimiyeti & Zirve DPS",
+            new Color(0.95f, 0.20f, 0.25f),
+            HangarManager.AircraftType.KaanApex);
+
+        // 3. Sol ve Sağ Kaydırma Butonları (Navigasyon Okları)
+        CreateNavButton("NavLeftBtn", -795f, 15f, "◀", () =>
+        {
+            if (_planesScrollRect != null)
+                _planesScrollRect.horizontalNormalizedPosition = Mathf.Clamp01(_planesScrollRect.horizontalNormalizedPosition - 0.35f);
+        });
+
+        CreateNavButton("NavRightBtn", 795f, 15f, "▶", () =>
+        {
+            if (_planesScrollRect != null)
+                _planesScrollRect.horizontalNormalizedPosition = Mathf.Clamp01(_planesScrollRect.horizontalNormalizedPosition + 0.35f);
+        });
     }
 
-    private void CreatePlaneCard(string objName, float posX, float posY, string name, string subtitle, string badgeTag, string stats, Color borderColor, HangarManager.AircraftType type, out Button actionBtn, out TextMeshProUGUI actionBtnTMP)
+    private void CreateNavButton(string objName, float posX, float posY, string arrowText, UnityEngine.Events.UnityAction onClick)
+    {
+        GameObject btnObj = new GameObject(objName);
+        btnObj.transform.SetParent(_planesContainer.transform, false);
+
+        RectTransform rt = GetRect(btnObj);
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(posX, posY);
+        rt.sizeDelta = new Vector2(55f, 110f);
+
+        Image img = btnObj.AddComponent<Image>();
+        img.color = new Color(0.08f, 0.15f, 0.26f, 0.90f);
+
+        Outline outline = btnObj.AddComponent<Outline>();
+        outline.effectColor = new Color(0.0f, 0.85f, 1f, 0.8f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        Button btn = btnObj.AddComponent<Button>();
+        btn.onClick.AddListener(onClick);
+
+        GameObject txtObj = new GameObject("Text");
+        txtObj.transform.SetParent(btnObj.transform, false);
+        RectTransform tRt = GetRect(txtObj);
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.text = arrowText;
+        tmp.fontSize = 32f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = new Color(0.0f, 0.9f, 1.0f);
+    }
+
+    private void CreatePlaneCard(string objName, Transform parent, float posX, float posY, float width, float height, string name, string subtitle, string badgeTag, string stats, Color borderColor, HangarManager.AircraftType type)
     {
         GameObject cardObj = new GameObject(objName);
-        cardObj.transform.SetParent(_planesContainer.transform, false);
+        cardObj.transform.SetParent(parent, false);
 
         RectTransform cRt = GetRect(cardObj);
-        cRt.anchorMin = new Vector2(0.5f, 0.5f);
-        cRt.anchorMax = new Vector2(0.5f, 0.5f);
+        cRt.anchorMin = new Vector2(0f, 0.5f);
+        cRt.anchorMax = new Vector2(0f, 0.5f);
         cRt.pivot = new Vector2(0.5f, 0.5f);
         cRt.anchoredPosition = new Vector2(posX, posY);
-        cRt.sizeDelta = new Vector2(440f, 560f);
+        cRt.sizeDelta = new Vector2(width, height);
 
         Image cardBg = cardObj.AddComponent<Image>();
         cardBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
 
         Outline outline = cardObj.AddComponent<Outline>();
         outline.effectColor = borderColor;
-        outline.effectDistance = new Vector2(3f, -3f);
+        outline.effectDistance = new Vector2(2.5f, -2.5f);
 
         // 1. Başlık & Model Tanımı
         GameObject titleObj = new GameObject("CardTitle");
         titleObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(titleObj);
-        tRt.anchorMin = new Vector2(0f, 0.86f);
+        tRt.anchorMin = new Vector2(0f, 0.87f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.offsetMin = Vector2.zero;
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
         tTMP.text = $"<b>{name}</b>\n<size=70%><color=#8AB4F8>{subtitle}</color></size>";
-        tTMP.fontSize = 22f;
+        tTMP.fontSize = 20f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = Color.white;
 
-        // 2. UÇAK GÖRSEL VİTRİNİ (HANGAR PİSTİ & KENDİNE HAS JET GÖRSELİ)
+        // 2. UÇAK GÖRSEL VİTRİNİ
         GameObject showcaseObj = new GameObject("PlaneVisualShowcase");
         showcaseObj.transform.SetParent(cardObj.transform, false);
         RectTransform scRt = GetRect(showcaseObj);
-        scRt.anchorMin = new Vector2(0.06f, 0.51f);
-        scRt.anchorMax = new Vector2(0.94f, 0.85f);
+        scRt.anchorMin = new Vector2(0.06f, 0.52f);
+        scRt.anchorMax = new Vector2(0.94f, 0.86f);
         scRt.offsetMin = Vector2.zero;
         scRt.offsetMax = Vector2.zero;
 
@@ -666,17 +836,17 @@ public class HangarUI : MonoBehaviour
 
         Outline scOutline = showcaseObj.AddComponent<Outline>();
         scOutline.effectColor = new Color(borderColor.r, borderColor.g, borderColor.b, 0.65f);
-        scOutline.effectDistance = new Vector2(2f, -2f);
+        scOutline.effectDistance = new Vector2(1.5f, -1.5f);
 
-        // Uçak Resmi (Kendine has detaylı piksel model)
+        // Uçak Resmi
         GameObject planeImgObj = new GameObject("PlaneSpriteImage");
         planeImgObj.transform.SetParent(showcaseObj.transform, false);
         RectTransform imgRt = GetRect(planeImgObj);
         imgRt.anchorMin = new Vector2(0.5f, 0.5f);
         imgRt.anchorMax = new Vector2(0.5f, 0.5f);
         imgRt.pivot = new Vector2(0.5f, 0.5f);
-        imgRt.anchoredPosition = new Vector2(0f, 12f);
-        imgRt.sizeDelta = new Vector2(145f, 145f);
+        imgRt.anchoredPosition = new Vector2(0f, 10f);
+        imgRt.sizeDelta = new Vector2(130f, 130f);
 
         Image planeImg = planeImgObj.AddComponent<Image>();
         planeImg.sprite = HangarManager.GetAircraftSprite(type);
@@ -693,7 +863,7 @@ public class HangarUI : MonoBehaviour
 
         TextMeshProUGUI tagTMP = tagObj.AddComponent<TextMeshProUGUI>();
         tagTMP.text = $"[ {badgeTag} ]";
-        tagTMP.fontSize = 13f;
+        tagTMP.fontSize = 12f;
         tagTMP.fontStyle = FontStyles.Bold;
         tagTMP.alignment = TextAlignmentOptions.Center;
         tagTMP.color = borderColor;
@@ -702,15 +872,15 @@ public class HangarUI : MonoBehaviour
         GameObject statObj = new GameObject("Stats");
         statObj.transform.SetParent(cardObj.transform, false);
         RectTransform sRt = GetRect(statObj);
-        sRt.anchorMin = new Vector2(0.06f, 0.17f);
-        sRt.anchorMax = new Vector2(0.94f, 0.49f);
+        sRt.anchorMin = new Vector2(0.06f, 0.16f);
+        sRt.anchorMax = new Vector2(0.94f, 0.50f);
         sRt.offsetMin = Vector2.zero;
         sRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI sTMP = statObj.AddComponent<TextMeshProUGUI>();
         sTMP.text = stats;
-        sTMP.fontSize = 17f;
-        sTMP.lineSpacing = 3f;
+        sTMP.fontSize = 15f;
+        sTMP.lineSpacing = 2.5f;
         sTMP.alignment = TextAlignmentOptions.Center;
         sTMP.color = new Color(0.9f, 0.95f, 1f);
 
@@ -726,7 +896,7 @@ public class HangarUI : MonoBehaviour
         Image btnImg = btnObj.AddComponent<Image>();
         btnImg.color = new Color(0.18f, 0.55f, 0.32f);
 
-        actionBtn = btnObj.AddComponent<Button>();
+        Button actionBtn = btnObj.AddComponent<Button>();
         actionBtn.onClick.AddListener(() =>
         {
             HangarManager hm = HangarManager.EnsureInstance();
@@ -749,12 +919,19 @@ public class HangarUI : MonoBehaviour
         btRt.offsetMin = Vector2.zero;
         btRt.offsetMax = Vector2.zero;
 
-        actionBtnTMP = btnTxtObj.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI actionBtnTMP = btnTxtObj.AddComponent<TextMeshProUGUI>();
         actionBtnTMP.text = "GÖREVE SEÇ";
-        actionBtnTMP.fontSize = 20f;
+        actionBtnTMP.fontSize = 18f;
         actionBtnTMP.fontStyle = FontStyles.Bold;
         actionBtnTMP.alignment = TextAlignmentOptions.Center;
         actionBtnTMP.color = Color.white;
+
+        _planeCards.Add(new PlaneCardRef
+        {
+            type = type,
+            actionBtn = actionBtn,
+            actionBtnTMP = actionBtnTMP
+        });
     }
 
     // ==================== TAB 2: DESTEK DRONELARI (5 AŞAMALI GÜÇ DÜZEYİ & DAYANIKLILIK) ====================
