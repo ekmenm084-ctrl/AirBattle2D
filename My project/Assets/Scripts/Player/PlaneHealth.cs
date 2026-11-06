@@ -77,10 +77,16 @@ public class PlaneHealth : MonoBehaviour
         _isDead = true;
 
         PlaneController pc = GetComponent<PlaneController>();
-        bool isBoss = (pc != null && !pc.isPlayer1 && GameManager.Instance != null && (GameManager.Instance.currentPlaneIndex % 5 == 0));
+        bool isBoss = (pc != null && !pc.isPlayer1 && GameManager.Instance != null && GameManager.Instance.IsBossPlane(GameManager.Instance.currentPlaneIndex));
+        bool isFinalBoss = (pc != null && !pc.isPlayer1 && GameManager.Instance != null &&
+            ((GameManager.Instance.CurrentMode == GameManager.GameMode.BossRush && GameManager.Instance.currentPlaneIndex >= 4) ||
+             (GameManager.Instance.CurrentMode == GameManager.GameMode.SoloVsAI && GameManager.Instance.currentPlaneIndex >= GameManager.MaxPlanes)));
 
-        // Sinematik Prosedürel Patlama & Sarsıntı
-        VFXManager.SpawnExplosion(transform.position, isBoss);
+        // Sinematik Prosedürel Patlama & Sarsıntı (Final Boss ise ilk darbe, ardından zincirleme patlama GameManager tarafından yönetilir)
+        if (!isFinalBoss)
+        {
+            VFXManager.SpawnExplosion(transform.position, isBoss);
+        }
 
         // Düşman uçağı düştüğünde ganimet (Loot) bırak
         if (pc != null && !pc.isPlayer1)
@@ -93,18 +99,22 @@ public class PlaneHealth : MonoBehaviour
 
         onDeath?.Invoke();
 
-        GameManager.Instance?.OnPlaneDead(this);
-
         if (pc != null) pc.FreezeMovement();
 
         PlaneShooter ps = GetComponent<PlaneShooter>();
         if (ps != null) ps.enabled = false;
 
-        SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        if (sr != null) sr.enabled = false;
-
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
+
+        // Normal düşmanlarda uçağı hemen gizle; Final Boss için ağır çekim patlama sekansı bitince gizlenecek!
+        if (!isFinalBoss)
+        {
+            SpriteRenderer sr = GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = false;
+        }
+
+        GameManager.Instance?.OnPlaneDead(this);
     }
 
     /// <summary>

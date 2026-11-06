@@ -46,6 +46,7 @@ public class GameUI : MonoBehaviour
 
         SetupWaveBadge();
         SetupWaveAlertObject();
+        SetupRedZoneOverlay();
         SetupMissileButton();
         SetupGoldHUD();
 
@@ -66,6 +67,7 @@ public class GameUI : MonoBehaviour
         if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(visible);
         if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
         if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
+        if (!visible && _redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
     }
 
     private void FindPlanesIfNull()
@@ -282,6 +284,63 @@ public class GameUI : MonoBehaviour
         _waveAlertObj.SetActive(false);
     }
 
+    private GameObject _redZoneOverlayObj;
+    private Image _redZoneBgImage;
+    private TextMeshProUGUI _redZoneAlertTMP;
+    private Coroutine _redZoneCoroutine;
+
+    private void SetupRedZoneOverlay()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        Transform existing = canvas.transform.Find("HUD_RedZoneOverlay");
+        _redZoneOverlayObj = existing != null ? existing.gameObject : new GameObject("HUD_RedZoneOverlay");
+        _redZoneOverlayObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform rt = _redZoneOverlayObj.GetComponent<RectTransform>();
+        if (rt == null) rt = _redZoneOverlayObj.AddComponent<RectTransform>();
+
+        // Tam ekran kaplama
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        _redZoneBgImage = _redZoneOverlayObj.GetComponent<Image>();
+        if (_redZoneBgImage == null) _redZoneBgImage = _redZoneOverlayObj.AddComponent<Image>();
+        _redZoneBgImage.color = new Color(0.9f, 0.05f, 0.05f, 0f);
+        _redZoneBgImage.raycastTarget = false;
+
+        // Uyarı Başlık Metni
+        Transform bannerTr = _redZoneOverlayObj.transform.Find("BannerText");
+        GameObject bannerObj = (bannerTr != null) ? bannerTr.gameObject : new GameObject("BannerText");
+        bannerObj.transform.SetParent(_redZoneOverlayObj.transform, false);
+
+        RectTransform bannerRt = bannerObj.GetComponent<RectTransform>();
+        if (bannerRt == null) bannerRt = bannerObj.AddComponent<RectTransform>();
+        bannerRt.anchorMin = new Vector2(0f, 0.5f);
+        bannerRt.anchorMax = new Vector2(1f, 0.5f);
+        bannerRt.pivot = new Vector2(0.5f, 0.5f);
+        bannerRt.anchoredPosition = new Vector2(0f, 85f);
+        bannerRt.sizeDelta = new Vector2(0f, 180f);
+
+        _redZoneAlertTMP = bannerObj.GetComponent<TextMeshProUGUI>();
+        if (_redZoneAlertTMP == null) _redZoneAlertTMP = bannerObj.AddComponent<TextMeshProUGUI>();
+        _redZoneAlertTMP.fontSize = 38f;
+        _redZoneAlertTMP.fontStyle = FontStyles.Bold;
+        _redZoneAlertTMP.alignment = TextAlignmentOptions.Center;
+        _redZoneAlertTMP.raycastTarget = false;
+
+        var outline = bannerObj.GetComponent<Outline>();
+        if (outline == null) outline = bannerObj.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        _redZoneOverlayObj.SetActive(false);
+    }
+
     private GameObject _goldHUDObj;
     private TextMeshProUGUI _goldHUDTMP;
     private Outline _goldHUDOutline;
@@ -418,6 +477,76 @@ public class GameUI : MonoBehaviour
 
         _waveAlertObj.SetActive(false);
         _alertCoroutine = null;
+    }
+
+    /// <summary>
+    /// Boss Rush modunda veya Final Boss yaklaşırken ekranı kırmızı alarm (Red Zone) ve sarsıntı ile kaplar.
+    /// </summary>
+    public void TriggerRedZoneWarning(float duration = 2.8f, System.Action onComplete = null)
+    {
+        if (_redZoneOverlayObj == null || _redZoneAlertTMP == null)
+            SetupRedZoneOverlay();
+
+        if (_redZoneCoroutine != null)
+            StopCoroutine(_redZoneCoroutine);
+
+        _redZoneCoroutine = StartCoroutine(RedZoneRoutine(duration, onComplete));
+    }
+
+    private IEnumerator RedZoneRoutine(float duration, System.Action onComplete)
+    {
+        if (_redZoneOverlayObj == null) yield break;
+
+        _redZoneOverlayObj.SetActive(true);
+        _redZoneOverlayObj.transform.SetAsLastSibling();
+
+        if (_redZoneAlertTMP != null)
+        {
+            _redZoneAlertTMP.text = "🚨 <color=#FFE600><b>[ RED ZONE: KRİTİK TEHLİKE ]</b></color> 🚨\n<size=75%><color=#FF2222>FİNAL BOSS HAVA SAHASINA GİRİYOR!</color></size>\n<size=52%><color=#FFFFFF>NÜKLEER AS TESPİT EDİLDİ - DİKKAT!</color></size>";
+        }
+
+        // Alarm süresince ekrana sürekli tok sarsıntı ver
+        CameraShake.Shake(0.30f, duration);
+
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+
+            // Nabız atan derin kırmızı ekran efekti
+            float pulse = Mathf.PingPong(elapsed * 4.5f, 1f);
+            float alpha = Mathf.Lerp(0.12f, 0.44f, pulse);
+            if (_redZoneBgImage != null)
+                _redZoneBgImage.color = new Color(0.95f, 0.05f, 0.05f, alpha);
+
+            // Uyarı metni nabız parlaklığı
+            if (_redZoneAlertTMP != null)
+            {
+                float textAlpha = Mathf.Lerp(0.65f, 1f, pulse);
+                _redZoneAlertTMP.alpha = textAlpha;
+            }
+
+            yield return null;
+        }
+
+        // Yumuşak kayboluş (Fade out)
+        float fadeOutTime = 0.40f;
+        float fadeElapsed = 0f;
+        Color initialColor = (_redZoneBgImage != null) ? _redZoneBgImage.color : Color.clear;
+        while (fadeElapsed < fadeOutTime)
+        {
+            fadeElapsed += Time.unscaledDeltaTime;
+            float t = fadeElapsed / fadeOutTime;
+            if (_redZoneBgImage != null)
+                _redZoneBgImage.color = new Color(initialColor.r, initialColor.g, initialColor.b, Mathf.Lerp(initialColor.a, 0f, t));
+            if (_redZoneAlertTMP != null)
+                _redZoneAlertTMP.alpha = Mathf.Lerp(1f, 0f, t);
+            yield return null;
+        }
+
+        _redZoneOverlayObj.SetActive(false);
+        _redZoneCoroutine = null;
+        onComplete?.Invoke();
     }
 
     private void Update()

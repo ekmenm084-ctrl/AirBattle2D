@@ -172,5 +172,66 @@ public class VFXManager : MonoBehaviour
 
         Destroy(expObj, 1.2f);
     }
+
+    /// <summary>
+    /// Final Boss imhası veya özel sinematik anlar için devasa, alevli ve şok dalgalı ağır çekim uyumlu patlama.
+    /// </summary>
+    public static void SpawnMegaExplosion(Vector3 position, float scaleMultiplier = 2.5f)
+    {
+        EnsureInstance();
+
+        GameObject expObj = new GameObject("MegaExplosionEffect");
+        expObj.transform.position = position;
+
+        ParticleSystem ps = expObj.AddComponent<ParticleSystem>();
+        ParticleSystemRenderer psr = expObj.GetComponent<ParticleSystemRenderer>();
+        psr.material = _particleMat;
+        psr.sortingOrder = 25;
+
+        var main = ps.main;
+        main.useUnscaledTime = true; // Ağır çekimde (slow motion) akıcı ve kesintisiz patlasın
+        main.startLifetime = 0.65f;
+        main.startSpeed = new ParticleSystem.MinMaxCurve(5f * scaleMultiplier, 12f * scaleMultiplier);
+        main.startSize = new ParticleSystem.MinMaxCurve(0.35f * scaleMultiplier, 0.85f * scaleMultiplier);
+        main.startColor = new Color(1f, 0.55f, 0.1f);
+        main.loop = false;
+        main.playOnAwake = false;
+        main.stopAction = ParticleSystemStopAction.Destroy;
+
+        var emission = ps.emission;
+        emission.SetBursts(new ParticleSystem.Burst[] { new ParticleSystem.Burst(0f, (short)(35 * scaleMultiplier)) });
+
+        var shape = ps.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 0.35f * scaleMultiplier;
+
+        var col = ps.colorOverLifetime;
+        col.enabled = true;
+        Gradient grad = new Gradient();
+        grad.SetKeys(
+            new GradientColorKey[] {
+                new GradientColorKey(new Color(1f, 1f, 0.85f), 0f),
+                new GradientColorKey(new Color(1f, 0.38f, 0.05f), 0.45f),
+                new GradientColorKey(new Color(0.2f, 0.15f, 0.15f), 1f)
+            },
+            new GradientAlphaKey[] {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(0.95f, 0.5f),
+                new GradientAlphaKey(0f, 1f)
+            }
+        );
+        col.color = grad;
+
+        var sol = ps.sizeOverLifetime;
+        sol.enabled = true;
+        AnimationCurve curve = new AnimationCurve();
+        curve.AddKey(0f, 1f);
+        curve.AddKey(1f, 0f);
+        sol.size = new ParticleSystem.MinMaxCurve(1f, curve);
+
+        ps.Play();
+
+        Destroy(expObj, 2.5f);
+    }
 }
 

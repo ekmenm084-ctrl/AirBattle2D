@@ -269,8 +269,23 @@ public class GameManager : MonoBehaviour
         // Canı ve bileşenleri sıfırla
         plane2Health.ResetHealth(hp);
 
-        // Uçağın konumunu üst merkeze al
-        plane2Health.transform.position = new Vector3(0f, 3.5f, 0f);
+        // Boss Rush Final Boss özel girişi (Wave 4)
+        bool isBossRushFinal = (CurrentMode == GameMode.BossRush && waveIndex == 4);
+
+        if (isBossRushFinal)
+        {
+            // Uçağı ekranın tepesinde gizli başlat
+            plane2Health.transform.position = new Vector3(0f, 7.5f, 0f);
+            var aiComp = plane2Health.GetComponent<AIController>();
+            if (aiComp != null) aiComp.enabled = false;
+            var psComp = plane2Health.GetComponent<PlaneShooter>();
+            if (psComp != null) psComp.enabled = false;
+        }
+        else
+        {
+            // Uçağın konumunu üst merkeze al
+            plane2Health.transform.position = new Vector3(0f, 3.5f, 0f);
+        }
 
         // Görsel Boss Ölçeklendirmesi ve Renk Tonlaması
         Transform planeTransform = plane2Health.transform;
@@ -308,8 +323,80 @@ public class GameManager : MonoBehaviour
         // Boss dalgası ise geçişli cümleli Boss Tanıtım sinematiğini oynat
         if (isBoss)
         {
-            StoryCampaignManager.EnsureInstance()?.PlayBossIntro(effIndex, null);
+            if (isBossRushFinal)
+            {
+                if (StoryCampaignManager.EnsureInstance() != null)
+                {
+                    StoryCampaignManager.EnsureInstance().PlayBossIntro(effIndex, () =>
+                    {
+                        StartCoroutine(FinalBossArrivalRoutine());
+                    });
+                }
+                else
+                {
+                    StartCoroutine(FinalBossArrivalRoutine());
+                }
+            }
+            else
+            {
+                StoryCampaignManager.EnsureInstance()?.PlayBossIntro(effIndex, null);
+            }
         }
+    }
+
+    /// <summary>
+    /// Boss Rush modunun Final Boss'u için Red Zone alarmı, ekran sarsıntısı ve uçak giriş sekansı.
+    /// </summary>
+    private IEnumerator FinalBossArrivalRoutine()
+    {
+        if (plane2Health == null) yield break;
+
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.TriggerRedZoneWarning(2.8f);
+
+        // Şiddetli ekran sarsıntısı ve nükleer alarm hissi
+        CameraShake.Shake(0.32f, 2.8f);
+        AudioManager.Instance?.PlayGunfire(true);
+
+        Vector3 startPos = new Vector3(0f, 7.5f, 0f);
+        Vector3 targetPos = new Vector3(0f, 3.5f, 0f);
+        plane2Health.transform.position = startPos;
+
+        float duration = 2.4f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+
+            // Yumuşak iniş eğrisi (Cubic Ease-Out)
+            float ease = 1f - Mathf.Pow(1f - t, 3f);
+            plane2Health.transform.position = Vector3.Lerp(startPos, targetPos, ease);
+
+            // Motor egzozlarından kıvılcım ve alev izi
+            if (elapsed % 0.12f < Time.deltaTime)
+            {
+                Vector3 engineL = plane2Health.transform.position + new Vector3(-0.4f, -0.9f, 0f);
+                Vector3 engineR = plane2Health.transform.position + new Vector3(0.4f, -0.9f, 0f);
+                VFXManager.SpawnHitSparks(engineL, new Color(1f, 0.45f, 0.1f));
+                VFXManager.SpawnHitSparks(engineR, new Color(1f, 0.45f, 0.1f));
+            }
+
+            yield return null;
+        }
+
+        plane2Health.transform.position = targetPos;
+
+        // Sahaya iniş şok dalgası ve patlama sesi
+        CameraShake.Shake(0.45f, 0.45f);
+        AudioManager.Instance?.PlayExplosion(isBoss: true);
+
+        // AI ve atış mekanizmalarını savaşa hazır hale getir
+        var ai = plane2Health.GetComponent<AIController>();
+        if (ai != null) ai.enabled = true;
+        var ps = plane2Health.GetComponent<PlaneShooter>();
+        if (ps != null) ps.enabled = true;
     }
 
     public void OnPlaneDead(PlaneHealth deadPlane)
@@ -395,19 +482,8 @@ public class GameManager : MonoBehaviour
             // BOSS RUSH VE SOLO MOD ZAFER KONTROLÜ
             if (CurrentMode == GameMode.BossRush && currentPlaneIndex >= 4)
             {
-                // BOSS RUSH TAMAMLANDI!
-                gameEnded = true;
-                int rushReward = 1500;
-                HangarManager.EnsureInstance()?.AddGold(rushReward);
-                sessionGoldEarned += rushReward;
-
-                PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
-                PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(4);
-
-                if (gameOverUI != null)
-                    gameOverUI.Show($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!");
-
-                StartCoroutine(ReturnToMainMenuRoutine(2.5f));
+                // BOSS RUSH TAMAMLANDI: Ağır çekim ve zincirleme devasa patlama sekansını başlat
+                StartCoroutine(FinalBossDefeatSlowMoRoutine(deadPlane));
             }
             else if (CurrentMode == GameMode.SoloVsAI && currentPlaneIndex >= MaxPlanes)
             {
@@ -560,7 +636,90 @@ public class GameManager : MonoBehaviour
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    /// <summary>
+    /// Boss Rush modunun Final Boss'u düştüğünde sinematik ağır çekim (Slow-Mo) ve zincirleme gövde patlamaları sekansı.
+    /// </summary>
+    private IEnumerator FinalBossDefeatSlowMoRoutine(PlaneHealth bossPlane)
+    {
+        gameEnded = true;
+
+        // 1. Ağır Çekim (Slow-Motion) Başlat: Zamanı 0.18x hızına çek
+        Time.timeScale = 0.18f;
+        Time.fixedDeltaTime = 0.02f * Time.timeScale;
+
+        Vector3 bossPos = (bossPlane != null) ? bossPlane.transform.position : new Vector3(0f, 3.5f, 0f);
+        SpriteRenderer sr = (bossPlane != null) ? bossPlane.GetComponent<SpriteRenderer>() : null;
+        Color originalColor = (sr != null) ? sr.color : Color.white;
+
+        // 2. İlk Şiddetli Sarsıntı ve Patlama Sesi
+        CameraShake.Shake(0.50f, 3.0f);
+        AudioManager.Instance?.PlayExplosion(isBoss: true);
+
+        // 3. Gövde Üzerinde Sırayla Patlayan 8 Kademeli Zincirleme Alev & Şok Dalgası Noktası
+        Vector2[] offsets = new Vector2[]
+        {
+            new Vector2(-0.75f, -0.3f), // Sol Kanat
+            new Vector2(0.75f, -0.3f),  // Sağ Kanat
+            new Vector2(0.0f, 0.8f),    // Kokpit / Burun
+            new Vector2(-0.4f, -0.9f),  // Sol Motor
+            new Vector2(0.4f, -0.9f),   // Sağ Motor
+            new Vector2(-0.35f, 0.2f),  // Sol Gövde
+            new Vector2(0.35f, 0.2f),   // Sağ Gövde
+            new Vector2(0.0f, -0.2f)    // Gövde Merkezi
+        };
+
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            Vector3 point = bossPos + (Vector3)offsets[i];
+            VFXManager.SpawnMegaExplosion(point, scaleMultiplier: 1.8f);
+            AudioManager.Instance?.PlayExplosion(isBoss: true);
+
+            // Uçak alev alırken yanıp sönme efekti
+            if (sr != null)
+            {
+                sr.color = (i % 2 == 0) ? new Color(1f, 0.35f, 0.1f) : new Color(1f, 0.95f, 0.85f);
+            }
+
+            yield return new WaitForSecondsRealtime(0.20f);
+        }
+
+        // 4. Nihai Devasa Patlama ve Sarsıntı Zirvesi
+        VFXManager.SpawnMegaExplosion(bossPos, scaleMultiplier: 3.5f);
+        CameraShake.Shake(0.75f, 1.2f);
+        AudioManager.Instance?.PlayExplosion(isBoss: true);
+
+        // Uçak enkaza dönüşüp alevlerin ardında kaybolur
+        if (sr != null)
+        {
+            sr.enabled = false;
+            sr.color = originalColor;
+        }
+
+        // Ağır çekimin sinematik etkisini hissettirmek için kısa bir an bekle
+        yield return new WaitForSecondsRealtime(0.70f);
+
+        // 5. Zamanı Normale Döndür
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
+
+        // 6. Zafer & Ödül
+        int rushReward = 1500;
+        HangarManager.EnsureInstance()?.AddGold(rushReward);
+        sessionGoldEarned += rushReward;
+
+        PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
+        PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(4);
+
+        AudioManager.Instance?.PlayRewardFanfare();
+
+        if (gameOverUI != null)
+            gameOverUI.Show($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!");
+
+        StartCoroutine(ReturnToMainMenuRoutine(3.0f));
     }
 
     public void RestartGame()
@@ -568,6 +727,7 @@ public class GameManager : MonoBehaviour
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -576,6 +736,19 @@ public class GameManager : MonoBehaviour
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void OnDisable()
+    {
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
+    }
+
+    private void OnDestroy()
+    {
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
     }
 }
