@@ -11,7 +11,9 @@ public static class GameSettings
         Solo,       // 20 Uçaklık Hikaye Seferi (Bölüm 1, 2, 3)
         Online,     // 2 Oyunculu Düello
         Endless,    // Sonsuz İt Dalaşı (High Score)
-        BossRush    // Sadece Boss Filosu (4 Boss Peş Peşe)
+        BossRush,   // Sadece Boss Filosu (4 Boss Peş Peşe)
+        BulletHell, // Mermi Cehennemi (Aşırı Mermi Fırtınası & Hayatta Kalma)
+        TimeAttack  // Zaman Taarruzu (Zamana Karşı Hızlı Av Modu)
     }
 
     public enum Difficulty 

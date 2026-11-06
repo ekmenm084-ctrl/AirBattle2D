@@ -47,6 +47,7 @@ public class GameUI : MonoBehaviour
         SetupWaveBadge();
         SetupWaveAlertObject();
         SetupRedZoneOverlay();
+        SetupModeIntroBanner();
         SetupMissileButton();
         SetupGoldHUD();
 
@@ -68,6 +69,7 @@ public class GameUI : MonoBehaviour
         if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
         if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
         if (!visible && _redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
+        if (!visible && _modeIntroObj != null) _modeIntroObj.SetActive(false);
     }
 
     private void FindPlanesIfNull()
@@ -341,6 +343,89 @@ public class GameUI : MonoBehaviour
         _redZoneOverlayObj.SetActive(false);
     }
 
+    private GameObject _modeIntroObj;
+    private TextMeshProUGUI _modeIntroTitleTMP;
+    private TextMeshProUGUI _modeIntroSubtitleTMP;
+    private TextMeshProUGUI _modeIntroDescTMP;
+    private CanvasGroup _modeIntroCanvasGroup;
+    private Outline _modeIntroOutline;
+    private Coroutine _modeIntroCoroutine;
+
+    private void SetupModeIntroBanner()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        Transform existing = canvas.transform.Find("HUD_ModeIntroBanner");
+        _modeIntroObj = existing != null ? existing.gameObject : new GameObject("HUD_ModeIntroBanner");
+        _modeIntroObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform rt = _modeIntroObj.GetComponent<RectTransform>() ?? _modeIntroObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0f, 75f);
+        rt.sizeDelta = new Vector2(760f, 180f);
+
+        Image bg = _modeIntroObj.GetComponent<Image>() ?? _modeIntroObj.AddComponent<Image>();
+        bg.color = new Color(0.03f, 0.07f, 0.13f, 0.94f);
+        bg.raycastTarget = false;
+
+        _modeIntroOutline = _modeIntroObj.GetComponent<Outline>() ?? _modeIntroObj.AddComponent<Outline>();
+        _modeIntroOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
+        _modeIntroOutline.effectDistance = new Vector2(2.5f, -2.5f);
+
+        _modeIntroCanvasGroup = _modeIntroObj.GetComponent<CanvasGroup>() ?? _modeIntroObj.AddComponent<CanvasGroup>();
+
+        // 1. Başlık
+        Transform titleTr = _modeIntroObj.transform.Find("TitleText");
+        GameObject titleObj = (titleTr != null) ? titleTr.gameObject : new GameObject("TitleText");
+        titleObj.transform.SetParent(_modeIntroObj.transform, false);
+        RectTransform titleRt = titleObj.GetComponent<RectTransform>() ?? titleObj.AddComponent<RectTransform>();
+        titleRt.anchorMin = new Vector2(0f, 0.60f);
+        titleRt.anchorMax = new Vector2(1f, 0.98f);
+        titleRt.offsetMin = Vector2.zero;
+        titleRt.offsetMax = Vector2.zero;
+        _modeIntroTitleTMP = titleObj.GetComponent<TextMeshProUGUI>() ?? titleObj.AddComponent<TextMeshProUGUI>();
+        _modeIntroTitleTMP.fontSize = 28f;
+        _modeIntroTitleTMP.fontStyle = FontStyles.Bold;
+        _modeIntroTitleTMP.alignment = TextAlignmentOptions.Center;
+        _modeIntroTitleTMP.raycastTarget = false;
+
+        // 2. Alt Başlık
+        Transform subTr = _modeIntroObj.transform.Find("SubtitleText");
+        GameObject subObj = (subTr != null) ? subTr.gameObject : new GameObject("SubtitleText");
+        subObj.transform.SetParent(_modeIntroObj.transform, false);
+        RectTransform subRt = subObj.GetComponent<RectTransform>() ?? subObj.AddComponent<RectTransform>();
+        subRt.anchorMin = new Vector2(0f, 0.30f);
+        subRt.anchorMax = new Vector2(1f, 0.62f);
+        subRt.offsetMin = Vector2.zero;
+        subRt.offsetMax = Vector2.zero;
+        _modeIntroSubtitleTMP = subObj.GetComponent<TextMeshProUGUI>() ?? subObj.AddComponent<TextMeshProUGUI>();
+        _modeIntroSubtitleTMP.fontSize = 18f;
+        _modeIntroSubtitleTMP.fontStyle = FontStyles.Bold;
+        _modeIntroSubtitleTMP.alignment = TextAlignmentOptions.Center;
+        _modeIntroSubtitleTMP.raycastTarget = false;
+
+        // 3. Açıklama & Hazır Mesajı
+        Transform descTr = _modeIntroObj.transform.Find("DescText");
+        GameObject descObj = (descTr != null) ? descTr.gameObject : new GameObject("DescText");
+        descObj.transform.SetParent(_modeIntroObj.transform, false);
+        RectTransform descRt = descObj.GetComponent<RectTransform>() ?? descObj.AddComponent<RectTransform>();
+        descRt.anchorMin = new Vector2(0f, 0.04f);
+        descRt.anchorMax = new Vector2(1f, 0.32f);
+        descRt.offsetMin = Vector2.zero;
+        descRt.offsetMax = Vector2.zero;
+        _modeIntroDescTMP = descObj.GetComponent<TextMeshProUGUI>() ?? descObj.AddComponent<TextMeshProUGUI>();
+        _modeIntroDescTMP.fontSize = 15f;
+        _modeIntroDescTMP.fontStyle = FontStyles.Normal;
+        _modeIntroDescTMP.alignment = TextAlignmentOptions.Center;
+        _modeIntroDescTMP.raycastTarget = false;
+
+        _modeIntroObj.SetActive(false);
+    }
+
     private GameObject _goldHUDObj;
     private TextMeshProUGUI _goldHUDTMP;
     private Outline _goldHUDOutline;
@@ -549,6 +634,88 @@ public class GameUI : MonoBehaviour
         onComplete?.Invoke();
     }
 
+    /// <summary>
+    /// Savaşa başlamadan önce seçilen oyun modunu ve hedeflerini tanıtan askeri brifing kartı gösterir.
+    /// </summary>
+    public void ShowModeIntroBanner(string title, string subtitle, string description, Color themeColor, float duration = 2.8f)
+    {
+        if (_modeIntroObj == null)
+            SetupModeIntroBanner();
+
+        if (_modeIntroCoroutine != null)
+            StopCoroutine(_modeIntroCoroutine);
+
+        _modeIntroCoroutine = StartCoroutine(ModeIntroBannerRoutine(title, subtitle, description, themeColor, duration));
+    }
+
+    private IEnumerator ModeIntroBannerRoutine(string title, string subtitle, string description, Color themeColor, float duration)
+    {
+        if (_modeIntroObj == null) yield break;
+
+        _modeIntroObj.SetActive(true);
+        _modeIntroObj.transform.SetAsLastSibling();
+
+        if (_modeIntroTitleTMP != null)
+        {
+            _modeIntroTitleTMP.text = title;
+            _modeIntroTitleTMP.color = themeColor;
+        }
+
+        if (_modeIntroSubtitleTMP != null)
+        {
+            _modeIntroSubtitleTMP.text = subtitle;
+            _modeIntroSubtitleTMP.color = Color.white;
+        }
+
+        if (_modeIntroDescTMP != null)
+        {
+            _modeIntroDescTMP.text = $"{description}\n<size=80%><color=#2ECC71><b>► HAVA SAHASINA GİRİLDİ • MOTORLAR ÇALIŞTI ◄</b></color></size>";
+        }
+
+        if (_modeIntroOutline != null)
+        {
+            _modeIntroOutline.effectColor = themeColor;
+        }
+
+        // Telsiz atış sesi ile bildirim
+        AudioManager.Instance?.PlayGunfire(false);
+
+        // Yumuşak Beliriş (Fade In)
+        float fadeIn = 0.28f;
+        float elapsed = 0f;
+        while (elapsed < fadeIn)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            if (_modeIntroCanvasGroup != null)
+                _modeIntroCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeIn);
+            yield return null;
+        }
+        if (_modeIntroCanvasGroup != null) _modeIntroCanvasGroup.alpha = 1f;
+
+        // Ekranda Kalma Süresi
+        float stayTime = duration - 0.6f;
+        elapsed = 0f;
+        while (elapsed < stayTime)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        // Yumuşak Kayboluş (Fade Out)
+        float fadeOut = 0.32f;
+        elapsed = 0f;
+        while (elapsed < fadeOut)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            if (_modeIntroCanvasGroup != null)
+                _modeIntroCanvasGroup.alpha = Mathf.Clamp01(1f - (elapsed / fadeOut));
+            yield return null;
+        }
+
+        _modeIntroObj.SetActive(false);
+        _modeIntroCoroutine = null;
+    }
+
     private void Update()
     {
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
@@ -584,6 +751,25 @@ public class GameUI : MonoBehaviour
         if (plane2HealthBar != null)
         {
             plane2HealthBar.value = Mathf.MoveTowards(plane2HealthBar.value, _targetP2Health, Time.deltaTime * 2.5f);
+        }
+
+        if (GameManager.Instance != null && _waveBadgeTMP != null)
+        {
+            if (GameManager.Instance.CurrentMode == GameManager.GameMode.BulletHell)
+            {
+                float t = GameManager.Instance.bulletHellTime;
+                int m = (int)(t / 60f);
+                int s = (int)(t % 60f);
+                int ms = (int)((t * 10f) % 10f);
+                _waveBadgeTMP.text = $"MERMİ CEHENNEMİ: <color=#FF4081><b>{m:00}:{s:00}.{ms}</b></color> (KADEME {GameManager.Instance.bulletHellTier})";
+            }
+            else if (GameManager.Instance.CurrentMode == GameManager.GameMode.TimeAttack)
+            {
+                float rem = GameManager.Instance.timeAttackRemaining;
+                int kills = GameManager.Instance.timeAttackKills;
+                string timerColor = (rem <= 10f) ? "#FF1744" : (rem <= 20f ? "#FFA000" : "#00E5FF");
+                _waveBadgeTMP.text = $"ZAMAN TAARRUZU: <color={timerColor}><b>{rem:0.0}s</b></color> • İMHA: <b>{kills}</b>";
+            }
         }
     }
 
@@ -649,7 +835,12 @@ public class GameUI : MonoBehaviour
 
                 if (_p2TmpLabel != null)
                 {
-                    if (isBoss)
+                    if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.BulletHell)
+                    {
+                        _p2TmpLabel.text = $"CEHENNEM KALESİ: %{hpInt} ({rawHp} HP)";
+                        _p2TmpLabel.color = new Color(1f, 0.25f, 0.55f);
+                    }
+                    else if (isBoss)
                     {
                         _p2TmpLabel.text = $"{title}: %{hpInt} ({rawHp} HP)";
                         _p2TmpLabel.color = new Color(1f, 0.85f, 0.2f); // Altın / Akkor Boss rengi
@@ -691,6 +882,14 @@ public class GameUI : MonoBehaviour
                     else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.BossRush)
                     {
                         _waveBadgeTMP.text = $"<color=#E74C3C>BOSS RUSH: {wave} / 4</color> {diffTag}";
+                    }
+                    else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.BulletHell)
+                    {
+                        _waveBadgeTMP.text = $"MERMİ CEHENNEMİ: 00:00.0 (KADEME 1) {diffTag}";
+                    }
+                    else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TimeAttack)
+                    {
+                        _waveBadgeTMP.text = $"ZAMAN TAARRUZU: 60.0s • İMHA: 0 {diffTag}";
                     }
                     else
                     {

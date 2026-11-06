@@ -14,12 +14,22 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public enum GameMode { SoloVsAI, TwoPlayer, Endless, BossRush }
+    public enum GameMode { SoloVsAI, TwoPlayer, Endless, BossRush, BulletHell, TimeAttack }
     public GameMode CurrentMode { get; private set; } = GameMode.SoloVsAI;
 
     [Header("20 Uçaklık İlerleme Modu")]
     public int currentPlaneIndex = 1;
     public const int MaxPlanes = 20;
+
+    [Header("Mermi Cehennemi (Bullet Hell)")]
+    public float bulletHellTime = 0f;
+    public int bulletHellTier = 1;
+    private Coroutine _bulletHellCoroutine;
+
+    [Header("Zaman Taarruzu (Time Attack)")]
+    public float timeAttackRemaining = 60f;
+    public int timeAttackKills = 0;
+    private Coroutine _timeAttackCoroutine;
 
     [Header("Seferde Kazanılan Altın")]
     public int sessionGoldEarned = 0;
@@ -79,6 +89,10 @@ public class GameManager : MonoBehaviour
             CurrentMode = GameMode.Endless;
         else if (GameSettings.SelectedMode == GameSettings.GameMode.BossRush)
             CurrentMode = GameMode.BossRush;
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.BulletHell)
+            CurrentMode = GameMode.BulletHell;
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.TimeAttack)
+            CurrentMode = GameMode.TimeAttack;
         else
             CurrentMode = GameMode.SoloVsAI;
 
@@ -131,7 +145,18 @@ public class GameManager : MonoBehaviour
 
         if (CurrentMode == GameMode.TwoPlayer)
         {
+            ShowActiveModeIntroBanner();
             ApplyEnemyWave(1);
+        }
+        else if (CurrentMode == GameMode.BulletHell)
+        {
+            ShowActiveModeIntroBanner();
+            StartBulletHellMode();
+        }
+        else if (CurrentMode == GameMode.TimeAttack)
+        {
+            ShowActiveModeIntroBanner();
+            StartTimeAttackMode();
         }
         else
         {
@@ -145,12 +170,14 @@ public class GameManager : MonoBehaviour
                 // Solo Seferde 1. Dalga öncesinde hikaye brifingini oynat
                 StoryCampaignManager.EnsureInstance()?.PlayCampaignIntro(() =>
                 {
+                    ShowActiveModeIntroBanner();
                     ApplyEnemyWave(currentPlaneIndex);
                 });
             }
             else
             {
                 // Sonsuz İt Dalaşı veya Boss Rush doğrudan başlar
+                ShowActiveModeIntroBanner();
                 ApplyEnemyWave(currentPlaneIndex);
             }
         }
@@ -179,7 +206,8 @@ public class GameManager : MonoBehaviour
     public int GetTotalPlanesForMode()
     {
         if (CurrentMode == GameMode.BossRush) return 4;
-        if (CurrentMode == GameMode.Endless) return 999;
+        if (CurrentMode == GameMode.Endless || CurrentMode == GameMode.TimeAttack) return 999;
+        if (CurrentMode == GameMode.BulletHell) return 1;
         return MaxPlanes;
     }
 
@@ -190,12 +218,17 @@ public class GameManager : MonoBehaviour
             // Boss Rush: 1 -> 5, 2 -> 10, 3 -> 15, 4 -> 20
             return Mathf.Clamp(index, 1, 4) * 5;
         }
+        if (CurrentMode == GameMode.TimeAttack)
+        {
+            return Mathf.Clamp(index, 1, 20);
+        }
         return index;
     }
 
     public bool IsBossPlane(int index)
     {
         if (CurrentMode == GameMode.BossRush) return true;
+        if (CurrentMode == GameMode.BulletHell) return true;
         return (index % 5 == 0);
     }
 
@@ -418,15 +451,76 @@ public class GameManager : MonoBehaviour
                 return;
             }
 
+            if (CurrentMode == GameMode.BulletHell)
+            {
+                player1Lives--;
+                var gameUI = FindObjectOfType<GameUI>();
+                gameUI?.UpdateHealthBars();
+
+                if (player1Lives > 0)
+                {
+                    gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#FF4081>KALAN CAN HAKKI: {player1Lives}</color>", new Color(1f, 0.4f, 0.2f), 1.8f);
+                    StartCoroutine(RespawnPlayer1Routine(1.2f));
+                }
+                else
+                {
+                    gameEnded = true;
+                    if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
+                    CleanUpBulletHellPlane();
+
+                    float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                    bool newRecord = bulletHellTime > bestTime;
+                    if (newRecord)
+                    {
+                        PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
+                        PlayerPrefs.Save();
+                    }
+
+                    int reward = (int)(bulletHellTime * 4f) + (newRecord ? 200 : 50);
+                    HangarManager.EnsureInstance()?.AddGold(reward);
+                    sessionGoldEarned += reward;
+
+                    int m = (int)(bulletHellTime / 60);
+                    int s = (int)(bulletHellTime % 60);
+                    int bm = (int)(bestTime / 60);
+                    int bs = (int)(bestTime % 60);
+
+                    string defeatMsg = newRecord
+                        ? $"<b><color=#2ECC71>YENİ HAYATTA KALMA REKORU!</color></b>\nSÜRE: {m:00}:{s:00}\nÖNCEKİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"
+                        : $"HAYATTA KALMA SONLANDI!\nSÜRE: {m:00}:{s:00}\nEN İYİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>";
+
+                    if (gameOverUI != null) gameOverUI.Show(defeatMsg);
+                    StartCoroutine(ReturnToMainMenuRoutine(2.8f));
+                }
+                return;
+            }
+            else if (CurrentMode == GameMode.TimeAttack)
+            {
+                player1Lives--;
+                var gameUI = FindObjectOfType<GameUI>();
+                gameUI?.UpdateHealthBars();
+
+                if (player1Lives > 0)
+                {
+                    gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ! KALAN CAN: {player1Lives}\n<color=#FFD54F>SÜRE DEVAM EDİYOR!</color>", new Color(1f, 0.4f, 0.2f), 1.5f);
+                    StartCoroutine(RespawnPlayer1Routine(1.0f));
+                }
+                else
+                {
+                    EndTimeAttackGame(isTimeUp: false);
+                }
+                return;
+            }
+
             // CAN HAKKI KONTROLÜ (Toplam 3 Can Hakkı)
             player1Lives--;
 
-            var gameUI = FindObjectOfType<GameUI>();
-            gameUI?.UpdateHealthBars();
+            var normalGameUI = FindObjectOfType<GameUI>();
+            normalGameUI?.UpdateHealthBars();
 
             if (player1Lives > 0)
             {
-                gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
+                normalGameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
                 StartCoroutine(RespawnPlayer1Routine(1.2f));
             }
             else
@@ -477,6 +571,58 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            if (CurrentMode == GameMode.BulletHell)
+            {
+                gameEnded = true;
+                if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
+                CleanUpBulletHellPlane();
+
+                int reward = 2500;
+                HangarManager.EnsureInstance()?.AddGold(reward);
+                sessionGoldEarned += reward;
+                PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
+
+                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                if (bulletHellTime > bestTime)
+                {
+                    PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
+                    PlayerPrefs.Save();
+                }
+
+                int m = (int)(bulletHellTime / 60f);
+                int s = (int)(bulletHellTime % 60f);
+                if (gameOverUI != null)
+                    gameOverUI.Show($"İNANILMAZ ZAFER!\nCEHENNEM KALESİ İMHA EDİLDİ!\nSÜRE: {m:00}:{s:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>");
+
+                AudioManager.Instance?.PlayRewardFanfare();
+                StartCoroutine(ReturnToMainMenuRoutine(3.5f));
+                return;
+            }
+            else if (CurrentMode == GameMode.TimeAttack)
+            {
+                timeAttackKills++;
+                bool isBoss = (timeAttackKills % 5 == 0);
+                float bonusSec = isBoss ? 8.0f : 4.0f;
+                timeAttackRemaining += bonusSec;
+
+                int killReward = 15 + (timeAttackKills * 2) + (isBoss ? 25 : 0);
+                HangarManager.EnsureInstance()?.AddGold(killReward);
+                sessionGoldEarned += killReward;
+
+                PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: isBoss, isElite: isBoss);
+                plane1Health?.Heal(25f);
+
+                var gameUI = FindObjectOfType<GameUI>();
+                string bonusMsg = isBoss
+                    ? $"[★] BOSS İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#2ECC71>TOPLAM İMHA: {timeAttackKills}</color>"
+                    : $"[+] UÇAK İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#00E5FF>TOPLAM İMHA: {timeAttackKills}</color>";
+                gameUI?.ShowWaveAlert(bonusMsg, isBoss ? new Color(1f, 0.85f, 0.2f) : new Color(0.2f, 0.95f, 0.4f), 1.1f);
+
+                currentPlaneIndex = timeAttackKills + 1;
+                StartCoroutine(SpawnNextEnemyRoutine(0.35f));
+                return;
+            }
+
             int totalPlanes = GetTotalPlanesForMode();
 
             // BOSS RUSH VE SOLO MOD ZAFER KONTROLÜ
@@ -722,8 +868,350 @@ public class GameManager : MonoBehaviour
         StartCoroutine(ReturnToMainMenuRoutine(3.0f));
     }
 
+    // ==========================================
+    // MERMİ CEHENNEMİ (BULLET HELL) YÖNETİCİSİ
+    // ==========================================
+    private void StartBulletHellMode()
+    {
+        player1Lives = MaxPlayerLives;
+        bulletHellTime = 0f;
+        bulletHellTier = 1;
+        currentPlaneIndex = 1;
+
+        if (plane1Health != null)
+        {
+            plane1Health.ResetHealth(100f);
+            plane1Health.transform.position = new Vector3(0f, -3.5f, 0f);
+            plane1Health.gameObject.SetActive(true);
+        }
+
+        if (plane2Health != null)
+        {
+            plane2Health.gameObject.SetActive(true);
+            plane2Health.ResetHealth(8000f);
+            plane2Health.transform.position = new Vector3(0f, 3.4f, 0f);
+            plane2Health.transform.localScale = _plane2OriginalScale * 1.65f;
+
+            SpriteRenderer sr = plane2Health.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.color = new Color(0.9f, 0.2f, 0.5f);
+
+            var ai = plane2Health.GetComponent<AIController>();
+            if (ai != null) ai.enabled = false; // BulletHellDirector mermileri yönetir
+
+            var pc = plane2Health.GetComponent<PlaneController>();
+            if (pc != null) pc.enabled = false;
+
+            var rb = plane2Health.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.bodyType = RigidbodyType2D.Kinematic;
+            }
+        }
+
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.ShowWaveAlert("🚨 [MERMİ CEHENNEMİ BAŞLADI!] 🚨\n<color=#FF4081>NE KADAR DAYANABİLİRSİN? HAYATTA KAL!</color>", new Color(1f, 0.2f, 0.5f), 2.8f);
+
+        if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
+        _bulletHellCoroutine = StartCoroutine(BulletHellDirectorRoutine());
+    }
+
+    private void CleanUpBulletHellPlane()
+    {
+        if (plane2Health != null)
+        {
+            plane2Health.transform.localScale = _plane2OriginalScale;
+            SpriteRenderer sr = plane2Health.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.color = Color.white;
+
+            var pc = plane2Health.GetComponent<PlaneController>();
+            if (pc != null) pc.enabled = true;
+
+            var rb = plane2Health.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.bodyType = RigidbodyType2D.Dynamic;
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+        }
+    }
+
+    private IEnumerator BulletHellDirectorRoutine()
+    {
+        PlaneShooter shooter = (plane2Health != null) ? plane2Health.GetComponent<PlaneShooter>() : null;
+        float spiralAngle = 0f;
+        float radialTimer = 0f;
+        float fanTimer = 0f;
+        float spiralTimer = 0f;
+        float goldTimer = 0f;
+
+        while (!gameEnded && plane2Health != null)
+        {
+            float dt = Time.deltaTime;
+            bulletHellTime += dt;
+            radialTimer += dt;
+            fanTimer += dt;
+            spiralTimer += dt;
+            goldTimer += dt;
+
+            int prevTier = bulletHellTier;
+            if (bulletHellTime < 18f) bulletHellTier = 1;
+            else if (bulletHellTime < 40f) bulletHellTier = 2;
+            else if (bulletHellTime < 70f) bulletHellTier = 3;
+            else bulletHellTier = 4;
+
+            if (bulletHellTier > prevTier)
+            {
+                var ui = FindObjectOfType<GameUI>();
+                ui?.ShowWaveAlert($"⚠️ <b>[KADEME {bulletHellTier} CEHENNEM!]</b> ⚠️\n<color=#FF1744>MERMİ YOĞUNLUĞU VE SALVO ARTTI!</color>", new Color(1f, 0.1f, 0.3f), 2.0f);
+                CameraShake.Shake(0.35f, 1.2f);
+                AudioManager.Instance?.PlayExplosion(isBoss: true);
+            }
+
+            // Uçak 2'yi sinüs dalgası ile sağa sola akıcı ve sarsıntısız süzdürelim (60 FPS)
+            float moveX = Mathf.Sin(bulletHellTime * 1.25f) * 2.2f;
+            plane2Health.transform.position = new Vector3(moveX, 3.4f, 0f);
+
+            Vector3 spawnPos = plane2Health.transform.position;
+
+            // 1. Kademe: Dairesel Mermi Çemberi (Radial Burst)
+            float radialInterval = (bulletHellTier >= 4) ? 1.35f : ((bulletHellTier >= 3) ? 1.7f : 2.1f);
+            if (radialTimer >= radialInterval && shooter != null)
+            {
+                radialTimer = 0f;
+                int bulletCount = (bulletHellTier >= 4) ? 14 : ((bulletHellTier >= 2) ? 10 : 8);
+                float step = 360f / bulletCount;
+                float startRot = Random.Range(0f, 30f);
+                Color ringColor = (bulletHellTier >= 3) ? new Color(1f, 0.25f, 0.1f) : new Color(1f, 0.35f, 0.85f);
+                float bulletSpeed = (bulletHellTier >= 3) ? 7.2f : 5.8f;
+
+                for (int i = 0; i < bulletCount; i++)
+                {
+                    float angle = (startRot + i * step) * Mathf.Deg2Rad;
+                    Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                    shooter.SpawnCustomBullet(spawnPos, dir, bulletSpeed, 12f, ringColor);
+                }
+
+                AudioManager.Instance?.PlayGunfire(true);
+            }
+
+            // 2. ve 3. Kademe: Dönen Spiral Mermiler
+            float spiralInterval = (bulletHellTier >= 4) ? 0.08f : 0.12f;
+            if (bulletHellTier >= 2 && shooter != null && spiralTimer >= spiralInterval)
+            {
+                spiralTimer = 0f;
+                float spiralStep = (bulletHellTier >= 4) ? 22f : 25f;
+                spiralAngle += spiralStep;
+
+                float rad1 = spiralAngle * Mathf.Deg2Rad;
+                Vector2 dir1 = new Vector2(Mathf.Cos(rad1), Mathf.Sin(rad1));
+                shooter.SpawnCustomBullet(spawnPos, dir1, 6.5f, 10f, new Color(0.75f, 0.2f, 1f));
+
+                // Kademe 3+: Ters Yöne Dönen İkinci Spiral
+                if (bulletHellTier >= 3)
+                {
+                    float rad2 = (-spiralAngle * 1.15f) * Mathf.Deg2Rad;
+                    Vector2 dir2 = new Vector2(Mathf.Cos(rad2), Mathf.Sin(rad2));
+                    shooter.SpawnCustomBullet(spawnPos, dir2, 6.0f, 10f, new Color(0.2f, 0.85f, 1f));
+                }
+            }
+
+            // Hedefli Yelpaze Atışı (Targeted Fan Burst)
+            float fanInterval = (bulletHellTier >= 3) ? 2.2f : 3.0f;
+            if (bulletHellTier >= 2 && fanTimer >= fanInterval && shooter != null && plane1Health != null)
+            {
+                fanTimer = 0f;
+                Vector2 toPlayer = (plane1Health.transform.position - spawnPos).normalized;
+                float baseAngle = Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg;
+                int fanCount = (bulletHellTier >= 3) ? 5 : 3;
+                float fanSpread = 18f;
+
+                for (int i = 0; i < fanCount; i++)
+                {
+                    float offset = (i - (fanCount - 1) * 0.5f) * fanSpread;
+                    float finalRad = (baseAngle + offset) * Mathf.Deg2Rad;
+                    Vector2 dir = new Vector2(Mathf.Cos(finalRad), Mathf.Sin(finalRad));
+                    shooter.SpawnCustomBullet(spawnPos, dir, 7.5f, 12f, new Color(1f, 0.9f, 0.2f));
+                }
+            }
+
+            // 5 Saniyede Bir Hayatta Kalma Altın Ödülü
+            if (goldTimer >= 5.0f)
+            {
+                goldTimer = 0f;
+                int goldAmount = 15 + (bulletHellTier * 5);
+                HangarManager.EnsureInstance()?.AddGold(goldAmount);
+                sessionGoldEarned += goldAmount;
+            }
+
+            yield return null;
+        }
+    }
+
+    // ==========================================
+    // ZAMAN TAARRUZU (TIME ATTACK) YÖNETİCİSİ
+    // ==========================================
+    private void StartTimeAttackMode()
+    {
+        player1Lives = MaxPlayerLives;
+        timeAttackRemaining = 60f;
+        timeAttackKills = 0;
+        currentPlaneIndex = 1;
+
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.ShowWaveAlert("⏱️ [ZAMAN TAARRUZU BAŞLADI!] ⏱️\n<color=#FFD54F>60 SANİYEN VAR! DÜŞMANLARI HIZLA AVLA!</color>", new Color(1f, 0.85f, 0.2f), 2.5f);
+
+        ApplyEnemyWave(1);
+
+        if (_timeAttackCoroutine != null) StopCoroutine(_timeAttackCoroutine);
+        _timeAttackCoroutine = StartCoroutine(TimeAttackCountdownRoutine());
+    }
+
+    private IEnumerator TimeAttackCountdownRoutine()
+    {
+        while (!gameEnded && timeAttackRemaining > 0f)
+        {
+            timeAttackRemaining -= Time.deltaTime;
+
+            if (timeAttackRemaining <= 0f)
+            {
+                timeAttackRemaining = 0f;
+                EndTimeAttackGame(isTimeUp: true);
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
+    private void EndTimeAttackGame(bool isTimeUp)
+    {
+        if (gameEnded) return;
+        gameEnded = true;
+
+        if (_timeAttackCoroutine != null) StopCoroutine(_timeAttackCoroutine);
+
+        int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+        bool newRecord = timeAttackKills > bestKills;
+        if (newRecord)
+        {
+            PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
+            PlayerPrefs.Save();
+        }
+
+        int reward = (timeAttackKills * 25) + (newRecord ? 250 : 50);
+        HangarManager.EnsureInstance()?.AddGold(reward);
+        sessionGoldEarned += reward;
+
+        PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(timeAttackKills);
+        AudioManager.Instance?.PlayRewardFanfare();
+
+        string title = isTimeUp ? "SÜRE DOLDU! HAREKAT BİTTİ!" : "GÖREV BAŞARISIZ! UÇAK DÜŞTÜ!";
+        string recordMsg = newRecord
+            ? $"<b><color=#2ECC71>YENİ REKOR!</color></b>\nTOPLAM İMHA: {timeAttackKills} UÇAK"
+            : $"TOPLAM İMHA: {timeAttackKills} UÇAK\nEN YÜKSEK REKOR: {bestKills}";
+
+        if (gameOverUI != null)
+            gameOverUI.Show($"{title}\n{recordMsg}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>");
+
+        StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+    }
+
+    /// <summary>
+    /// Oyuna girildiğinde seçilen oyun modunu tanıtan brifing banner'ını ekranda gösterir.
+    /// </summary>
+    public void ShowActiveModeIntroBanner()
+    {
+        var gameUI = FindObjectOfType<GameUI>();
+        if (gameUI == null) return;
+
+        string title;
+        string subtitle;
+        string desc;
+        Color color;
+
+        switch (CurrentMode)
+        {
+            case GameMode.SoloVsAI:
+                if (StoryCampaignManager.CurrentCampaign == StoryCampaignManager.CampaignType.OperationBlackDawn)
+                {
+                    title = "BÖLÜM 1: OPERASYON KARA ŞAFAK";
+                    subtitle = "VATAN SAVUNMASI & HAVA İNTİKAMI • 20 HAVA TAARRUZU";
+                    desc = "Düşman işgal filosu sınır hattını yardı! Hava üssünü savun ve 4 ana generali düşür!";
+                    color = new Color(0.2f, 0.9f, 0.6f);
+                }
+                else if (StoryCampaignManager.CurrentCampaign == StoryCampaignManager.CampaignType.ProjectChimera)
+                {
+                    title = "BÖLÜM 2: PROJE KİMERAS";
+                    subtitle = "YAPAY ZEKA İSYANI & SİBER SAVAŞ • 20 HAVA TAARRUZU";
+                    desc = "Kontrolden çıkan otonom savaş filosu gökyüzünü ele geçirdi! Kimera çekirdeğini imha et!";
+                    color = new Color(0.2f, 0.75f, 1f);
+                }
+                else
+                {
+                    title = "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ";
+                    subtitle = "ACE OF ACES & SERBEST KONTRATLAR • 20 HAVA TAARRUZU";
+                    desc = "En tehlikeli hava korsanları ve paralı pilot filoları karşına çıkıyor! Gökyüzünün ası ol!";
+                    color = new Color(1f, 0.65f, 0.2f);
+                }
+                break;
+
+            case GameMode.Endless:
+                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+                title = "SONSUZ İT DALAŞI";
+                subtitle = $"SINIRSIZ HAVA AKINI • EN İYİ REKOR: DALGA {bestWave}";
+                desc = "Düşmanlar aralıksız ve her dalgada güçlenerek geliyor! Her 20. Boss'ta +1 Can Hakkı kazanırsın!";
+                color = new Color(0.2f, 0.95f, 0.4f);
+                break;
+
+            case GameMode.BossRush:
+                title = "BOSS RUSH (DEVLER LİGİ)";
+                subtitle = "4 AMANSIZ SAVAŞ MAKİNESİ ARKA ARKAYA";
+                desc = "Sıradan uçaklar yok, sadece 4 dev Boss! Finalde Kırmızı Bölge Alarmı ve Dev Boss seni bekliyor!";
+                color = new Color(1f, 0.25f, 0.25f);
+                break;
+
+            case GameMode.BulletHell:
+                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                int bm = (int)(bestTime / 60);
+                int bs = (int)(bestTime % 60);
+                title = "MERMİ CEHENNEMİ (BULLET HELL)";
+                subtitle = $"HİPER YOĞUN SALVO KALKAN SAVUNMASI • EN İYİ REKOR: {bm:00}:{bs:00}";
+                desc = "Binlerce merminin arasından sıyrıl, manevra kabiliyetini göster ve Cehennem Kalesini devir!";
+                color = new Color(1f, 0.25f, 0.8f);
+                break;
+
+            case GameMode.TimeAttack:
+                int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+                title = "ZAMAN TAARRUZU (TIME ATTACK)";
+                subtitle = $"60 SANİYELİK YILDIRIM OPERASYONU • EN İYİ REKOR: {bestKills} İMHA";
+                desc = "Süre daralıyor! 60 saniye içinde indirebildiğin kadar uçak avla, her imhada ek süre kazan!";
+                color = new Color(1f, 0.85f, 0.2f);
+                break;
+
+            case GameMode.TwoPlayer:
+                title = "2 OYUNCULU İT DALAŞI";
+                subtitle = "AYNI CİHAZDA ÇİFT KONTROLLÜ HAVA DÜELLOSU";
+                desc = "Mavi Kanat (P1) vs Kırmızı Avcı (P2)! Gökyüzünün tek ve mutlak hâkimi kim olacak?";
+                color = new Color(0.35f, 0.75f, 1f);
+                break;
+
+            default:
+                title = "HAVA MUHAREBESİ";
+                subtitle = "GÖREV BAŞLADI";
+                desc = "Düşman unsurlarını hava sahasından temizleyin!";
+                color = Color.white;
+                break;
+        }
+
+        gameUI.ShowModeIntroBanner(title, subtitle, desc, color, 3.2f);
+    }
+
     public void RestartGame()
     {
+        CleanUpBulletHellPlane();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
@@ -733,6 +1221,7 @@ public class GameManager : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        CleanUpBulletHellPlane();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
@@ -742,13 +1231,19 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        CleanUpBulletHellPlane();
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
+        if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
+        if (_timeAttackCoroutine != null) StopCoroutine(_timeAttackCoroutine);
     }
 
     private void OnDestroy()
     {
+        CleanUpBulletHellPlane();
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
+        if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
+        if (_timeAttackCoroutine != null) StopCoroutine(_timeAttackCoroutine);
     }
 }

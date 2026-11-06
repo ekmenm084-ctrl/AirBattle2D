@@ -248,4 +248,39 @@ public class PlaneShooter : MonoBehaviour
             Physics2D.IgnoreCollision(planeCol, bulletCol);
         }
     }
+
+    /// <summary>
+    /// Mermi Cehennemi (Bullet Hell) veya özel mermi desenleri için istenen yöne, hıza ve renge sahip mermi fırlatır.
+    /// </summary>
+    public GameObject SpawnCustomBullet(Vector3 position, Vector2 direction, float speed = 10f, float damage = 15f, Color? bulletColor = null)
+    {
+        if (bulletPrefab == null) return null;
+
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+        Quaternion rot = Quaternion.Euler(0f, 0f, angle);
+
+        GameObject bullet = Instantiate(bulletPrefab, position, rot);
+        Bullet b = bullet.GetComponent<Bullet>();
+        if (b != null)
+        {
+            b.speed = speed;
+            b.damage = damage;
+            b.owner = gameObject;
+        }
+
+        if (bulletColor.HasValue)
+        {
+            SpriteRenderer sr = bullet.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.color = bulletColor.Value;
+        }
+
+        Collider2D planeCol = GetComponent<Collider2D>();
+        Collider2D bulletCol = bullet.GetComponent<Collider2D>();
+        if (planeCol != null && bulletCol != null)
+        {
+            Physics2D.IgnoreCollision(planeCol, bulletCol);
+        }
+
+        return bullet;
+    }
 }

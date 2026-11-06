@@ -37,6 +37,8 @@ public class MainMenuManager : MonoBehaviour
     private Button _campaign3Button;
     private Button _endlessButton;
     private Button _bossRushButton;
+    private Button _bulletHellButton;
+    private Button _timeAttackButton;
     private Button _modesDiffEasyBtn;
     private Button _modesDiffNormalBtn;
     private Button _modesDiffHardBtn;
@@ -594,30 +596,40 @@ public class MainMenuManager : MonoBehaviour
         _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
 
         // 4. Sonsuz İt Dalaşı (Endless Survival Mode)
-        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 24f, "[SONSUZ] İT DALAŞI", new Color(0.16f, 0.44f, 0.52f), 264f, 46f, posX: -138f);
+        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 28f, "[SONSUZ] İT DALAŞI", new Color(0.16f, 0.44f, 0.52f), 264f, 44f, posX: -138f);
         _endlessButton.onClick.RemoveAllListeners();
         _endlessButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Endless));
 
         // 5. Boss Rush (4 Boss Avı)
-        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 24f, "[BOSS RUSH] (4 AS)", new Color(0.60f, 0.20f, 0.18f), 264f, 46f, posX: 138f);
+        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 28f, "[BOSS RUSH] (4 AS)", new Color(0.60f, 0.20f, 0.18f), 264f, 44f, posX: 138f);
         _bossRushButton.onClick.RemoveAllListeners();
         _bossRushButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BossRush));
 
-        // 6. Online 2 Oyunculu Düello
+        // 6. Mermi Cehennemi (Bullet Hell)
+        _bulletHellButton = CreateOrFindModesButton("BulletHellBtn", -22f, "[CEHENNEM] MERMİ FIRTINASI", new Color(0.60f, 0.12f, 0.35f), 264f, 44f, posX: -138f);
+        _bulletHellButton.onClick.RemoveAllListeners();
+        _bulletHellButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BulletHell));
+
+        // 7. Zaman Taarruzu (Time Attack)
+        _timeAttackButton = CreateOrFindModesButton("TimeAttackBtn", -22f, "[HIZ] ZAMAN TAARRUZU", new Color(0.70f, 0.45f, 0.12f), 264f, 44f, posX: 138f);
+        _timeAttackButton.onClick.RemoveAllListeners();
+        _timeAttackButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.TimeAttack));
+
+        // 8. Online 2 Oyunculu Düello
         if (onlineButton != null)
         {
-            FormatBtn(onlineButton, -26f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.28f, 0.20f, 0.45f), 540f, 44f);
+            FormatBtn(onlineButton, -72f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.28f, 0.20f, 0.45f), 540f, 42f);
             onlineButton.onClick.RemoveAllListeners();
             onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
         }
 
-        // 7. Modlar Panelinde Doğrudan Zorluk Seçim Butonları
+        // 9. Modlar Panelinde Doğrudan Zorluk Seçim Butonları
         SetupModesDifficultyRow();
 
-        // 8. Taktik Sefer Brifing Kartı
+        // 10. Taktik Sefer Brifing Kartı
         SetupCampaignBriefingBox();
 
-        // 9. Geri Dön Butonu
+        // 11. Geri Dön Butonu
         if (backFromModesButton != null)
         {
             FormatBottomLeftBackBtn(backFromModesButton);
@@ -626,15 +638,15 @@ public class MainMenuManager : MonoBehaviour
 
     private void SetupModesDifficultyRow()
     {
-        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -74f, "KOLAY", new Color(0.18f, 0.55f, 0.34f), 174f, 42f, posX: -182f);
+        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -118f, "KOLAY", new Color(0.18f, 0.55f, 0.34f), 174f, 38f, posX: -182f);
         _modesDiffEasyBtn.onClick.RemoveAllListeners();
         _modesDiffEasyBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Kolay));
 
-        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -74f, "NORMAL", new Color(0.70f, 0.55f, 0.15f), 174f, 42f, posX: 0f);
+        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -118f, "NORMAL", new Color(0.70f, 0.55f, 0.15f), 174f, 38f, posX: 0f);
         _modesDiffNormalBtn.onClick.RemoveAllListeners();
         _modesDiffNormalBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Normal));
 
-        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -74f, "ZOR", new Color(0.75f, 0.20f, 0.20f), 174f, 42f, posX: 182f);
+        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -118f, "ZOR", new Color(0.75f, 0.20f, 0.20f), 174f, 38f, posX: 182f);
         _modesDiffHardBtn.onClick.RemoveAllListeners();
         _modesDiffHardBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Zor));
     }
@@ -683,8 +695,8 @@ public class MainMenuManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, -145f);
-        rt.sizeDelta = new Vector2(540f, 95f); // Butonlarla orantılı
+        rt.anchoredPosition = new Vector2(0f, -178f);
+        rt.sizeDelta = new Vector2(540f, 76f); // Butonlarla orantılı
 
         Image bg = boxObj.GetComponent<Image>();
         if (bg == null) bg = boxObj.AddComponent<Image>();
@@ -943,6 +955,8 @@ public class MainMenuManager : MonoBehaviour
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         bool isEndless = (GameSettings.SelectedMode == GameSettings.GameMode.Endless);
         bool isBossRush = (GameSettings.SelectedMode == GameSettings.GameMode.BossRush);
+        bool isBulletHell = (GameSettings.SelectedMode == GameSettings.GameMode.BulletHell);
+        bool isTimeAttack = (GameSettings.SelectedMode == GameSettings.GameMode.TimeAttack);
         bool isSolo = (GameSettings.SelectedMode == GameSettings.GameMode.Solo);
         var activeCamp = StoryCampaignManager.CurrentCampaign;
 
@@ -951,6 +965,8 @@ public class MainMenuManager : MonoBehaviour
         Highlight(_campaign3Button, isSolo && activeCamp == StoryCampaignManager.CampaignType.SkyMercenary);
         Highlight(_endlessButton, isEndless);
         Highlight(_bossRushButton, isBossRush);
+        Highlight(_bulletHellButton, isBulletHell);
+        Highlight(_timeAttackButton, isTimeAttack);
         Highlight(onlineButton, isOnline);
 
         // 4. Modlar Paneli Brifing Metni
@@ -994,6 +1010,18 @@ public class MainMenuManager : MonoBehaviour
                 else if (isBossRush)
                 {
                     playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FF8A80>[BOSS RUSH: 4 AS]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
+                }
+                else if (isBulletHell)
+                {
+                    float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                    int m = (int)(bestTime / 60);
+                    int s = (int)(bestTime % 60);
+                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FF4081>[MERMİ CEHENNEMİ (Rekor: {m:00}:{s:00})]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
+                }
+                else if (isTimeAttack)
+                {
+                    int best = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FFD54F>[ZAMAN TAARRUZU (Rekor: {best} İMHA)]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
                 }
                 else
                 {
@@ -1064,6 +1092,22 @@ public class MainMenuManager : MonoBehaviour
         {
             _briefingTMP.text = "<color=#FF8A80><b>[BOSS RUSH - 4 AS HAREKATI]</b></color> • Ödül: <b>+1500 Altın</b>\n" +
                                 "Sıradan uçaklar yok! 4 dev Boss uçağı peş peşe saldırır!\n" +
+                                $"{diffStats}";
+        }
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.BulletHell)
+        {
+            float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+            int m = (int)(bestTime / 60);
+            int s = (int)(bestTime % 60);
+            _briefingTMP.text = $"<color=#FF4081><b>[MERMİ CEHENNEMİ - HAYATTA KALMA]</b></color> • En İyi: <b>{m:00}:{s:00}</b>\n" +
+                                "Spiral mermi fırtınaları, lazer tuzakları ve aşırı cehennem salvosu! Ne kadar dayanabilirsin?\n" +
+                                $"{diffStats}";
+        }
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.TimeAttack)
+        {
+            int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+            _briefingTMP.text = $"<color=#FFD54F><b>[ZAMAN TAARRUZU - HIZ HAREKATI]</b></color> • Rekor: <b>{bestKills} Uçak</b>\n" +
+                                "60 saniyeyle başla! Her uçak <b>+4 sn</b>, Bosslar <b>+8 sn</b> ekler! Durmaksızın avlan!\n" +
                                 $"{diffStats}";
         }
         else
