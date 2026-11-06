@@ -87,6 +87,11 @@ public class Bullet : MonoBehaviour
         PlaneHealth health = target.GetComponent<PlaneHealth>();
         if (health != null)
         {
+            if (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true)
+            {
+                PlayerCombatManeuvers.Instance?.AddUltiEnergy(1.8f);
+            }
+
             VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.9f, 0.2f));
             health.TakeDamage(damage);
             Destroy(gameObject);

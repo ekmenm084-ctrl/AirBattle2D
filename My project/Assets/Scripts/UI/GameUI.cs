@@ -50,6 +50,8 @@ public class GameUI : MonoBehaviour
         SetupModeIntroBanner();
         SetupMissileButton();
         SetupGoldHUD();
+        SetupUltiBar();
+        SetupCombatManeuverButtons();
 
         UpdateHealthBars();
 
@@ -68,6 +70,9 @@ public class GameUI : MonoBehaviour
         if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(visible);
         if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
         if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
+        if (_ultiBarObj != null) _ultiBarObj.SetActive(visible);
+        if (_dodgeBtnObj != null) _dodgeBtnObj.SetActive(visible);
+        if (_ultiBtnObj != null) _ultiBtnObj.SetActive(visible);
         if (!visible && _redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
         if (!visible && _modeIntroObj != null) _modeIntroObj.SetActive(false);
     }
@@ -536,6 +541,303 @@ public class GameUI : MonoBehaviour
         }
     }
 
+    [Header("Ulti Barı ve Savaş Manevraları UI")]
+    private GameObject _ultiBarObj;
+    private Image _ultiBarFillImg;
+    private TextMeshProUGUI _ultiBarTMP;
+    private Outline _ultiBarOutline;
+
+    private GameObject _dodgeBtnObj;
+    private Image _dodgeFillImg;
+    private TextMeshProUGUI _dodgeBtnTMP;
+    private Outline _dodgeBtnOutline;
+
+    private GameObject _ultiBtnObj;
+    private Image _ultiFillImg;
+    private TextMeshProUGUI _ultiBtnTMP;
+    private Outline _ultiBtnOutline;
+    private Vector3 _ultiBtnBaseScale = Vector3.one;
+
+    private void SetupUltiBar()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        Transform existing = canvas.transform.Find("HUD_UltiBar");
+        _ultiBarObj = existing != null ? existing.gameObject : new GameObject("HUD_UltiBar");
+        _ultiBarObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform rt = _ultiBarObj.GetComponent<RectTransform>() ?? _ultiBarObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 0f);
+        rt.anchorMax = new Vector2(0f, 0f);
+        rt.pivot = new Vector2(0f, 0f);
+        rt.anchoredPosition = new Vector2(60f, 345f);
+        rt.sizeDelta = new Vector2(300f, 22f);
+
+        Image bg = _ultiBarObj.GetComponent<Image>() ?? _ultiBarObj.AddComponent<Image>();
+        bg.color = new Color(0.06f, 0.10f, 0.16f, 0.90f);
+
+        _ultiBarOutline = _ultiBarObj.GetComponent<Outline>() ?? _ultiBarObj.AddComponent<Outline>();
+        _ultiBarOutline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
+        _ultiBarOutline.effectDistance = new Vector2(2f, -2f);
+
+        Transform fillTr = _ultiBarObj.transform.Find("Fill");
+        GameObject fillObj = fillTr != null ? fillTr.gameObject : new GameObject("Fill");
+        fillObj.transform.SetParent(_ultiBarObj.transform, false);
+        RectTransform fillRt = fillObj.GetComponent<RectTransform>() ?? fillObj.AddComponent<RectTransform>();
+        fillRt.anchorMin = Vector2.zero;
+        fillRt.anchorMax = Vector2.one;
+        fillRt.offsetMin = new Vector2(2f, 2f);
+        fillRt.offsetMax = new Vector2(-2f, -2f);
+
+        _ultiBarFillImg = fillObj.GetComponent<Image>() ?? fillObj.AddComponent<Image>();
+        _ultiBarFillImg.type = Image.Type.Filled;
+        _ultiBarFillImg.fillMethod = Image.FillMethod.Horizontal;
+        _ultiBarFillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
+        _ultiBarFillImg.color = new Color(0f, 0.95f, 1f, 0.95f);
+        _ultiBarFillImg.fillAmount = 0f;
+
+        Transform txtTr = _ultiBarObj.transform.Find("Text");
+        GameObject txtObj = txtTr != null ? txtTr.gameObject : new GameObject("Text");
+        txtObj.transform.SetParent(_ultiBarObj.transform, false);
+        RectTransform txtRt = txtObj.GetComponent<RectTransform>() ?? txtObj.AddComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = Vector2.zero;
+        txtRt.offsetMax = Vector2.zero;
+
+        _ultiBarTMP = txtObj.GetComponent<TextMeshProUGUI>() ?? txtObj.AddComponent<TextMeshProUGUI>();
+        _ultiBarTMP.fontSize = 13f;
+        _ultiBarTMP.fontStyle = FontStyles.Bold;
+        _ultiBarTMP.alignment = TextAlignmentOptions.Center;
+        _ultiBarTMP.color = Color.white;
+        _ultiBarTMP.text = "⚡ SÜPER GÜÇ: %0";
+        _ultiBarTMP.raycastTarget = false;
+    }
+
+    private void SetupCombatManeuverButtons()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        // 1. KAÇIŞ (DODGE ROLL) BUTONU
+        Transform existingDodge = canvas.transform.Find("HUD_DodgeButton");
+        _dodgeBtnObj = existingDodge != null ? existingDodge.gameObject : new GameObject("HUD_DodgeButton");
+        _dodgeBtnObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform dRt = _dodgeBtnObj.GetComponent<RectTransform>() ?? _dodgeBtnObj.AddComponent<RectTransform>();
+        dRt.anchorMin = new Vector2(1f, 0f);
+        dRt.anchorMax = new Vector2(1f, 0f);
+        dRt.pivot = new Vector2(0.5f, 0.5f);
+        dRt.anchoredPosition = new Vector2(-65f, 260f);
+        dRt.sizeDelta = new Vector2(86f, 86f);
+
+        Image dImg = _dodgeBtnObj.GetComponent<Image>() ?? _dodgeBtnObj.AddComponent<Image>();
+        dImg.color = new Color(0.08f, 0.16f, 0.25f, 0.94f);
+
+        _dodgeBtnOutline = _dodgeBtnObj.GetComponent<Outline>() ?? _dodgeBtnObj.AddComponent<Outline>();
+        _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
+        _dodgeBtnOutline.effectDistance = new Vector2(2.5f, -2.5f);
+
+        Button dBtn = _dodgeBtnObj.GetComponent<Button>() ?? _dodgeBtnObj.AddComponent<Button>();
+        dBtn.targetGraphic = dImg;
+        dBtn.onClick.RemoveAllListeners();
+        dBtn.onClick.AddListener(() =>
+        {
+            PlayerCombatManeuvers.Instance?.TryDodge();
+        });
+
+        Transform dFillTr = _dodgeBtnObj.transform.Find("CooldownFill");
+        GameObject dFillObj = dFillTr != null ? dFillTr.gameObject : new GameObject("CooldownFill");
+        dFillObj.transform.SetParent(_dodgeBtnObj.transform, false);
+        RectTransform dFillRt = dFillObj.GetComponent<RectTransform>() ?? dFillObj.AddComponent<RectTransform>();
+        dFillRt.anchorMin = Vector2.zero;
+        dFillRt.anchorMax = Vector2.one;
+        dFillRt.offsetMin = Vector2.zero;
+        dFillRt.offsetMax = Vector2.zero;
+
+        _dodgeFillImg = dFillObj.GetComponent<Image>() ?? dFillObj.AddComponent<Image>();
+        _dodgeFillImg.color = new Color(0f, 0f, 0f, 0.72f);
+        _dodgeFillImg.type = Image.Type.Filled;
+        _dodgeFillImg.fillMethod = Image.FillMethod.Radial360;
+        _dodgeFillImg.fillOrigin = (int)Image.Origin360.Top;
+        _dodgeFillImg.fillClockwise = false;
+        _dodgeFillImg.raycastTarget = false;
+        _dodgeFillImg.fillAmount = 0f;
+
+        Transform dTxtTr = _dodgeBtnObj.transform.Find("Text");
+        GameObject dTxtObj = dTxtTr != null ? dTxtTr.gameObject : new GameObject("Text");
+        dTxtObj.transform.SetParent(_dodgeBtnObj.transform, false);
+        RectTransform dTxtRt = dTxtObj.GetComponent<RectTransform>() ?? dTxtObj.AddComponent<RectTransform>();
+        dTxtRt.anchorMin = Vector2.zero;
+        dTxtRt.anchorMax = Vector2.one;
+        dTxtRt.offsetMin = Vector2.zero;
+        dTxtRt.offsetMax = Vector2.zero;
+
+        _dodgeBtnTMP = dTxtObj.GetComponent<TextMeshProUGUI>() ?? dTxtObj.AddComponent<TextMeshProUGUI>();
+        _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SPACE]</size>";
+        _dodgeBtnTMP.fontSize = 17f;
+        _dodgeBtnTMP.fontStyle = FontStyles.Bold;
+        _dodgeBtnTMP.alignment = TextAlignmentOptions.Center;
+        _dodgeBtnTMP.color = Color.white;
+        _dodgeBtnTMP.raycastTarget = false;
+
+        // 2. ULTİ (SÜPER YETENEK) BUTONU
+        Transform existingUlti = canvas.transform.Find("HUD_UltiButton");
+        _ultiBtnObj = existingUlti != null ? existingUlti.gameObject : new GameObject("HUD_UltiButton");
+        _ultiBtnObj.transform.SetParent(canvas.transform, false);
+
+        RectTransform uRt = _ultiBtnObj.GetComponent<RectTransform>() ?? _ultiBtnObj.AddComponent<RectTransform>();
+        uRt.anchorMin = new Vector2(1f, 0f);
+        uRt.anchorMax = new Vector2(1f, 0f);
+        uRt.pivot = new Vector2(0.5f, 0.5f);
+        uRt.anchoredPosition = new Vector2(-65f, 365f);
+        uRt.sizeDelta = new Vector2(92f, 92f);
+        _ultiBtnBaseScale = Vector3.one;
+
+        Image uImg = _ultiBtnObj.GetComponent<Image>() ?? _ultiBtnObj.AddComponent<Image>();
+        uImg.color = new Color(0.18f, 0.12f, 0.04f, 0.94f);
+
+        _ultiBtnOutline = _ultiBtnObj.GetComponent<Outline>() ?? _ultiBtnObj.AddComponent<Outline>();
+        _ultiBtnOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
+        _ultiBtnOutline.effectDistance = new Vector2(2.5f, -2.5f);
+
+        Button uBtn = _ultiBtnObj.GetComponent<Button>() ?? _ultiBtnObj.AddComponent<Button>();
+        uBtn.targetGraphic = uImg;
+        uBtn.onClick.RemoveAllListeners();
+        uBtn.onClick.AddListener(() =>
+        {
+            PlayerCombatManeuvers.Instance?.TryActivateUltimate();
+        });
+
+        Transform uFillTr = _ultiBtnObj.transform.Find("ChargeFill");
+        GameObject uFillObj = uFillTr != null ? uFillTr.gameObject : new GameObject("ChargeFill");
+        uFillObj.transform.SetParent(_ultiBtnObj.transform, false);
+        RectTransform uFillRt = uFillObj.GetComponent<RectTransform>() ?? uFillObj.AddComponent<RectTransform>();
+        uFillRt.anchorMin = Vector2.zero;
+        uFillRt.anchorMax = Vector2.one;
+        uFillRt.offsetMin = Vector2.zero;
+        uFillRt.offsetMax = Vector2.zero;
+
+        _ultiFillImg = uFillObj.GetComponent<Image>() ?? uFillObj.AddComponent<Image>();
+        _ultiFillImg.color = new Color(0f, 0f, 0f, 0.70f);
+        _ultiFillImg.type = Image.Type.Filled;
+        _ultiFillImg.fillMethod = Image.FillMethod.Radial360;
+        _ultiFillImg.fillOrigin = (int)Image.Origin360.Top;
+        _ultiFillImg.fillClockwise = false;
+        _ultiFillImg.raycastTarget = false;
+        _ultiFillImg.fillAmount = 1f;
+
+        Transform uTxtTr = _ultiBtnObj.transform.Find("Text");
+        GameObject uTxtObj = uTxtTr != null ? uTxtTr.gameObject : new GameObject("Text");
+        uTxtObj.transform.SetParent(_ultiBtnObj.transform, false);
+        RectTransform uTxtRt = uTxtObj.GetComponent<RectTransform>() ?? uTxtObj.AddComponent<RectTransform>();
+        uTxtRt.anchorMin = Vector2.zero;
+        uTxtRt.anchorMax = Vector2.one;
+        uTxtRt.offsetMin = Vector2.zero;
+        uTxtRt.offsetMax = Vector2.zero;
+
+        _ultiBtnTMP = uTxtObj.GetComponent<TextMeshProUGUI>() ?? uTxtObj.AddComponent<TextMeshProUGUI>();
+        _ultiBtnTMP.text = "ULTİ\n<size=65%>[E]</size>";
+        _ultiBtnTMP.fontSize = 17f;
+        _ultiBtnTMP.fontStyle = FontStyles.Bold;
+        _ultiBtnTMP.alignment = TextAlignmentOptions.Center;
+        _ultiBtnTMP.color = Color.white;
+        _ultiBtnTMP.raycastTarget = false;
+    }
+
+    private void UpdateUltiAndManeuverVisuals()
+    {
+        var pcm = PlayerCombatManeuvers.Instance;
+        if (pcm == null) return;
+
+        // 1. ULTİ BARI
+        if (_ultiBarFillImg != null && _ultiBarTMP != null)
+        {
+            if (pcm.isOverdriveActive)
+            {
+                float fill = Mathf.Clamp01(pcm.overdriveRemaining / pcm.overdriveDuration);
+                _ultiBarFillImg.fillAmount = fill;
+                _ultiBarFillImg.color = new Color(1f, 0.6f, 0.1f);
+                _ultiBarTMP.text = $"🔥 AŞIRI YÜKLEME: {pcm.overdriveRemaining:F1}s";
+                if (_ultiBarOutline != null) _ultiBarOutline.effectColor = new Color(1f, 0.85f, 0.2f);
+            }
+            else
+            {
+                float fill = Mathf.Clamp01(pcm.currentUlti / pcm.maxUlti);
+                _ultiBarFillImg.fillAmount = fill;
+
+                if (pcm.IsUltiReady)
+                {
+                    float pulse = Mathf.PingPong(Time.time * 4f, 1f);
+                    _ultiBarFillImg.color = Color.Lerp(new Color(0f, 0.95f, 1f), new Color(1f, 0.85f, 0.2f), pulse);
+                    _ultiBarTMP.text = "⚡ SÜPER GÜÇ: %100 [HAZIR! • E] ⚡";
+                    if (_ultiBarOutline != null) _ultiBarOutline.effectColor = Color.yellow;
+                }
+                else
+                {
+                    _ultiBarFillImg.color = new Color(0f, 0.85f, 1f);
+                    _ultiBarTMP.text = $"⚡ SÜPER GÜÇ: %{(int)pcm.currentUlti}";
+                    if (_ultiBarOutline != null) _ultiBarOutline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
+                }
+            }
+        }
+
+        // 2. KAÇIŞ BUTONU
+        if (_dodgeFillImg != null && _dodgeBtnTMP != null)
+        {
+            float rem = pcm.DodgeCooldownRemaining;
+            if (rem > 0.05f)
+            {
+                _dodgeFillImg.fillAmount = (rem / pcm.dodgeCooldown);
+                _dodgeBtnTMP.text = $"{rem:F1}s";
+                _dodgeBtnTMP.color = new Color(0.7f, 0.7f, 0.7f);
+                if (_dodgeBtnOutline != null) _dodgeBtnOutline.effectColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+            }
+            else
+            {
+                _dodgeFillImg.fillAmount = 0f;
+                _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SPACE]</size>";
+                _dodgeBtnTMP.color = Color.white;
+                if (_dodgeBtnOutline != null) _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
+            }
+        }
+
+        // 3. ULTİ BUTONU
+        if (_ultiFillImg != null && _ultiBtnTMP != null && _ultiBtnObj != null)
+        {
+            if (pcm.isOverdriveActive)
+            {
+                _ultiFillImg.fillAmount = 0f;
+                _ultiBtnTMP.text = $"🔥 AKTİF 🔥\n<size=65%>{pcm.overdriveRemaining:F1}s</size>";
+                _ultiBtnTMP.color = new Color(1f, 0.9f, 0.3f);
+                if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(1f, 0.5f, 0.1f);
+                _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
+            }
+            else if (pcm.IsUltiReady)
+            {
+                _ultiFillImg.fillAmount = 0f;
+                _ultiBtnTMP.text = "⚡ ULTİ ⚡\n<size=65%>HAZIR! [E]</size>";
+                _ultiBtnTMP.color = Color.white;
+                if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = Color.yellow;
+
+                float pulse = 1f + Mathf.Sin(Time.time * 6f) * 0.08f;
+                _ultiBtnObj.transform.localScale = _ultiBtnBaseScale * pulse;
+            }
+            else
+            {
+                float uncharged = 1f - (pcm.currentUlti / pcm.maxUlti);
+                _ultiFillImg.fillAmount = uncharged;
+                _ultiBtnTMP.text = $"ULTİ\n<size=65%>%{(int)pcm.currentUlti} [E]</size>";
+                _ultiBtnTMP.color = new Color(0.75f, 0.75f, 0.75f);
+                if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(0.5f, 0.45f, 0.2f, 0.7f);
+                _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
+            }
+        }
+    }
+
     public void ShowWaveAlert(string message, Color color, float duration = 2.0f)
     {
         if (_waveAlertObj == null || _waveAlertTMP == null)
@@ -736,7 +1038,24 @@ public class GameUI : MonoBehaviour
             plane2HealthBar.gameObject.SetActive(!isMenuOpen);
         }
 
+        if (_ultiBarObj != null && _ultiBarObj.activeSelf == isMenuOpen)
+        {
+            _ultiBarObj.SetActive(!isMenuOpen);
+        }
+
+        if (_dodgeBtnObj != null && _dodgeBtnObj.activeSelf == isMenuOpen)
+        {
+            _dodgeBtnObj.SetActive(!isMenuOpen);
+        }
+
+        if (_ultiBtnObj != null && _ultiBtnObj.activeSelf == isMenuOpen)
+        {
+            _ultiBtnObj.SetActive(!isMenuOpen);
+        }
+
         if (isMenuOpen) return;
+
+        UpdateUltiAndManeuverVisuals();
         if (plane1HealthBar != null)
         {
             plane1HealthBar.value = Mathf.MoveTowards(plane1HealthBar.value, _targetP1Health, Time.deltaTime * 2.5f);

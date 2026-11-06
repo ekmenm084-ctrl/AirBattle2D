@@ -602,6 +602,7 @@ public class GameManager : MonoBehaviour
             {
                 timeAttackKills++;
                 bool isBoss = (timeAttackKills % 5 == 0);
+                PlayerCombatManeuvers.Instance?.AddUltiEnergy(isBoss ? 20f : 10f);
                 float bonusSec = isBoss ? 8.0f : 4.0f;
                 timeAttackRemaining += bonusSec;
 
@@ -652,6 +653,7 @@ public class GameManager : MonoBehaviour
 
                 if (wasBoss)
                 {
+                    PlayerCombatManeuvers.Instance?.AddUltiEnergy(25f);
                     int bossReward = (CurrentMode == GameMode.BossRush) ? 250 : (100 + justDefeated * 10);
                     HangarManager.EnsureInstance()?.AddGold(bossReward);
                     sessionGoldEarned += bossReward;
@@ -680,6 +682,7 @@ public class GameManager : MonoBehaviour
                 else
                 {
                     bool isElite = (justDefeated % 5 == 4);
+                    PlayerCombatManeuvers.Instance?.AddUltiEnergy(isElite ? 15f : 10f);
                     int killReward = 15 + (justDefeated * 2) + (isElite ? 15 : 0);
                     HangarManager.EnsureInstance()?.AddGold(killReward);
                     sessionGoldEarned += killReward;

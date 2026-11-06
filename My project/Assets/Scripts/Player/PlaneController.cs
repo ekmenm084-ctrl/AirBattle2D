@@ -25,6 +25,8 @@ public class PlaneController : MonoBehaviour
     private TwoPlayerInputRouter _p2Router;
     private Vector2 _inputDir;
 
+    public Vector2 InputDir => _inputDir;
+
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
@@ -67,6 +69,8 @@ public class PlaneController : MonoBehaviour
         if (isPlayer1)
         {
             HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(this);
+            if (GetComponent<PlayerCombatManeuvers>() == null)
+                gameObject.AddComponent<PlayerCombatManeuvers>();
         }
     }
 
@@ -161,6 +165,9 @@ public class PlaneController : MonoBehaviour
 
     private void ApplyMovement()
     {
+        var maneuvers = GetComponent<PlayerCombatManeuvers>();
+        if (maneuvers != null && maneuvers.isDodging) return;
+
         float targetVx = _inputDir.x * moveSpeed;
 
         // Ekran kenarlarında titreme olmadan yumuşak durdurma
