@@ -594,12 +594,12 @@ public class MainMenuManager : MonoBehaviour
         _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
 
         // 4. Sonsuz İt Dalaşı (Endless Survival Mode)
-        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 24f, "♾️ SONSUZ İT DALAŞI", new Color(0.16f, 0.44f, 0.52f), 264f, 46f, posX: -138f);
+        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 24f, "[SONSUZ] İT DALAŞI", new Color(0.16f, 0.44f, 0.52f), 264f, 46f, posX: -138f);
         _endlessButton.onClick.RemoveAllListeners();
         _endlessButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Endless));
 
         // 5. Boss Rush (4 Boss Avı)
-        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 24f, "💀 BOSS RUSH (4 AS)", new Color(0.60f, 0.20f, 0.18f), 264f, 46f, posX: 138f);
+        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 24f, "[BOSS RUSH] (4 AS)", new Color(0.60f, 0.20f, 0.18f), 264f, 46f, posX: 138f);
         _bossRushButton.onClick.RemoveAllListeners();
         _bossRushButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BossRush));
 
@@ -962,7 +962,7 @@ public class MainMenuManager : MonoBehaviour
             TextMeshProUGUI qTmp = _quickDiffButton.GetComponentInChildren<TextMeshProUGUI>();
             if (qTmp != null)
             {
-                qTmp.text = $"⚡ ZORLUK: <color={diffHex}><b>[ {diffName.ToUpper()} ]</b></color> <size=68%>(Dokun Değiştir)</size>";
+                qTmp.text = $"ZORLUK: <color={diffHex}><b>[ {diffName.ToUpper()} ]</b></color> <size=68%>(Dokun Değiştir)</size>";
             }
             Image qImg = _quickDiffButton.GetComponent<Image>();
             if (qImg != null)
@@ -1016,7 +1016,7 @@ public class MainMenuManager : MonoBehaviour
             if (img != null) img.color = activeColor;
             if (tmp != null)
             {
-                tmp.text = $"✓ [SEÇİLİ] {baseTitle}";
+                tmp.text = $"[SEÇİLİ] {baseTitle}";
                 tmp.color = Color.white;
             }
             if (outline == null) outline = btn.gameObject.AddComponent<Outline>();

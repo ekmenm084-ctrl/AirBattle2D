@@ -65,7 +65,7 @@ public class HangarManager : MonoBehaviour
 
     [Header("Mevcut Durum")]
     public AircraftType activeAircraft = AircraftType.F16Viper;
-    public int gold = 25; // Başlangıç hoş geldin hediyesi
+    public int gold = 250; // Başlangıç hoş geldin hediyesi
     public int totalCratesOpened = 0;
 
     [Header("Kalıcı Atölye Seviyeleri (Maks 5)")]
@@ -137,7 +137,7 @@ public class HangarManager : MonoBehaviour
 
     public void LoadHangarData()
     {
-        gold = PlayerPrefs.GetInt(PREF_GOLD, 25);
+        gold = PlayerPrefs.GetInt(PREF_GOLD, 250);
         activeAircraft = (AircraftType)PlayerPrefs.GetInt(PREF_ACTIVE_PLANE, (int)AircraftType.F16Viper);
 
         armorLevel = 0;
@@ -264,6 +264,14 @@ public class HangarManager : MonoBehaviour
             AircraftType.KaanApex      => 470f,
             _                          => 520f
         };
+
+        string resName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+        Sprite resSpr = Resources.Load<Sprite>(resName);
+        if (resSpr != null)
+        {
+            _aircraftSpriteCache[type] = resSpr;
+            return resSpr;
+        }
 
         string fullPath = System.IO.Path.Combine(Application.dataPath, "Sprites", fileName);
         if (System.IO.File.Exists(fullPath))

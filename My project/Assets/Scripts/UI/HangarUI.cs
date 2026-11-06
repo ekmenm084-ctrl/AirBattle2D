@@ -389,7 +389,7 @@ public class HangarUI : MonoBehaviour
 
             if (isSelected)
             {
-                card.actionBtnTMP.text = "✓ GÖREVDE";
+                card.actionBtnTMP.text = "[AKTİF] GÖREVDE";
                 card.actionBtnTMP.color = Color.white;
                 card.actionBtn.interactable = true;
                 if (bg != null) bg.color = new Color(0.18f, 0.55f, 0.32f);
@@ -737,13 +737,13 @@ public class HangarUI : MonoBehaviour
             HangarManager.AircraftType.KaanApex);
 
         // 3. Sol ve Sağ Kaydırma Butonları (Navigasyon Okları)
-        CreateNavButton("NavLeftBtn", -795f, 15f, "◀", () =>
+        CreateNavButton("NavLeftBtn", -795f, 15f, "<", () =>
         {
             if (_planesScrollRect != null)
                 _planesScrollRect.horizontalNormalizedPosition = Mathf.Clamp01(_planesScrollRect.horizontalNormalizedPosition - 0.35f);
         });
 
-        CreateNavButton("NavRightBtn", 795f, 15f, "▶", () =>
+        CreateNavButton("NavRightBtn", 795f, 15f, ">", () =>
         {
             if (_planesScrollRect != null)
                 _planesScrollRect.horizontalNormalizedPosition = Mathf.Clamp01(_planesScrollRect.horizontalNormalizedPosition + 0.35f);
@@ -1324,7 +1324,7 @@ public class HangarUI : MonoBehaviour
         iTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI iTMP = iTxtObj.AddComponent<TextMeshProUGUI>();
-        iTMP.text = "🎒 ASKERİ ENVANTER";
+        iTMP.text = "ASKERİ ENVANTER";
         iTMP.fontSize = 22f;
         iTMP.fontStyle = FontStyles.Bold;
         iTMP.alignment = TextAlignmentOptions.Center;
@@ -1360,7 +1360,7 @@ public class HangarUI : MonoBehaviour
         cTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI cTMP = cTxtObj.AddComponent<TextMeshProUGUI>();
-        cTMP.text = "🧰 İKMAL SANDIKLARI";
+        cTMP.text = "İKMAL SANDIKLARI";
         cTMP.fontSize = 22f;
         cTMP.fontStyle = FontStyles.Bold;
         cTMP.alignment = TextAlignmentOptions.Center;

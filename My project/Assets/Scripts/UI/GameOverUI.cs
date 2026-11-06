@@ -2,7 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Oyun sonu ekranı: kazanan metni, yeniden oyna ve ana menü butonları.
+/// Oyun sonu ekranı: kazanan metni, yeniden oyna, hangar ve ana menü butonları.
+/// Sahnede panel atanmamışsa dahi otomatik olarak Canvas üzerinde kusursuz panel inşa eder.
 /// </summary>
 public class GameOverUI : MonoBehaviour
 {
@@ -28,7 +29,13 @@ public class GameOverUI : MonoBehaviour
     /// <summary>GameManager tarafından çağrılır.</summary>
     public void Show(string message)
     {
-        if (panel != null) panel.SetActive(true);
+        EnsurePanel();
+
+        if (panel != null)
+        {
+            panel.SetActive(true);
+            panel.transform.SetAsLastSibling();
+        }
 
         int earned = (GameManager.Instance != null) ? GameManager.Instance.sessionGoldEarned : 0;
         int totalGold = HangarManager.EnsureInstance().gold;
@@ -42,6 +49,90 @@ public class GameOverUI : MonoBehaviour
         if (winnerText != null) winnerText.text = fullMsg;
 
         EnsureHangarButton();
+    }
+
+    private void EnsurePanel()
+    {
+        if (panel != null) return;
+
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null)
+        {
+            var canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None);
+            if (canvases.Length > 0) canvas = canvases[0];
+        }
+        if (canvas == null) return;
+
+        panel = new GameObject("GameOverPanel");
+        panel.transform.SetParent(canvas.transform, false);
+
+        RectTransform pRt = panel.AddComponent<RectTransform>();
+        pRt.anchorMin = Vector2.zero;
+        pRt.anchorMax = Vector2.one;
+        pRt.offsetMin = Vector2.zero;
+        pRt.offsetMax = Vector2.zero;
+
+        Image bg = panel.AddComponent<Image>();
+        bg.color = new Color(0.04f, 0.08f, 0.14f, 0.94f);
+
+        // Winner / Message Text
+        GameObject tObj = new GameObject("WinnerText");
+        tObj.transform.SetParent(panel.transform, false);
+        RectTransform tRt = tObj.AddComponent<RectTransform>();
+        tRt.anchorMin = new Vector2(0.1f, 0.42f);
+        tRt.anchorMax = new Vector2(0.9f, 0.88f);
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
+
+        winnerText = tObj.AddComponent<Text>();
+        winnerText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        winnerText.fontSize = 24;
+        winnerText.fontStyle = FontStyle.Bold;
+        winnerText.alignment = TextAnchor.MiddleCenter;
+        winnerText.color = Color.white;
+
+        // Restart Button
+        restartButton = CreateBtn(panel.transform, "RestartBtn", "YENİDEN OYNA", new Vector2(0f, -40f), new Color(0.16f, 0.55f, 0.32f), () => GameManager.Instance?.RestartGame());
+
+        // Main Menu Button
+        mainMenuButton = CreateBtn(panel.transform, "MainMenuBtn", "ANA MENÜYE DÖN", new Vector2(0f, -170f), new Color(0.25f, 0.30f, 0.38f), () => GameManager.Instance?.GoToMainMenu());
+    }
+
+    private Button CreateBtn(Transform parent, string name, string text, Vector2 pos, Color col, UnityEngine.Events.UnityAction action)
+    {
+        GameObject bObj = new GameObject(name);
+        bObj.transform.SetParent(parent, false);
+        RectTransform rt = bObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(340f, 50f);
+        rt.anchoredPosition = pos;
+
+        Image img = bObj.AddComponent<Image>();
+        img.color = col;
+
+        Button btn = bObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.onClick.AddListener(action);
+
+        GameObject tObj = new GameObject("Text");
+        tObj.transform.SetParent(bObj.transform, false);
+        RectTransform tRt = tObj.AddComponent<RectTransform>();
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
+
+        Text t = tObj.AddComponent<Text>();
+        t.text = text;
+        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+        t.fontSize = 18;
+        t.fontStyle = FontStyle.Bold;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.color = Color.white;
+
+        return btn;
     }
 
     private void EnsureHangarButton()
@@ -63,7 +154,7 @@ public class GameOverUI : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(340f, 50f);
-        rt.anchoredPosition = new Vector2(0f, -120f);
+        rt.anchoredPosition = new Vector2(0f, -105f);
 
         Image bg = hObj.AddComponent<Image>();
         bg.color = new Color(0.72f, 0.48f, 0.12f, 0.95f);
@@ -73,7 +164,7 @@ public class GameOverUI : MonoBehaviour
         _hangarDirectBtn.onClick.AddListener(() =>
         {
             GameManager.Instance?.GoToMainMenu();
-            MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+            MainMenuManager menu = FindAnyObjectByType<MainMenuManager>();
             menu?.OpenHangarPanel();
         });
 
@@ -94,4 +185,3 @@ public class GameOverUI : MonoBehaviour
         t.color = Color.white;
     }
 }
-

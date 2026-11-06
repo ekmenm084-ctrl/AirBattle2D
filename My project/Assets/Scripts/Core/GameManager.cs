@@ -339,7 +339,7 @@ public class GameManager : MonoBehaviour
 
             if (player1Lives > 0)
             {
-                gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives} / {MaxPlayerLives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
+                gameUI?.ShowWaveAlert($"UÇAĞINIZ DÜŞTÜ!\n<color=#F1C40F>KALAN CAN HAKKI: {player1Lives}</color>", new Color(1f, 0.4f, 0.2f), 2.0f);
                 StartCoroutine(RespawnPlayer1Routine(1.2f));
             }
             else
@@ -397,7 +397,7 @@ public class GameManager : MonoBehaviour
             {
                 // BOSS RUSH TAMAMLANDI!
                 gameEnded = true;
-                int rushReward = 150;
+                int rushReward = 1500;
                 HangarManager.EnsureInstance()?.AddGold(rushReward);
                 sessionGoldEarned += rushReward;
 
@@ -413,8 +413,9 @@ public class GameManager : MonoBehaviour
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
-                HangarManager.EnsureInstance()?.AddGold(100);
-                sessionGoldEarned += 100;
+                int campaignReward = 1000;
+                HangarManager.EnsureInstance()?.AddGold(campaignReward);
+                sessionGoldEarned += campaignReward;
 
                 PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
                 PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(20);
@@ -429,7 +430,7 @@ public class GameManager : MonoBehaviour
 
                 if (wasBoss)
                 {
-                    int bossReward = (CurrentMode == GameMode.BossRush) ? 35 : 25;
+                    int bossReward = (CurrentMode == GameMode.BossRush) ? 250 : (100 + justDefeated * 10);
                     HangarManager.EnsureInstance()?.AddGold(bossReward);
                     sessionGoldEarned += bossReward;
 
@@ -437,17 +438,30 @@ public class GameManager : MonoBehaviour
                     PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(justDefeated);
 
                     var gameUI = FindObjectOfType<GameUI>();
-                    gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ! (+{bossReward}G)\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
+
+                    // SONSUZ İT DALAŞI MODU ÖZEL CAN ÖDÜLÜ:
+                    // Her 20. Boss zaferinde (ve 20'nin katı olan her büyük boss dalgasında) sorulmadan doğrudan +1 Can Hakkı ekle!
+                    if (CurrentMode == GameMode.Endless && (justDefeated % 20 == 0 || (justDefeated / 5) % 20 == 0))
+                    {
+                        player1Lives++;
+                        AudioManager.Instance?.PlayRewardFanfare();
+                        gameUI?.ShowWaveAlert($"[+] 20. BOSS İMHA EDİLDİ!\n<color=#2ECC71><b>OTOMATİK +1 YEDEK CAN EKLENDİ!</b></color>\n(TOPLAM CAN HAKKI: {player1Lives})", new Color(0.2f, 0.95f, 0.4f), 3.0f);
+                        gameUI?.UpdateHealthBars();
+                    }
+                    else
+                    {
+                        gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ! (+{bossReward}G)\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
+                    }
 
                     StartCoroutine(OpenUpgradeHangarRoutine(justDefeated));
                 }
                 else
                 {
-                    int killReward = 2 + (justDefeated / 4);
+                    bool isElite = (justDefeated % 5 == 4);
+                    int killReward = 15 + (justDefeated * 2) + (isElite ? 15 : 0);
                     HangarManager.EnsureInstance()?.AddGold(killReward);
                     sessionGoldEarned += killReward;
 
-                    bool isElite = (justDefeated % 5 == 4);
                     PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: false, isElite: isElite);
                     PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(justDefeated);
 

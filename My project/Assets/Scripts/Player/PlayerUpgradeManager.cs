@@ -58,6 +58,8 @@ public class PlayerUpgradeManager : MonoBehaviour
     public void AddGold(int amount)
     {
         HangarManager.EnsureInstance()?.AddGold(amount);
+        if (GameManager.Instance != null)
+            GameManager.Instance.sessionGoldEarned += amount;
     }
 
     public void GrantShield(float amount = 60f)
@@ -256,7 +258,7 @@ public class PlayerUpgradeManager : MonoBehaviour
             _shieldVisualObj.SetActive(false);
 
         var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("⚠️ KALKAN PARÇALANDI!", new Color(1f, 0.3f, 0.2f), 1.5f);
+        gameUI?.ShowWaveAlert("[!] KALKAN PARÇALANDI!", new Color(1f, 0.3f, 0.2f), 1.5f);
     }
 
     private IEnumerator FlashShieldRoutine(Color flashColor, float duration)

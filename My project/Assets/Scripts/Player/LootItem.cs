@@ -113,8 +113,9 @@ public class LootItem : MonoBehaviour
                 break;
 
             case LootType.Gold:
-                PlayerUpgradeManager.Instance?.AddGold(8);
-                gameUI?.ShowWaveAlert("[ +8 HANGAR ALTINI ]", new Color(1f, 0.9f, 0.2f), 1.3f);
+                int dropGold = 50;
+                PlayerUpgradeManager.Instance?.AddGold(dropGold);
+                gameUI?.ShowWaveAlert($"[ +{dropGold} HANGAR ALTINI ]", new Color(1f, 0.9f, 0.2f), 1.3f);
                 break;
         }
 

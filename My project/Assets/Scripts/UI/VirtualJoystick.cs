@@ -153,6 +153,10 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
     private Sprite LoadSpriteFromDisk(string fileName)
     {
+        string resName = Path.GetFileNameWithoutExtension(fileName);
+        Sprite resSpr = Resources.Load<Sprite>(resName);
+        if (resSpr != null) return resSpr;
+
         try
         {
             string path = Path.Combine(Application.dataPath, "Sprites", fileName);

@@ -184,13 +184,13 @@ public class GameUI : MonoBehaviour
         if (isPlayer)
         {
             tmp.color = new Color(0.4f, 0.9f, 1f);
-            tmp.text = "🛡️ OYUNCU 1: %100";
+            tmp.text = "[P1] OYUNCU 1: %100";
             _p1TmpLabel = tmp;
         }
         else
         {
             tmp.color = new Color(1f, 0.4f, 0.4f);
-            tmp.text = "⚠️ DÜŞMAN: %100";
+            tmp.text = "[DÜŞMAN] %100";
             _p2TmpLabel = tmp;
         }
     }
@@ -581,12 +581,9 @@ public class GameUI : MonoBehaviour
 
     private string GetHeartsDisplay(int lives)
     {
-        switch (lives)
-        {
-            case 3: return "<color=#FF3366>[3 CAN]</color>";
-            case 2: return "<color=#F39C12>[2 CAN]</color>";
-            case 1: return "<color=#E74C3C>[SON CAN]</color>";
-            default: return "<color=#888888>[CAN YOK]</color>";
-        }
+        if (lives <= 0) return "<color=#888888>[CAN YOK]</color>";
+        if (lives == 1) return "<color=#E74C3C>[SON CAN]</color>";
+        if (lives == 2) return "<color=#F39C12>[2 CAN]</color>";
+        return $"<color=#FF3366>[{lives} CAN]</color>";
     }
 }

@@ -236,7 +236,7 @@ public class InventoryUI : MonoBehaviour
                 $"• Mermi Hasarı: <color=#E74C3C>{totalDmg:0.0} DMG</color>\n\n" +
                 $"• Uçuş Hızı: <color=#3498DB>{totalSpd:0.0} Mach</color>\n\n" +
                 $"• Kritik Vuruş Şansı: <color=#F1C40F>%{totalCrit:0}</color>\n\n" +
-                $"• Toplam Muharebe Skoru:\n  <color=#F1C40F><size=125%>★ {ratingScore:N0} GP</size></color>";
+                $"• Toplam Muharebe Skoru:\n  <color=#F1C40F><size=125%>{ratingScore:N0} GP</size></color>";
         }
     }
 

@@ -56,6 +56,6 @@ public class MainMenuUI : MonoBehaviour
 
     private void StartGame()
     {
-        SceneManager.LoadScene("GameScene");
+        SceneManager.LoadScene("SampleScene");
     }
 }

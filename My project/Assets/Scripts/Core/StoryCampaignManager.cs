@@ -935,7 +935,7 @@ public class StoryCampaignManager : MonoBehaviour
             {
                 case 5:
                     return (
-                        "⚠️ [BOSS 1: A.P.E.X. SAVUNMA PROTOKOLÜ] ⚠️",
+                        "[DİKKAT: BOSS 1: A.P.E.X. SAVUNMA PROTOKOLÜ]",
                         new Color(1f, 0.35f, 0.25f),
                         new string[]
                         {
@@ -946,7 +946,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 case 10:
                     return (
-                        "⚠️ [BOSS 2: A.P.E.X. SİBER HAYALET] ⚠️",
+                        "[DİKKAT: BOSS 2: A.P.E.X. SİBER HAYALET]",
                         new Color(0.85f, 0.4f, 1f),
                         new string[]
                         {
@@ -957,7 +957,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 case 15:
                     return (
-                        "⚠️ [BOSS 3: A.P.E.X. PLAZMA REAKTÖRÜ] ⚠️",
+                        "[DİKKAT: BOSS 3: A.P.E.X. PLAZMA REAKTÖRÜ]",
                         new Color(1f, 0.5f, 0.15f),
                         new string[]
                         {
@@ -968,7 +968,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 default:
                     return (
-                        "🚨 [FİNAL BOSS: A.P.E.X. SÜPER BEYİN MERKEZİ] 🚨",
+                        "[ALARM: FİNAL BOSS: A.P.E.X. SÜPER BEYİN MERKEZİ]",
                         new Color(1f, 0.15f, 0.15f),
                         new string[]
                         {
@@ -985,7 +985,7 @@ public class StoryCampaignManager : MonoBehaviour
             {
                 case 5:
                     return (
-                        "⚠️ [BOSS 1: DEMİR YÜREK - 500.000$ ÖDÜL] ⚠️",
+                        "[DİKKAT: BOSS 1: DEMİR YÜREK - 500.000$ ÖDÜL]",
                         new Color(1f, 0.45f, 0.1f),
                         new string[]
                         {
@@ -996,7 +996,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 case 10:
                     return (
-                        "⚠️ [BOSS 2: GÖLGE PENÇE - 1.000.000$ ÖDÜL] ⚠️",
+                        "[DİKKAT: BOSS 2: GÖLGE PENÇE - 1.000.000$ ÖDÜL]",
                         new Color(0.85f, 0.4f, 1f),
                         new string[]
                         {
@@ -1007,7 +1007,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 case 15:
                     return (
-                        "⚠️ [BOSS 3: KIRMIZI BARON - 2.500.000$ ÖDÜL] ⚠️",
+                        "[DİKKAT: BOSS 3: KIRMIZI BARON - 2.500.000$ ÖDÜL]",
                         new Color(1f, 0.25f, 0.25f),
                         new string[]
                         {
@@ -1018,7 +1018,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 default:
                     return (
-                        "🚨 [FİNAL BOSS: KARTEL BARONU VOLK - 10.000.000$ BÜYÜK ÖDÜL] 🚨",
+                        "[ALARM: FİNAL BOSS: KARTEL BARONU VOLK - 10.000.000$ BÜYÜK ÖDÜL]",
                         new Color(1f, 0.85f, 0.15f),
                         new string[]
                         {
@@ -1036,7 +1036,7 @@ public class StoryCampaignManager : MonoBehaviour
             {
                 case 5:
                     return (
-                        "⚠️ [BOSS 1: GENERAL VOLKOV - AĞIR TAARRUZ] ⚠️",
+                        "[DİKKAT: BOSS 1: GENERAL VOLKOV - AĞIR TAARRUZ]",
                         new Color(1f, 0.35f, 0.35f),
                         new string[]
                         {
@@ -1047,7 +1047,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 case 10:
                     return (
-                        "⚠️ [BOSS 2: PHANTOM - GÖRÜNMEZ GECE AVCISI] ⚠️",
+                        "[DİKKAT: BOSS 2: PHANTOM - GÖRÜNMEZ GECE AVCISI]",
                         new Color(0.2f, 0.85f, 1f),
                         new string[]
                         {
@@ -1058,7 +1058,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 case 15:
                     return (
-                        "⚠️ [BOSS 3: FIREBIRD - PLAZMA ALEV KARTALI] ⚠️",
+                        "[DİKKAT: BOSS 3: FIREBIRD - PLAZMA ALEV KARTALI]",
                         new Color(1f, 0.45f, 0.1f),
                         new string[]
                         {
@@ -1069,7 +1069,7 @@ public class StoryCampaignManager : MonoBehaviour
                     );
                 default:
                     return (
-                        "🚨 [FİNAL BOSS: GÖK HAKİMİ AMİRALİ - AMİRAL GEMİSİ] 🚨",
+                        "[ALARM: FİNAL BOSS: GÖK HAKİMİ AMİRALİ - AMİRAL GEMİSİ]",
                         new Color(1f, 0.2f, 0.2f),
                         new string[]
                         {

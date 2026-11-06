@@ -21,6 +21,10 @@ public class ModeSelector : MonoBehaviour
     public static void SetMode(Mode mode)
     {
         SelectedMode = mode;
+        if (mode == Mode.SoloVsAI)
+            GameSettings.SelectedMode = GameSettings.GameMode.Solo;
+        else
+            GameSettings.SelectedMode = GameSettings.GameMode.Online;
     }
 }
 

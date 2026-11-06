@@ -133,7 +133,7 @@ public class PlayerProfileManager : MonoBehaviour
             level++;
             leveledUp = true;
 
-            int levelReward = Mathf.Max(5, level * 3);
+            int levelReward = Mathf.Max(50, level * 30);
             totalReward += levelReward;
             HangarManager.EnsureInstance()?.AddGold(levelReward);
         }

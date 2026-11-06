@@ -119,6 +119,14 @@ public class DroneCompanion : MonoBehaviour
             _                         => 1100f
         };
 
+        string resName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+        Sprite resSpr = Resources.Load<Sprite>(resName);
+        if (resSpr != null)
+        {
+            _droneSpriteCache[type] = resSpr;
+            return resSpr;
+        }
+
         string fullPath = System.IO.Path.Combine(Application.dataPath, "Sprites", fileName);
         if (System.IO.File.Exists(fullPath))
         {
@@ -444,11 +452,11 @@ public class DroneCompanion : MonoBehaviour
 
         if (currentDeaths >= maxDeaths)
         {
-            gameUI?.ShowWaveAlert($"💥 <b>[{modelName.ToUpper()} TAMAMEN İMHA OLDU!]</b>\n<color=#FF5252>2/2 Can Hakkı Tükendi - Hangardan Tekrar Satın Alınmalı!</color>", Color.red, 3.5f);
+            gameUI?.ShowWaveAlert($"[!] <b>[{modelName.ToUpper()} TAMAMEN İMHA OLDU!]</b>\n<color=#FF5252>2/2 Can Hakkı Tükendi - Hangardan Tekrar Satın Alınmalı!</color>", Color.red, 3.5f);
         }
         else
         {
-            gameUI?.ShowWaveAlert($"⚠️ <b>[{modelName.ToUpper()} AĞIR HASAR ALDI!]</b>\n<color=#FFA000>Kanattan Düştü (1/{maxDeaths} Hak Kalan) - Hangarda Onarılabilir!</color>", new Color(1f, 0.65f, 0f), 3.5f);
+            gameUI?.ShowWaveAlert($"[!] <b>[{modelName.ToUpper()} AĞIR HASAR ALDI!]</b>\n<color=#FFA000>Kanattan Düştü (1/{maxDeaths} Hak Kalan) - Hangarda Onarılabilir!</color>", new Color(1f, 0.65f, 0f), 3.5f);
         }
 
         HangarManager.Instance?.OnDroneDestroyed(droneType);
