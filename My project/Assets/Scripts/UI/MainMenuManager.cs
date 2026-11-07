@@ -59,6 +59,8 @@ public class MainMenuManager : MonoBehaviour
     private GameObject _titleObject;
     private Button _hangarButton;
     private Button _cratesButton;
+    private Button _leaderboardButton;
+    private Button _modesLeaderboardButton;
     private Button _quickDiffButton;
 
     public static void MakeFullScreenRect(RectTransform rt)
@@ -159,6 +161,9 @@ public class MainMenuManager : MonoBehaviour
         OpenMainPanel();
         UpdateUIFeedback();
         SetTouchControlsVisibility(false, false);
+
+        // İlk kez giriş yapan oyuncuya pilot çağrı kodu / isim belirleme ekranını göster
+        PilotLoginUI.EnsureUI()?.CheckFirstTimeLogin();
     }
 
     private void TryLoadBackgroundArt()
@@ -208,31 +213,38 @@ public class MainMenuManager : MonoBehaviour
 
     private void FormatMilitaryButtons()
     {
-        FormatBtn(playButton, 130f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 68f);
+        FormatBtn(playButton, 138f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 62f);
 
-        _hangarButton = CreateOrFindMainButton("HangarButton", 64f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 54f);
+        _hangarButton = CreateOrFindMainButton("HangarButton", 78f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 50f);
         if (_hangarButton != null)
         {
             _hangarButton.onClick.RemoveAllListeners();
             _hangarButton.onClick.AddListener(OpenHangarPanel);
         }
 
-        _cratesButton = CreateOrFindMainButton("CratesButton", 2f, "İKMAL VE GANİMET SANDIKLARI", new Color(0.72f, 0.48f, 0.12f), 520f, 54f);
+        _cratesButton = CreateOrFindMainButton("CratesButton", 22f, "İKMAL VE GANİMET SANDIKLARI", new Color(0.72f, 0.48f, 0.12f), 520f, 50f);
         if (_cratesButton != null)
         {
             _cratesButton.onClick.RemoveAllListeners();
             _cratesButton.onClick.AddListener(OpenCratesPanel);
         }
 
-        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -60f, "ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 520f, 54f);
+        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -34f, "🏆 KÜRESEL REKOR TABLOSU", new Color(0.78f, 0.52f, 0.10f), 520f, 50f);
+        if (_leaderboardButton != null)
+        {
+            _leaderboardButton.onClick.RemoveAllListeners();
+            _leaderboardButton.onClick.AddListener(() => OpenLeaderboardPanel());
+        }
+
+        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -90f, "ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 520f, 50f);
         if (_quickDiffButton != null)
         {
             _quickDiffButton.onClick.RemoveAllListeners();
             _quickDiffButton.onClick.AddListener(CycleDifficulty);
         }
 
-        FormatBtn(modesButton, -122f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 520f, 54f);
-        FormatBtn(settingsButton, -184f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 520f, 54f);
+        FormatBtn(modesButton, -146f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 520f, 50f);
+        FormatBtn(settingsButton, -202f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 520f, 50f);
 
         // Ayarlar Paneli Zorluk Butonları (Kolay, Normal, Zor)
         FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 480f, 52f);
@@ -317,6 +329,23 @@ public class MainMenuManager : MonoBehaviour
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
 
         CratesUI.EnsureUI()?.OpenCratesPanel(() => OpenMainPanel());
+    }
+
+    public void OpenLeaderboardPanel(LeaderboardManager.BoardMode mode = LeaderboardManager.BoardMode.Endless)
+    {
+        if (mainPanel != null) mainPanel.SetActive(false);
+        if (modesPanel != null) modesPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (_titleObject != null) _titleObject.SetActive(false);
+        if (backgroundImage != null) backgroundImage.enabled = true;
+
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+
+        LeaderboardUI.EnsureUI()?.OpenLeaderboard(mode, () => OpenMainPanel());
     }
 
     private void FormatBtn(Button btn, float posY, string text, Color color, float width, float height, float posX = 0f)
@@ -503,6 +532,7 @@ public class MainMenuManager : MonoBehaviour
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+        if (LeaderboardUI.Instance != null) LeaderboardUI.Instance.CloseLeaderboard();
     }
 
     public void OpenModesPanel()
@@ -517,6 +547,7 @@ public class MainMenuManager : MonoBehaviour
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+        if (LeaderboardUI.Instance != null) LeaderboardUI.Instance.CloseLeaderboard();
 
         UpdateUIFeedback();
     }
@@ -537,6 +568,7 @@ public class MainMenuManager : MonoBehaviour
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+        if (LeaderboardUI.Instance != null) LeaderboardUI.Instance.CloseLeaderboard();
 
         UpdateUIFeedback();
     }
@@ -633,6 +665,33 @@ public class MainMenuManager : MonoBehaviour
         if (backFromModesButton != null)
         {
             FormatBottomLeftBackBtn(backFromModesButton);
+        }
+
+        // 12. Modlar Paneli Rekor Tablosu Butonu (Sağ Alt Köşe)
+        _modesLeaderboardButton = CreateOrFindModesButton("ModesLeaderboardBtn", 25f, "🏆 REKOR TABLOSU", new Color(0.78f, 0.52f, 0.10f), 260f, 54f, posX: 0f);
+        if (_modesLeaderboardButton != null)
+        {
+            RectTransform lbRt = _modesLeaderboardButton.GetComponent<RectTransform>();
+            if (lbRt != null)
+            {
+                lbRt.anchorMin = new Vector2(1f, 0f);
+                lbRt.anchorMax = new Vector2(1f, 0f);
+                lbRt.pivot = new Vector2(1f, 0f);
+                lbRt.anchoredPosition = new Vector2(-40f, 25f);
+            }
+            _modesLeaderboardButton.onClick.RemoveAllListeners();
+            _modesLeaderboardButton.onClick.AddListener(() =>
+            {
+                LeaderboardManager.BoardMode targetBoard = GameSettings.SelectedMode switch
+                {
+                    GameSettings.GameMode.Endless => LeaderboardManager.BoardMode.Endless,
+                    GameSettings.GameMode.TimeAttack => LeaderboardManager.BoardMode.TimeAttack,
+                    GameSettings.GameMode.BulletHell => LeaderboardManager.BoardMode.BulletHell,
+                    GameSettings.GameMode.BossRush => LeaderboardManager.BoardMode.BossRush,
+                    _ => LeaderboardManager.BoardMode.Endless
+                };
+                OpenLeaderboardPanel(targetBoard);
+            });
         }
     }
 

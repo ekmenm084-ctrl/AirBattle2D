@@ -14,6 +14,7 @@ public class GameOverUI : MonoBehaviour
     public Button mainMenuButton;
 
     private Button _hangarDirectBtn;
+    private Button _leaderboardBtn;
 
     private void Awake()
     {
@@ -92,10 +93,29 @@ public class GameOverUI : MonoBehaviour
         winnerText.color = Color.white;
 
         // Restart Button
-        restartButton = CreateBtn(panel.transform, "RestartBtn", "YENİDEN OYNA", new Vector2(0f, -40f), new Color(0.16f, 0.55f, 0.32f), () => GameManager.Instance?.RestartGame());
+        restartButton = CreateBtn(panel.transform, "RestartBtn", "YENİDEN OYNA", new Vector2(0f, -35f), new Color(0.16f, 0.55f, 0.32f), () => GameManager.Instance?.RestartGame());
+
+        // Leaderboard Button
+        _leaderboardBtn = CreateBtn(panel.transform, "LeaderboardBtn", "🏆 KÜRESEL REKOR TABLOSU", new Vector2(0f, -95f), new Color(0.72f, 0.48f, 0.12f), OpenLeaderboardFromGameOver);
 
         // Main Menu Button
-        mainMenuButton = CreateBtn(panel.transform, "MainMenuBtn", "ANA MENÜYE DÖN", new Vector2(0f, -170f), new Color(0.25f, 0.30f, 0.38f), () => GameManager.Instance?.GoToMainMenu());
+        mainMenuButton = CreateBtn(panel.transform, "MainMenuBtn", "ANA MENÜYE DÖN", new Vector2(0f, -215f), new Color(0.25f, 0.30f, 0.38f), () => GameManager.Instance?.GoToMainMenu());
+    }
+
+    private void OpenLeaderboardFromGameOver()
+    {
+        LeaderboardManager.BoardMode bMode = LeaderboardManager.BoardMode.Endless;
+        if (GameManager.Instance != null)
+        {
+            if (GameManager.Instance.CurrentMode == GameManager.GameMode.TimeAttack)
+                bMode = LeaderboardManager.BoardMode.TimeAttack;
+            else if (GameManager.Instance.CurrentMode == GameManager.GameMode.BulletHell)
+                bMode = LeaderboardManager.BoardMode.BulletHell;
+            else if (GameManager.Instance.CurrentMode == GameManager.GameMode.BossRush)
+                bMode = LeaderboardManager.BoardMode.BossRush;
+        }
+
+        LeaderboardUI.EnsureUI()?.OpenLeaderboard(bMode, null);
     }
 
     private Button CreateBtn(Transform parent, string name, string text, Vector2 pos, Color col, UnityEngine.Events.UnityAction action)
@@ -154,7 +174,7 @@ public class GameOverUI : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.sizeDelta = new Vector2(340f, 50f);
-        rt.anchoredPosition = new Vector2(0f, -105f);
+        rt.anchoredPosition = new Vector2(0f, -155f);
 
         Image bg = hObj.AddComponent<Image>();
         bg.color = new Color(0.72f, 0.48f, 0.12f, 0.95f);

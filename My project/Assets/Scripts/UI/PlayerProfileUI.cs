@@ -344,7 +344,8 @@ public class PlayerProfileUI : MonoBehaviour
         if (_rankTitleTMP != null)
         {
             Color c = PlayerProfileManager.GetRankColor(pm.level);
-            _rankTitleTMP.text = $"<color=#{ColorUtility.ToHtmlStringRGB(c)}><b>{pm.RankTitle.ToUpper()}</b></color>";
+            string callsign = LeaderboardManager.PlayerCallsign;
+            _rankTitleTMP.text = $"<color=#00E5FF><b>[{callsign}]</b></color> <color=#{ColorUtility.ToHtmlStringRGB(c)}>{pm.RankTitle.ToUpper()}</color>";
         }
 
         if (_expBarFill != null)
@@ -533,12 +534,53 @@ public class PlayerProfileUI : MonoBehaviour
         _dossierPerksTMP.margin = new Vector4(20f, 15f, 15f, 15f);
         _dossierPerksTMP.color = new Color(0.88f, 0.94f, 1f);
 
+        // Çağrı Kodunu Değiştir Butonu
+        GameObject editNameObj = new GameObject("EditNameBtn");
+        editNameObj.transform.SetParent(_dossierModal.transform, false);
+        RectTransform enRt = editNameObj.AddComponent<RectTransform>();
+        enRt.anchorMin = new Vector2(0.18f, 0.05f);
+        enRt.anchorMax = new Vector2(0.48f, 0.16f);
+        enRt.offsetMin = Vector2.zero;
+        enRt.offsetMax = Vector2.zero;
+
+        Image enImg = editNameObj.AddComponent<Image>();
+        enImg.color = new Color(0.12f, 0.45f, 0.65f);
+
+        Outline enOutline = editNameObj.AddComponent<Outline>();
+        enOutline.effectColor = new Color(0f, 0.85f, 1f, 1f);
+        enOutline.effectDistance = new Vector2(2f, -2f);
+
+        Button enBtn = editNameObj.AddComponent<Button>();
+        enBtn.onClick.AddListener(() =>
+        {
+            PilotLoginUI.EnsureUI()?.OpenLoginModal(() =>
+            {
+                UpdateDossierContent();
+                RefreshBadgeVisuals();
+            });
+        });
+
+        GameObject enTxtObj = new GameObject("Text");
+        enTxtObj.transform.SetParent(editNameObj.transform, false);
+        RectTransform entRt = enTxtObj.AddComponent<RectTransform>();
+        entRt.anchorMin = Vector2.zero;
+        entRt.anchorMax = Vector2.one;
+        entRt.offsetMin = Vector2.zero;
+        entRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI enTMP = enTxtObj.AddComponent<TextMeshProUGUI>();
+        enTMP.text = "<b>✏️ ÇAĞRI KODUNU DEĞİŞTİR</b>";
+        enTMP.fontSize = 17f;
+        enTMP.fontStyle = FontStyles.Bold;
+        enTMP.alignment = TextAlignmentOptions.Center;
+        enTMP.color = Color.white;
+
         // Kapat Butonu
         GameObject closeObj = new GameObject("CloseBtn");
         closeObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform cRt = closeObj.AddComponent<RectTransform>();
-        cRt.anchorMin = new Vector2(0.35f, 0.05f);
-        cRt.anchorMax = new Vector2(0.65f, 0.16f);
+        cRt.anchorMin = new Vector2(0.52f, 0.05f);
+        cRt.anchorMax = new Vector2(0.82f, 0.16f);
         cRt.offsetMin = Vector2.zero;
         cRt.offsetMax = Vector2.zero;
 
@@ -576,7 +618,8 @@ public class PlayerProfileUI : MonoBehaviour
         if (_dossierRankTMP != null)
         {
             Color c = PlayerProfileManager.GetRankColor(pm.level);
-            _dossierRankTMP.text = $"<b>PİLOT RÜTBESİ:</b> <color=#{ColorUtility.ToHtmlStringRGB(c)}>{pm.RankTitle}</color>\n<size=75%><color=#8AB4F8>KADEME SEVİYESİ: {pm.level} | TOPLAM EXP: {pm.currentExp} / {pm.ExpForNextLevel}</color></size>";
+            string callsign = LeaderboardManager.PlayerCallsign;
+            _dossierRankTMP.text = $"<b>PİLOT ÇAĞRI KODU:</b> <color=#00E5FF><b>[{callsign}]</b></color>   |   <b>RÜTBE:</b> <color=#{ColorUtility.ToHtmlStringRGB(c)}>{pm.RankTitle}</color>\n<size=75%><color=#8AB4F8>KADEME SEVİYESİ: {pm.level} | TOPLAM EXP: {pm.currentExp} / {pm.ExpForNextLevel}</color></size>";
         }
 
         if (_dossierStatsTMP != null)

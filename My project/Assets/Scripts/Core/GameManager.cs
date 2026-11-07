@@ -475,6 +475,7 @@ public class GameManager : MonoBehaviour
                         PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
                         PlayerPrefs.Save();
                     }
+                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);
 
                     int reward = (int)(bulletHellTime * 4f) + (newRecord ? 200 : 50);
                     HangarManager.EnsureInstance()?.AddGold(reward);
@@ -542,9 +543,12 @@ public class GameManager : MonoBehaviour
                     {
                         defeatMsg = $"GÖREV BAŞARISIZ!\nSONSUZ MOD: DALGA {currentPlaneIndex}\nEN YÜKSEK REKOR: {bestWave}";
                     }
+                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.Endless, currentPlaneIndex);
                 }
                 else if (CurrentMode == GameMode.BossRush)
                 {
+                    int bossScore = Mathf.Max(0, currentPlaneIndex - 1) * 100;
+                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossScore);
                     defeatMsg = $"BOSS RUSH BAŞARISIZ!\nELENEN BOSS: {currentPlaneIndex - 1} / 4";
                 }
                 else
@@ -588,6 +592,7 @@ public class GameManager : MonoBehaviour
                     PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
                     PlayerPrefs.Save();
                 }
+                LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);
 
                 int m = (int)(bulletHellTime / 60f);
                 int s = (int)(bulletHellTime % 60f);
@@ -862,6 +867,7 @@ public class GameManager : MonoBehaviour
 
         PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
         PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(4);
+        LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, 400);
 
         AudioManager.Instance?.PlayRewardFanfare();
 
@@ -1103,6 +1109,7 @@ public class GameManager : MonoBehaviour
             PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
             PlayerPrefs.Save();
         }
+        LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.TimeAttack, timeAttackKills);
 
         int reward = (timeAttackKills * 25) + (newRecord ? 250 : 50);
         HangarManager.EnsureInstance()?.AddGold(reward);
