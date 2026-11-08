@@ -1,12 +1,13 @@
 using System.Collections;
 using UnityEngine;
+using TMPro;
 
 /// <summary>
-/// Düşman uçaklarından düşen ve sahada süzülen ganimet/güçlendirme küresi:
-/// - Health: +35 Can Tamiri
-/// - Shield: +60 Plazma Enerji Kalkanı
-/// - Overdrive: 7 Saniye Süper Seri 3'lü Lazer Atışı
-/// - Gold: +100 Altın Madalyon
+/// Düşman uçaklarından düşen ve sahada süzülen yüksek çözünürlüklü taktik ganimet / güçlendirme küresi:
+/// - Health (Gövde Tamiri): +35 Can Onarımı, Askeri Yeşil Tamir Kiti simgesi ve [ +TAMİR ] etiketi.
+/// - Shield (Plazma Kalkan): +60 Plazma Enerji Kalkanı, Fütüristik Kalkan simgesi ve [ KALKAN ] etiketi.
+/// - Overdrive (Süper Ateş): 7 Saniye 3'lü Hiper Seri Ateş, Alevli Mühimmat Sandığı ve [ SÜPER ATEŞ ] etiketi.
+/// - Gold (Pilot As Altını): +50 Hangar Altını, 3D Kanatlı Askeri Madalyon ve [ +50 ALTIN ] etiketi.
 /// </summary>
 public class LootItem : MonoBehaviour
 {
@@ -20,12 +21,14 @@ public class LootItem : MonoBehaviour
 
     public LootType type = LootType.Health;
     public float floatSpeed = 0.95f;
-    public float magnetRadius = 2.6f;
+    public float magnetRadius = 2.8f;
     public float lifetime = 14f;
 
     private Transform _playerTransform;
     private Rigidbody2D _rb;
     private SpriteRenderer _sr;
+    private SpriteRenderer _haloSr;
+    private TextMeshPro _labelTMP;
     private Color _themeColor = Color.green;
 
     private void Awake()
@@ -36,7 +39,7 @@ public class LootItem : MonoBehaviour
 
         CircleCollider2D col = GetComponent<CircleCollider2D>();
         if (col == null) col = gameObject.AddComponent<CircleCollider2D>();
-        col.radius = 0.42f;
+        col.radius = 0.46f;
         col.isTrigger = true;
     }
 
@@ -44,6 +47,7 @@ public class LootItem : MonoBehaviour
     {
         FindPlayer();
         SetupVisuals();
+        SetupFloatingTag();
         Destroy(gameObject, lifetime);
     }
 
@@ -52,25 +56,46 @@ public class LootItem : MonoBehaviour
         if (_playerTransform == null || !_playerTransform.gameObject.activeInHierarchy)
             FindPlayer();
 
-        // Hafifçe aşağı doğru süzülme
+        // Aşağı doğru hafif süzülme
         Vector2 velocity = new Vector2(0f, -floatSpeed);
 
-        // Manyetik Çekim: Oyuncuya yaklaştığında oyuncuya doğru çekilir
+        // Manyetik Çekim: Oyuncuya yaklaştığında hızlanarak oyuncuya doğru akar
         if (_playerTransform != null)
         {
             float dist = Vector2.Distance(transform.position, _playerTransform.position);
             if (dist < magnetRadius)
             {
                 Vector2 dir = ((Vector2)_playerTransform.position - _rb.position).normalized;
-                velocity = Vector2.Lerp(velocity, dir * 4.5f, (magnetRadius - dist) / magnetRadius);
+                velocity = Vector2.Lerp(velocity, dir * 5.2f, (magnetRadius - dist) / magnetRadius);
             }
         }
 
         _rb.linearVelocity = velocity;
 
-        // Hafif nabız gibi atma animasyonu
-        float pulse = 1f + Mathf.Sin(Time.time * 6f) * 0.12f;
-        transform.localScale = new Vector3(pulse, pulse, 1f);
+        // Nefes alma / nabız animasyonu
+        float pulse = 1f + Mathf.Sin(Time.time * 5f) * 0.08f;
+        if (_sr != null)
+        {
+            _sr.transform.localScale = new Vector3(pulse, pulse, 1f);
+        }
+
+        // Parıltı halesi nabız efekti
+        if (_haloSr != null)
+        {
+            float haloPulse = 1.25f + Mathf.Sin(Time.time * 6f) * 0.18f;
+            _haloSr.transform.localScale = new Vector3(haloPulse, haloPulse, 1f);
+            float alpha = 0.35f + Mathf.Sin(Time.time * 6f) * 0.20f;
+            Color c = _themeColor;
+            c.a = Mathf.Clamp01(alpha);
+            _haloSr.color = c;
+        }
+
+        // Etiket yukarı-aşağı hafif süzülüşü (bobbing)
+        if (_labelTMP != null)
+        {
+            float bob = 0.46f + Mathf.Sin(Time.time * 4f) * 0.04f;
+            _labelTMP.transform.localPosition = new Vector3(0f, bob, 0f);
+        }
     }
 
     private void FindPlayer()
@@ -99,27 +124,27 @@ public class LootItem : MonoBehaviour
         {
             case LootType.Health:
                 health?.Heal(35f);
-                gameUI?.ShowWaveAlert("[ +35 GÖVDE TAMİRİ ]", new Color(0.2f, 1f, 0.4f), 1.3f);
+                gameUI?.ShowWaveAlert("🔧 <b>[ +35 GÖVDE TAMİRİ EDİLDİ ]</b>", new Color(0.1f, 1f, 0.4f), 1.4f);
                 break;
 
             case LootType.Shield:
                 PlayerUpgradeManager.Instance?.GrantShield(60f);
-                gameUI?.ShowWaveAlert("[ +60 ENERJİ KALKANI AKTİF ]", new Color(0.2f, 0.9f, 1f), 1.3f);
+                gameUI?.ShowWaveAlert("🛡️ <b>[ +60 PLAZMA ENERJİ KALKANI AKTİF ]</b>", new Color(0f, 0.9f, 1f), 1.4f);
                 break;
 
             case LootType.Overdrive:
                 shooter?.ActivateOverdrive(7.0f);
-                gameUI?.ShowWaveAlert("[ AŞIRI YÜKLEME: 3'LÜ SERİ ATEŞ ]", new Color(1f, 0.85f, 0.1f), 1.5f);
+                gameUI?.ShowWaveAlert("⚡ <b>[ AŞIRI YÜKLEME: 3'LÜ HİPER ATEŞ (7s) ]</b>", new Color(1f, 0.85f, 0.1f), 1.6f);
                 break;
 
             case LootType.Gold:
                 int dropGold = 50;
                 PlayerUpgradeManager.Instance?.AddGold(dropGold);
-                gameUI?.ShowWaveAlert($"[ +{dropGold} HANGAR ALTINI ]", new Color(1f, 0.9f, 0.2f), 1.3f);
+                gameUI?.ShowWaveAlert($"💰 <b>[ +{dropGold} HANGAR ALTINI KAZANILDI ]</b>", new Color(1f, 0.88f, 0.2f), 1.4f);
                 break;
         }
 
-        // Parlak kıvılcım ve ses efekti
+        // Parlak kıvılcım & ses efekti
         VFXManager.SpawnHitSparks(transform.position, _themeColor);
         AudioManager.Instance?.PlayGunfire(false);
 
@@ -128,138 +153,160 @@ public class LootItem : MonoBehaviour
 
     private void SetupVisuals()
     {
+        // 1. Ana Sprite Renderer
         _sr = GetComponent<SpriteRenderer>();
         if (_sr == null) _sr = gameObject.AddComponent<SpriteRenderer>();
 
-        int size = 28;
-        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-        tex.filterMode = FilterMode.Point;
+        string resName = "";
+        switch (type)
+        {
+            case LootType.Health:
+                _themeColor = new Color(0.1f, 1f, 0.4f);
+                resName = "loot_health";
+                break;
+            case LootType.Shield:
+                _themeColor = new Color(0f, 0.88f, 1f);
+                resName = "loot_shield";
+                break;
+            case LootType.Overdrive:
+                _themeColor = new Color(1f, 0.70f, 0.1f);
+                resName = "loot_overdrive";
+                break;
+            case LootType.Gold:
+                _themeColor = new Color(1f, 0.85f, 0.15f);
+                resName = "loot_gold";
+                break;
+        }
+
+        // Resources klasöründen yüksek kaliteli saydam sprite'ı yükle
+        Sprite loadedSpr = Resources.Load<Sprite>(resName);
+        if (loadedSpr != null)
+        {
+            _sr.sprite = loadedSpr;
+            // 128x128 sprite'ı sahneye mükemmel oranda oturt (0.68f)
+            transform.localScale = new Vector3(0.68f, 0.68f, 1f);
+        }
+        else
+        {
+            // Eğer kaynak bulunamazsa şık prosedürel çizim devreye girer
+            GenerateProceduralFallback();
+        }
+
+        _sr.sortingOrder = 16;
+
+        // 2. Arka Plan Parlayan Enerji Halesi (Halo)
+        GameObject haloObj = new GameObject("HaloAura");
+        haloObj.transform.SetParent(transform, false);
+        haloObj.transform.localPosition = Vector3.zero;
+
+        _haloSr = haloObj.AddComponent<SpriteRenderer>();
+        _haloSr.sprite = CreateGlowCircleSprite();
+        _haloSr.sortingOrder = 14; // Ana sprite'ın arkasında
+        Color haloC = _themeColor;
+        haloC.a = 0.45f;
+        _haloSr.color = haloC;
+        _haloSr.transform.localScale = new Vector3(1.25f, 1.25f, 1f);
+    }
+
+    /// <summary>
+    /// Eşyanın hemen üstünde beliren ve havada ne olduğunu 100% net gösteren dünya uzayı metin etiketi.
+    /// </summary>
+    private void SetupFloatingTag()
+    {
+        GameObject tagObj = new GameObject("LootTag");
+        tagObj.transform.SetParent(transform, false);
+        tagObj.transform.localPosition = new Vector3(0f, 0.46f, 0f);
+
+        _labelTMP = tagObj.AddComponent<TextMeshPro>();
+        _labelTMP.alignment = TextAlignmentOptions.Center;
+        _labelTMP.fontSize = 2.4f;
+        _labelTMP.fontStyle = FontStyles.Bold;
+        _labelTMP.sortingOrder = 22;
+        _labelTMP.extraPadding = true;
+        _labelTMP.outlineWidth = 0.28f;
+        _labelTMP.outlineColor = Color.black;
 
         switch (type)
         {
             case LootType.Health:
-                _themeColor = new Color(0.2f, 1f, 0.4f);
-                DrawHealthKit(tex, size);
+                _labelTMP.text = "<color=#00FF66><b>[ +TAMİR ]</b></color>";
                 break;
             case LootType.Shield:
-                _themeColor = new Color(0.1f, 0.85f, 1f);
-                DrawShieldSphere(tex, size);
+                _labelTMP.text = "<color=#00E5FF><b>[ KALKAN ]</b></color>";
                 break;
             case LootType.Overdrive:
-                _themeColor = new Color(1f, 0.85f, 0.15f);
-                DrawLightning(tex, size);
+                _labelTMP.text = "<color=#FFA000><b>[ SÜPER ATEŞ ]</b></color>";
                 break;
             case LootType.Gold:
-                _themeColor = new Color(1f, 0.75f, 0.1f);
-                DrawCoin(tex, size);
+                _labelTMP.text = "<color=#FFD700><b>[ +50 ALTIN ]</b></color>";
                 break;
         }
 
+        // Metin boyutu dengesi
+        RectTransform rt = tagObj.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.sizeDelta = new Vector2(3.5f, 1f);
+        }
+    }
+
+    private static Sprite _cachedGlowCircle;
+    private static Sprite CreateGlowCircleSprite()
+    {
+        if (_cachedGlowCircle != null) return _cachedGlowCircle;
+
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
+        float radius = size * 0.48f;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                if (dist > radius)
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+                else
+                {
+                    float factor = 1f - (dist / radius);
+                    float alpha = Mathf.SmoothStep(0f, 1f, factor * factor);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+                }
+            }
+        }
         tex.Apply();
-        _sr.sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 28f);
-        _sr.sortingOrder = 16;
+        _cachedGlowCircle = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 64f);
+        return _cachedGlowCircle;
     }
 
-    private void DrawHealthKit(Texture2D tex, int size)
+    private void GenerateProceduralFallback()
     {
-        Color green = new Color(0.2f, 0.95f, 0.35f);
-        Color white = Color.white;
+        int size = 48;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        Vector2 center = new Vector2(size * 0.5f, size * 0.5f);
+        float radius = size * 0.46f;
 
         for (int y = 0; y < size; y++)
         {
             for (int x = 0; x < size; x++)
             {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(size / 2, size / 2));
-                if (dist > (size / 2 - 1))
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                if (dist > radius)
                 {
                     tex.SetPixel(x, y, Color.clear);
                 }
                 else
                 {
-                    // Yeşil arka plan küresi
-                    tex.SetPixel(x, y, new Color(0.05f, 0.35f, 0.15f, 0.95f));
-
-                    // Beyaz Sağlık Artısı
-                    bool isCrossH = (y >= 11 && y <= 16 && x >= 7 && x <= 20);
-                    bool isCrossV = (x >= 11 && x <= 16 && y >= 7 && y <= 20);
-                    if (isCrossH || isCrossV)
-                        tex.SetPixel(x, y, white);
+                    tex.SetPixel(x, y, _themeColor);
                 }
             }
         }
-    }
-
-    private void DrawShieldSphere(Texture2D tex, int size)
-    {
-        Color cyan = new Color(0f, 0.9f, 1f);
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(size / 2, size / 2));
-                if (dist > (size / 2 - 1))
-                {
-                    tex.SetPixel(x, y, Color.clear);
-                }
-                else
-                {
-                    float ring = Mathf.Abs(dist - (size / 2 - 3f));
-                    if (ring < 2.5f)
-                        tex.SetPixel(x, y, cyan);
-                    else
-                        tex.SetPixel(x, y, new Color(0f, 0.3f, 0.6f, 0.85f));
-                }
-            }
-        }
-    }
-
-    private void DrawLightning(Texture2D tex, int size)
-    {
-        Color yellow = new Color(1f, 0.9f, 0.1f);
-        Color dark = new Color(0.4f, 0.3f, 0.05f, 0.9f);
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(size / 2, size / 2));
-                if (dist > (size / 2 - 1))
-                    tex.SetPixel(x, y, Color.clear);
-                else
-                    tex.SetPixel(x, y, dark);
-            }
-        }
-
-        // Yıldırım simgesi pikselleri
-        for (int y = 5; y < 23; y++)
-        {
-            int cx = 14 + (y > 14 ? (y - 14) : -(14 - y));
-            for (int dx = -2; dx <= 2; dx++)
-            {
-                int px = Mathf.Clamp(cx + dx, 0, size - 1);
-                tex.SetPixel(px, y, yellow);
-            }
-        }
-    }
-
-    private void DrawCoin(Texture2D tex, int size)
-    {
-        Color gold = new Color(1f, 0.85f, 0.2f);
-        Color border = new Color(0.75f, 0.5f, 0.05f);
-
-        for (int y = 0; y < size; y++)
-        {
-            for (int x = 0; x < size; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(size / 2, size / 2));
-                if (dist > (size / 2 - 1))
-                    tex.SetPixel(x, y, Color.clear);
-                else if (dist > (size / 2 - 3))
-                    tex.SetPixel(x, y, border);
-                else
-                    tex.SetPixel(x, y, gold);
-            }
-        }
+        tex.Apply();
+        _sr.sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 48f);
     }
 }
-

@@ -170,12 +170,8 @@ public class GameUI : MonoBehaviour
 
     private void CreateHUDLabel(Slider slider, bool isPlayer)
     {
-        Transform existing = slider.transform.Find("HUD_Label");
-        GameObject labelObj = existing != null ? existing.gameObject : new GameObject("HUD_Label");
-        labelObj.transform.SetParent(slider.transform, false);
-
-        RectTransform rt = labelObj.GetComponent<RectTransform>();
-        if (rt == null) rt = labelObj.AddComponent<RectTransform>();
+        GameObject labelObj = EnsureUIGameObject(slider.transform, "HUD_Label");
+        RectTransform rt = EnsureComponent<RectTransform>(labelObj);
 
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
@@ -183,8 +179,7 @@ public class GameUI : MonoBehaviour
         rt.anchoredPosition = new Vector2(0f, 4f);
         rt.sizeDelta = new Vector2(0f, 26f);
 
-        TextMeshProUGUI tmp = labelObj.GetComponent<TextMeshProUGUI>();
-        if (tmp == null) tmp = labelObj.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI tmp = EnsureComponent<TextMeshProUGUI>(labelObj);
 
         tmp.fontSize = 18f;
         tmp.fontStyle = FontStyles.Bold;
@@ -210,42 +205,31 @@ public class GameUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Transform existing = canvas.transform.Find("HUD_WaveBadge");
-        GameObject badgeObj = existing != null ? existing.gameObject : new GameObject("HUD_WaveBadge");
-        badgeObj.transform.SetParent(canvas.transform, false);
+        GameObject badgeObj = EnsureUIGameObject(canvas.transform, "HUD_WaveBadge");
         _waveBadgeObj = badgeObj;
 
-        RectTransform rt = badgeObj.GetComponent<RectTransform>();
-        if (rt == null) rt = badgeObj.AddComponent<RectTransform>();
-
+        RectTransform rt = EnsureComponent<RectTransform>(badgeObj);
         rt.anchorMin = new Vector2(0.5f, 1f); // Üst Orta
         rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = new Vector2(0f, -25f);
         rt.sizeDelta = new Vector2(440f, 48f);
 
-        Image bg = badgeObj.GetComponent<Image>();
-        if (bg == null) bg = badgeObj.AddComponent<Image>();
+        Image bg = EnsureComponent<Image>(badgeObj);
         bg.color = new Color(0.06f, 0.09f, 0.14f, 0.85f);
 
-        Outline outline = badgeObj.GetComponent<Outline>();
-        if (outline == null) outline = badgeObj.AddComponent<Outline>();
+        Outline outline = EnsureComponent<Outline>(badgeObj);
         outline.effectColor = new Color(0f, 0.85f, 1f, 0.6f);
         outline.effectDistance = new Vector2(2f, -2f);
 
-        Transform textChild = badgeObj.transform.Find("Text");
-        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("Text");
-        textObj.transform.SetParent(badgeObj.transform, false);
-
-        RectTransform textRt = textObj.GetComponent<RectTransform>();
-        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
+        GameObject textObj = EnsureUIGameObject(badgeObj.transform, "Text");
+        RectTransform textRt = EnsureComponent<RectTransform>(textObj);
         textRt.anchorMin = Vector2.zero;
         textRt.anchorMax = Vector2.one;
         textRt.offsetMin = Vector2.zero;
         textRt.offsetMax = Vector2.zero;
 
-        _waveBadgeTMP = textObj.GetComponent<TextMeshProUGUI>();
-        if (_waveBadgeTMP == null) _waveBadgeTMP = textObj.AddComponent<TextMeshProUGUI>();
+        _waveBadgeTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
         _waveBadgeTMP.fontSize = 22f;
         _waveBadgeTMP.fontStyle = FontStyles.Bold;
@@ -267,22 +251,16 @@ public class GameUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Transform existing = canvas.transform.Find("HUD_WaveAlert");
-        _waveAlertObj = existing != null ? existing.gameObject : new GameObject("HUD_WaveAlert");
-        _waveAlertObj.transform.SetParent(canvas.transform, false);
+        _waveAlertObj = EnsureUIGameObject(canvas.transform, "HUD_WaveAlert");
 
-        RectTransform rt = _waveAlertObj.GetComponent<RectTransform>();
-        if (rt == null) rt = _waveAlertObj.AddComponent<RectTransform>();
-
+        RectTransform rt = EnsureComponent<RectTransform>(_waveAlertObj);
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = new Vector2(0f, 80f);
         rt.sizeDelta = new Vector2(850f, 120f);
 
-        _waveAlertTMP = _waveAlertObj.GetComponent<TextMeshProUGUI>();
-        if (_waveAlertTMP == null) _waveAlertTMP = _waveAlertObj.AddComponent<TextMeshProUGUI>();
-
+        _waveAlertTMP = EnsureComponent<TextMeshProUGUI>(_waveAlertObj);
         _waveAlertTMP.fontSize = 36f;
         _waveAlertTMP.fontStyle = FontStyles.Bold;
         _waveAlertTMP.alignment = TextAlignmentOptions.Center;
@@ -302,46 +280,34 @@ public class GameUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Transform existing = canvas.transform.Find("HUD_RedZoneOverlay");
-        _redZoneOverlayObj = existing != null ? existing.gameObject : new GameObject("HUD_RedZoneOverlay");
-        _redZoneOverlayObj.transform.SetParent(canvas.transform, false);
+        _redZoneOverlayObj = EnsureUIGameObject(canvas.transform, "HUD_RedZoneOverlay");
 
-        RectTransform rt = _redZoneOverlayObj.GetComponent<RectTransform>();
-        if (rt == null) rt = _redZoneOverlayObj.AddComponent<RectTransform>();
-
-        // Tam ekran kaplama
+        RectTransform rt = EnsureComponent<RectTransform>(_redZoneOverlayObj);
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
 
-        _redZoneBgImage = _redZoneOverlayObj.GetComponent<Image>();
-        if (_redZoneBgImage == null) _redZoneBgImage = _redZoneOverlayObj.AddComponent<Image>();
+        _redZoneBgImage = EnsureComponent<Image>(_redZoneOverlayObj);
         _redZoneBgImage.color = new Color(0.9f, 0.05f, 0.05f, 0f);
         _redZoneBgImage.raycastTarget = false;
 
         // Uyarı Başlık Metni
-        Transform bannerTr = _redZoneOverlayObj.transform.Find("BannerText");
-        GameObject bannerObj = (bannerTr != null) ? bannerTr.gameObject : new GameObject("BannerText");
-        bannerObj.transform.SetParent(_redZoneOverlayObj.transform, false);
-
-        RectTransform bannerRt = bannerObj.GetComponent<RectTransform>();
-        if (bannerRt == null) bannerRt = bannerObj.AddComponent<RectTransform>();
+        GameObject bannerObj = EnsureUIGameObject(_redZoneOverlayObj.transform, "BannerText");
+        RectTransform bannerRt = EnsureComponent<RectTransform>(bannerObj);
         bannerRt.anchorMin = new Vector2(0f, 0.5f);
         bannerRt.anchorMax = new Vector2(1f, 0.5f);
         bannerRt.pivot = new Vector2(0.5f, 0.5f);
         bannerRt.anchoredPosition = new Vector2(0f, 85f);
         bannerRt.sizeDelta = new Vector2(0f, 180f);
 
-        _redZoneAlertTMP = bannerObj.GetComponent<TextMeshProUGUI>();
-        if (_redZoneAlertTMP == null) _redZoneAlertTMP = bannerObj.AddComponent<TextMeshProUGUI>();
+        _redZoneAlertTMP = EnsureComponent<TextMeshProUGUI>(bannerObj);
         _redZoneAlertTMP.fontSize = 38f;
         _redZoneAlertTMP.fontStyle = FontStyles.Bold;
         _redZoneAlertTMP.alignment = TextAlignmentOptions.Center;
         _redZoneAlertTMP.raycastTarget = false;
 
-        var outline = bannerObj.GetComponent<Outline>();
-        if (outline == null) outline = bannerObj.AddComponent<Outline>();
+        var outline = EnsureComponent<Outline>(bannerObj);
         outline.effectColor = Color.black;
         outline.effectDistance = new Vector2(2f, -2f);
 
@@ -356,73 +322,81 @@ public class GameUI : MonoBehaviour
     private Outline _modeIntroOutline;
     private Coroutine _modeIntroCoroutine;
 
+    private static GameObject EnsureUIGameObject(Transform parent, string name)
+    {
+        Transform child = parent != null ? parent.Find(name) : null;
+        if (child != null) return child.gameObject;
+        GameObject go = new GameObject(name, typeof(RectTransform));
+        if (parent != null) go.transform.SetParent(parent, false);
+        return go;
+    }
+
+    private static T EnsureComponent<T>(GameObject go) where T : Component
+    {
+        T comp = go.GetComponent<T>();
+        if (comp == null) comp = go.AddComponent<T>();
+        return comp;
+    }
+
     private void SetupModeIntroBanner()
     {
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Transform existing = canvas.transform.Find("HUD_ModeIntroBanner");
-        _modeIntroObj = existing != null ? existing.gameObject : new GameObject("HUD_ModeIntroBanner");
-        _modeIntroObj.transform.SetParent(canvas.transform, false);
+        _modeIntroObj = EnsureUIGameObject(canvas.transform, "HUD_ModeIntroBanner");
 
-        RectTransform rt = _modeIntroObj.GetComponent<RectTransform>() ?? _modeIntroObj.AddComponent<RectTransform>();
+        RectTransform rt = EnsureComponent<RectTransform>(_modeIntroObj);
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = new Vector2(0f, 75f);
         rt.sizeDelta = new Vector2(760f, 180f);
 
-        Image bg = _modeIntroObj.GetComponent<Image>() ?? _modeIntroObj.AddComponent<Image>();
+        Image bg = EnsureComponent<Image>(_modeIntroObj);
         bg.color = new Color(0.03f, 0.07f, 0.13f, 0.94f);
         bg.raycastTarget = false;
 
-        _modeIntroOutline = _modeIntroObj.GetComponent<Outline>() ?? _modeIntroObj.AddComponent<Outline>();
+        _modeIntroOutline = EnsureComponent<Outline>(_modeIntroObj);
         _modeIntroOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
         _modeIntroOutline.effectDistance = new Vector2(2.5f, -2.5f);
 
-        _modeIntroCanvasGroup = _modeIntroObj.GetComponent<CanvasGroup>() ?? _modeIntroObj.AddComponent<CanvasGroup>();
+        _modeIntroCanvasGroup = EnsureComponent<CanvasGroup>(_modeIntroObj);
 
         // 1. Başlık
-        Transform titleTr = _modeIntroObj.transform.Find("TitleText");
-        GameObject titleObj = (titleTr != null) ? titleTr.gameObject : new GameObject("TitleText");
-        titleObj.transform.SetParent(_modeIntroObj.transform, false);
-        RectTransform titleRt = titleObj.GetComponent<RectTransform>() ?? titleObj.AddComponent<RectTransform>();
+        GameObject titleObj = EnsureUIGameObject(_modeIntroObj.transform, "TitleText");
+        RectTransform titleRt = EnsureComponent<RectTransform>(titleObj);
         titleRt.anchorMin = new Vector2(0f, 0.60f);
         titleRt.anchorMax = new Vector2(1f, 0.98f);
         titleRt.offsetMin = Vector2.zero;
         titleRt.offsetMax = Vector2.zero;
-        _modeIntroTitleTMP = titleObj.GetComponent<TextMeshProUGUI>() ?? titleObj.AddComponent<TextMeshProUGUI>();
+        _modeIntroTitleTMP = EnsureComponent<TextMeshProUGUI>(titleObj);
         _modeIntroTitleTMP.fontSize = 28f;
         _modeIntroTitleTMP.fontStyle = FontStyles.Bold;
         _modeIntroTitleTMP.alignment = TextAlignmentOptions.Center;
         _modeIntroTitleTMP.raycastTarget = false;
 
         // 2. Alt Başlık
-        Transform subTr = _modeIntroObj.transform.Find("SubtitleText");
-        GameObject subObj = (subTr != null) ? subTr.gameObject : new GameObject("SubtitleText");
-        subObj.transform.SetParent(_modeIntroObj.transform, false);
-        RectTransform subRt = subObj.GetComponent<RectTransform>() ?? subObj.AddComponent<RectTransform>();
+        GameObject subObj = EnsureUIGameObject(_modeIntroObj.transform, "SubtitleText");
+        RectTransform subRt = EnsureComponent<RectTransform>(subObj);
         subRt.anchorMin = new Vector2(0f, 0.30f);
         subRt.anchorMax = new Vector2(1f, 0.62f);
         subRt.offsetMin = Vector2.zero;
         subRt.offsetMax = Vector2.zero;
-        _modeIntroSubtitleTMP = subObj.GetComponent<TextMeshProUGUI>() ?? subObj.AddComponent<TextMeshProUGUI>();
+        _modeIntroSubtitleTMP = EnsureComponent<TextMeshProUGUI>(subObj);
         _modeIntroSubtitleTMP.fontSize = 18f;
         _modeIntroSubtitleTMP.fontStyle = FontStyles.Bold;
         _modeIntroSubtitleTMP.alignment = TextAlignmentOptions.Center;
         _modeIntroSubtitleTMP.raycastTarget = false;
 
         // 3. Açıklama & Hazır Mesajı
-        Transform descTr = _modeIntroObj.transform.Find("DescText");
-        GameObject descObj = (descTr != null) ? descTr.gameObject : new GameObject("DescText");
-        descObj.transform.SetParent(_modeIntroObj.transform, false);
-        RectTransform descRt = descObj.GetComponent<RectTransform>() ?? descObj.AddComponent<RectTransform>();
+        GameObject descObj = EnsureUIGameObject(_modeIntroObj.transform, "DescText");
+        RectTransform descRt = EnsureComponent<RectTransform>(descObj);
         descRt.anchorMin = new Vector2(0f, 0.04f);
         descRt.anchorMax = new Vector2(1f, 0.32f);
         descRt.offsetMin = Vector2.zero;
         descRt.offsetMax = Vector2.zero;
-        _modeIntroDescTMP = descObj.GetComponent<TextMeshProUGUI>() ?? descObj.AddComponent<TextMeshProUGUI>();
+        _modeIntroDescTMP = EnsureComponent<TextMeshProUGUI>(descObj);
         _modeIntroDescTMP.fontSize = 15f;
         _modeIntroDescTMP.fontStyle = FontStyles.Normal;
         _modeIntroDescTMP.alignment = TextAlignmentOptions.Center;
@@ -442,42 +416,30 @@ public class GameUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Transform existing = canvas.transform.Find("HUD_GoldBadge");
-        _goldHUDObj = existing != null ? existing.gameObject : new GameObject("HUD_GoldBadge");
-        _goldHUDObj.transform.SetParent(canvas.transform, false);
+        _goldHUDObj = EnsureUIGameObject(canvas.transform, "HUD_GoldBadge");
 
-        RectTransform rt = _goldHUDObj.GetComponent<RectTransform>();
-        if (rt == null) rt = _goldHUDObj.AddComponent<RectTransform>();
-
-        // Sağ üst köşe, Pause butonunun hemen solu
+        RectTransform rt = EnsureComponent<RectTransform>(_goldHUDObj);
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
         rt.anchoredPosition = new Vector2(-96f, -28f);
         rt.sizeDelta = new Vector2(210f, 44f);
 
-        Image bg = _goldHUDObj.GetComponent<Image>();
-        if (bg == null) bg = _goldHUDObj.AddComponent<Image>();
+        Image bg = EnsureComponent<Image>(_goldHUDObj);
         bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
 
-        _goldHUDOutline = _goldHUDObj.GetComponent<Outline>();
-        if (_goldHUDOutline == null) _goldHUDOutline = _goldHUDObj.AddComponent<Outline>();
+        _goldHUDOutline = EnsureComponent<Outline>(_goldHUDObj);
         _goldHUDOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
         _goldHUDOutline.effectDistance = new Vector2(2f, -2f);
 
-        Transform textChild = _goldHUDObj.transform.Find("Text");
-        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("Text");
-        textObj.transform.SetParent(_goldHUDObj.transform, false);
-
-        RectTransform textRt = textObj.GetComponent<RectTransform>();
-        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
+        GameObject textObj = EnsureUIGameObject(_goldHUDObj.transform, "Text");
+        RectTransform textRt = EnsureComponent<RectTransform>(textObj);
         textRt.anchorMin = Vector2.zero;
         textRt.anchorMax = Vector2.one;
         textRt.offsetMin = Vector2.zero;
         textRt.offsetMax = Vector2.zero;
 
-        _goldHUDTMP = textObj.GetComponent<TextMeshProUGUI>();
-        if (_goldHUDTMP == null) _goldHUDTMP = textObj.AddComponent<TextMeshProUGUI>();
+        _goldHUDTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
         _goldHUDTMP.fontSize = 20f;
         _goldHUDTMP.fontStyle = FontStyles.Bold;
@@ -564,50 +526,44 @@ public class GameUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        Transform existing = canvas.transform.Find("HUD_UltiBar");
-        _ultiBarObj = existing != null ? existing.gameObject : new GameObject("HUD_UltiBar");
-        _ultiBarObj.transform.SetParent(canvas.transform, false);
+        _ultiBarObj = EnsureUIGameObject(canvas.transform, "HUD_UltiBar");
 
-        RectTransform rt = _ultiBarObj.GetComponent<RectTransform>() ?? _ultiBarObj.AddComponent<RectTransform>();
+        RectTransform rt = EnsureComponent<RectTransform>(_ultiBarObj);
         rt.anchorMin = new Vector2(0f, 0f);
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0f, 0f);
         rt.anchoredPosition = new Vector2(60f, 345f);
         rt.sizeDelta = new Vector2(300f, 22f);
 
-        Image bg = _ultiBarObj.GetComponent<Image>() ?? _ultiBarObj.AddComponent<Image>();
+        Image bg = EnsureComponent<Image>(_ultiBarObj);
         bg.color = new Color(0.06f, 0.10f, 0.16f, 0.90f);
 
-        _ultiBarOutline = _ultiBarObj.GetComponent<Outline>() ?? _ultiBarObj.AddComponent<Outline>();
+        _ultiBarOutline = EnsureComponent<Outline>(_ultiBarObj);
         _ultiBarOutline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
         _ultiBarOutline.effectDistance = new Vector2(2f, -2f);
 
-        Transform fillTr = _ultiBarObj.transform.Find("Fill");
-        GameObject fillObj = fillTr != null ? fillTr.gameObject : new GameObject("Fill");
-        fillObj.transform.SetParent(_ultiBarObj.transform, false);
-        RectTransform fillRt = fillObj.GetComponent<RectTransform>() ?? fillObj.AddComponent<RectTransform>();
+        GameObject fillObj = EnsureUIGameObject(_ultiBarObj.transform, "Fill");
+        RectTransform fillRt = EnsureComponent<RectTransform>(fillObj);
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = Vector2.one;
         fillRt.offsetMin = new Vector2(2f, 2f);
         fillRt.offsetMax = new Vector2(-2f, -2f);
 
-        _ultiBarFillImg = fillObj.GetComponent<Image>() ?? fillObj.AddComponent<Image>();
+        _ultiBarFillImg = EnsureComponent<Image>(fillObj);
         _ultiBarFillImg.type = Image.Type.Filled;
         _ultiBarFillImg.fillMethod = Image.FillMethod.Horizontal;
         _ultiBarFillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
         _ultiBarFillImg.color = new Color(0f, 0.95f, 1f, 0.95f);
         _ultiBarFillImg.fillAmount = 0f;
 
-        Transform txtTr = _ultiBarObj.transform.Find("Text");
-        GameObject txtObj = txtTr != null ? txtTr.gameObject : new GameObject("Text");
-        txtObj.transform.SetParent(_ultiBarObj.transform, false);
-        RectTransform txtRt = txtObj.GetComponent<RectTransform>() ?? txtObj.AddComponent<RectTransform>();
+        GameObject txtObj = EnsureUIGameObject(_ultiBarObj.transform, "Text");
+        RectTransform txtRt = EnsureComponent<RectTransform>(txtObj);
         txtRt.anchorMin = Vector2.zero;
         txtRt.anchorMax = Vector2.one;
         txtRt.offsetMin = Vector2.zero;
         txtRt.offsetMax = Vector2.zero;
 
-        _ultiBarTMP = txtObj.GetComponent<TextMeshProUGUI>() ?? txtObj.AddComponent<TextMeshProUGUI>();
+        _ultiBarTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
         _ultiBarTMP.fontSize = 13f;
         _ultiBarTMP.fontStyle = FontStyles.Bold;
         _ultiBarTMP.alignment = TextAlignmentOptions.Center;
@@ -623,25 +579,23 @@ public class GameUI : MonoBehaviour
         if (canvas == null) return;
 
         // 1. KAÇIŞ (DODGE ROLL) BUTONU
-        Transform existingDodge = canvas.transform.Find("HUD_DodgeButton");
-        _dodgeBtnObj = existingDodge != null ? existingDodge.gameObject : new GameObject("HUD_DodgeButton");
-        _dodgeBtnObj.transform.SetParent(canvas.transform, false);
+        _dodgeBtnObj = EnsureUIGameObject(canvas.transform, "HUD_DodgeButton");
 
-        RectTransform dRt = _dodgeBtnObj.GetComponent<RectTransform>() ?? _dodgeBtnObj.AddComponent<RectTransform>();
+        RectTransform dRt = EnsureComponent<RectTransform>(_dodgeBtnObj);
         dRt.anchorMin = new Vector2(1f, 0f);
         dRt.anchorMax = new Vector2(1f, 0f);
         dRt.pivot = new Vector2(0.5f, 0.5f);
         dRt.anchoredPosition = new Vector2(-65f, 260f);
         dRt.sizeDelta = new Vector2(86f, 86f);
 
-        Image dImg = _dodgeBtnObj.GetComponent<Image>() ?? _dodgeBtnObj.AddComponent<Image>();
+        Image dImg = EnsureComponent<Image>(_dodgeBtnObj);
         dImg.color = new Color(0.08f, 0.16f, 0.25f, 0.94f);
 
-        _dodgeBtnOutline = _dodgeBtnObj.GetComponent<Outline>() ?? _dodgeBtnObj.AddComponent<Outline>();
+        _dodgeBtnOutline = EnsureComponent<Outline>(_dodgeBtnObj);
         _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
         _dodgeBtnOutline.effectDistance = new Vector2(2.5f, -2.5f);
 
-        Button dBtn = _dodgeBtnObj.GetComponent<Button>() ?? _dodgeBtnObj.AddComponent<Button>();
+        Button dBtn = EnsureComponent<Button>(_dodgeBtnObj);
         dBtn.targetGraphic = dImg;
         dBtn.onClick.RemoveAllListeners();
         dBtn.onClick.AddListener(() =>
@@ -649,16 +603,14 @@ public class GameUI : MonoBehaviour
             PlayerCombatManeuvers.Instance?.TryDodge();
         });
 
-        Transform dFillTr = _dodgeBtnObj.transform.Find("CooldownFill");
-        GameObject dFillObj = dFillTr != null ? dFillTr.gameObject : new GameObject("CooldownFill");
-        dFillObj.transform.SetParent(_dodgeBtnObj.transform, false);
-        RectTransform dFillRt = dFillObj.GetComponent<RectTransform>() ?? dFillObj.AddComponent<RectTransform>();
+        GameObject dFillObj = EnsureUIGameObject(_dodgeBtnObj.transform, "CooldownFill");
+        RectTransform dFillRt = EnsureComponent<RectTransform>(dFillObj);
         dFillRt.anchorMin = Vector2.zero;
         dFillRt.anchorMax = Vector2.one;
         dFillRt.offsetMin = Vector2.zero;
         dFillRt.offsetMax = Vector2.zero;
 
-        _dodgeFillImg = dFillObj.GetComponent<Image>() ?? dFillObj.AddComponent<Image>();
+        _dodgeFillImg = EnsureComponent<Image>(dFillObj);
         _dodgeFillImg.color = new Color(0f, 0f, 0f, 0.72f);
         _dodgeFillImg.type = Image.Type.Filled;
         _dodgeFillImg.fillMethod = Image.FillMethod.Radial360;
@@ -667,16 +619,14 @@ public class GameUI : MonoBehaviour
         _dodgeFillImg.raycastTarget = false;
         _dodgeFillImg.fillAmount = 0f;
 
-        Transform dTxtTr = _dodgeBtnObj.transform.Find("Text");
-        GameObject dTxtObj = dTxtTr != null ? dTxtTr.gameObject : new GameObject("Text");
-        dTxtObj.transform.SetParent(_dodgeBtnObj.transform, false);
-        RectTransform dTxtRt = dTxtObj.GetComponent<RectTransform>() ?? dTxtObj.AddComponent<RectTransform>();
+        GameObject dTxtObj = EnsureUIGameObject(_dodgeBtnObj.transform, "Text");
+        RectTransform dTxtRt = EnsureComponent<RectTransform>(dTxtObj);
         dTxtRt.anchorMin = Vector2.zero;
         dTxtRt.anchorMax = Vector2.one;
         dTxtRt.offsetMin = Vector2.zero;
         dTxtRt.offsetMax = Vector2.zero;
 
-        _dodgeBtnTMP = dTxtObj.GetComponent<TextMeshProUGUI>() ?? dTxtObj.AddComponent<TextMeshProUGUI>();
+        _dodgeBtnTMP = EnsureComponent<TextMeshProUGUI>(dTxtObj);
         _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SPACE]</size>";
         _dodgeBtnTMP.fontSize = 17f;
         _dodgeBtnTMP.fontStyle = FontStyles.Bold;
@@ -685,11 +635,9 @@ public class GameUI : MonoBehaviour
         _dodgeBtnTMP.raycastTarget = false;
 
         // 2. ULTİ (SÜPER YETENEK) BUTONU
-        Transform existingUlti = canvas.transform.Find("HUD_UltiButton");
-        _ultiBtnObj = existingUlti != null ? existingUlti.gameObject : new GameObject("HUD_UltiButton");
-        _ultiBtnObj.transform.SetParent(canvas.transform, false);
+        _ultiBtnObj = EnsureUIGameObject(canvas.transform, "HUD_UltiButton");
 
-        RectTransform uRt = _ultiBtnObj.GetComponent<RectTransform>() ?? _ultiBtnObj.AddComponent<RectTransform>();
+        RectTransform uRt = EnsureComponent<RectTransform>(_ultiBtnObj);
         uRt.anchorMin = new Vector2(1f, 0f);
         uRt.anchorMax = new Vector2(1f, 0f);
         uRt.pivot = new Vector2(0.5f, 0.5f);
@@ -697,14 +645,14 @@ public class GameUI : MonoBehaviour
         uRt.sizeDelta = new Vector2(92f, 92f);
         _ultiBtnBaseScale = Vector3.one;
 
-        Image uImg = _ultiBtnObj.GetComponent<Image>() ?? _ultiBtnObj.AddComponent<Image>();
+        Image uImg = EnsureComponent<Image>(_ultiBtnObj);
         uImg.color = new Color(0.18f, 0.12f, 0.04f, 0.94f);
 
-        _ultiBtnOutline = _ultiBtnObj.GetComponent<Outline>() ?? _ultiBtnObj.AddComponent<Outline>();
+        _ultiBtnOutline = EnsureComponent<Outline>(_ultiBtnObj);
         _ultiBtnOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
         _ultiBtnOutline.effectDistance = new Vector2(2.5f, -2.5f);
 
-        Button uBtn = _ultiBtnObj.GetComponent<Button>() ?? _ultiBtnObj.AddComponent<Button>();
+        Button uBtn = EnsureComponent<Button>(_ultiBtnObj);
         uBtn.targetGraphic = uImg;
         uBtn.onClick.RemoveAllListeners();
         uBtn.onClick.AddListener(() =>
@@ -712,16 +660,14 @@ public class GameUI : MonoBehaviour
             PlayerCombatManeuvers.Instance?.TryActivateUltimate();
         });
 
-        Transform uFillTr = _ultiBtnObj.transform.Find("ChargeFill");
-        GameObject uFillObj = uFillTr != null ? uFillTr.gameObject : new GameObject("ChargeFill");
-        uFillObj.transform.SetParent(_ultiBtnObj.transform, false);
-        RectTransform uFillRt = uFillObj.GetComponent<RectTransform>() ?? uFillObj.AddComponent<RectTransform>();
+        GameObject uFillObj = EnsureUIGameObject(_ultiBtnObj.transform, "ChargeFill");
+        RectTransform uFillRt = EnsureComponent<RectTransform>(uFillObj);
         uFillRt.anchorMin = Vector2.zero;
         uFillRt.anchorMax = Vector2.one;
         uFillRt.offsetMin = Vector2.zero;
         uFillRt.offsetMax = Vector2.zero;
 
-        _ultiFillImg = uFillObj.GetComponent<Image>() ?? uFillObj.AddComponent<Image>();
+        _ultiFillImg = EnsureComponent<Image>(uFillObj);
         _ultiFillImg.color = new Color(0f, 0f, 0f, 0.70f);
         _ultiFillImg.type = Image.Type.Filled;
         _ultiFillImg.fillMethod = Image.FillMethod.Radial360;
@@ -730,16 +676,14 @@ public class GameUI : MonoBehaviour
         _ultiFillImg.raycastTarget = false;
         _ultiFillImg.fillAmount = 1f;
 
-        Transform uTxtTr = _ultiBtnObj.transform.Find("Text");
-        GameObject uTxtObj = uTxtTr != null ? uTxtTr.gameObject : new GameObject("Text");
-        uTxtObj.transform.SetParent(_ultiBtnObj.transform, false);
-        RectTransform uTxtRt = uTxtObj.GetComponent<RectTransform>() ?? uTxtObj.AddComponent<RectTransform>();
+        GameObject uTxtObj = EnsureUIGameObject(_ultiBtnObj.transform, "Text");
+        RectTransform uTxtRt = EnsureComponent<RectTransform>(uTxtObj);
         uTxtRt.anchorMin = Vector2.zero;
         uTxtRt.anchorMax = Vector2.one;
         uTxtRt.offsetMin = Vector2.zero;
         uTxtRt.offsetMax = Vector2.zero;
 
-        _ultiBtnTMP = uTxtObj.GetComponent<TextMeshProUGUI>() ?? uTxtObj.AddComponent<TextMeshProUGUI>();
+        _ultiBtnTMP = EnsureComponent<TextMeshProUGUI>(uTxtObj);
         _ultiBtnTMP.text = "ULTİ\n<size=65%>[E]</size>";
         _ultiBtnTMP.fontSize = 17f;
         _ultiBtnTMP.fontStyle = FontStyles.Bold;

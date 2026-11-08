@@ -59,7 +59,7 @@ public class PilotLoginUI : MonoBehaviour
         if (canvas == null) return null;
 
         Transform existing = canvas.transform.Find("PilotLoginUI");
-        GameObject go = existing != null ? existing.gameObject : new GameObject("PilotLoginUI");
+        GameObject go = existing != null ? existing.gameObject : new GameObject("PilotLoginUI", typeof(RectTransform));
         go.transform.SetParent(canvas.transform, false);
 
         Instance = go.GetComponent<PilotLoginUI>();
@@ -147,19 +147,19 @@ public class PilotLoginUI : MonoBehaviour
         if (canvas == null) return;
 
         // 1. Karartma Arka Planı (Full Screen Overlay)
-        _modalRoot = new GameObject("PilotLoginModalRoot");
+        _modalRoot = new GameObject("PilotLoginModalRoot", typeof(RectTransform));
         _modalRoot.transform.SetParent(canvas.transform, false);
 
-        RectTransform rootRt = _modalRoot.AddComponent<RectTransform>();
+        RectTransform rootRt = _modalRoot.GetComponent<RectTransform>();
         MainMenuManager.MakeFullScreenRect(rootRt);
 
         Image bg = _modalRoot.AddComponent<Image>();
         bg.color = new Color(0.02f, 0.05f, 0.09f, 0.94f); // Derin askeri kokpit gecesi
 
         // 2. Ana Askeri Kart / İletişim Kutusu (Modal Box)
-        GameObject boxObj = new GameObject("PilotCardBox");
+        GameObject boxObj = new GameObject("PilotCardBox", typeof(RectTransform));
         boxObj.transform.SetParent(_modalRoot.transform, false);
-        RectTransform bRt = boxObj.AddComponent<RectTransform>();
+        RectTransform bRt = boxObj.GetComponent<RectTransform>();
         bRt.anchorMin = new Vector2(0.5f, 0.5f);
         bRt.anchorMax = new Vector2(0.5f, 0.5f);
         bRt.pivot = new Vector2(0.5f, 0.5f);
@@ -174,9 +174,9 @@ public class PilotLoginUI : MonoBehaviour
         bOutline.effectDistance = new Vector2(3f, -3f);
 
         // Şık Üst Başlık Şeridi
-        GameObject headerStrip = new GameObject("HeaderStrip");
+        GameObject headerStrip = new GameObject("HeaderStrip", typeof(RectTransform));
         headerStrip.transform.SetParent(boxObj.transform, false);
-        RectTransform hsRt = headerStrip.AddComponent<RectTransform>();
+        RectTransform hsRt = headerStrip.GetComponent<RectTransform>();
         hsRt.anchorMin = new Vector2(0f, 1f);
         hsRt.anchorMax = new Vector2(1f, 1f);
         hsRt.pivot = new Vector2(0.5f, 1f);
@@ -187,25 +187,25 @@ public class PilotLoginUI : MonoBehaviour
         hsImg.color = new Color(0.09f, 0.18f, 0.28f, 1f);
 
         // Başlık Metni
-        GameObject titleObj = new GameObject("TitleText");
+        GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
         titleObj.transform.SetParent(headerStrip.transform, false);
-        RectTransform tRt = titleObj.AddComponent<RectTransform>();
+        RectTransform tRt = titleObj.GetComponent<RectTransform>();
         tRt.anchorMin = Vector2.zero;
         tRt.anchorMax = Vector2.one;
         tRt.offsetMin = Vector2.zero;
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "✈️ ASKERİ UÇUŞ KARTI & PİLOT GİRİŞİ ✈️";
+        titleTMP.text = "[+] ASKERİ UÇUŞ KARTI & PİLOT GİRİŞİ [+]";
         titleTMP.fontSize = 20f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(0f, 0.95f, 1f);
 
         // Alt Bilgi / Açıklama
-        GameObject subObj = new GameObject("SubTitleText");
+        GameObject subObj = new GameObject("SubTitleText", typeof(RectTransform));
         subObj.transform.SetParent(boxObj.transform, false);
-        RectTransform sRt = subObj.AddComponent<RectTransform>();
+        RectTransform sRt = subObj.GetComponent<RectTransform>();
         sRt.anchorMin = new Vector2(0f, 1f);
         sRt.anchorMax = new Vector2(1f, 1f);
         sRt.pivot = new Vector2(0.5f, 1f);
@@ -219,9 +219,9 @@ public class PilotLoginUI : MonoBehaviour
         subTMP.color = new Color(0.85f, 0.9f, 0.95f);
 
         // Input Field Arka Planı
-        GameObject inpObj = new GameObject("NameInputField");
+        GameObject inpObj = new GameObject("NameInputField", typeof(RectTransform));
         inpObj.transform.SetParent(boxObj.transform, false);
-        RectTransform inRt = inpObj.AddComponent<RectTransform>();
+        RectTransform inRt = inpObj.GetComponent<RectTransform>();
         inRt.anchorMin = new Vector2(0.5f, 0.5f);
         inRt.anchorMax = new Vector2(0.5f, 0.5f);
         inRt.pivot = new Vector2(0.5f, 0.5f);
@@ -236,9 +236,9 @@ public class PilotLoginUI : MonoBehaviour
         inOutline.effectDistance = new Vector2(2f, -2f);
 
         // Text Component
-        GameObject textObj = new GameObject("Text");
+        GameObject textObj = new GameObject("Text", typeof(RectTransform));
         textObj.transform.SetParent(inpObj.transform, false);
-        RectTransform textRt = textObj.AddComponent<RectTransform>();
+        RectTransform textRt = textObj.GetComponent<RectTransform>();
         textRt.anchorMin = Vector2.zero;
         textRt.anchorMax = Vector2.one;
         textRt.offsetMin = new Vector2(16f, 4f);
@@ -251,9 +251,9 @@ public class PilotLoginUI : MonoBehaviour
         inputText.color = Color.white;
 
         // Placeholder Text
-        GameObject phObj = new GameObject("Placeholder");
+        GameObject phObj = new GameObject("Placeholder", typeof(RectTransform));
         phObj.transform.SetParent(inpObj.transform, false);
-        RectTransform phRt = phObj.AddComponent<RectTransform>();
+        RectTransform phRt = phObj.GetComponent<RectTransform>();
         phRt.anchorMin = Vector2.zero;
         phRt.anchorMax = Vector2.one;
         phRt.offsetMin = new Vector2(16f, 4f);
@@ -274,9 +274,9 @@ public class PilotLoginUI : MonoBehaviour
         _inputField.onValueChanged.AddListener(OnInputChanged);
 
         // Karakter Sayacı
-        GameObject countObj = new GameObject("CharCounter");
+        GameObject countObj = new GameObject("CharCounter", typeof(RectTransform));
         countObj.transform.SetParent(boxObj.transform, false);
-        RectTransform cntRt = countObj.AddComponent<RectTransform>();
+        RectTransform cntRt = countObj.GetComponent<RectTransform>();
         cntRt.anchorMin = new Vector2(0.5f, 0.5f);
         cntRt.anchorMax = new Vector2(0.5f, 0.5f);
         cntRt.pivot = new Vector2(1f, 0.5f);
@@ -289,9 +289,9 @@ public class PilotLoginUI : MonoBehaviour
         _charCountTMP.color = new Color(0.6f, 0.75f, 0.9f);
 
         // Doğrulama / Uyarı Mesajı
-        GameObject valObj = new GameObject("ValidationMessage");
+        GameObject valObj = new GameObject("ValidationMessage", typeof(RectTransform));
         valObj.transform.SetParent(boxObj.transform, false);
-        RectTransform vRt = valObj.AddComponent<RectTransform>();
+        RectTransform vRt = valObj.GetComponent<RectTransform>();
         vRt.anchorMin = new Vector2(0.5f, 0.5f);
         vRt.anchorMax = new Vector2(0.5f, 0.5f);
         vRt.pivot = new Vector2(0.5f, 0.5f);
@@ -303,15 +303,15 @@ public class PilotLoginUI : MonoBehaviour
         _validationTMP.alignment = TextAlignmentOptions.Center;
         _validationTMP.color = new Color(0.9f, 0.9f, 0.9f);
 
-        // 🎲 Rastgele İsim Üret Butonu
-        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "🎲 RASTGELE ÇAĞRI KODU",
+        // Rastgele İsim Üret Butonu
+        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "RASTGELE ÇAĞRI KODU",
             new Vector2(0f, -55f), new Vector2(260f, 38f),
             new Color(0.12f, 0.22f, 0.35f), GenerateRandomCallsign);
         _randomNameButton = rndBtnObj.GetComponent<Button>();
 
         // 3. Alt Aksiyon Butonları
         // Onayla ve Savaşa Katıl Butonu
-        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "✓ ONAYLA VE GÖREVE BAŞLA",
+        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "ONAYLA VE GÖREVE BAŞLA",
             new Vector2(0f, -125f), new Vector2(300f, 50f),
             new Color(0.12f, 0.55f, 0.32f), OnSaveClicked);
         _saveButton = saveBtnObj.GetComponent<Button>();
@@ -327,10 +327,10 @@ public class PilotLoginUI : MonoBehaviour
 
     private GameObject CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Color bgColor, Action onClick)
     {
-        GameObject btnObj = new GameObject(name);
+        GameObject btnObj = new GameObject(name, typeof(RectTransform));
         btnObj.transform.SetParent(parent, false);
 
-        RectTransform rt = btnObj.AddComponent<RectTransform>();
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
@@ -348,9 +348,9 @@ public class PilotLoginUI : MonoBehaviour
         btn.targetGraphic = img;
         btn.onClick.AddListener(() => onClick?.Invoke());
 
-        GameObject txtObj = new GameObject("Text");
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(btnObj.transform, false);
-        RectTransform tRt = txtObj.AddComponent<RectTransform>();
+        RectTransform tRt = txtObj.GetComponent<RectTransform>();
         tRt.anchorMin = Vector2.zero;
         tRt.anchorMax = Vector2.one;
         tRt.offsetMin = Vector2.zero;
