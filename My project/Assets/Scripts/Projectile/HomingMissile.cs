@@ -96,10 +96,18 @@ public class HomingMissile : MonoBehaviour
     {
         if (other.gameObject == owner) return;
 
+        SwarmEnemy swarm = other.GetComponent<SwarmEnemy>();
+        if (swarm != null && swarm.gameObject != owner)
+        {
+            swarm.TakeDamage(damage, true, transform.position);
+            Detonate();
+            return;
+        }
+
         PlaneHealth health = other.GetComponent<PlaneHealth>();
         if (health != null)
         {
-            health.TakeDamage(damage);
+            health.TakeDamage(damage, true, transform.position);
             Detonate();
         }
     }

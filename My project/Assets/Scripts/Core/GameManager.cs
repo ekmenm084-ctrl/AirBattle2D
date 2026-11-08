@@ -145,16 +145,19 @@ public class GameManager : MonoBehaviour
 
         if (CurrentMode == GameMode.TwoPlayer)
         {
+            EnemyFormationManager.Instance?.StopDirector();
             ShowActiveModeIntroBanner();
             ApplyEnemyWave(1);
         }
         else if (CurrentMode == GameMode.BulletHell)
         {
+            EnemyFormationManager.EnsureInstance()?.StartDirector();
             ShowActiveModeIntroBanner();
             StartBulletHellMode();
         }
         else if (CurrentMode == GameMode.TimeAttack)
         {
+            EnemyFormationManager.EnsureInstance()?.StartDirector();
             ShowActiveModeIntroBanner();
             StartTimeAttackMode();
         }
@@ -164,6 +167,7 @@ public class GameManager : MonoBehaviour
             currentPlaneIndex = 1;
             PlayerUpgradeManager.EnsureInstance();
             UpgradeSelectionUI.EnsureInstance();
+            EnemyFormationManager.EnsureInstance()?.StartDirector();
 
             if (CurrentMode == GameMode.SoloVsAI)
             {
@@ -719,6 +723,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator OpenUpgradeHangarRoutine(int justDefeated)
     {
+        EnemyFormationManager.Instance?.ClearAllSwarmEnemies();
         yield return new WaitForSeconds(1.0f);
 
         UpgradeSelectionUI upgradeUI = UpgradeSelectionUI.EnsureInstance();
@@ -787,6 +792,7 @@ public class GameManager : MonoBehaviour
             yield return null;
         }
 
+        EnemyFormationManager.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
@@ -1222,6 +1228,7 @@ public class GameManager : MonoBehaviour
     public void RestartGame()
     {
         CleanUpBulletHellPlane();
+        EnemyFormationManager.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
@@ -1232,6 +1239,7 @@ public class GameManager : MonoBehaviour
     public void GoToMainMenu()
     {
         CleanUpBulletHellPlane();
+        EnemyFormationManager.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;

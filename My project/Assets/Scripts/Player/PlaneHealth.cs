@@ -30,15 +30,21 @@ public class PlaneHealth : MonoBehaviour
             gameObject.AddComponent<PlaneVisualEffects>();
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, bool isCrit = false, Vector3 hitPoint = default)
     {
         if (_isDead || isInvulnerable) return;
 
         PlaneController pc = GetComponent<PlaneController>();
         PlaneVisualEffects pve = GetComponent<PlaneVisualEffects>();
+        bool isP1 = (pc != null && pc.isPlayer1);
+
+        if (hitPoint == default)
+        {
+            hitPoint = transform.position + new Vector3(Random.Range(-0.25f, 0.25f), Random.Range(-0.25f, 0.25f), 0f);
+        }
 
         // Player 1 için aktif enerji kalkanı hasar soğurması
-        if (pc != null && pc.isPlayer1 && PlayerUpgradeManager.Instance != null)
+        if (isP1 && PlayerUpgradeManager.Instance != null)
         {
             amount = PlayerUpgradeManager.Instance.AbsorbDamage(amount);
             if (amount <= 0f)
@@ -56,10 +62,13 @@ public class PlaneHealth : MonoBehaviour
 
         // Hasar alındı - Vuruş Flaş Efekti ve Mermi Kıvılcımı
         pve?.TriggerHitFlash(isShieldHit: false);
-        VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.85f, 0.2f));
+        VFXManager.SpawnHitSparks(transform.position, isCrit ? new Color(1f, 0.95f, 0.15f) : new Color(1f, 0.85f, 0.2f));
 
-        if (pc != null && pc.isPlayer1)
+        if (isP1)
             CameraShake.ShakeHit();
+
+        // Taktik Uçuşan Hasar Sayısı
+        DamageNumberManager.EnsureInstance()?.SpawnDamageNumber(hitPoint, amount, isCrit, isPlayerDamage: isP1);
 
         currentHealth = Mathf.Max(0f, currentHealth - amount);
         onHealthChanged?.Invoke(currentHealth / maxHealth);

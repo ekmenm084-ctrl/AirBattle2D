@@ -79,7 +79,23 @@ public class Bullet : MonoBehaviour
         if (drone != null && drone.GetPlayer() != null && drone.GetPlayer().gameObject != owner)
         {
             VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.7f, 0.2f));
+            DamageNumberManager.EnsureInstance()?.SpawnDamageNumber(transform.position, damage, isCritical, false);
             drone.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
+
+        // Sürü Düşman İHA'sına çarptı mı?
+        SwarmEnemy swarm = target.GetComponent<SwarmEnemy>();
+        if (swarm != null && swarm.gameObject != owner)
+        {
+            if (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true)
+            {
+                PlayerCombatManeuvers.Instance?.AddUltiEnergy(2.0f);
+            }
+
+            VFXManager.SpawnHitSparks(transform.position, isCritical ? new Color(1f, 0.95f, 0.1f) : new Color(1f, 0.8f, 0.2f));
+            swarm.TakeDamage(damage, isCritical, transform.position);
             Destroy(gameObject);
             return;
         }
@@ -92,8 +108,8 @@ public class Bullet : MonoBehaviour
                 PlayerCombatManeuvers.Instance?.AddUltiEnergy(1.8f);
             }
 
-            VFXManager.SpawnHitSparks(transform.position, new Color(1f, 0.9f, 0.2f));
-            health.TakeDamage(damage);
+            VFXManager.SpawnHitSparks(transform.position, isCritical ? new Color(1f, 0.95f, 0.1f) : new Color(1f, 0.9f, 0.2f));
+            health.TakeDamage(damage, isCritical, transform.position);
             Destroy(gameObject);
         }
     }

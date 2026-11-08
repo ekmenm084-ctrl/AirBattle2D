@@ -31,6 +31,19 @@ public class PlaneShooter : MonoBehaviour
     public void RequestFire() => _fireRequested = true;
     public void FireManual() => TryFire();
 
+    private void Start()
+    {
+        PlaneController pc = GetComponent<PlaneController>();
+        if (pc != null && pc.isPlayer1)
+        {
+            // Player 1 için taban %15 kritik darbe şansı
+            if (criticalChance <= 0f)
+            {
+                criticalChance = 0.15f;
+            }
+        }
+    }
+
     /// <summary>
     /// Ganimet kutusundan alınan aşırı yükleme ile uçağı geçici olarak süper seri 3'lü atış moduna geçirir.
     /// </summary>
@@ -46,14 +59,17 @@ public class PlaneShooter : MonoBehaviour
         isOverdriveActive = true;
         float originalRate = fireRate;
         int originalBullets = bulletsPerShot;
+        float originalCrit = criticalChance;
 
         fireRate = 0.12f; // Çok seri ateş hızı
         bulletsPerShot = Mathf.Max(3, bulletsPerShot + 1); // En az 3 namlu
+        criticalChance = Mathf.Min(0.85f, criticalChance + 0.25f); // Aşırı yüklemede +%25 kritik şansı!
 
         yield return new WaitForSeconds(duration);
 
         fireRate = originalRate;
         bulletsPerShot = originalBullets;
+        criticalChance = originalCrit;
         isOverdriveActive = false;
         _overdriveCoroutine = null;
     }

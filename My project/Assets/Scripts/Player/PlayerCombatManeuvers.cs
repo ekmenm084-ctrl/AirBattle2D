@@ -313,14 +313,23 @@ public class PlayerCombatManeuvers : MonoBehaviour
             }
         }
 
-        // Tüm aktif düşman uçaklarına EMP şok hasarı (160 Hasar)
+        // Tüm aktif düşman uçaklarına ve İHA sürü filolarına EMP şok hasarı (160 Hasar)
+        var swarms = FindObjectsOfType<SwarmEnemy>();
+        foreach (var s in swarms)
+        {
+            if (s != null)
+            {
+                s.TakeDamage(160f, true, s.transform.position);
+            }
+        }
+
         var planes = FindObjectsOfType<PlaneHealth>();
         foreach (var p in planes)
         {
             if (p != null && p.gameObject != gameObject)
             {
                 VFXManager.SpawnHitSparks(p.transform.position, Color.yellow);
-                p.TakeDamage(160f);
+                p.TakeDamage(160f, true, p.transform.position);
             }
         }
 
