@@ -27,6 +27,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
     [Header("Ulti / Süper Yetenek Ayarları")]
     public float maxUlti = 100f;
     public float currentUlti { get; private set; } = 0f;
+    public float ultiChargeMultiplier = 1.0f;
     public float overdriveDuration = 6.0f;
     public float overdriveRemaining { get; private set; } = 0f;
     public bool isOverdriveActive { get; private set; } = false;
@@ -263,6 +264,8 @@ public class PlayerCombatManeuvers : MonoBehaviour
     public void AddUltiEnergy(float amount)
     {
         if (isOverdriveActive) return;
+
+        amount *= Mathf.Max(0.1f, ultiChargeMultiplier);
 
         bool wasReady = IsUltiReady;
         currentUlti = Mathf.Clamp(currentUlti + amount, 0f, maxUlti);

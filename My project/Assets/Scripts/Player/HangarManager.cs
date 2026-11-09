@@ -227,6 +227,22 @@ public class HangarManager : MonoBehaviour
         gameUI?.UpdateGoldHUD(gold, amount);
     }
 
+    /// <summary>
+    /// Kasadan altın harcar, yeterli bakiye yoksa false döner.
+    /// </summary>
+    public bool SpendGold(int amount)
+    {
+        if (amount <= 0) return true;
+        LoadHangarData();
+        if (gold < amount) return false;
+        gold -= amount;
+        SaveHangarData();
+
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.UpdateGoldHUD(gold, -amount);
+        return true;
+    }
+
     private static readonly System.Collections.Generic.Dictionary<AircraftType, Sprite> _aircraftSpriteCache 
         = new System.Collections.Generic.Dictionary<AircraftType, Sprite>();
 
@@ -1179,16 +1195,23 @@ public class HangarManager : MonoBehaviour
                 break;
         }
 
-        // Sandık kalıcı çip bonusları eklenir
-        float finalHp = baseHp + chipBonusHealth;
-        float finalSpd = baseSpd;
-        float finalDmg = baseDmg + chipBonusDamage;
-        float finalCrit = baseCrit;
+        // Sandık kalıcı çip bonusları ve Askeri Mağaza donatım parçaları eklenir
+        MilitaryStoreManager.LoadoutStats loadout = default;
+        if (MilitaryStoreManager.Instance != null || MilitaryStoreManager.EnsureInstance() != null)
+        {
+            loadout = MilitaryStoreManager.EnsureInstance().GetLoadoutStats(activeAircraft);
+        }
+
+        float finalHp = baseHp + chipBonusHealth + loadout.bonusHp;
+        float finalSpd = baseSpd + loadout.bonusSpeed;
+        float finalDmg = baseDmg + chipBonusDamage + loadout.bonusDamage;
+        float finalCrit = baseCrit + loadout.bonusCrit;
 
         pc.moveSpeed = finalSpd;
 
         if (health != null)
         {
+            health.damageReductionPercent = Mathf.Clamp(loadout.damageReductionPercent, 0f, 0.50f);
             health.ResetHealth(finalHp);
         }
 
@@ -1197,6 +1220,25 @@ public class HangarManager : MonoBehaviour
             shooter.bulletDamage = finalDmg;
             shooter.bulletsPerShot = baseBullets;
             shooter.criticalChance = finalCrit;
+        }
+
+        // Askeri Zırh / EW Kalkanı Uygula
+        if (loadout.bonusShield > 0f)
+        {
+            PlayerUpgradeManager.EnsureInstance()?.GrantShield(loadout.bonusShield);
+        }
+
+        // İtki Yönlendirme ve Elektronik Harp Manevra Bonusları
+        if (PlayerCombatManeuvers.Instance != null)
+        {
+            if (loadout.dodgeCdReduction > 0f)
+            {
+                PlayerCombatManeuvers.Instance.dodgeCooldown = Mathf.Max(1.0f, 3.0f - loadout.dodgeCdReduction);
+            }
+            if (loadout.ultiBonusPercent > 0f)
+            {
+                PlayerCombatManeuvers.Instance.ultiChargeMultiplier = 1.0f + loadout.ultiBonusPercent;
+            }
         }
 
         // Uçak ölçeğini düşman uçağı ve ekranla kusursuz uyumlu kıl

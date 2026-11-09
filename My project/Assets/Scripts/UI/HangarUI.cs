@@ -1294,7 +1294,43 @@ public class HangarUI : MonoBehaviour
         bTMP.alignment = TextAlignmentOptions.Center;
         bTMP.color = Color.white;
 
-        // 2. ASKERİ ENVANTERİ AÇ BUTONU (ÖNCEKİ MENÜ KAPANIR, YENİ SAYFADA AÇILIR)
+        // 2. ASKERİ MAĞAZA VE DONATIM BUTONU
+        GameObject storeBtnObj = new GameObject("OpenMilitaryStoreButton");
+        storeBtnObj.transform.SetParent(_panelRoot.transform, false);
+
+        RectTransform stRt = GetRect(storeBtnObj);
+        stRt.anchorMin = new Vector2(1f, 0f);
+        stRt.anchorMax = new Vector2(1f, 0f);
+        stRt.pivot = new Vector2(1f, 0f);
+        stRt.anchoredPosition = new Vector2(-640f, 25f);
+        stRt.sizeDelta = new Vector2(280f, 54f);
+
+        Image stImg = storeBtnObj.AddComponent<Image>();
+        stImg.color = new Color(0.15f, 0.58f, 0.65f);
+
+        Outline stOutline = storeBtnObj.AddComponent<Outline>();
+        stOutline.effectColor = new Color(0.38f, 0.85f, 0.95f);
+        stOutline.effectDistance = new Vector2(2f, -2f);
+
+        Button stBtn = storeBtnObj.AddComponent<Button>();
+        stBtn.onClick.AddListener(() =>
+        {
+            CloseDirectly();
+            MilitaryStoreUI.EnsureUI()?.OpenStore();
+        });
+
+        GameObject stTxtObj = new GameObject("Text");
+        stTxtObj.transform.SetParent(storeBtnObj.transform, false);
+        MakeFullScreenRect(GetRect(stTxtObj));
+
+        TextMeshProUGUI stTMP = stTxtObj.AddComponent<TextMeshProUGUI>();
+        stTMP.text = "🛒 ASKERİ MAĞAZA";
+        stTMP.fontSize = 20f;
+        stTMP.fontStyle = FontStyles.Bold;
+        stTMP.alignment = TextAlignmentOptions.Center;
+        stTMP.color = Color.white;
+
+        // 3. ASKERİ ENVANTERİ AÇ BUTONU (ÖNCEKİ MENÜ KAPANIR, YENİ SAYFADA AÇILIR)
         GameObject invBtnObj = new GameObject("OpenInventoryButton");
         invBtnObj.transform.SetParent(_panelRoot.transform, false);
 
@@ -1302,8 +1338,8 @@ public class HangarUI : MonoBehaviour
         iRt.anchorMin = new Vector2(1f, 0f);
         iRt.anchorMax = new Vector2(1f, 0f);
         iRt.pivot = new Vector2(1f, 0f);
-        iRt.anchoredPosition = new Vector2(-360f, 25f);
-        iRt.sizeDelta = new Vector2(300f, 54f);
+        iRt.anchoredPosition = new Vector2(-340f, 25f);
+        iRt.sizeDelta = new Vector2(280f, 54f);
 
         Image iImg = invBtnObj.AddComponent<Image>();
         iImg.color = new Color(0.18f, 0.48f, 0.72f);

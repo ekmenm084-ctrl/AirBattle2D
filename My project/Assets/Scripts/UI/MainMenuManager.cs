@@ -59,6 +59,7 @@ public class MainMenuManager : MonoBehaviour
 
     private GameObject _titleObject;
     private Button _hangarButton;
+    private Button _militaryStoreButton;
     private Button _cratesButton;
     private Button _leaderboardButton;
     private Button _modesLeaderboardButton;
@@ -214,38 +215,45 @@ public class MainMenuManager : MonoBehaviour
 
     private void FormatMilitaryButtons()
     {
-        FormatBtn(playButton, 138f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 62f);
+        FormatBtn(playButton, 150f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 56f);
 
-        _hangarButton = CreateOrFindMainButton("HangarButton", 78f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 50f);
+        _hangarButton = CreateOrFindMainButton("HangarButton", 96f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 46f);
         if (_hangarButton != null)
         {
             _hangarButton.onClick.RemoveAllListeners();
             _hangarButton.onClick.AddListener(OpenHangarPanel);
         }
 
-        _cratesButton = CreateOrFindMainButton("CratesButton", 22f, "İKMAL VE GANİMET SANDIKLARI", new Color(0.72f, 0.48f, 0.12f), 520f, 50f);
+        _militaryStoreButton = CreateOrFindMainButton("MilitaryStoreButton", 44f, "🛒 ASKERİ MAĞAZA & PARÇALAR", new Color(0.15f, 0.58f, 0.65f), 520f, 46f);
+        if (_militaryStoreButton != null)
+        {
+            _militaryStoreButton.onClick.RemoveAllListeners();
+            _militaryStoreButton.onClick.AddListener(OpenStorePanel);
+        }
+
+        _cratesButton = CreateOrFindMainButton("CratesButton", -8f, "İKMAL VE GANİMET SANDIKLARI", new Color(0.72f, 0.48f, 0.12f), 520f, 46f);
         if (_cratesButton != null)
         {
             _cratesButton.onClick.RemoveAllListeners();
             _cratesButton.onClick.AddListener(OpenCratesPanel);
         }
 
-        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -34f, "🏆 KÜRESEL REKOR TABLOSU", new Color(0.78f, 0.52f, 0.10f), 520f, 50f);
+        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -60f, "🏆 KÜRESEL REKOR TABLOSU", new Color(0.78f, 0.52f, 0.10f), 520f, 46f);
         if (_leaderboardButton != null)
         {
             _leaderboardButton.onClick.RemoveAllListeners();
             _leaderboardButton.onClick.AddListener(() => OpenLeaderboardPanel());
         }
 
-        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -90f, "ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 520f, 50f);
+        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -112f, "ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 520f, 46f);
         if (_quickDiffButton != null)
         {
             _quickDiffButton.onClick.RemoveAllListeners();
             _quickDiffButton.onClick.AddListener(CycleDifficulty);
         }
 
-        FormatBtn(modesButton, -146f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 520f, 50f);
-        FormatBtn(settingsButton, -202f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 520f, 50f);
+        FormatBtn(modesButton, -164f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 520f, 46f);
+        FormatBtn(settingsButton, -216f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 520f, 46f);
 
         // Ayarlar Paneli Zorluk Butonları (Kolay, Normal, Zor)
         FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 480f, 52f);
@@ -310,10 +318,29 @@ public class MainMenuManager : MonoBehaviour
 
         PlayerProfileUI.Instance?.SetBadgeActive(false);
 
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
 
         HangarUI.EnsureUI()?.OpenHangar();
+    }
+
+    public void OpenStorePanel()
+    {
+        if (mainPanel != null) mainPanel.SetActive(false);
+        if (modesPanel != null) modesPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (_titleObject != null) _titleObject.SetActive(false);
+        if (backgroundImage != null) backgroundImage.enabled = true;
+
+        PlayerProfileUI.Instance?.SetBadgeActive(false);
+
+        if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
+        if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
+        if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
+        if (LeaderboardUI.Instance != null) LeaderboardUI.Instance.CloseLeaderboard();
+
+        MilitaryStoreUI.EnsureUI()?.OpenStore();
     }
 
     public void OpenCratesPanel()
@@ -326,6 +353,7 @@ public class MainMenuManager : MonoBehaviour
 
         PlayerProfileUI.Instance?.SetBadgeActive(false);
 
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
 
@@ -342,6 +370,7 @@ public class MainMenuManager : MonoBehaviour
 
         PlayerProfileUI.Instance?.SetBadgeActive(false);
 
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
@@ -530,6 +559,7 @@ public class MainMenuManager : MonoBehaviour
         PlayerProfileUI.Instance?.SetBadgeActive(true);
         PlayerProfileUI.Instance?.RefreshBadgeVisuals();
 
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
@@ -545,6 +575,7 @@ public class MainMenuManager : MonoBehaviour
 
         PlayerProfileUI.Instance?.SetBadgeActive(false);
 
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
@@ -566,6 +597,7 @@ public class MainMenuManager : MonoBehaviour
 
         PlayerProfileUI.Instance?.SetBadgeActive(false);
 
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
@@ -1238,6 +1270,7 @@ public class MainMenuManager : MonoBehaviour
         // Menüyü kapat ve savaşı başlat
         gameObject.SetActive(false);
         PlayerProfileUI.Instance?.SetBadgeActive(false);
+        if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();

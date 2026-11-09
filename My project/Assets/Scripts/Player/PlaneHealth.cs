@@ -9,6 +9,7 @@ public class PlaneHealth : MonoBehaviour
     [Header("Can Ayarları")]
     public float maxHealth = 100f;
     public float currentHealth { get; private set; }
+    public float damageReductionPercent = 0f; // Askeri Zırh / RAM Kaplama hasar azaltma oranı
 
     [Header("Görsel Efektler")]
     public GameObject explosionPrefab;
@@ -41,6 +42,12 @@ public class PlaneHealth : MonoBehaviour
         if (hitPoint == default)
         {
             hitPoint = transform.position + new Vector3(Random.Range(-0.25f, 0.25f), Random.Range(-0.25f, 0.25f), 0f);
+        }
+
+        // Askeri zırh veya elektronik harp savunma süiti hasar sönümleme
+        if (damageReductionPercent > 0.001f)
+        {
+            amount *= Mathf.Clamp01(1f - damageReductionPercent);
         }
 
         // Player 1 için aktif enerji kalkanı hasar soğurması
