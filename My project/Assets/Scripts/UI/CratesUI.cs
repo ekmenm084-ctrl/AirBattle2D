@@ -103,6 +103,7 @@ public class CratesUI : MonoBehaviour
 
         MakeFullScreenRect(GetRect(_panelRoot));
         _panelRoot.SetActive(true);
+        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar();
         if (_cinematicOverlayObj != null) _cinematicOverlayObj.SetActive(false);
         _isOpeningCrate = false;
         RefreshVisuals();
@@ -250,41 +251,6 @@ public class CratesUI : MonoBehaviour
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
-
-        // Üst Sol Geri Dön Butonu
-        GameObject topBackBtnObj = new GameObject("TopBackFromCratesButton");
-        topBackBtnObj.transform.SetParent(_panelRoot.transform, false);
-        RectTransform tbRt = GetRect(topBackBtnObj);
-        tbRt.anchorMin = new Vector2(0f, 1f);
-        tbRt.anchorMax = new Vector2(0f, 1f);
-        tbRt.pivot = new Vector2(0f, 1f);
-        tbRt.anchoredPosition = new Vector2(40f, -22f);
-        tbRt.sizeDelta = new Vector2(170f, 52f);
-
-        Image tbBg = topBackBtnObj.AddComponent<Image>();
-        tbBg.color = new Color(0.12f, 0.18f, 0.26f, 0.95f);
-
-        Outline tbOutline = topBackBtnObj.AddComponent<Outline>();
-        tbOutline.effectColor = new Color(0.4f, 0.7f, 1f);
-        tbOutline.effectDistance = new Vector2(2f, -2f);
-
-        Button tbBtn = topBackBtnObj.AddComponent<Button>();
-        tbBtn.onClick.AddListener(CloseCratesPanel);
-
-        GameObject tbTxtObj = new GameObject("Text");
-        tbTxtObj.transform.SetParent(topBackBtnObj.transform, false);
-        RectTransform tbtRt = GetRect(tbTxtObj);
-        tbtRt.anchorMin = Vector2.zero;
-        tbtRt.anchorMax = Vector2.one;
-        tbtRt.offsetMin = Vector2.zero;
-        tbtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI tbTMP = tbTxtObj.AddComponent<TextMeshProUGUI>();
-        tbTMP.text = "<b>< GERİ</b>";
-        tbTMP.fontSize = 20f;
-        tbTMP.fontStyle = FontStyles.Bold;
-        tbTMP.alignment = TextAlignmentOptions.Center;
-        tbTMP.color = Color.white;
     }
 
     private void BuildCrateCards()

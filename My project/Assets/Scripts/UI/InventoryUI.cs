@@ -81,6 +81,7 @@ public class InventoryUI : MonoBehaviour
 
         MakeFullScreenRect(GetRect(_panelRoot));
         _panelRoot.SetActive(true);
+        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar();
         RefreshVisuals();
     }
 
@@ -325,41 +326,6 @@ public class InventoryUI : MonoBehaviour
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
-
-        // Üst Sol Geri Dön Butonu (Hızlı erişim)
-        GameObject topBackBtnObj = new GameObject("TopBackFromInventoryButton");
-        topBackBtnObj.transform.SetParent(_panelRoot.transform, false);
-        RectTransform tbRt = GetRect(topBackBtnObj);
-        tbRt.anchorMin = new Vector2(0f, 1f);
-        tbRt.anchorMax = new Vector2(0f, 1f);
-        tbRt.pivot = new Vector2(0f, 1f);
-        tbRt.anchoredPosition = new Vector2(35f, -22f);
-        tbRt.sizeDelta = new Vector2(200f, 52f);
-
-        Image tbImg = topBackBtnObj.AddComponent<Image>();
-        tbImg.color = new Color(0.18f, 0.28f, 0.40f);
-
-        Outline tbOutline = topBackBtnObj.AddComponent<Outline>();
-        tbOutline.effectColor = new Color(0.35f, 0.75f, 1f);
-        tbOutline.effectDistance = new Vector2(2f, -2f);
-
-        Button tbBtn = topBackBtnObj.AddComponent<Button>();
-        tbBtn.onClick.AddListener(CloseInventory);
-
-        GameObject tbTxtObj = new GameObject("Text");
-        tbTxtObj.transform.SetParent(topBackBtnObj.transform, false);
-        RectTransform tbTxtRt = GetRect(tbTxtObj);
-        tbTxtRt.anchorMin = Vector2.zero;
-        tbTxtRt.anchorMax = Vector2.one;
-        tbTxtRt.offsetMin = Vector2.zero;
-        tbTxtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI tbTMP = tbTxtObj.AddComponent<TextMeshProUGUI>();
-        tbTMP.text = "< GERİ DÖN";
-        tbTMP.fontSize = 21f;
-        tbTMP.fontStyle = FontStyles.Bold;
-        tbTMP.alignment = TextAlignmentOptions.Center;
-        tbTMP.color = Color.white;
     }
 
     private void BuildInventoryCards()

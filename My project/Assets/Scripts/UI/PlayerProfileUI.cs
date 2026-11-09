@@ -12,12 +12,17 @@ public class PlayerProfileUI : MonoBehaviour
 {
     public static PlayerProfileUI Instance { get; private set; }
 
-    // Ana Menü Rozeti
+    // Ana Menü & Tüm Menüler Rozeti (Sol Üst)
+    private GameObject _statusBarRoot;
     private GameObject _badgeRoot;
     private TextMeshProUGUI _rankTitleTMP;
     private TextMeshProUGUI _levelBadgeTMP;
     private TextMeshProUGUI _expBarTMP;
     private Image _expBarFill;
+
+    // Tüm Menüler Altın Rozeti (Sağ Üst)
+    private GameObject _goldBadgeRoot;
+    private TextMeshProUGUI _goldBadgeTMP;
 
     // Savaş İçi HUD Rozeti & EXP Barı
     private GameObject _hudBadgeRoot;
@@ -89,16 +94,80 @@ public class PlayerProfileUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Ana Menüye sol üst köşeye şık pilot profil rozetini ve EXP barını ekler.
+    /// Tüm menülerde (Ana Menü, Hangar, Mağaza, Modlar, Ayarlar, Sandıklar, Envanter, Rekor)
+    /// ekranın sol üstünde Pilot Seviye & EXP Barı, sağ üstünde Altın Göstergesi oluşturan genel durum barı.
     /// </summary>
-    public void SetupMainMenuProfileBadge(Transform parent)
+    public void SetupMenuStatusBar(Canvas canvas = null)
     {
-        if (_badgeRoot != null)
+        if (canvas == null) canvas = GetComponentInParent<Canvas>() ?? FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        if (_statusBarRoot != null)
         {
-            _badgeRoot.SetActive(true);
+            _statusBarRoot.SetActive(true);
+            _statusBarRoot.transform.SetAsLastSibling();
             RefreshBadgeVisuals();
             return;
         }
+
+        Transform existing = canvas.transform.Find("GlobalMenuStatusBar");
+        if (existing != null)
+        {
+            _statusBarRoot = existing.gameObject;
+            _statusBarRoot.SetActive(true);
+            _statusBarRoot.transform.SetAsLastSibling();
+            RefreshBadgeVisuals();
+            return;
+        }
+
+        _statusBarRoot = new GameObject("GlobalMenuStatusBar");
+        _statusBarRoot.transform.SetParent(canvas.transform, false);
+
+        RectTransform sbRt = _statusBarRoot.AddComponent<RectTransform>();
+        MainMenuManager.MakeFullScreenRect(sbRt);
+
+        // 1. Sol Üst: Pilot Profil Rozeti & Canlı EXP Barı
+        BuildProfileLevelBadge(_statusBarRoot.transform);
+
+        // 2. Sağ Üst: Altın Kasası Rozeti
+        BuildMenuGoldBadge(_statusBarRoot.transform);
+
+        _statusBarRoot.transform.SetAsLastSibling();
+        RefreshBadgeVisuals();
+    }
+
+    public void ShowMenuStatusBar()
+    {
+        if (_statusBarRoot == null)
+        {
+            Canvas canvas = GetComponentInParent<Canvas>() ?? FindObjectOfType<Canvas>();
+            if (canvas != null) SetupMenuStatusBar(canvas);
+        }
+
+        if (_statusBarRoot != null)
+        {
+            _statusBarRoot.SetActive(true);
+            _statusBarRoot.transform.SetAsLastSibling();
+            RefreshBadgeVisuals();
+        }
+    }
+
+    public void HideMenuStatusBar()
+    {
+        if (_statusBarRoot != null)
+            _statusBarRoot.SetActive(false);
+    }
+
+    public void SetupMainMenuProfileBadge(Transform parent)
+    {
+        Canvas canvas = (parent != null) ? parent.GetComponentInParent<Canvas>() : null;
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        SetupMenuStatusBar(canvas);
+    }
+
+    private void BuildProfileLevelBadge(Transform parent)
+    {
+        if (_badgeRoot != null) return;
 
         _badgeRoot = new GameObject("PilotProfileBadge");
         _badgeRoot.transform.SetParent(parent, false);
@@ -152,7 +221,7 @@ public class PlayerProfileUI : MonoBehaviour
         _levelBadgeTMP.color = new Color(1f, 0.88f, 0.25f);
         _levelBadgeTMP.raycastTarget = false;
 
-        // Rütbe Başlığı (Ünvan Kutusu - 120px)
+        // Rütbe Başlığı
         GameObject rObj = new GameObject("RankTitle");
         rObj.transform.SetParent(_badgeRoot.transform, false);
         RectTransform rRt = rObj.AddComponent<RectTransform>();
@@ -172,7 +241,7 @@ public class PlayerProfileUI : MonoBehaviour
         _rankTitleTMP.fontSizeMin = 14f;
         _rankTitleTMP.fontSizeMax = 20f;
 
-        // EXP Bar Çerçevesi (Yarı yarıya küçültüldü - Ünvan kutusuyla aynı 124px genişlik ve oranda)
+        // EXP Bar Çerçevesi
         GameObject barBgObj = new GameObject("ExpBarBg");
         barBgObj.transform.SetParent(_badgeRoot.transform, false);
         RectTransform barRt = barBgObj.AddComponent<RectTransform>();
@@ -215,8 +284,49 @@ public class PlayerProfileUI : MonoBehaviour
         _expBarTMP.alignment = TextAlignmentOptions.Center;
         _expBarTMP.color = Color.white;
         _expBarTMP.raycastTarget = false;
+    }
 
-        RefreshBadgeVisuals();
+    private void BuildMenuGoldBadge(Transform parent)
+    {
+        if (_goldBadgeRoot != null) return;
+
+        _goldBadgeRoot = new GameObject("MenuGoldBadge");
+        _goldBadgeRoot.transform.SetParent(parent, false);
+
+        RectTransform gRt = _goldBadgeRoot.AddComponent<RectTransform>();
+        gRt.anchorMin = new Vector2(1f, 1f);
+        gRt.anchorMax = new Vector2(1f, 1f);
+        gRt.pivot = new Vector2(1f, 1f);
+        gRt.anchoredPosition = new Vector2(-30f, -20f);
+        gRt.sizeDelta = new Vector2(260f, 54f);
+
+        Image gBg = _goldBadgeRoot.AddComponent<Image>();
+        gBg.color = new Color(0.04f, 0.08f, 0.14f, 0.95f);
+
+        Outline gOutline = _goldBadgeRoot.AddComponent<Outline>();
+        gOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.95f);
+        gOutline.effectDistance = new Vector2(2f, -2f);
+
+        Button gBtn = _goldBadgeRoot.AddComponent<Button>();
+        gBtn.onClick.AddListener(() =>
+        {
+            MainMenuManager.Instance?.OpenStorePanel();
+        });
+
+        GameObject goldTxtObj = new GameObject("Text");
+        goldTxtObj.transform.SetParent(_goldBadgeRoot.transform, false);
+        RectTransform gtRt = goldTxtObj.AddComponent<RectTransform>();
+        gtRt.anchorMin = Vector2.zero;
+        gtRt.anchorMax = Vector2.one;
+        gtRt.offsetMin = Vector2.zero;
+        gtRt.offsetMax = Vector2.zero;
+
+        _goldBadgeTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
+        _goldBadgeTMP.fontSize = 20f;
+        _goldBadgeTMP.fontStyle = FontStyles.Bold;
+        _goldBadgeTMP.alignment = TextAlignmentOptions.Center;
+        _goldBadgeTMP.color = new Color(1f, 0.88f, 0.25f);
+        _goldBadgeTMP.raycastTarget = false;
     }
 
     /// <summary>
@@ -377,11 +487,20 @@ public class PlayerProfileUI : MonoBehaviour
         {
             UpdateDossierContent();
         }
+
+        // 3. Menüler Genel Altın Kasası Rozeti
+        if (_goldBadgeTMP != null)
+        {
+            HangarManager hm = HangarManager.EnsureInstance();
+            int currentGold = (hm != null) ? hm.gold : PlayerPrefs.GetInt("AirBattle_Gold", 250);
+            _goldBadgeTMP.text = $"🪙 ALTIN: <b>{currentGold:N0} G</b>";
+        }
     }
 
     public void SetBadgeActive(bool active)
     {
-        if (_badgeRoot != null) _badgeRoot.SetActive(active);
+        if (active) ShowMenuStatusBar();
+        else HideMenuStatusBar();
     }
 
     public void SetHUDBadgeActive(bool active)

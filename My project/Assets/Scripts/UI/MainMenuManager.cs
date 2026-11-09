@@ -316,7 +316,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
@@ -333,7 +333,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
@@ -351,7 +351,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -368,7 +368,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -556,8 +556,7 @@ public class MainMenuManager : MonoBehaviour
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (_titleObject != null) _titleObject.SetActive(true);
 
-        PlayerProfileUI.Instance?.SetBadgeActive(true);
-        PlayerProfileUI.Instance?.RefreshBadgeVisuals();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -573,7 +572,7 @@ public class MainMenuManager : MonoBehaviour
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (_titleObject != null) _titleObject.SetActive(false);
 
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -595,7 +594,7 @@ public class MainMenuManager : MonoBehaviour
         }
         if (_titleObject != null) _titleObject.SetActive(false);
 
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -1269,7 +1268,7 @@ public class MainMenuManager : MonoBehaviour
 
         // Menüyü kapat ve savaşı başlat
         gameObject.SetActive(false);
-        PlayerProfileUI.Instance?.SetBadgeActive(false);
+        PlayerProfileUI.Instance?.HideMenuStatusBar();
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();

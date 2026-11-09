@@ -225,6 +225,7 @@ public class HangarManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateGoldHUD(gold, amount);
+        PlayerProfileUI.Instance?.RefreshBadgeVisuals();
     }
 
     /// <summary>
@@ -240,6 +241,7 @@ public class HangarManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateGoldHUD(gold, -amount);
+        PlayerProfileUI.Instance?.RefreshBadgeVisuals();
         return true;
     }
 

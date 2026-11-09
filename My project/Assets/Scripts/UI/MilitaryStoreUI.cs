@@ -107,6 +107,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         MakeFullScreenRect(GetRect(_panelRoot));
         _panelRoot.SetActive(true);
+        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar();
 
         MilitaryStoreManager.EnsureInstance();
 
@@ -191,15 +192,15 @@ public class MilitaryStoreUI : MonoBehaviour
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(0.92f, 0.96f, 1.0f);
 
-        // Geri Dön Butonu (Sol Üst)
+        // Geri Dön Butonu (Sol Alt)
         GameObject backBtnObj = new GameObject("StoreBackButton");
         backBtnObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform bRt = GetRect(backBtnObj);
-        bRt.anchorMin = new Vector2(0f, 1f);
-        bRt.anchorMax = new Vector2(0f, 1f);
-        bRt.pivot = new Vector2(0f, 1f);
-        bRt.anchoredPosition = new Vector2(25f, -14f);
-        bRt.sizeDelta = new Vector2(170f, 48f);
+        bRt.anchorMin = Vector2.zero;
+        bRt.anchorMax = Vector2.zero;
+        bRt.pivot = Vector2.zero;
+        bRt.anchoredPosition = new Vector2(40f, 25f);
+        bRt.sizeDelta = new Vector2(220f, 52f);
 
         Image bImg = backBtnObj.AddComponent<Image>();
         bImg.color = new Color(0.18f, 0.28f, 0.40f);
@@ -220,7 +221,7 @@ public class MilitaryStoreUI : MonoBehaviour
         btRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI bTMP = bTxtObj.AddComponent<TextMeshProUGUI>();
-        bTMP.text = "< GERİ";
+        bTMP.text = "< GERİ DÖN";
         bTMP.fontSize = 20f;
         bTMP.fontStyle = FontStyles.Bold;
         bTMP.alignment = TextAlignmentOptions.Center;
@@ -430,7 +431,7 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform sRt = GetRect(_cardsScrollContainer);
         sRt.anchorMin = new Vector2(0f, 0f);
         sRt.anchorMax = new Vector2(1f, 1f);
-        sRt.offsetMin = new Vector2(25f, 20f);
+        sRt.offsetMin = new Vector2(25f, 85f);
         sRt.offsetMax = new Vector2(-25f, -196f);
 
         Image scrollBg = _cardsScrollContainer.AddComponent<Image>();
@@ -474,7 +475,7 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform lRt = GetRect(_loadoutContainer);
         lRt.anchorMin = new Vector2(0f, 0f);
         lRt.anchorMax = new Vector2(1f, 1f);
-        lRt.offsetMin = new Vector2(25f, 20f);
+        lRt.offsetMin = new Vector2(25f, 85f);
         lRt.offsetMax = new Vector2(-25f, -196f);
 
         Image lBg = _loadoutContainer.AddComponent<Image>();
