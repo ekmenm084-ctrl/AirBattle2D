@@ -341,6 +341,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
         Time.timeScale = 0.35f;
         yield return new WaitForSecondsRealtime(0.28f);
         Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.ShowWaveAlert("⚡ [GÖKYÜZÜ HAKİMİYETİ DEVREDE!] ⚡\n<color=#00E5FF>EMP TÜM MERMİLERİ SİLDİ!</color> • <color=#FFD54F>4'LÜ SÜPER PLAZMA AŞIRI YÜKLEMESİ</color>", new Color(0f, 0.95f, 1f), 2.8f);

@@ -16,7 +16,6 @@ public class DamageNumberManager : MonoBehaviour
     private readonly Queue<DamageNumber> _pool = new Queue<DamageNumber>();
     private readonly List<DamageNumber> _activeList = new List<DamageNumber>();
     private Transform _poolContainer;
-    private Coroutine _hitStopCoroutine;
 
     private void Awake()
     {
@@ -104,11 +103,10 @@ public class DamageNumberManager : MonoBehaviour
         _activeList.Add(dn);
         dn.Play(worldPos, damage, isCrit, isPlayerDamage);
 
-        // Kritik darbe görsel ve dokunsal geri bildirimi
+        // Kritik darbe görsel ve dokunsal geri bildirimi (Tok sarsıntı)
         if (isCrit && !isPlayerDamage)
         {
-            CameraShake.Shake(0.18f, 0.14f);
-            TriggerHitStop(0.04f); // Micro Hit-Stop (Visceral Impact)
+            CameraShake.Shake(0.14f, 0.10f);
         }
     }
 
@@ -122,39 +120,6 @@ public class DamageNumberManager : MonoBehaviour
         if (!_pool.Contains(dn))
         {
             _pool.Enqueue(dn);
-        }
-    }
-
-    /// <summary>
-    /// Kritik vuruşlarda arcade dövüş oyunları hissi veren mikro duraksama (Micro Hit-Stop).
-    /// </summary>
-    public void TriggerHitStop(float duration)
-    {
-        if (_hitStopCoroutine != null)
-        {
-            StopCoroutine(_hitStopCoroutine);
-        }
-        _hitStopCoroutine = StartCoroutine(HitStopRoutine(duration));
-    }
-
-    private IEnumerator HitStopRoutine(float duration)
-    {
-        float prevScale = Time.timeScale;
-        // Eğer oyun zaten duraklatıldıysa TimeScale'i değiştirme
-        if (prevScale > 0.05f)
-        {
-            Time.timeScale = 0.08f;
-            yield return new WaitForSecondsRealtime(duration);
-            Time.timeScale = prevScale;
-        }
-        _hitStopCoroutine = null;
-    }
-
-    private void OnDestroy()
-    {
-        if (Time.timeScale < 0.1f)
-        {
-            Time.timeScale = 1.0f;
         }
     }
 }

@@ -13,7 +13,8 @@ public static class GameSettings
         Endless,    // Sonsuz İt Dalaşı (High Score)
         BossRush,   // Sadece Boss Filosu (4 Boss Peş Peşe)
         BulletHell, // Mermi Cehennemi (Aşırı Mermi Fırtınası & Hayatta Kalma)
-        TimeAttack  // Zaman Taarruzu (Zamana Karşı Hızlı Av Modu)
+        TimeAttack, // Zaman Taarruzu (Zamana Karşı Hızlı Av Modu)
+        Hardcore    // Hardcore Modu (Tek Can, 200 HP, Her Gelen Düşman Güçlenen Boss)
     }
 
     public enum Difficulty 

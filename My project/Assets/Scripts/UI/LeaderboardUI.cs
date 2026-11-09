@@ -20,8 +20,8 @@ public class LeaderboardUI : MonoBehaviour
     private Action _onCloseCallback;
 
     // Sekme Butonları
-    private Button _tabEndlessBtn, _tabTimeAttackBtn, _tabBulletHellBtn, _tabBossRushBtn;
-    private TextMeshProUGUI _tabEndlessTMP, _tabTimeAttackTMP, _tabBulletHellTMP, _tabBossRushTMP;
+    private Button _tabEndlessBtn, _tabTimeAttackBtn, _tabBulletHellBtn, _tabBossRushBtn, _tabHardcoreBtn;
+    private TextMeshProUGUI _tabEndlessTMP, _tabTimeAttackTMP, _tabBulletHellTMP, _tabBossRushTMP, _tabHardcoreTMP;
 
     // Başlık ve Bilgilendirme
     private TextMeshProUGUI _callsignTMP;
@@ -206,13 +206,14 @@ public class LeaderboardUI : MonoBehaviour
         tabRt.anchoredPosition = new Vector2(0f, -114f);
         tabRt.sizeDelta = new Vector2(840f, 40f);
 
-        float tabW = 205f;
-        float startX = -312f;
+        float tabW = 162f;
+        float startX = -336f;
 
-        _tabEndlessBtn = CreateTabBtn(tabsObj.transform, "TabEndless", "SONSUZ İT DALAŞI", startX + (tabW + 6f) * 0, () => SetTab(LeaderboardManager.BoardMode.Endless), out _tabEndlessTMP);
-        _tabTimeAttackBtn = CreateTabBtn(tabsObj.transform, "TabTimeAttack", "ZAMAN TAARRUZU", startX + (tabW + 6f) * 1, () => SetTab(LeaderboardManager.BoardMode.TimeAttack), out _tabTimeAttackTMP);
-        _tabBulletHellBtn = CreateTabBtn(tabsObj.transform, "TabBulletHell", "MERMİ CEHENNEMİ", startX + (tabW + 6f) * 2, () => SetTab(LeaderboardManager.BoardMode.BulletHell), out _tabBulletHellTMP);
-        _tabBossRushBtn = CreateTabBtn(tabsObj.transform, "TabBossRush", "BOSS RUSH", startX + (tabW + 6f) * 3, () => SetTab(LeaderboardManager.BoardMode.BossRush), out _tabBossRushTMP);
+        _tabEndlessBtn = CreateTabBtn(tabsObj.transform, "TabEndless", "SONSUZ", startX + (tabW + 6f) * 0, () => SetTab(LeaderboardManager.BoardMode.Endless), out _tabEndlessTMP);
+        _tabHardcoreBtn = CreateTabBtn(tabsObj.transform, "TabHardcore", "☠ HARDCORE", startX + (tabW + 6f) * 1, () => SetTab(LeaderboardManager.BoardMode.Hardcore), out _tabHardcoreTMP);
+        _tabBossRushBtn = CreateTabBtn(tabsObj.transform, "TabBossRush", "BOSS RUSH", startX + (tabW + 6f) * 2, () => SetTab(LeaderboardManager.BoardMode.BossRush), out _tabBossRushTMP);
+        _tabTimeAttackBtn = CreateTabBtn(tabsObj.transform, "TabTimeAttack", "ZAMAN TAARRUZU", startX + (tabW + 6f) * 3, () => SetTab(LeaderboardManager.BoardMode.TimeAttack), out _tabTimeAttackTMP);
+        _tabBulletHellBtn = CreateTabBtn(tabsObj.transform, "TabBulletHell", "MERMİ CEHENNEMİ", startX + (tabW + 6f) * 4, () => SetTab(LeaderboardManager.BoardMode.BulletHell), out _tabBulletHellTMP);
 
         // 4. SENİN DERECEN / KİŞİSEL EN İYİ REKOR KARTI
         GameObject myCard = new GameObject("PlayerBestCard");
@@ -380,9 +381,10 @@ public class LeaderboardUI : MonoBehaviour
     private void UpdateTabVisuals()
     {
         SetTabStyle(_tabEndlessBtn, _tabEndlessTMP, _currentMode == LeaderboardManager.BoardMode.Endless);
+        SetTabStyle(_tabHardcoreBtn, _tabHardcoreTMP, _currentMode == LeaderboardManager.BoardMode.Hardcore);
+        SetTabStyle(_tabBossRushBtn, _tabBossRushTMP, _currentMode == LeaderboardManager.BoardMode.BossRush);
         SetTabStyle(_tabTimeAttackBtn, _tabTimeAttackTMP, _currentMode == LeaderboardManager.BoardMode.TimeAttack);
         SetTabStyle(_tabBulletHellBtn, _tabBulletHellTMP, _currentMode == LeaderboardManager.BoardMode.BulletHell);
-        SetTabStyle(_tabBossRushBtn, _tabBossRushTMP, _currentMode == LeaderboardManager.BoardMode.BossRush);
     }
 
     private void SetTabStyle(Button btn, TextMeshProUGUI tmp, bool isSelected)

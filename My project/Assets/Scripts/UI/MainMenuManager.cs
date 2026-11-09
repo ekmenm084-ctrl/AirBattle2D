@@ -39,6 +39,7 @@ public class MainMenuManager : MonoBehaviour
     private Button _bossRushButton;
     private Button _bulletHellButton;
     private Button _timeAttackButton;
+    private Button _hardcoreButton;
     private Button _modesDiffEasyBtn;
     private Button _modesDiffNormalBtn;
     private Button _modesDiffHardBtn;
@@ -647,10 +648,15 @@ public class MainMenuManager : MonoBehaviour
         _timeAttackButton.onClick.RemoveAllListeners();
         _timeAttackButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.TimeAttack));
 
-        // 8. Online 2 Oyunculu Düello
+        // 8. Hardcore Modu (Tek Can, 200 HP, Her Uçak Giderek Güçlenen Boss)
+        _hardcoreButton = CreateOrFindModesButton("HardcoreModeBtn", -72f, "☠ [HARDCORE] 1 CAN BOSS", new Color(0.75f, 0.12f, 0.12f), 264f, 44f, posX: -138f);
+        _hardcoreButton.onClick.RemoveAllListeners();
+        _hardcoreButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Hardcore));
+
+        // 9. Online 2 Oyunculu Düello
         if (onlineButton != null)
         {
-            FormatBtn(onlineButton, -72f, "ONLINE: 2 OYUNCULU DÜELLO", new Color(0.28f, 0.20f, 0.45f), 540f, 42f);
+            FormatBtn(onlineButton, -72f, "ONLINE: 2P DUELLO", new Color(0.28f, 0.20f, 0.45f), 264f, 44f, posX: 138f);
             onlineButton.onClick.RemoveAllListeners();
             onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
         }
@@ -685,6 +691,7 @@ public class MainMenuManager : MonoBehaviour
                 LeaderboardManager.BoardMode targetBoard = GameSettings.SelectedMode switch
                 {
                     GameSettings.GameMode.Endless => LeaderboardManager.BoardMode.Endless,
+                    GameSettings.GameMode.Hardcore => LeaderboardManager.BoardMode.Hardcore,
                     GameSettings.GameMode.TimeAttack => LeaderboardManager.BoardMode.TimeAttack,
                     GameSettings.GameMode.BulletHell => LeaderboardManager.BoardMode.BulletHell,
                     GameSettings.GameMode.BossRush => LeaderboardManager.BoardMode.BossRush,
@@ -1016,6 +1023,7 @@ public class MainMenuManager : MonoBehaviour
         bool isBossRush = (GameSettings.SelectedMode == GameSettings.GameMode.BossRush);
         bool isBulletHell = (GameSettings.SelectedMode == GameSettings.GameMode.BulletHell);
         bool isTimeAttack = (GameSettings.SelectedMode == GameSettings.GameMode.TimeAttack);
+        bool isHardcore = (GameSettings.SelectedMode == GameSettings.GameMode.Hardcore);
         bool isSolo = (GameSettings.SelectedMode == GameSettings.GameMode.Solo);
         var activeCamp = StoryCampaignManager.CurrentCampaign;
 
@@ -1026,6 +1034,7 @@ public class MainMenuManager : MonoBehaviour
         Highlight(_bossRushButton, isBossRush);
         Highlight(_bulletHellButton, isBulletHell);
         Highlight(_timeAttackButton, isTimeAttack);
+        Highlight(_hardcoreButton, isHardcore);
         Highlight(onlineButton, isOnline);
 
         // 4. Modlar Paneli Brifing Metni
@@ -1081,6 +1090,11 @@ public class MainMenuManager : MonoBehaviour
                 {
                     int best = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
                     playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FFD54F>[ZAMAN TAARRUZU (Rekor: {best} İMHA)]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
+                }
+                else if (isHardcore)
+                {
+                    int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FF2A2A>[HARDCORE (Rekor: {bestHc} Boss)]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
                 }
                 else
                 {
@@ -1167,6 +1181,15 @@ public class MainMenuManager : MonoBehaviour
             int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
             _briefingTMP.text = $"<color=#FFD54F><b>[ZAMAN TAARRUZU - HIZ HAREKATI]</b></color> • Rekor: <b>{bestKills} Uçak</b>\n" +
                                 "60 saniyeyle başla! Her uçak <b>+4 sn</b>, Bosslar <b>+8 sn</b> ekler! Durmaksızın avlan!\n" +
+                                $"{diffStats}";
+        }
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.Hardcore)
+        {
+            int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+            _briefingTMP.text = $"<color=#FF2A2A><b>[HARDCORE MODU: TEK CAN]</b></color> • En Yüksek: <b>{bestHc} Boss</b>\n" +
+                                "• Sadece <b>1 Can Hakkı</b> (Yedek can yok, permadeath!).\n" +
+                                "• Uçağın <b>200 HP</b> takviyeli gövdeye sahip.\n" +
+                                "• <b>HER GELEN DÜŞMAN UÇAĞI BİR ÖNCEKİNDEN DAHA GÜÇLÜ BİR BOSS!</b>\n" +
                                 $"{diffStats}";
         }
         else

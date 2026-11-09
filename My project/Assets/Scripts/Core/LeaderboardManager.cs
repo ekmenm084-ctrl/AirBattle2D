@@ -19,7 +19,8 @@ public class LeaderboardManager : MonoBehaviour
         Endless = 0,     // Sonsuz İt Dalaşı (Dalga Sayısı)
         TimeAttack = 1,  // Zaman Taarruzu (60s İmha Sayısı)
         BulletHell = 2,  // Mermi Cehennemi (Hayatta Kalma Süresi)
-        BossRush = 3     // Boss Rush (Elenen Boss / Süre Skoru)
+        BossRush = 3,    // Boss Rush (Elenen Boss / Süre Skoru)
+        Hardcore = 4     // Hardcore Modu (Tek Can, 200 HP, İlerlenen Boss Sayısı)
     }
 
     [System.Serializable]
@@ -168,6 +169,7 @@ public class LeaderboardManager : MonoBehaviour
             BoardMode.TimeAttack => PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0),
             BoardMode.BulletHell => Mathf.RoundToInt(PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f)),
             BoardMode.BossRush => PlayerPrefs.GetInt("AirBattle_BossRushHighScore", 0),
+            BoardMode.Hardcore => PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0),
             _ => 0
         };
     }
@@ -321,6 +323,18 @@ public class LeaderboardManager : MonoBehaviour
                 ("Astsubay Glider", 30, 30f, "Kıdemli Başçavuş"),
                 ("Çavuş Breeze", 20, 20f, "Uçuş Çavuşu")
             },
+            BoardMode.Hardcore => new[]
+            {
+                ("Mareşal GökKürşad", 24, 0f, "Efsanevi Mareşal"),
+                ("Albay DemirYumruk", 18, 0f, "Taktik Hava Albayı"),
+                ("Yarbay Titan", 14, 0f, "Hava Kurmay Yarbay"),
+                ("Binbaşı Kasırga", 11, 0f, "Filo As Binbaşısı"),
+                ("Yüzbaşı Ecel", 8, 0f, "Hava Yüzbaşısı"),
+                ("Üsteğmen Bıçak", 6, 0f, "Kıdemli Üsteğmen"),
+                ("Teğmen ÇelikKanat", 4, 0f, "Hava Kıdemli Teğmen"),
+                ("Astsubay Bozkurt", 2, 0f, "Kıdemli Başçavuş"),
+                ("Çavuş Barut", 1, 0f, "Uçuş Çavuşu")
+            },
             _ => new[] // Boss Rush
             {
                 ("Albay TitanSlayer", 400, 75f, "Taktik Hava Albayı"),
@@ -414,6 +428,7 @@ public class LeaderboardManager : MonoBehaviour
             BoardMode.TimeAttack => $"{score} İMHA",
             BoardMode.BulletHell => FormatTime(timeSeconds > 0 ? timeSeconds : score),
             BoardMode.BossRush => (score >= 400) ? $"4/4 BOSS ({FormatTime(timeSeconds)})" : $"{score / 100}/4 BOSS",
+            BoardMode.Hardcore => $"{score} BOSS İMHA",
             _ => score.ToString()
         };
     }

@@ -1059,10 +1059,13 @@ public class GameUI : MonoBehaviour
                 {
                     int lives = GameManager.Instance != null ? GameManager.Instance.player1Lives : 3;
                     string hearts = GetHeartsDisplay(lives);
+                    string livesDisplay = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
+                        ? "<color=#FF2222><b>[TEK CAN: ☠]</b></color>"
+                        : hearts;
                     string shieldTxt = (PlayerUpgradeManager.Instance != null && PlayerUpgradeManager.Instance.currentShield > 0f)
                         ? $" <color=#00E5FF>[KALKAN: {Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color>"
                         : "";
-                    _p1TmpLabel.text = $"CAN: %{hpInt} ({rawHp} HP){shieldTxt} | {hearts}";
+                    _p1TmpLabel.text = $"CAN: %{hpInt} ({rawHp} HP){shieldTxt} | {livesDisplay}";
                 }
             }
         }
@@ -1102,6 +1105,11 @@ public class GameUI : MonoBehaviour
                     {
                         _p2TmpLabel.text = $"CEHENNEM KALESİ: %{hpInt} ({rawHp} HP)";
                         _p2TmpLabel.color = new Color(1f, 0.25f, 0.55f);
+                    }
+                    else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
+                    {
+                        _p2TmpLabel.text = $"☠ HARDCORE BOSS #{wave}: %{hpInt} ({rawHp} HP)";
+                        _p2TmpLabel.color = new Color(1f, 0.25f, 0.25f);
                     }
                     else if (isBoss)
                     {
@@ -1153,6 +1161,11 @@ public class GameUI : MonoBehaviour
                     else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TimeAttack)
                     {
                         _waveBadgeTMP.text = $"ZAMAN TAARRUZU: 60.0s • İMHA: 0 {diffTag}";
+                    }
+                    else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
+                    {
+                        int best = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                        _waveBadgeTMP.text = $"<color=#FF2222>☠ HARDCORE BOSS #{wave}</color> (REKOR: {best}) {diffTag}";
                     }
                     else
                     {

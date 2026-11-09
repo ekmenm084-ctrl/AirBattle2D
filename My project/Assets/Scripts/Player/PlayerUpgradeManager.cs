@@ -375,16 +375,19 @@ public class PlayerUpgradeManager : MonoBehaviour
             new Color(0.3f, 0.6f, 1f)
         ));
 
-        // 6. Ekstra Can Hakkı (Yedek Uçak)
-        pool.Add(new UpgradeOption(
-            UpgradeType.ExtraLife,
-            "YEDEK SAVAŞ JETİ (+1 CAN)",
-            "[HAYATTA KALMA]",
-            "Filoya ilave 1 yedek uçak kazandırır! Düşsen bile bir can hakkı daha elde edersin.",
-            "+1 Yedek Can Hakkı",
-            "[+1 CAN]",
-            new Color(1f, 0.35f, 0.65f)
-        ));
+        // 6. Ekstra Can Hakkı (Yedek Uçak - Hardcore modunda tek can kuralı nedeniyle devre dışıdır)
+        if (GameManager.Instance == null || GameManager.Instance.CurrentMode != GameManager.GameMode.Hardcore)
+        {
+            pool.Add(new UpgradeOption(
+                UpgradeType.ExtraLife,
+                "YEDEK SAVAŞ JETİ (+1 CAN)",
+                "[HAYATTA KALMA]",
+                "Filoya ilave 1 yedek uçak kazandırır! Düşsen bile bir can hakkı daha elde edersin.",
+                "+1 Yedek Can Hakkı",
+                "[+1 CAN]",
+                new Color(1f, 0.35f, 0.65f)
+            ));
+        }
 
         // Havuzdan rastgele 3 tanesini seç
         Shuffle(pool);
@@ -492,6 +495,12 @@ public class PlayerUpgradeManager : MonoBehaviour
                 break;
 
             case UpgradeType.ExtraLife:
+                if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
+                {
+                    // Hardcore modunda ekstra can hakkı verilemez (Tek can kuralı)
+                    upgradeTitle = "[HARDCORE] TEK CAN KURALI GEÇERLİ!";
+                    break;
+                }
                 extraLivesGranted++;
                 if (GameManager.Instance != null)
                 {

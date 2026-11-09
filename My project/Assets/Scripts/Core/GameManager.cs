@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    public enum GameMode { SoloVsAI, TwoPlayer, Endless, BossRush, BulletHell, TimeAttack }
+    public enum GameMode { SoloVsAI, TwoPlayer, Endless, BossRush, BulletHell, TimeAttack, Hardcore }
     public GameMode CurrentMode { get; private set; } = GameMode.SoloVsAI;
 
     [Header("20 Uçaklık İlerleme Modu")]
@@ -73,6 +73,21 @@ public class GameManager : MonoBehaviour
         ApplyGameMode();
     }
 
+    private void Update()
+    {
+        // Eğer oyun duraklatılmamışsa, menüde değilse veya oyun bitmemişse,
+        // Time.timeScale'in anormal şekilde ağır çekimde takılı kalmasını mutlak olarak engelle
+        if (!gameEnded && Time.timeScale > 0.001f && Time.timeScale < 0.95f)
+        {
+            // Boss Rush final sinematik ağır çekimi hariç zamanı daima 1.0x hızına sabitle
+            if (CurrentMode != GameMode.BossRush || currentPlaneIndex < 4)
+            {
+                Time.timeScale = 1.0f;
+                Time.fixedDeltaTime = 0.02f;
+            }
+        }
+    }
+
     /// <summary>
     /// Menüden seçilen Modu (Solo, 2 Oyunculu, Sonsuz İt Dalaşı, Boss Rush) sahneye uygular.
     /// </summary>
@@ -93,6 +108,8 @@ public class GameManager : MonoBehaviour
             CurrentMode = GameMode.BulletHell;
         else if (GameSettings.SelectedMode == GameSettings.GameMode.TimeAttack)
             CurrentMode = GameMode.TimeAttack;
+        else if (GameSettings.SelectedMode == GameSettings.GameMode.Hardcore)
+            CurrentMode = GameMode.Hardcore;
         else
             CurrentMode = GameMode.SoloVsAI;
 
@@ -161,6 +178,20 @@ public class GameManager : MonoBehaviour
             ShowActiveModeIntroBanner();
             StartTimeAttackMode();
         }
+        else if (CurrentMode == GameMode.Hardcore)
+        {
+            player1Lives = 1; // SADECE 1 CAN HAKKI (Permadeath)
+            currentPlaneIndex = 1;
+            if (plane1Health != null)
+            {
+                plane1Health.ResetHealth(200f); // UÇAĞIMIZIN CAN BARI 200 OLACAK
+            }
+            PlayerUpgradeManager.EnsureInstance();
+            UpgradeSelectionUI.EnsureInstance();
+            EnemyFormationManager.EnsureInstance()?.StartDirector();
+            ShowActiveModeIntroBanner();
+            ApplyEnemyWave(currentPlaneIndex);
+        }
         else
         {
             player1Lives = MaxPlayerLives;
@@ -210,7 +241,7 @@ public class GameManager : MonoBehaviour
     public int GetTotalPlanesForMode()
     {
         if (CurrentMode == GameMode.BossRush) return 4;
-        if (CurrentMode == GameMode.Endless || CurrentMode == GameMode.TimeAttack) return 999;
+        if (CurrentMode == GameMode.Endless || CurrentMode == GameMode.TimeAttack || CurrentMode == GameMode.Hardcore) return 999;
         if (CurrentMode == GameMode.BulletHell) return 1;
         return MaxPlanes;
     }
@@ -233,11 +264,16 @@ public class GameManager : MonoBehaviour
     {
         if (CurrentMode == GameMode.BossRush) return true;
         if (CurrentMode == GameMode.BulletHell) return true;
+        if (CurrentMode == GameMode.Hardcore) return true; // HER GELEN DÜŞMAN UÇAĞI BOSS!
         return (index % 5 == 0);
     }
 
     public string GetCurrentPlaneTitle(int index)
     {
+        if (CurrentMode == GameMode.Hardcore)
+        {
+            return $"HARDCORE BOSS #{index}";
+        }
         int effectiveIndex = GetEffectiveWaveIndex(index);
         return StoryCampaignManager.GetPlaneTitle(effectiveIndex);
     }
@@ -257,6 +293,13 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public float GetPlaneHealthForWave(int index)
     {
+        if (CurrentMode == GameMode.Hardcore)
+        {
+            // Hardcore Modu: 1. Boss 180 HP, her gelen boss +65 HP daha fazla cana sahip!
+            float hcBaseHp = 115f + (index * 65f);
+            return Mathf.Round(hcBaseHp * GetDifficultyHealthMultiplier());
+        }
+
         int eff = GetEffectiveWaveIndex(index);
         float baseHp = 0f;
         switch (eff)
@@ -299,6 +342,10 @@ public class GameManager : MonoBehaviour
     {
         if (plane2Health == null) return;
 
+        // Dalga başlangıcında zaman hızının kesinlikle normale (1.0x) dönmesini sağla
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
+
         int effIndex = GetEffectiveWaveIndex(waveIndex);
         bool isBoss = IsBossPlane(waveIndex);
         float hp = GetPlaneHealthForWave(waveIndex);
@@ -330,15 +377,33 @@ public class GameManager : MonoBehaviour
 
         if (isBoss)
         {
-            float scaleMultiplier = (effIndex >= 20) ? 1.55f : (effIndex >= 15 ? 1.45f : (effIndex >= 10 ? 1.38f : 1.28f));
+            float scaleMultiplier = (CurrentMode == GameMode.Hardcore)
+                ? Mathf.Min(1.68f, 1.28f + (waveIndex * 0.035f))
+                : ((effIndex >= 20) ? 1.55f : (effIndex >= 15 ? 1.45f : (effIndex >= 10 ? 1.38f : 1.28f)));
             planeTransform.localScale = _plane2OriginalScale * scaleMultiplier;
 
             if (sr != null)
             {
-                if (effIndex <= 5) sr.color = new Color(1f, 0.85f, 0.45f); // Altın Sarısı / Taktik
-                else if (effIndex <= 10) sr.color = new Color(0.9f, 0.45f, 1f); // Mor Gölge Phantom
-                else if (effIndex <= 15) sr.color = new Color(1f, 0.35f, 0.2f); // Kor Alev Lav
-                else sr.color = new Color(1f, 0.8f, 0.15f); // İmparatorluk Altını Final Boss
+                if (CurrentMode == GameMode.Hardcore)
+                {
+                    Color[] hcColors = new Color[]
+                    {
+                        new Color(1f, 0.38f, 0.32f),  // 1: Kan Kırmızısı
+                        new Color(1f, 0.62f, 0.15f),  // 2: Lav Turuncusu
+                        new Color(0.85f, 0.28f, 1.0f), // 3: Mor Kıyamet
+                        new Color(0.18f, 0.95f, 0.85f), // 4: Plazma Şimşek
+                        new Color(1f, 0.12f, 0.12f),  // 5: Saf Kızıl Şeytan
+                        new Color(1f, 0.88f, 0.18f)   // 6+: İmparatorluk Altını
+                    };
+                    sr.color = hcColors[(waveIndex - 1) % hcColors.Length];
+                }
+                else
+                {
+                    if (effIndex <= 5) sr.color = new Color(1f, 0.85f, 0.45f); // Altın Sarısı / Taktik
+                    else if (effIndex <= 10) sr.color = new Color(0.9f, 0.45f, 1f); // Mor Gölge Phantom
+                    else if (effIndex <= 15) sr.color = new Color(1f, 0.35f, 0.2f); // Kor Alev Lav
+                    else sr.color = new Color(1f, 0.8f, 0.15f); // İmparatorluk Altını Final Boss
+                }
             }
         }
         else
@@ -351,16 +416,22 @@ public class GameManager : MonoBehaviour
         var ai = plane2Health.GetComponent<AIController>();
         if (ai != null)
         {
-            ai.ConfigureWave(effIndex, isBoss);
+            ai.ConfigureWave(waveIndex, isBoss);
         }
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateHealthBars();
 
-        // Boss dalgası ise geçişli cümleli Boss Tanıtım sinematiğini oynat
+        // Boss dalgası ise bildirim veya tanıtım sinematiğini oynat
         if (isBoss)
         {
-            if (isBossRushFinal)
+            if (CurrentMode == GameMode.Hardcore)
+            {
+                gameUI?.ShowWaveAlert($"☠ HARDCORE BOSS #{waveIndex} GİRDİ! ☠\n<color=#FF2222>ZIRH: {hp} HP • TEK CANIN VAR!</color>", new Color(1f, 0.2f, 0.2f), 2.2f);
+                CameraShake.Shake(0.28f, 0.35f);
+                AudioManager.Instance?.PlayExplosion(isBoss: true);
+            }
+            else if (isBossRushFinal)
             {
                 if (StoryCampaignManager.EnsureInstance() != null)
                 {
@@ -555,6 +626,26 @@ public class GameManager : MonoBehaviour
                     LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossScore);
                     defeatMsg = $"BOSS RUSH BAŞARISIZ!\nELENEN BOSS: {currentPlaneIndex - 1} / 4";
                 }
+                else if (CurrentMode == GameMode.Hardcore)
+                {
+                    int defeatedBosses = Mathf.Max(0, currentPlaneIndex - 1);
+                    int bestHardcore = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                    bool newRecord = defeatedBosses > bestHardcore;
+                    if (newRecord)
+                    {
+                        PlayerPrefs.SetInt("AirBattle_HardcoreHighScore", defeatedBosses);
+                        PlayerPrefs.Save();
+                    }
+                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.Hardcore, defeatedBosses);
+
+                    int rewardGold = defeatedBosses * 60;
+                    HangarManager.EnsureInstance()?.AddGold(rewardGold);
+                    sessionGoldEarned += rewardGold;
+
+                    defeatMsg = newRecord
+                        ? $"☠ <b><color=#FF2222>YENİ HARDCORE REKORU!</color></b> ☠\n<color=#FFD54F>İMHA EDİLEN BOSS: {defeatedBosses}</color>\nÖNCEKİ REKOR: {bestHardcore}\n<color=#2ECC71>+{rewardGold} ALTIN KAZANILDI!</color>"
+                        : $"☠ <b>HARDCORE GÖREVİ SONA ERDİ</b> ☠\nİMHA EDİLEN BOSS: {defeatedBosses}\nEN İYİ REKOR: {bestHardcore}\n<color=#FFE082>+{rewardGold} ALTIN KAZANILDI!</color>";
+                }
                 else
                 {
                     defeatMsg = $"GÖREV BAŞARISIZ!\nTÜM CAN HAKLARI TÜKENDİ!\nİLERLEME: UÇAK {currentPlaneIndex} / {MaxPlanes}";
@@ -672,9 +763,12 @@ public class GameManager : MonoBehaviour
 
                     var gameUI = FindObjectOfType<GameUI>();
 
-                    // SONSUZ İT DALAŞI MODU ÖZEL CAN ÖDÜLÜ:
-                    // Her 20. Boss zaferinde (ve 20'nin katı olan her büyük boss dalgasında) sorulmadan doğrudan +1 Can Hakkı ekle!
-                    if (CurrentMode == GameMode.Endless && (justDefeated % 20 == 0 || (justDefeated / 5) % 20 == 0))
+                    if (CurrentMode == GameMode.Hardcore)
+                    {
+                        plane1Health?.Heal(50f); // 200 HP can barı için gövde tamiri ödülü
+                        gameUI?.ShowWaveAlert($"☠ BOSS #{justDefeated} İMHA EDİLDİ! (+{bossReward}G)\n<color=#FF3333>+50 HP TAMİR EDİLDİ • HANGAR AÇILIYOR</color>", new Color(1f, 0.25f, 0.25f), 2.2f);
+                    }
+                    else if (CurrentMode == GameMode.Endless && (justDefeated % 20 == 0 || (justDefeated / 5) % 20 == 0))
                     {
                         player1Lives++;
                         AudioManager.Instance?.PlayRewardFanfare();
@@ -749,6 +843,8 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator SpawnNextEnemyRoutine(float delay)
     {
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
         yield return new WaitForSeconds(delay);
 
         if (!gameEnded)
@@ -1205,6 +1301,14 @@ public class GameManager : MonoBehaviour
                 subtitle = $"60 SANİYELİK YILDIRIM OPERASYONU • EN İYİ REKOR: {bestKills} İMHA";
                 desc = "Süre daralıyor! 60 saniye içinde indirebildiğin kadar uçak avla, her imhada ek süre kazan!";
                 color = new Color(1f, 0.85f, 0.2f);
+                break;
+
+            case GameMode.Hardcore:
+                int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                title = "☠ HARDCORE MODU ☠";
+                subtitle = $"TEK CAN • 200 HP GÖVDE • EN İYİ REKOR: {bestHc} BOSS";
+                desc = "Her gelen düşman bir öncekinden daha zırhlı ve güçlü bir Boss! İkinci bir şansın yok, tek canla savaş!";
+                color = new Color(1f, 0.18f, 0.18f);
                 break;
 
             case GameMode.TwoPlayer:

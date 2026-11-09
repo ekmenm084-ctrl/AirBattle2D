@@ -127,7 +127,31 @@ public class AIController : MonoBehaviour
                 break;
         }
 
-        // 2. BOSS VEYA STANDART UÇAK PARAMETRELERİ
+        // 2. HARDCORE MODU ÖZEL BOSS ÖLÇEKLENDİRMESİ
+        if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
+        {
+            // Her gelen düşman uçağı bir öncekinden daha çevik, seri ve güçlü bir BOSS!
+            float hcProgress = Mathf.Clamp01((wave - 1f) / 10f); // 1. Boss'tan 10. Boss'a doğru maksimuma tırmanış
+            reactionSpeed = Mathf.Lerp(0.18f, 0.05f, hcProgress) * reactionMod;
+            fireInterval = Mathf.Lerp(0.80f, 0.35f, hcProgress) * fireRateMod;
+            aimToleranceX = Mathf.Lerp(0.95f, 1.45f, hcProgress);
+            dodgeChance = Mathf.Lerp(0.28f, 0.65f, hcProgress) * dodgeMod;
+
+            if (_controller != null)
+                _controller.moveSpeed = Mathf.Lerp(5.8f, 8.8f, hcProgress) * speedMod;
+
+            if (_shooter != null)
+            {
+                _shooter.fireRate = fireInterval;
+                // Boss 1-2: 2 Namlu, Boss 3-5: 3 Namlu, Boss 6+: 4 Namlu!
+                _shooter.bulletsPerShot = (wave >= 6) ? 4 : (wave >= 3 ? 3 : 2);
+                _shooter.bulletSpread = 0.38f;
+                _shooter.bulletDamage = (15f + Mathf.Min(wave * 2.2f, 22f)) * damageMod;
+            }
+            return;
+        }
+
+        // 3. BOSS VEYA STANDART UÇAK PARAMETRELERİ
         if (isBoss)
         {
             // Bosslar: Dengeli ama Zor modda gerçek bir ecel terleten savaş
