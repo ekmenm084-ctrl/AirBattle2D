@@ -173,14 +173,26 @@ public class MainMenuManager : MonoBehaviour
         if (backgroundImage == null)
             backgroundImage = GetComponent<Image>();
 
+        // Arka plan için MenuRoot altında izole ve daima en arkada (Index 0) duracak konteyner nesnesi
+        Transform existingContainer = transform.Find("MenuDynamicBackground_Root");
+        GameObject bgObj = existingContainer != null ? existingContainer.gameObject : new GameObject("MenuDynamicBackground_Root");
+        bgObj.transform.SetParent(transform, false);
+        bgObj.transform.SetAsFirstSibling(); // Kesinlikle en arkada kalsın
+
+        RectTransform bgRt = bgObj.GetComponent<RectTransform>() ?? bgObj.AddComponent<RectTransform>();
+        MakeFullScreenRect(bgRt);
+
+        DynamicStormBackground.AttachTo(bgObj, backgroundImage != null ? backgroundImage.sprite : null);
+
         if (backgroundImage != null)
         {
-            if (backgroundImage.sprite != null && backgroundImage.sprite.name != "Background")
-            {
-                backgroundImage.color = Color.white;
-                return;
-            }
+            backgroundImage.color = new Color(0f, 0f, 0f, 0f);
+            backgroundImage.raycastTarget = false;
         }
+
+        // Ana Menü paneli ve Başlık nesnesinin arka planın önünde yer almasını mutlak sağla
+        if (mainPanel != null) mainPanel.transform.SetAsLastSibling();
+        if (_titleObject != null) _titleObject.transform.SetAsLastSibling();
     }
 
     private void SetupAviationHeader()
@@ -189,6 +201,8 @@ public class MainMenuManager : MonoBehaviour
         if (existingTitle != null)
         {
             _titleObject = existingTitle.gameObject;
+            var existingTmp = _titleObject.GetComponent<TextMeshProUGUI>();
+            if (existingTmp != null) existingTmp.raycastTarget = false;
             return;
         }
 
@@ -199,23 +213,41 @@ public class MainMenuManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(850f, 150f);
-        rt.anchoredPosition = new Vector2(0f, 225f);
+        rt.sizeDelta = new Vector2(850f, 120f);
+        rt.anchoredPosition = new Vector2(0f, 275f); // 275f: HAREKATA BAŞLA butonunun (150f) 65 piksel güvenli yukarısında
 
         TextMeshProUGUI tmp = _titleObject.AddComponent<TextMeshProUGUI>();
         tmp.text = "AIR BATTLE 2D\n<size=42%><color=#F1C40F>- İT DALAŞI HAREKATI -</color></size>";
-        tmp.fontSize = 58f; // 46f -> 58f (+12f)
+        tmp.fontSize = 54f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = new Color(0.95f, 0.95f, 1f);
         tmp.extraPadding = true;
         tmp.outlineWidth = 0.22f;
         tmp.outlineColor = Color.black;
+        tmp.raycastTarget = false; // Tıklamaları kesinlikle engellemez
     }
 
     private void FormatMilitaryButtons()
     {
+        if (playButton == null && mainPanel != null)
+        {
+            Transform pBtn = mainPanel.transform.Find("playButton") ?? mainPanel.transform.Find("PlayButton");
+            if (pBtn != null) playButton = pBtn.GetComponent<Button>();
+        }
+
         FormatBtn(playButton, 150f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 56f);
+
+        if (playButton != null)
+        {
+            playButton.interactable = true;
+            playButton.onClick.RemoveAllListeners();
+            playButton.onClick.AddListener(OnPlayClicked);
+            playButton.transform.SetAsLastSibling();
+
+            Image pImg = playButton.GetComponent<Image>();
+            if (pImg != null) pImg.raycastTarget = true;
+        }
 
         _hangarButton = CreateOrFindMainButton("HangarButton", 96f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 46f);
         if (_hangarButton != null)
@@ -393,6 +425,7 @@ public class MainMenuManager : MonoBehaviour
         if (img != null)
         {
             img.color = color;
+            img.raycastTarget = true;
         }
 
         TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
@@ -406,6 +439,7 @@ public class MainMenuManager : MonoBehaviour
             tmp.extraPadding = true;
             tmp.outlineWidth = 0.20f;
             tmp.outlineColor = Color.black;
+            tmp.raycastTarget = false; // Metin butonun tıklamasını kesinlikle engellemesin
         }
     }
 
@@ -551,10 +585,17 @@ public class MainMenuManager : MonoBehaviour
     public void OpenMainPanel()
     {
         if (backgroundImage != null) backgroundImage.enabled = true;
-        if (mainPanel != null) mainPanel.SetActive(true);
+        if (_titleObject != null)
+        {
+            _titleObject.SetActive(true);
+        }
+        if (mainPanel != null)
+        {
+            mainPanel.SetActive(true);
+            mainPanel.transform.SetAsLastSibling(); // MainPanel ve butonları daima en önde
+        }
         if (modesPanel != null) modesPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
-        if (_titleObject != null) _titleObject.SetActive(true);
 
         PlayerProfileUI.Instance?.ShowMenuStatusBar();
 
@@ -563,6 +604,11 @@ public class MainMenuManager : MonoBehaviour
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
         if (InventoryUI.Instance != null) InventoryUI.Instance.CloseDirectly();
         if (LeaderboardUI.Instance != null) LeaderboardUI.Instance.CloseLeaderboard();
+
+        // Menüdeyken oyun içi tüm HUD ve dokunmatik kontrollerin gizli kalmasını sağla
+        SetTouchControlsVisibility(false, false);
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.SetHUDVisibility(false);
     }
 
     public void OpenModesPanel()
@@ -1097,6 +1143,7 @@ public class MainMenuManager : MonoBehaviour
             TextMeshProUGUI playTMP = playButton.GetComponentInChildren<TextMeshProUGUI>();
             if (playTMP != null)
             {
+                playTMP.raycastTarget = false;
                 if (isOnline)
                 {
                     playTMP.text = "HAREKATA BAŞLA\n<size=62%><color=#D1C4E9>[ONLINE: 2 OYUNCULU DÜELLO]</color></size>";

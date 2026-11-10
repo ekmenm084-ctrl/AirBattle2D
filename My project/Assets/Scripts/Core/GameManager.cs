@@ -62,10 +62,9 @@ public class GameManager : MonoBehaviour
     {
         GameSettings.LoadSettings();
 
-        // Eğer sahnede Ana Menü açıksa oyunu ve alt yazıyı burada başlatma!
-        // Yalnızca oyuncu menüden "HAREKATA BAŞLA" butonuna bastığında ApplyGameMode() çalışacaktır.
-        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
-        if (menu != null && menu.gameObject.activeInHierarchy)
+        // Eğer sahnede Ana Menü mevcutsa (veya Instance varsa), oyunu ve alt yazıyı burada başlatma!
+        // Yalnızca oyuncu ana menüden "HAREKATA BAŞLA" butonuna bastığında ApplyGameMode() çalışacaktır.
+        if (MainMenuManager.Instance != null || FindObjectOfType<MainMenuManager>() != null)
         {
             return;
         }
