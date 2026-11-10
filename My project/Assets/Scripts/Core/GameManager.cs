@@ -281,21 +281,22 @@ public class GameManager : MonoBehaviour
     {
         switch (GameSettings.SelectedDifficulty)
         {
-            case GameSettings.Difficulty.Kolay: return 0.70f; // Kolay modda %30 daha az can
-            case GameSettings.Difficulty.Zor:   return 1.45f; // Zor modda %45 daha fazla can
-            default:                            return 1.00f; // Normal mod
+            case GameSettings.Difficulty.Kolay: return 0.85f; // Kolay mod
+            case GameSettings.Difficulty.Zor:   return 1.80f; // Zor modda %80 daha fazla can (gerçek bir meydan okuma!)
+            default:                            return 1.20f; // Normal modda %20 daha dayanıklı
         }
     }
 
     /// <summary>
     /// Uçağın canını dalga numarasına VE seçilen menü zorluğuna (Kolay/Normal/Zor) göre hesaplar.
+    /// Düşman uçaklarının dayanıklılığı artırılmıştır.
     /// </summary>
     public float GetPlaneHealthForWave(int index)
     {
         if (CurrentMode == GameMode.Hardcore)
         {
-            // Hardcore Modu: 1. Boss 180 HP, her gelen boss +65 HP daha fazla cana sahip!
-            float hcBaseHp = 115f + (index * 65f);
+            // Hardcore Modu: 1. Boss 245 HP, her gelen boss +85 HP daha fazla cana sahip!
+            float hcBaseHp = 160f + (index * 85f);
             return Mathf.Round(hcBaseHp * GetDifficultyHealthMultiplier());
         }
 
@@ -303,15 +304,15 @@ public class GameManager : MonoBehaviour
         float baseHp = 0f;
         switch (eff)
         {
-            case 5:  baseHp = 160f; break; // Boss 1
-            case 10: baseHp = 240f; break; // Boss 2
-            case 15: baseHp = 320f; break; // Boss 3
-            case 20: baseHp = 420f; break; // Final Boss
+            case 5:  baseHp = 250f; break; // Boss 1 (önceki: 160)
+            case 10: baseHp = 380f; break; // Boss 2 (önceki: 240)
+            case 15: baseHp = 520f; break; // Boss 3 (önceki: 320)
+            case 20: baseHp = 700f; break; // Final Boss (önceki: 420)
             default:
                 if (eff > 20)
-                    baseHp = 220f + ((eff - 20) * 15f); // Sonsuz mod artışı
+                    baseHp = 350f + ((eff - 20) * 25f); // Sonsuz mod artışı
                 else
-                    baseHp = 70f + (eff * 6f);
+                    baseHp = 95f + (eff * 11f); // Standart uçaklar (önceki: 70 + eff*6)
                 break;
         }
 
@@ -323,7 +324,7 @@ public class GameManager : MonoBehaviour
         if (Instance != null)
             return Instance.GetPlaneHealthForWave(index);
 
-        return Mathf.Round((70f + (index * 6f)) * GetDifficultyHealthMultiplier());
+        return Mathf.Round((95f + (index * 11f)) * GetDifficultyHealthMultiplier());
     }
 
     public static string GetPlaneTitle(int index)

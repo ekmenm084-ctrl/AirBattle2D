@@ -273,10 +273,39 @@ public class PlayerUpgradeManager : MonoBehaviour
 
     /// <summary>
     /// Seçim ekranında gösterilmek üzere 3 farklı benzersiz yükseltme kartı seçer.
+    /// Süper Ateş / Seri Ateş Aşırı Yüklemesi ilk aşamalardan kaldırılmıştır; yalnızca
+    /// zorlanmaya başlanan ileri dalgalarda (Dalga 10+ veya Boss Rush/Hardcore ileri turlar) açılır.
     /// </summary>
     public List<UpgradeOption> GenerateThreeRandomOptions()
     {
         List<UpgradeOption> pool = new List<UpgradeOption>();
+
+        // Mevcut dalga numarasını kontrol et
+        int currentWave = (GameManager.Instance != null) ? GameManager.Instance.currentPlaneIndex : 1;
+        bool isLateWave = false;
+
+        if (GameManager.Instance != null)
+        {
+            switch (GameManager.Instance.CurrentMode)
+            {
+                case GameManager.GameMode.BossRush:
+                    isLateWave = (currentWave >= 3);
+                    break;
+                case GameManager.GameMode.Hardcore:
+                    isLateWave = (currentWave >= 4);
+                    break;
+                case GameManager.GameMode.Endless:
+                    isLateWave = (currentWave >= 8);
+                    break;
+                default: // SoloVsAI (Hikaye Seferi - 20 Dalga)
+                    isLateWave = (currentWave >= 10);
+                    break;
+            }
+        }
+        else
+        {
+            isLateWave = (currentWave >= 10);
+        }
 
         // 1. Silah Yükseltmesi
         if (weaponLevel == 1)
@@ -291,8 +320,9 @@ public class PlayerUpgradeManager : MonoBehaviour
                 new Color(0.95f, 0.3f, 0.2f)
             ));
         }
-        else if (weaponLevel == 2)
+        else if (weaponLevel == 2 && isLateWave)
         {
+            // Üçlü salvo yalnızca ileriki zorlu aşamalarda açılır
             pool.Add(new UpgradeOption(
                 UpgradeType.TwinCannons,
                 "ÜÇLÜ SALVO TOPU",
@@ -303,8 +333,9 @@ public class PlayerUpgradeManager : MonoBehaviour
                 new Color(1f, 0.45f, 0.1f)
             ));
         }
-        else
+        else if (weaponLevel >= 3 && isLateWave)
         {
+            // Plazma çekirdek topu yalnızca ileriki zorlu aşamalarda açılır
             pool.Add(new UpgradeOption(
                 UpgradeType.TwinCannons,
                 "PLAZMA ÇEKİRDEK TOPU",
@@ -353,16 +384,20 @@ public class PlayerUpgradeManager : MonoBehaviour
             new Color(0.2f, 0.9f, 0.4f)
         ));
 
-        // 4. Aşırı Yüklemeli Seri Ateş
-        pool.Add(new UpgradeOption(
-            UpgradeType.RapidFire,
-            "SERİ ATEŞ AŞIRI YÜKLEMESİ",
-            "[SALDIRI HIZI]",
-            "Mermi namlu döngüsünü hızlandırır (%30 daha seri ateş) ve her mermiye +6 ilave hasar ekler.",
-            "%30 Daha Hızlı Ateş & +6 Hasar",
-            "[SERİ ATEŞ]",
-            new Color(1f, 0.85f, 0.15f)
-        ));
+        // 4. Aşırı Yüklemeli Seri Ateş (Süper Ateş):
+        // İlk aşamalardan kaldırılmıştır, yalnızca zorlu ileri aşamalarda (isLateWave) listeye eklenir!
+        if (isLateWave)
+        {
+            pool.Add(new UpgradeOption(
+                UpgradeType.RapidFire,
+                "SERİ ATEŞ AŞIRI YÜKLEMESİ",
+                "[SALDIRI HIZI]",
+                "Mermi namlu döngüsünü hızlandırır (%30 daha seri ateş) ve her mermiye +6 ilave hasar ekler.",
+                "%30 Daha Hızlı Ateş & +6 Hasar",
+                "[SERİ ATEŞ]",
+                new Color(1f, 0.85f, 0.15f)
+            ));
+        }
 
         // 5. Plazma İtici Motor
         pool.Add(new UpgradeOption(

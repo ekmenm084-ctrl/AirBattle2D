@@ -53,30 +53,30 @@ public class AIController : MonoBehaviour
         switch (GameSettings.SelectedDifficulty)
         {
             case GameSettings.Difficulty.Kolay:
-                reactionSpeed = 0.45f;
-                fireInterval = 1.45f;
-                aimToleranceX = 0.5f;
-                dodgeChance = 0.08f;
-                if (_controller != null) _controller.moveSpeed = 3.5f;
-                if (_shooter != null) _shooter.bulletDamage = 10f;
+                reactionSpeed = 0.35f;
+                fireInterval = 1.15f;
+                aimToleranceX = 0.9f;
+                dodgeChance = 0.15f;
+                if (_controller != null) _controller.moveSpeed = 4.2f;
+                if (_shooter != null) _shooter.bulletDamage = 14f;
                 break;
 
             case GameSettings.Difficulty.Normal:
-                reactionSpeed = 0.22f;
-                fireInterval = 0.85f;
-                aimToleranceX = 0.8f;
-                dodgeChance = 0.25f;
-                if (_controller != null) _controller.moveSpeed = 5.5f;
-                if (_shooter != null) _shooter.bulletDamage = 16f;
+                reactionSpeed = 0.15f;
+                fireInterval = 0.65f;
+                aimToleranceX = 1.4f;
+                dodgeChance = 0.35f;
+                if (_controller != null) _controller.moveSpeed = 6.2f;
+                if (_shooter != null) _shooter.bulletDamage = 20f;
                 break;
 
             case GameSettings.Difficulty.Zor:
-                reactionSpeed = 0.08f;
-                fireInterval = 0.45f;
-                aimToleranceX = 1.2f;
-                dodgeChance = 0.55f;
-                if (_controller != null) _controller.moveSpeed = 8.0f;
-                if (_shooter != null) _shooter.bulletDamage = 22f;
+                reactionSpeed = 0.05f; // Anlık refleksler
+                fireInterval = 0.30f;  // Seri ve baskı kuran acımasız ateş
+                aimToleranceX = 2.0f;  // Geniş nişan toleransı (ekrandan kaçışı zorlaştırır)
+                dodgeChance = 0.70f;   // Çok çevik ve agresif kaçış manevrası
+                if (_controller != null) _controller.moveSpeed = 9.2f; // Yüksek takip hızı
+                if (_shooter != null) _shooter.bulletDamage = 28f;     // Ezici mermi hasarı
                 break;
         }
     }
@@ -103,27 +103,27 @@ public class AIController : MonoBehaviour
         switch (GameSettings.SelectedDifficulty)
         {
             case GameSettings.Difficulty.Kolay:
-                speedMod = 0.72f;     // %28 daha yavaş hareket
-                fireRateMod = 1.45f;  // %45 daha seyrek ateş (interval uzar)
-                reactionMod = 1.50f;  // %50 daha geç tepki
-                dodgeMod = 0.20f;     // Çok nadir kaçış manevrası
-                damageMod = 0.70f;    // %30 daha az mermi hasarı
+                speedMod = 0.85f;
+                fireRateMod = 1.25f;
+                reactionMod = 1.30f;
+                dodgeMod = 0.40f;
+                damageMod = 0.85f;
                 break;
 
             case GameSettings.Difficulty.Normal:
-                speedMod = 1.00f;
-                fireRateMod = 1.00f;
-                reactionMod = 1.00f;
-                dodgeMod = 1.00f;
-                damageMod = 1.00f;
+                speedMod = 1.05f;
+                fireRateMod = 0.90f;
+                reactionMod = 0.90f;
+                dodgeMod = 1.10f;
+                damageMod = 1.15f;
                 break;
 
             case GameSettings.Difficulty.Zor:
-                speedMod = 1.30f;     // %30 daha hızlı ve çevik hareket
-                fireRateMod = 0.65f;  // %35 daha seri ve acımasız ateş
-                reactionMod = 0.60f;  // %40 daha anlık ve keskin tepki
-                dodgeMod = 1.60f;     // Yüksek kaçış ve manevra
-                damageMod = 1.35f;    // %35 daha fazla mermi hasarı
+                speedMod = 1.35f;     // %35 daha hızlı ve çevik hareket
+                fireRateMod = 0.50f;  // %50 daha seri ve acımasız ateş (aralık yarıya iner!)
+                reactionMod = 0.45f;  // %55 daha keskin tepki
+                dodgeMod = 1.85f;     // Çok yüksek kaçış ve manevra
+                damageMod = 1.55f;    // %55 daha fazla mermi hasarı
                 break;
         }
 
@@ -132,63 +132,82 @@ public class AIController : MonoBehaviour
         {
             // Her gelen düşman uçağı bir öncekinden daha çevik, seri ve güçlü bir BOSS!
             float hcProgress = Mathf.Clamp01((wave - 1f) / 10f); // 1. Boss'tan 10. Boss'a doğru maksimuma tırmanış
-            reactionSpeed = Mathf.Lerp(0.18f, 0.05f, hcProgress) * reactionMod;
-            fireInterval = Mathf.Lerp(0.80f, 0.35f, hcProgress) * fireRateMod;
-            aimToleranceX = Mathf.Lerp(0.95f, 1.45f, hcProgress);
-            dodgeChance = Mathf.Lerp(0.28f, 0.65f, hcProgress) * dodgeMod;
+            reactionSpeed = Mathf.Lerp(0.14f, 0.04f, hcProgress) * reactionMod;
+            fireInterval = Mathf.Lerp(0.65f, 0.28f, hcProgress) * fireRateMod;
+            aimToleranceX = Mathf.Lerp(1.20f, 2.20f, hcProgress);
+            dodgeChance = Mathf.Lerp(0.35f, 0.75f, hcProgress) * dodgeMod;
 
             if (_controller != null)
-                _controller.moveSpeed = Mathf.Lerp(5.8f, 8.8f, hcProgress) * speedMod;
+                _controller.moveSpeed = Mathf.Lerp(6.5f, 9.5f, hcProgress) * speedMod;
 
             if (_shooter != null)
             {
                 _shooter.fireRate = fireInterval;
-                // Boss 1-2: 2 Namlu, Boss 3-5: 3 Namlu, Boss 6+: 4 Namlu!
-                _shooter.bulletsPerShot = (wave >= 6) ? 4 : (wave >= 3 ? 3 : 2);
-                _shooter.bulletSpread = 0.38f;
-                _shooter.bulletDamage = (15f + Mathf.Min(wave * 2.2f, 22f)) * damageMod;
+                // Boss 1: 2 Namlu, Boss 2-4: 3 Namlu, Boss 5+: 4 Namlu!
+                _shooter.bulletsPerShot = (wave >= 5) ? 4 : (wave >= 2 ? 3 : 2);
+                _shooter.bulletSpread = 0.42f;
+                _shooter.bulletDamage = (18f + Mathf.Min(wave * 3.0f, 30f)) * damageMod;
             }
             return;
         }
 
         // 3. BOSS VEYA STANDART UÇAK PARAMETRELERİ
+        bool isZor = (GameSettings.SelectedDifficulty == GameSettings.Difficulty.Zor);
+
         if (isBoss)
         {
-            // Bosslar: Dengeli ama Zor modda gerçek bir ecel terleten savaş
-            reactionSpeed = Mathf.Lerp(0.24f, 0.10f, progress) * reactionMod;
-            fireInterval = Mathf.Lerp(0.90f, 0.45f, progress) * fireRateMod;
-            aimToleranceX = Mathf.Lerp(0.85f, 1.25f, progress);
-            dodgeChance = Mathf.Lerp(0.25f, 0.45f, progress) * dodgeMod;
+            // Bosslar: Zor modda ve ilerleyen dalgalarda gerçek bir mermi cehennemi
+            reactionSpeed = Mathf.Lerp(0.18f, 0.06f, progress) * reactionMod;
+            fireInterval = Mathf.Lerp(0.75f, 0.35f, progress) * fireRateMod;
+            aimToleranceX = Mathf.Lerp(1.20f, 2.20f, progress);
+            dodgeChance = Mathf.Lerp(0.30f, 0.60f, progress) * dodgeMod;
 
             if (_controller != null)
-                _controller.moveSpeed = Mathf.Lerp(5.2f, 7.5f, progress) * speedMod;
+                _controller.moveSpeed = Mathf.Lerp(5.5f, 8.5f, progress) * speedMod;
 
             if (_shooter != null)
             {
                 _shooter.fireRate = fireInterval;
-                _shooter.bulletsPerShot = (wave >= 15 || GameSettings.SelectedDifficulty == GameSettings.Difficulty.Zor) ? 3 : 2;
-                _shooter.bulletSpread = 0.40f;
-                _shooter.bulletDamage = (wave >= 15 ? 12f : 14f) * damageMod;
+                // Zor modda Boss 1 dahil en az 3'lü atar! İleri dalgalarda veya Zor modda 4'lü salvo!
+                if (wave >= 15 || (isZor && wave >= 10))
+                    _shooter.bulletsPerShot = 4;
+                else if (isZor || wave >= 10)
+                    _shooter.bulletsPerShot = 3;
+                else
+                    _shooter.bulletsPerShot = 2;
+
+                _shooter.bulletSpread = 0.42f;
+                float bossBaseDmg = 18f + Mathf.Min(wave * 1.0f, 22f);
+                _shooter.bulletDamage = bossBaseDmg * damageMod;
             }
         }
         else
         {
             // Standart Uçaklar
-            reactionSpeed = Mathf.Lerp(0.38f, 0.12f, progress) * reactionMod;
-            fireInterval = Mathf.Lerp(1.30f, 0.55f, progress) * fireRateMod;
-            aimToleranceX = Mathf.Lerp(0.50f, 1.05f, progress);
-            dodgeChance = Mathf.Lerp(0.10f, 0.35f, progress) * dodgeMod;
+            reactionSpeed = Mathf.Lerp(0.28f, 0.07f, progress) * reactionMod;
+            fireInterval = Mathf.Lerp(1.05f, 0.40f, progress) * fireRateMod;
+            aimToleranceX = Mathf.Lerp(0.90f, 1.80f, progress);
+            dodgeChance = Mathf.Lerp(0.15f, 0.45f, progress) * dodgeMod;
 
             if (_controller != null)
-                _controller.moveSpeed = Mathf.Lerp(4.0f, 6.8f, progress) * speedMod;
+                _controller.moveSpeed = Mathf.Lerp(4.5f, 7.8f, progress) * speedMod;
 
             if (_shooter != null)
             {
                 _shooter.fireRate = fireInterval;
-                // Zor modda 3. dalgadan sonra standart uçaklar da çiftli mermi atabilir!
-                _shooter.bulletsPerShot = (GameSettings.SelectedDifficulty == GameSettings.Difficulty.Zor && wave >= 3) ? 2 : 1;
-                _shooter.bulletSpread = 0.28f;
-                _shooter.bulletDamage = 14f * damageMod;
+                // Zor modda 2. dalgadan itibaren standart uçaklar da çiftli mermi atar!
+                // Zor modda 11. dalgadan sonra 3'lü salvo mermi fırlatır!
+                // Normal modda 7. dalgadan sonra çiftli mermi atar.
+                if (isZor && wave >= 11)
+                    _shooter.bulletsPerShot = 3;
+                else if ((isZor && wave >= 2) || wave >= 7)
+                    _shooter.bulletsPerShot = 2;
+                else
+                    _shooter.bulletsPerShot = 1;
+
+                _shooter.bulletSpread = 0.32f;
+                float planeBaseDmg = 16f + Mathf.Min(wave * 0.65f, 14f);
+                _shooter.bulletDamage = planeBaseDmg * damageMod;
             }
         }
     }
@@ -245,16 +264,16 @@ public class AIController : MonoBehaviour
                 return;
         }
 
-        if (Random.value < dodgeChance * 0.1f)
+        if (Random.value < dodgeChance * 0.18f)
         {
             _isDodging = true;
-            _dodgeEndTime = Time.time + Random.Range(0.4f, 0.8f);
+            _dodgeEndTime = Time.time + Random.Range(0.35f, 0.75f);
             _currentMoveX = Random.value > 0.5f ? 1f : -1f;
             return;
         }
 
         float diffX = target.position.x - transform.position.x;
-        if (Mathf.Abs(diffX) > 0.25f)
+        if (Mathf.Abs(diffX) > 0.18f)
         {
             _currentMoveX = Mathf.Sign(diffX);
         }
