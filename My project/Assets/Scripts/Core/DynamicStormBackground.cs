@@ -121,10 +121,10 @@ public class DynamicStormBackground : MonoBehaviour
     private void SetupContinuousScrollingLayers()
     {
         // Katman 1
-        GameObject bg1Obj = new GameObject("DynamicStorm_Layer1");
+        GameObject bg1Obj = new GameObject("DynamicStorm_Layer1", typeof(RectTransform));
         bg1Obj.transform.SetParent(transform, false);
         bg1Obj.transform.SetAsFirstSibling();
-        _bg1Rt = bg1Obj.AddComponent<RectTransform>();
+        _bg1Rt = bg1Obj.GetComponent<RectTransform>();
         ConfigureLayerRect(_bg1Rt, 0f);
         _bg1Img = bg1Obj.AddComponent<Image>();
         _bg1Img.sprite = _stormSprite;
@@ -132,10 +132,10 @@ public class DynamicStormBackground : MonoBehaviour
         _bg1Img.raycastTarget = false;
 
         // Katman 2 (Üstüne eklenen ikinci görsel)
-        GameObject bg2Obj = new GameObject("DynamicStorm_Layer2");
+        GameObject bg2Obj = new GameObject("DynamicStorm_Layer2", typeof(RectTransform));
         bg2Obj.transform.SetParent(transform, false);
         bg2Obj.transform.SetAsFirstSibling();
-        _bg2Rt = bg2Obj.AddComponent<RectTransform>();
+        _bg2Rt = bg2Obj.GetComponent<RectTransform>();
         ConfigureLayerRect(_bg2Rt, _layerHeight);
         _bg2Img = bg2Obj.AddComponent<Image>();
         _bg2Img.sprite = _stormSprite;
@@ -157,11 +157,11 @@ public class DynamicStormBackground : MonoBehaviour
 
     private void SetupLightningOverlay()
     {
-        GameObject overlayObj = new GameObject("DynamicStorm_LightningOverlay");
+        GameObject overlayObj = new GameObject("DynamicStorm_LightningOverlay", typeof(RectTransform));
         overlayObj.transform.SetParent(transform, false);
         overlayObj.transform.SetAsLastSibling();
 
-        RectTransform oRt = overlayObj.AddComponent<RectTransform>();
+        RectTransform oRt = overlayObj.GetComponent<RectTransform>();
         oRt.anchorMin = Vector2.zero;
         oRt.anchorMax = Vector2.one;
         oRt.offsetMin = Vector2.zero;

@@ -121,7 +121,7 @@ public class HangarUI : MonoBehaviour
 
         MakeFullScreenRect(GetRect(_panelRoot));
         _panelRoot.SetActive(true);
-        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar();
+        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar(showGoldBadge: false);
         SwitchTab(targetTab);
         RefreshAllVisuals();
     }

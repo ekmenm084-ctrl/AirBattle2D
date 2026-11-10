@@ -109,7 +109,7 @@ public class CratesUI : MonoBehaviour
 
         MakeFullScreenRect(GetRect(_panelRoot));
         _panelRoot.SetActive(true);
-        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar();
+        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar(showGoldBadge: false);
         if (_cinematicOverlayObj != null) _cinematicOverlayObj.SetActive(false);
         _isOpeningCrate = false;
         RefreshVisuals();
@@ -295,6 +295,7 @@ public class CratesUI : MonoBehaviour
 
         Image gBg = goldBadgeObj.AddComponent<Image>();
         gBg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
+        gBg.raycastTarget = false;
 
         Outline gOutline = goldBadgeObj.AddComponent<Outline>();
         gOutline.effectColor = new Color(1f, 0.85f, 0.2f);
@@ -314,6 +315,7 @@ public class CratesUI : MonoBehaviour
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
+        _goldTMP.raycastTarget = false;
     }
 
     private void BuildCrateCards()

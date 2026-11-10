@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
+using System.Collections.Generic;
 
 /// <summary>
 /// Uçak Savaşı Temalı Giriş Ekranı Yöneticisi:
@@ -12,6 +13,101 @@ using TMPro;
 public class MainMenuManager : MonoBehaviour
 {
     public static MainMenuManager Instance { get; private set; }
+
+    // ==========================================
+    // ASKERİ TAKTİK HUD SPRITE & FONT YÖNETİMİ
+    // ==========================================
+    private static TMP_FontAsset _cachedTacticalFont;
+    public static TMP_FontAsset GetTacticalFont()
+    {
+        if (_cachedTacticalFont != null) return _cachedTacticalFont;
+        _cachedTacticalFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF")
+            ?? Resources.Load<TMP_FontAsset>("Fonts & Materials/Roboto-Bold SDF")
+            ?? Resources.Load<TMP_FontAsset>("Fonts & Materials/Electronic Highway Sign SDF")
+            ?? TMP_Settings.defaultFontAsset;
+        return _cachedTacticalFont;
+    }
+
+    private static readonly Dictionary<string, Sprite> _hudSpriteCache = new Dictionary<string, Sprite>();
+
+    public static Sprite GetHudSprite(string spriteName, Color borderColor, Color glassColor, bool hasLeftBar = true)
+    {
+        if (!string.IsNullOrEmpty(spriteName) && _hudSpriteCache.TryGetValue(spriteName, out var cached) && cached != null)
+            return cached;
+
+        if (!string.IsNullOrEmpty(spriteName))
+        {
+            Sprite loaded = Resources.Load<Sprite>("UI/TacticalHUD/" + spriteName);
+            if (loaded != null)
+            {
+                _hudSpriteCache[spriteName] = loaded;
+                return loaded;
+            }
+        }
+
+        // Procedural 9-slice chamfered HUD sprite fallback
+        string key = $"proc_{borderColor.r:F2}_{borderColor.g:F2}_{borderColor.b:F2}_{hasLeftBar}";
+        if (_hudSpriteCache.TryGetValue(key, out var procCached) && procCached != null)
+            return procCached;
+
+        Sprite proc = CreateProceduralHudSprite(borderColor, glassColor, hasLeftBar);
+        _hudSpriteCache[key] = proc;
+        if (!string.IsNullOrEmpty(spriteName)) _hudSpriteCache[spriteName] = proc;
+        return proc;
+    }
+
+    private static Sprite CreateProceduralHudSprite(Color borderColor, Color glassColor, bool hasLeftBar)
+    {
+        int size = 64;
+        int cut = 12;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        Color clear = new Color(0f, 0f, 0f, 0f);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                bool isCut = (x + y < cut)
+                    || ((size - 1 - x) + y < cut)
+                    || (x + (size - 1 - y) < cut)
+                    || ((size - 1 - x) + (size - 1 - y) < cut);
+
+                if (isCut)
+                {
+                    tex.SetPixel(x, y, clear);
+                    continue;
+                }
+
+                bool isBorder = (x == 0 || x == size - 1 || y == 0 || y == size - 1)
+                    || (x + y == cut) || ((size - 1 - x) + y == cut)
+                    || (x + (size - 1 - y) == cut) || ((size - 1 - x) + (size - 1 - y) == cut);
+
+                if (isBorder)
+                {
+                    tex.SetPixel(x, y, borderColor);
+                }
+                else
+                {
+                    if (hasLeftBar && x >= 4 && x <= 6 && y >= cut + 2 && y <= size - cut - 3)
+                    {
+                        tex.SetPixel(x, y, new Color(borderColor.r, borderColor.g, borderColor.b, 0.95f));
+                    }
+                    else if (y == 2 && x >= cut + 2 && x <= size - cut - 3)
+                    {
+                        tex.SetPixel(x, y, new Color(1f, 1f, 1f, 0.45f));
+                    }
+                    else
+                    {
+                        tex.SetPixel(x, y, glassColor);
+                    }
+                }
+            }
+        }
+        tex.Apply();
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(20, 20, 20, 20));
+    }
 
     [Header("Paneller")]
     public GameObject mainPanel;        // Ana Menü
@@ -82,6 +178,11 @@ public class MainMenuManager : MonoBehaviour
     {
         Instance = this;
         Time.timeScale = 0f;
+
+        // Başlangıçta panellerin durumunu kesin olarak eşitle
+        if (modesPanel != null) modesPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (mainPanel != null) mainPanel.SetActive(true);
     }
 
     private void Update()
@@ -93,23 +194,34 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start()
     {
-        GameSettings.LoadSettings();
-        AudioManager.EnsureInstance();
-        StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen();
+        try { GameSettings.LoadSettings(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { AudioManager.EnsureInstance(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen(); } catch (System.Exception e) { Debug.LogError(e); }
 
         MakeFullScreenRect(mainPanel?.GetComponent<RectTransform>());
         MakeFullScreenRect(modesPanel?.GetComponent<RectTransform>());
         MakeFullScreenRect(settingsPanel?.GetComponent<RectTransform>());
 
-        TryLoadBackgroundArt();
-        SetupAviationHeader();
-        FormatMilitaryButtons();
-        SetupMainPanelQuitButton();
-        SetupModesHeader();
-        SetupSettingsHeader();
-        SetupCampaignSelectionUI();
+        // mainPanel arka plan görseli varsa şeffaf yap, böylece canlı fırtına arka planını örtmez
+        if (mainPanel != null)
+        {
+            Image mpImg = mainPanel.GetComponent<Image>();
+            if (mpImg != null)
+            {
+                mpImg.color = new Color(0f, 0f, 0f, 0f);
+                mpImg.raycastTarget = false;
+            }
+        }
 
-        PlayerProfileUI.EnsureUI()?.SetupMainMenuProfileBadge(mainPanel != null ? mainPanel.transform : transform);
+        try { TryLoadBackgroundArt(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { SetupAviationHeader(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { FormatMilitaryButtons(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { SetupMainPanelQuitButton(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { SetupModesHeader(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { SetupSettingsHeader(); } catch (System.Exception e) { Debug.LogError(e); }
+        try { SetupCampaignSelectionUI(); } catch (System.Exception e) { Debug.LogError(e); }
+
+        try { PlayerProfileUI.EnsureUI()?.SetupMainMenuProfileBadge(mainPanel != null ? mainPanel.transform : transform); } catch (System.Exception e) { Debug.LogError(e); }
 
         if (playButton == null && mainPanel != null)
         {
@@ -165,7 +277,7 @@ public class MainMenuManager : MonoBehaviour
         SetTouchControlsVisibility(false, false);
 
         // İlk kez giriş yapan oyuncuya pilot çağrı kodu / isim belirleme ekranını göster
-        PilotLoginUI.EnsureUI()?.CheckFirstTimeLogin();
+        try { PilotLoginUI.EnsureUI()?.CheckFirstTimeLogin(); } catch (System.Exception e) { Debug.LogError(e); }
     }
 
     private void TryLoadBackgroundArt()
@@ -175,12 +287,12 @@ public class MainMenuManager : MonoBehaviour
 
         // Arka plan için MenuRoot altında izole ve daima en arkada (Index 0) duracak konteyner nesnesi
         Transform existingContainer = transform.Find("MenuDynamicBackground_Root");
-        GameObject bgObj = existingContainer != null ? existingContainer.gameObject : new GameObject("MenuDynamicBackground_Root");
+        GameObject bgObj = existingContainer != null ? existingContainer.gameObject : new GameObject("MenuDynamicBackground_Root", typeof(RectTransform));
         bgObj.transform.SetParent(transform, false);
         bgObj.transform.SetAsFirstSibling(); // Kesinlikle en arkada kalsın
 
-        RectTransform bgRt = bgObj.GetComponent<RectTransform>() ?? bgObj.AddComponent<RectTransform>();
-        MakeFullScreenRect(bgRt);
+        RectTransform bgRt = bgObj.GetComponent<RectTransform>();
+        if (bgRt != null) MakeFullScreenRect(bgRt);
 
         DynamicStormBackground.AttachTo(bgObj, backgroundImage != null ? backgroundImage.sprite : null);
 
@@ -198,34 +310,53 @@ public class MainMenuManager : MonoBehaviour
     private void SetupAviationHeader()
     {
         Transform existingTitle = transform.Find("AirBattleTitle");
-        if (existingTitle != null)
+        GameObject titleObj = existingTitle != null ? existingTitle.gameObject : new GameObject("AirBattleTitle", typeof(RectTransform));
+        titleObj.transform.SetParent(transform, false);
+
+        RectTransform rt = titleObj.GetComponent<RectTransform>();
+        if (rt != null)
         {
-            _titleObject = existingTitle.gameObject;
-            var existingTmp = _titleObject.GetComponent<TextMeshProUGUI>();
-            if (existingTmp != null) existingTmp.raycastTarget = false;
-            return;
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(880f, 130f);
+            rt.anchoredPosition = new Vector2(0f, 275f);
         }
 
-        _titleObject = new GameObject("AirBattleTitle");
-        _titleObject.transform.SetParent(transform, false);
+        Image bgImg = titleObj.GetComponent<Image>() ?? titleObj.AddComponent<Image>();
+        bgImg.sprite = GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), hasLeftBar: false);
+        bgImg.type = Image.Type.Sliced;
+        bgImg.color = Color.white;
+        bgImg.raycastTarget = false;
 
-        RectTransform rt = _titleObject.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(850f, 120f);
-        rt.anchoredPosition = new Vector2(0f, 275f); // 275f: HAREKATA BAŞLA butonunun (150f) 65 piksel güvenli yukarısında
+        Transform textChild = titleObj.transform.Find("TitleText");
+        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("TitleText", typeof(RectTransform));
+        textObj.transform.SetParent(titleObj.transform, false);
 
-        TextMeshProUGUI tmp = _titleObject.AddComponent<TextMeshProUGUI>();
-        tmp.text = "AIR BATTLE 2D\n<size=42%><color=#F1C40F>- İT DALAŞI HAREKATI -</color></size>";
-        tmp.fontSize = 54f;
+        RectTransform textRt = textObj.GetComponent<RectTransform>();
+        if (textRt != null)
+        {
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(10f, 4f);
+            textRt.offsetMax = new Vector2(-10f, -4f);
+        }
+
+        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = "<size=36%><color=#80D8FF>◄ TACTICAL FLIGHT SIMULATION • DEFCON-1 ►</color></size>\n<b><color=#00E5FF>AIR</color> BATTLE <color=#FFD700>2D</color></b>\n<size=38%><color=#90CAF9>◄ ASKERİ HAVA HARP HAREKÂTI // İT DALAŞI ►</color></size>";
+        tmp.fontSize = 52f;
         tmp.fontStyle = FontStyles.Bold;
+        tmp.characterSpacing = 3.2f;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = new Color(0.95f, 0.95f, 1f);
+        tmp.color = Color.white;
         tmp.extraPadding = true;
-        tmp.outlineWidth = 0.22f;
-        tmp.outlineColor = Color.black;
-        tmp.raycastTarget = false; // Tıklamaları kesinlikle engellemez
+        tmp.outlineWidth = 0.12f;
+        tmp.outlineColor = new Color(0.01f, 0.03f, 0.06f, 0.95f);
+        tmp.raycastTarget = false;
+
+        _titleObject = titleObj;
+        _titleObject.transform.SetAsLastSibling();
     }
 
     private void FormatMilitaryButtons()
@@ -236,7 +367,8 @@ public class MainMenuManager : MonoBehaviour
             if (pBtn != null) playButton = pBtn.GetComponent<Button>();
         }
 
-        FormatBtn(playButton, 150f, "HAREKATA BAŞLA", new Color(0.18f, 0.55f, 0.34f), 520f, 56f);
+        // 1. Ana Harekât Butonu (Büyük, Taktik Cyan)
+        FormatBtn(playButton, 160f, "SYS // OPS-01  ✈ HAREKÂTI BAŞLAT", new Color(0f, 0.95f, 0.65f), 560f, 66f, 0f, "hud_btn_cyan");
 
         if (playButton != null)
         {
@@ -249,48 +381,56 @@ public class MainMenuManager : MonoBehaviour
             if (pImg != null) pImg.raycastTarget = true;
         }
 
-        _hangarButton = CreateOrFindMainButton("HangarButton", 96f, "ASKERİ HANGAR", new Color(0.18f, 0.48f, 0.72f), 520f, 46f);
+        // 2. Askeri Hangar & Donatım
+        _hangarButton = CreateOrFindMainButton("HangarButton", 100f, "FLEET // AIR-02  ⚙ ASKERİ HANGAR VE FİLO", new Color(0.28f, 0.62f, 1.0f), 560f, 50f, "hud_btn_blue");
         if (_hangarButton != null)
         {
             _hangarButton.onClick.RemoveAllListeners();
             _hangarButton.onClick.AddListener(OpenHangarPanel);
         }
 
-        _militaryStoreButton = CreateOrFindMainButton("MilitaryStoreButton", 44f, "🛒 ASKERİ MAĞAZA & PARÇALAR", new Color(0.15f, 0.58f, 0.65f), 520f, 46f);
+        // 3. Askeri Mağaza & Donatım
+        _militaryStoreButton = CreateOrFindMainButton("MilitaryStoreButton", 42f, "ARMORY // LOG-03  🛒 ASKERİ MAĞAZA VE DONATIM", new Color(0.12f, 0.85f, 0.92f), 560f, 50f, "hud_btn_teal");
         if (_militaryStoreButton != null)
         {
             _militaryStoreButton.onClick.RemoveAllListeners();
             _militaryStoreButton.onClick.AddListener(OpenStorePanel);
         }
 
-        _cratesButton = CreateOrFindMainButton("CratesButton", -8f, "İKMAL VE GANİMET SANDIKLARI", new Color(0.72f, 0.48f, 0.12f), 520f, 46f);
+        // 4. İkmal ve Ganimet Sandıkları
+        _cratesButton = CreateOrFindMainButton("CratesButton", -16f, "SUPPLY // CRATE-04  🗝️ ASKERİ İKMAL SANDIKLARI", new Color(1.0f, 0.80f, 0.22f), 560f, 50f, "hud_btn_amber");
         if (_cratesButton != null)
         {
             _cratesButton.onClick.RemoveAllListeners();
             _cratesButton.onClick.AddListener(OpenCratesPanel);
         }
 
-        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -60f, "🏆 KÜRESEL REKOR TABLOSU", new Color(0.78f, 0.52f, 0.10f), 520f, 46f);
+        // 5. Küresel As Pilot Tablosu
+        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -74f, "INTEL // RANK-05  🏆 KÜRESEL AS PİLOT TABLOSU", new Color(0.96f, 0.65f, 0.20f), 560f, 50f, "hud_btn_orange");
         if (_leaderboardButton != null)
         {
             _leaderboardButton.onClick.RemoveAllListeners();
             _leaderboardButton.onClick.AddListener(() => OpenLeaderboardPanel());
         }
 
-        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -112f, "ZORLUK: [ NORMAL ]", new Color(0.20f, 0.28f, 0.38f), 520f, 46f);
+        // 6. Hızlı Zorluk Seçimi
+        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -132f, "PROTOCOL // DIFF-06  ZORLUK: [ NORMAL ]", new Color(0.40f, 0.55f, 0.72f), 560f, 50f, "hud_btn_amber");
         if (_quickDiffButton != null)
         {
             _quickDiffButton.onClick.RemoveAllListeners();
             _quickDiffButton.onClick.AddListener(CycleDifficulty);
         }
 
-        FormatBtn(modesButton, -164f, "OYUN MODLARI & BÖLÜMLER", new Color(0.15f, 0.40f, 0.65f), 520f, 46f);
-        FormatBtn(settingsButton, -216f, "UÇUŞ VE SES AYARLARI", new Color(0.30f, 0.35f, 0.42f), 520f, 46f);
+        // 7. Oyun Modları ve Seferler
+        FormatBtn(modesButton, -190f, "SECTOR // OPS-07  🌐 OYUN MODLARI VE SEFERLER", new Color(0.30f, 0.58f, 0.88f), 560f, 50f, 0f, "hud_btn_blue");
+
+        // 8. Sistem ve Kokpit Ayarları
+        FormatBtn(settingsButton, -248f, "AVIONICS // CFG-08  ⚙️ KOKPİT VE SİSTEM AYARLARI", new Color(0.50f, 0.60f, 0.72f), 560f, 50f, 0f, "hud_btn_slate");
 
         // Ayarlar Paneli Zorluk Butonları (Kolay, Normal, Zor)
-        FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.55f, 0.34f), 480f, 52f);
-        FormatBtn(normalButton, 75f, "YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), 480f, 52f);
-        FormatBtn(hardButton, 15f, "AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), 480f, 52f);
+        FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.85f, 0.45f), 500f, 50f, 0f, "hud_btn_emerald");
+        FormatBtn(normalButton, 75f, "YÜZBAŞI (Normal)", new Color(1.0f, 0.75f, 0.20f), 500f, 50f, 0f, "hud_btn_amber");
+        FormatBtn(hardButton, 15f, "AS PİLOT (Zor)", new Color(0.92f, 0.25f, 0.25f), 500f, 50f, 0f, "hud_btn_red");
         FormatBottomLeftBackBtn(backFromSettingsButton);
     }
 
@@ -306,7 +446,7 @@ public class MainMenuManager : MonoBehaviour
         AudioManager.Instance?.PlayGunfire(false);
     }
 
-    private Button CreateOrFindMainButton(string objName, float posY, string text, Color color, float width, float height)
+    private Button CreateOrFindMainButton(string objName, float posY, string text, Color color, float width, float height, string spriteName = null)
     {
         if (mainPanel == null) return null;
         Transform existing = mainPanel.transform.Find(objName);
@@ -314,10 +454,10 @@ public class MainMenuManager : MonoBehaviour
 
         if (btnObj == null)
         {
-            btnObj = new GameObject(objName);
+            btnObj = new GameObject(objName, typeof(RectTransform));
             btnObj.transform.SetParent(mainPanel.transform, false);
 
-            RectTransform rt = btnObj.AddComponent<RectTransform>();
+            RectTransform rt = btnObj.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
@@ -325,9 +465,9 @@ public class MainMenuManager : MonoBehaviour
             btnObj.AddComponent<Image>();
             btnObj.AddComponent<Button>();
 
-            GameObject textObj = new GameObject("Text");
+            GameObject textObj = new GameObject("Text", typeof(RectTransform));
             textObj.transform.SetParent(btnObj.transform, false);
-            RectTransform textRt = textObj.AddComponent<RectTransform>();
+            RectTransform textRt = textObj.GetComponent<RectTransform>();
             textRt.anchorMin = Vector2.zero;
             textRt.anchorMax = Vector2.one;
             textRt.offsetMin = Vector2.zero;
@@ -336,7 +476,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         Button btn = btnObj.GetComponent<Button>();
-        FormatBtn(btn, posY, text, color, width, height);
+        FormatBtn(btn, posY, text, color, width, height, 0f, spriteName);
         return btn;
     }
 
@@ -348,7 +488,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: false);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
@@ -365,7 +505,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: false);
 
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
         if (CratesUI.Instance != null) CratesUI.Instance.CloseDirectly();
@@ -383,7 +523,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: false);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -400,7 +540,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: false);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -410,7 +550,7 @@ public class MainMenuManager : MonoBehaviour
         LeaderboardUI.EnsureUI()?.OpenLeaderboard(mode, () => OpenMainPanel());
     }
 
-    private void FormatBtn(Button btn, float posY, string text, Color color, float width, float height, float posX = 0f)
+    public static void FormatBtn(Button btn, float posY, string text, Color accentBorderColor, float width, float height, float posX = 0f, string hudSpriteName = null)
     {
         if (btn == null) return;
 
@@ -421,25 +561,52 @@ public class MainMenuManager : MonoBehaviour
             rt.anchoredPosition = new Vector2(posX, posY);
         }
 
+        if (string.IsNullOrEmpty(hudSpriteName))
+        {
+            if (accentBorderColor.r > 0.7f && accentBorderColor.g < 0.35f) hudSpriteName = "hud_btn_red";
+            else if (accentBorderColor.g > 0.7f && accentBorderColor.r < 0.35f) hudSpriteName = "hud_btn_emerald";
+            else if (accentBorderColor.r > 0.7f && accentBorderColor.g > 0.55f && accentBorderColor.b < 0.35f) hudSpriteName = "hud_btn_amber";
+            else if (accentBorderColor.b > 0.7f && accentBorderColor.r < 0.35f) hudSpriteName = "hud_btn_blue";
+            else hudSpriteName = "hud_btn_cyan";
+        }
+
         Image img = btn.GetComponent<Image>();
         if (img != null)
         {
-            img.color = color;
+            img.sprite = GetHudSprite(hudSpriteName, accentBorderColor, new Color(0.03f, 0.06f, 0.11f, 0.92f), hasLeftBar: true);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
             img.raycastTarget = true;
         }
+
+        // Eski Unity Outline bileşenini kaldır (45° açılı kesik köşeleri dikdörtgenle kapatmasın)
+        Outline outline = btn.GetComponent<Outline>();
+        if (outline != null) Destroy(outline);
+
+        // Aviyonik buton etkileşim renkleri (Hover ve basışta aviyonik parıltı)
+        ColorBlock cb = btn.colors;
+        cb.normalColor = Color.white;
+        cb.highlightedColor = new Color(1.35f, 1.35f, 1.35f, 1f);
+        cb.pressedColor = new Color(0.70f, 0.85f, 1.0f, 1f);
+        cb.selectedColor = Color.white;
+        cb.colorMultiplier = 1f;
+        cb.fadeDuration = 0.06f;
+        btn.colors = cb;
 
         TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
         if (tmp != null)
         {
+            tmp.font = GetTacticalFont();
             tmp.text = text;
-            tmp.fontSize = 25f; // 21f -> 25f (+4f orantılı büyüme)
+            tmp.fontSize = (height >= 58f) ? 22f : 19f;
             tmp.fontStyle = FontStyles.Bold;
-            tmp.color = Color.white;
+            tmp.characterSpacing = 2.4f; // Askeri HUD havacılık yazı aralığı
+            tmp.color = new Color(0.95f, 0.98f, 1f);
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.extraPadding = true;
-            tmp.outlineWidth = 0.20f;
-            tmp.outlineColor = Color.black;
-            tmp.raycastTarget = false; // Metin butonun tıklamasını kesinlikle engellemesin
+            tmp.outlineWidth = 0.08f;
+            tmp.outlineColor = new Color(0.01f, 0.03f, 0.06f, 0.95f);
+            tmp.raycastTarget = false;
         }
     }
 
@@ -453,59 +620,33 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMax = Vector2.zero;
             rt.pivot = Vector2.zero;
             rt.anchoredPosition = new Vector2(40f, 25f);
-            rt.sizeDelta = new Vector2(260f, 54f);
+            rt.sizeDelta = new Vector2(260f, 50f);
         }
         btn.transform.SetAsLastSibling();
-
-        Image img = btn.GetComponent<Image>();
-        if (img != null)
-        {
-            img.color = new Color(0.30f, 0.32f, 0.36f);
-        }
-
-        Outline outline = btn.GetComponent<Outline>();
-        if (outline == null) outline = btn.gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(0.55f, 0.60f, 0.68f);
-        outline.effectDistance = new Vector2(2f, -2f);
-
-        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
-        if (tmp != null)
-        {
-            tmp.text = "< GERİ DÖN";
-            tmp.fontSize = 22f;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.color = Color.white;
-            tmp.alignment = TextAlignmentOptions.Center;
-        }
+        FormatBtn(btn, 25f, "◀ TACTICAL // GERİ DÖN", new Color(0.35f, 0.65f, 0.95f), 260f, 50f, 40f, "hud_btn_blue");
     }
 
     private void SetupMainPanelQuitButton()
     {
         if (mainPanel == null) return;
         Transform existing = mainPanel.transform.Find("QuitButton");
-        GameObject btnObj = existing != null ? existing.gameObject : new GameObject("QuitButton");
+        GameObject btnObj = existing != null ? existing.gameObject : new GameObject("QuitButton", typeof(RectTransform));
         btnObj.transform.SetParent(mainPanel.transform, false);
 
         RectTransform rt = btnObj.GetComponent<RectTransform>();
-        if (rt == null) rt = btnObj.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.zero;
-        rt.pivot = Vector2.zero;
-        rt.anchoredPosition = new Vector2(40f, 25f);
-        rt.sizeDelta = new Vector2(260f, 54f);
+        if (rt != null)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.zero;
+            rt.pivot = Vector2.zero;
+            rt.anchoredPosition = new Vector2(40f, 25f);
+            rt.sizeDelta = new Vector2(260f, 50f);
+        }
         btnObj.transform.SetAsLastSibling();
 
-        Image img = btnObj.GetComponent<Image>();
-        if (img == null) img = btnObj.AddComponent<Image>();
-        img.color = new Color(0.30f, 0.32f, 0.36f);
+        Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
+        FormatBtn(btn, 25f, "✕ ABORT // ÜSSE DÖN", new Color(0.95f, 0.20f, 0.25f), 260f, 50f, 40f, "hud_btn_red");
 
-        Outline outline = btnObj.GetComponent<Outline>();
-        if (outline == null) outline = btnObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0.55f, 0.60f, 0.68f);
-        outline.effectDistance = new Vector2(2f, -2f);
-
-        Button btn = btnObj.GetComponent<Button>();
-        if (btn == null) btn = btnObj.AddComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
         {
@@ -515,89 +656,97 @@ public class MainMenuManager : MonoBehaviour
             Application.Quit();
             #endif
         });
-
-        Transform textChild = btnObj.transform.Find("Text");
-        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("Text");
-        textObj.transform.SetParent(btnObj.transform, false);
-
-        RectTransform textRt = textObj.GetComponent<RectTransform>();
-        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
-        textRt.anchorMin = Vector2.zero;
-        textRt.anchorMax = Vector2.one;
-        textRt.offsetMin = Vector2.zero;
-        textRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
-        if (tmp == null) tmp = textObj.AddComponent<TextMeshProUGUI>();
-        tmp.text = "< OYUNDAN ÇIK";
-        tmp.fontSize = 22f;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.color = Color.white;
-        tmp.alignment = TextAlignmentOptions.Center;
     }
 
     private void SetupModesHeader()
     {
         if (modesPanel == null) return;
         Transform existing = modesPanel.transform.Find("ModesHeaderTitle");
-        GameObject titleObj = existing != null ? existing.gameObject : new GameObject("ModesHeaderTitle");
+        GameObject titleObj = existing != null ? existing.gameObject : new GameObject("ModesHeaderTitle", typeof(RectTransform));
         titleObj.transform.SetParent(modesPanel.transform, false);
 
         RectTransform rt = titleObj.GetComponent<RectTransform>();
-        if (rt == null) rt = titleObj.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 1f);
-        rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -22f);
-        rt.sizeDelta = new Vector2(900f, 65f);
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, -22f);
+            rt.sizeDelta = new Vector2(880f, 74f);
+        }
 
-        TextMeshProUGUI tmp = titleObj.GetComponent<TextMeshProUGUI>();
-        if (tmp == null) tmp = titleObj.AddComponent<TextMeshProUGUI>();
-        tmp.text = "<b>OYUN MODLARI VE KAMPANYA SEFERİ</b>\n<size=55%><color=#8AB4F8>Hava muharebesi senaryosu veya sınırsız it dalaşı seçin.</color></size>";
+        Image bgImg = titleObj.GetComponent<Image>() ?? titleObj.AddComponent<Image>();
+        bgImg.sprite = GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), hasLeftBar: false);
+        bgImg.type = Image.Type.Sliced;
+        bgImg.color = Color.white;
+        bgImg.raycastTarget = false;
+
+        TextMeshProUGUI tmp = titleObj.GetComponentInChildren<TextMeshProUGUI>() ?? titleObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = "<b><color=#00E5FF>HAVA HAREKÂTI</color> VE GÖREV SEFERLERİ</b>\n<size=52%><color=#94A3B8>Taktik senaryo operasyonları veya sınırsız it dalaşı seçin</color></size>";
         tmp.fontSize = 26f;
+        tmp.characterSpacing = 2.4f;
+        tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
+        tmp.outlineWidth = 0.10f;
+        tmp.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
     }
 
     private void SetupSettingsHeader()
     {
         if (settingsPanel == null) return;
         Transform existing = settingsPanel.transform.Find("SettingsHeaderTitle");
-        GameObject titleObj = existing != null ? existing.gameObject : new GameObject("SettingsHeaderTitle");
+        GameObject titleObj = existing != null ? existing.gameObject : new GameObject("SettingsHeaderTitle", typeof(RectTransform));
         titleObj.transform.SetParent(settingsPanel.transform, false);
 
         RectTransform rt = titleObj.GetComponent<RectTransform>();
-        if (rt == null) rt = titleObj.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 1f);
-        rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -22f);
-        rt.sizeDelta = new Vector2(900f, 65f);
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(0.5f, 1f);
+            rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(0f, -22f);
+            rt.sizeDelta = new Vector2(880f, 74f);
+        }
 
-        TextMeshProUGUI tmp = titleObj.GetComponent<TextMeshProUGUI>();
-        if (tmp == null) tmp = titleObj.AddComponent<TextMeshProUGUI>();
-        tmp.text = "<b>UÇUŞ VE SES AYARLARI</b>\n<size=55%><color=#8AB4F8>Pilot rütbesi ve kokpit ses seviyelerini ayarlayın.</color></size>";
+        Image bgImg = titleObj.GetComponent<Image>() ?? titleObj.AddComponent<Image>();
+        bgImg.sprite = GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), hasLeftBar: false);
+        bgImg.type = Image.Type.Sliced;
+        bgImg.color = Color.white;
+        bgImg.raycastTarget = false;
+
+        TextMeshProUGUI tmp = titleObj.GetComponentInChildren<TextMeshProUGUI>() ?? titleObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = "<b><color=#00E5FF>KOKPİT SİSTEMLERİ</color> VE SES AYARLARI</b>\n<size=52%><color=#94A3B8>Zorluk kalibrasyonu ve aviyonik ses seviyeleri</color></size>";
         tmp.fontSize = 26f;
+        tmp.characterSpacing = 2.4f;
+        tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
+        tmp.outlineWidth = 0.10f;
+        tmp.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
     }
 
     public void OpenMainPanel()
     {
         if (backgroundImage != null) backgroundImage.enabled = true;
-        if (_titleObject != null)
-        {
-            _titleObject.SetActive(true);
-        }
+        if (modesPanel != null) modesPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+
         if (mainPanel != null)
         {
             mainPanel.SetActive(true);
             mainPanel.transform.SetAsLastSibling(); // MainPanel ve butonları daima en önde
         }
-        if (modesPanel != null) modesPanel.SetActive(false);
-        if (settingsPanel != null) settingsPanel.SetActive(false);
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        if (_titleObject != null)
+        {
+            _titleObject.SetActive(true);
+            _titleObject.transform.SetAsLastSibling(); // Başlık asla panelin arkasında kalmasın
+        }
+
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: true);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -614,11 +763,21 @@ public class MainMenuManager : MonoBehaviour
     public void OpenModesPanel()
     {
         if (mainPanel != null) mainPanel.SetActive(false);
-        if (modesPanel != null) modesPanel.SetActive(true);
+        if (modesPanel != null)
+        {
+            modesPanel.SetActive(true);
+            Image mImg = modesPanel.GetComponent<Image>();
+            if (mImg != null)
+            {
+                mImg.sprite = GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.90f), false);
+                mImg.type = Image.Type.Sliced;
+                mImg.color = Color.white;
+            }
+        }
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (_titleObject != null) _titleObject.SetActive(false);
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: true);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -636,11 +795,18 @@ public class MainMenuManager : MonoBehaviour
         if (settingsPanel != null)
         {
             settingsPanel.SetActive(true);
+            Image sImg = settingsPanel.GetComponent<Image>();
+            if (sImg != null)
+            {
+                sImg.sprite = GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.90f), false);
+                sImg.type = Image.Type.Sliced;
+                sImg.color = Color.white;
+            }
             SetupMenuSoundControls();
         }
         if (_titleObject != null) _titleObject.SetActive(false);
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar();
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: true);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -665,20 +831,20 @@ public class MainMenuManager : MonoBehaviour
             return;
         }
 
-        _soundControlsContainer = new GameObject("MenuSoundControls");
+        _soundControlsContainer = new GameObject("MenuSoundControls", typeof(RectTransform));
         _soundControlsContainer.transform.SetParent(settingsPanel.transform, false);
 
-        RectTransform rootRt = _soundControlsContainer.AddComponent<RectTransform>();
-        rootRt.anchorMin = new Vector2(0.5f, 0.5f);
-        rootRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rootRt.pivot = new Vector2(0.5f, 0.5f);
-        rootRt.sizeDelta = new Vector2(540f, 175f); // Geniş ve ferah
-        rootRt.anchoredPosition = new Vector2(0f, -75f);
+        RectTransform rootRt = _soundControlsContainer.GetComponent<RectTransform>();
+        if (rootRt != null)
+        {
+            rootRt.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRt.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRt.pivot = new Vector2(0.5f, 0.5f);
+            rootRt.sizeDelta = new Vector2(540f, 175f);
+            rootRt.anchoredPosition = new Vector2(0f, -75f);
+        }
 
-        // Müzik Satırı (Y: 34f)
         CreateMenuVolumeRow(_soundControlsContainer.transform, "SAVAŞ MÜZİĞİ", 34f, isMusic: true);
-
-        // Efekt Satırı (Y: -44f)
         CreateMenuVolumeRow(_soundControlsContainer.transform, "MERMİ & EFEKT", -44f, isMusic: false);
     }
 
@@ -690,50 +856,50 @@ public class MainMenuManager : MonoBehaviour
         if (soloButton != null)
         {
             _campaign1Button = soloButton;
-            FormatBtn(_campaign1Button, 180f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.45f, 0.28f), 540f, 48f);
+            FormatBtn(_campaign1Button, 180f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 560f, 48f, 0f, "hud_btn_emerald");
             _campaign1Button.onClick.RemoveAllListeners();
             _campaign1Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.OperationBlackDawn));
         }
 
         // 2. Kampanya 2: Proje Kimeras
-        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 128f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.15f, 0.35f, 0.60f), 540f, 48f);
+        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 128f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.28f, 0.62f, 1.0f), 560f, 48f, 0f, "hud_btn_blue");
         _campaign2Button.onClick.RemoveAllListeners();
         _campaign2Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.ProjectChimera));
 
         // 3. Kampanya 3: Gökyüzü Paralı Askeri
-        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 76f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(0.55f, 0.22f, 0.15f), 540f, 48f);
+        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 76f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(1.0f, 0.80f, 0.22f), 560f, 48f, 0f, "hud_btn_amber");
         _campaign3Button.onClick.RemoveAllListeners();
         _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
 
         // 4. Sonsuz İt Dalaşı (Endless Survival Mode)
-        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 28f, "[SONSUZ] İT DALAŞI", new Color(0.16f, 0.44f, 0.52f), 264f, 44f, posX: -138f);
+        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 26f, "[SONSUZ] İT DALAŞI", new Color(0f, 0.90f, 1f), 274f, 44f, posX: -142f, spriteName: "hud_btn_cyan");
         _endlessButton.onClick.RemoveAllListeners();
         _endlessButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Endless));
 
         // 5. Boss Rush (4 Boss Avı)
-        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 28f, "[BOSS RUSH] (4 AS)", new Color(0.60f, 0.20f, 0.18f), 264f, 44f, posX: 138f);
+        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 26f, "[BOSS RUSH] 4 AS", new Color(0.95f, 0.25f, 0.25f), 274f, 44f, posX: 142f, spriteName: "hud_btn_red");
         _bossRushButton.onClick.RemoveAllListeners();
         _bossRushButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BossRush));
 
         // 6. Mermi Cehennemi (Bullet Hell)
-        _bulletHellButton = CreateOrFindModesButton("BulletHellBtn", -22f, "[CEHENNEM] MERMİ FIRTINASI", new Color(0.60f, 0.12f, 0.35f), 264f, 44f, posX: -138f);
+        _bulletHellButton = CreateOrFindModesButton("BulletHellBtn", -24f, "[CEHENNEM] MERMİ FIRTINASI", new Color(0.95f, 0.20f, 0.50f), 274f, 44f, posX: -142f, spriteName: "hud_btn_red");
         _bulletHellButton.onClick.RemoveAllListeners();
         _bulletHellButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BulletHell));
 
         // 7. Zaman Taarruzu (Time Attack)
-        _timeAttackButton = CreateOrFindModesButton("TimeAttackBtn", -22f, "[HIZ] ZAMAN TAARRUZU", new Color(0.70f, 0.45f, 0.12f), 264f, 44f, posX: 138f);
+        _timeAttackButton = CreateOrFindModesButton("TimeAttackBtn", -24f, "[HIZ] ZAMAN TAARRUZU", new Color(1.0f, 0.75f, 0.20f), 274f, 44f, posX: 142f, spriteName: "hud_btn_amber");
         _timeAttackButton.onClick.RemoveAllListeners();
         _timeAttackButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.TimeAttack));
 
         // 8. Hardcore Modu (Tek Can, 200 HP, Her Uçak Giderek Güçlenen Boss)
-        _hardcoreButton = CreateOrFindModesButton("HardcoreModeBtn", -72f, "☠ [HARDCORE] 1 CAN BOSS", new Color(0.75f, 0.12f, 0.12f), 264f, 44f, posX: -138f);
+        _hardcoreButton = CreateOrFindModesButton("HardcoreModeBtn", -74f, "☠ [HARDCORE] 1 CAN BOSS", new Color(1.0f, 0.15f, 0.15f), 274f, 44f, posX: -142f, spriteName: "hud_btn_red");
         _hardcoreButton.onClick.RemoveAllListeners();
         _hardcoreButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Hardcore));
 
         // 9. Online 2 Oyunculu Düello
         if (onlineButton != null)
         {
-            FormatBtn(onlineButton, -72f, "ONLINE: 2P DUELLO", new Color(0.28f, 0.20f, 0.45f), 264f, 44f, posX: 138f);
+            FormatBtn(onlineButton, -74f, "ONLINE: 2P DUELLO", new Color(0.40f, 0.35f, 0.75f), 274f, 44f, posX: 142f, hudSpriteName: "hud_btn_blue");
             onlineButton.onClick.RemoveAllListeners();
             onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
         }
@@ -751,7 +917,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 12. Modlar Paneli Rekor Tablosu Butonu (Sağ Alt Köşe)
-        _modesLeaderboardButton = CreateOrFindModesButton("ModesLeaderboardBtn", 25f, "🏆 REKOR TABLOSU", new Color(0.78f, 0.52f, 0.10f), 260f, 54f, posX: 0f);
+        _modesLeaderboardButton = CreateOrFindModesButton("ModesLeaderboardBtn", 25f, "🏆 REKOR TABLOSU", new Color(1.0f, 0.80f, 0.22f), 260f, 50f, posX: 0f, spriteName: "hud_btn_amber");
         if (_modesLeaderboardButton != null)
         {
             RectTransform lbRt = _modesLeaderboardButton.GetComponent<RectTransform>();
@@ -781,30 +947,30 @@ public class MainMenuManager : MonoBehaviour
 
     private void SetupModesDifficultyRow()
     {
-        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -118f, "KOLAY", new Color(0.18f, 0.55f, 0.34f), 174f, 38f, posX: -182f);
+        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -122f, "KOLAY", new Color(0.18f, 0.85f, 0.45f), 180f, 40f, posX: -186f, spriteName: "hud_btn_emerald");
         _modesDiffEasyBtn.onClick.RemoveAllListeners();
         _modesDiffEasyBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Kolay));
 
-        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -118f, "NORMAL", new Color(0.70f, 0.55f, 0.15f), 174f, 38f, posX: 0f);
+        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -122f, "NORMAL", new Color(1.0f, 0.80f, 0.22f), 180f, 40f, posX: 0f, spriteName: "hud_btn_amber");
         _modesDiffNormalBtn.onClick.RemoveAllListeners();
         _modesDiffNormalBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Normal));
 
-        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -118f, "ZOR", new Color(0.75f, 0.20f, 0.20f), 174f, 38f, posX: 182f);
+        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -122f, "ZOR", new Color(0.95f, 0.25f, 0.25f), 180f, 40f, posX: 186f, spriteName: "hud_btn_red");
         _modesDiffHardBtn.onClick.RemoveAllListeners();
         _modesDiffHardBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Zor));
     }
 
-    private Button CreateOrFindModesButton(string objName, float posY, string text, Color color, float width, float height, float posX = 0f)
+    private Button CreateOrFindModesButton(string objName, float posY, string text, Color color, float width, float height, float posX = 0f, string spriteName = null)
     {
         Transform existing = modesPanel.transform.Find(objName);
         GameObject btnObj = existing != null ? existing.gameObject : null;
 
         if (btnObj == null)
         {
-            btnObj = new GameObject(objName);
+            btnObj = new GameObject(objName, typeof(RectTransform));
             btnObj.transform.SetParent(modesPanel.transform, false);
 
-            RectTransform rt = btnObj.AddComponent<RectTransform>();
+            RectTransform rt = btnObj.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
@@ -812,9 +978,9 @@ public class MainMenuManager : MonoBehaviour
             btnObj.AddComponent<Image>();
             btnObj.AddComponent<Button>();
 
-            GameObject textObj = new GameObject("Text");
+            GameObject textObj = new GameObject("Text", typeof(RectTransform));
             textObj.transform.SetParent(btnObj.transform, false);
-            RectTransform textRt = textObj.AddComponent<RectTransform>();
+            RectTransform textRt = textObj.GetComponent<RectTransform>();
             textRt.anchorMin = Vector2.zero;
             textRt.anchorMax = Vector2.one;
             textRt.offsetMin = Vector2.zero;
@@ -823,58 +989,62 @@ public class MainMenuManager : MonoBehaviour
         }
 
         Button btn = btnObj.GetComponent<Button>();
-        FormatBtn(btn, posY, text, color, width, height, posX);
+        FormatBtn(btn, posY, text, color, width, height, posX, spriteName);
         return btn;
     }
 
     private void SetupCampaignBriefingBox()
     {
         Transform existing = modesPanel.transform.Find("CampaignBriefingBox");
-        GameObject boxObj = existing != null ? existing.gameObject : new GameObject("CampaignBriefingBox");
+        GameObject boxObj = existing != null ? existing.gameObject : new GameObject("CampaignBriefingBox", typeof(RectTransform));
         boxObj.transform.SetParent(modesPanel.transform, false);
 
         RectTransform rt = boxObj.GetComponent<RectTransform>();
-        if (rt == null) rt = boxObj.AddComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, -178f);
-        rt.sizeDelta = new Vector2(540f, 76f); // Butonlarla orantılı
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, -180f);
+            rt.sizeDelta = new Vector2(560f, 76f);
+        }
 
-        Image bg = boxObj.GetComponent<Image>();
-        if (bg == null) bg = boxObj.AddComponent<Image>();
-        bg.color = new Color(0.03f, 0.07f, 0.12f, 0.96f);
+        Image bg = boxObj.GetComponent<Image>() ?? boxObj.AddComponent<Image>();
+        bg.sprite = GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.85f), new Color(0.03f, 0.07f, 0.12f, 0.94f), false);
+        bg.type = Image.Type.Sliced;
+        bg.color = Color.white;
 
         Outline outline = boxObj.GetComponent<Outline>();
-        if (outline == null) outline = boxObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
-        outline.effectDistance = new Vector2(2f, -2f);
+        if (outline != null) Destroy(outline);
 
         Transform textChild = boxObj.transform.Find("BriefingText");
-        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("BriefingText");
+        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("BriefingText", typeof(RectTransform));
         textObj.transform.SetParent(boxObj.transform, false);
 
         RectTransform textRt = textObj.GetComponent<RectTransform>();
-        if (textRt == null) textRt = textObj.AddComponent<RectTransform>();
-        textRt.anchorMin = Vector2.zero;
-        textRt.anchorMax = Vector2.one;
-        textRt.offsetMin = new Vector2(14f, 6f);
-        textRt.offsetMax = new Vector2(-14f, -6f);
+        if (textRt != null)
+        {
+            textRt.anchorMin = Vector2.zero;
+            textRt.anchorMax = Vector2.one;
+            textRt.offsetMin = new Vector2(16f, 6f);
+            textRt.offsetMax = new Vector2(-16f, -6f);
+        }
 
-        _briefingTMP = textObj.GetComponent<TextMeshProUGUI>();
-        if (_briefingTMP == null) _briefingTMP = textObj.AddComponent<TextMeshProUGUI>();
+        _briefingTMP = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
+        _briefingTMP.font = GetTacticalFont();
         _briefingTMP.enableAutoSizing = true;
         _briefingTMP.fontSizeMin = 13f;
         _briefingTMP.fontSizeMax = 20f;
         _briefingTMP.fontSize = 19f;
         _briefingTMP.fontStyle = FontStyles.Bold;
+        _briefingTMP.characterSpacing = 1.8f;
         _briefingTMP.alignment = TextAlignmentOptions.Center;
         _briefingTMP.color = Color.white;
         _briefingTMP.lineSpacing = 2.5f;
         _briefingTMP.textWrappingMode = TextWrappingModes.Normal;
         _briefingTMP.overflowMode = TextOverflowModes.Truncate;
         _briefingTMP.extraPadding = true;
-        _briefingTMP.outlineWidth = 0.20f;
+        _briefingTMP.outlineWidth = 0.12f;
         _briefingTMP.outlineColor = Color.black;
         _briefingTMP.raycastTarget = false;
     }
@@ -888,143 +1058,186 @@ public class MainMenuManager : MonoBehaviour
 
     private void CreateMenuVolumeRow(Transform parent, string title, float localY, bool isMusic)
     {
-        GameObject row = new GameObject("Row_" + (isMusic ? "Music" : "SFX"));
+        GameObject row = new GameObject("Row_" + (isMusic ? "Music" : "SFX"), typeof(RectTransform));
         row.transform.SetParent(parent, false);
 
-        RectTransform rRt = row.AddComponent<RectTransform>();
-        rRt.anchorMin = new Vector2(0.5f, 0.5f);
-        rRt.anchorMax = new Vector2(0.5f, 0.5f);
-        rRt.sizeDelta = new Vector2(500f, 64f);
-        rRt.anchoredPosition = new Vector2(0f, localY);
+        RectTransform rRt = row.GetComponent<RectTransform>();
+        if (rRt != null)
+        {
+            rRt.anchorMin = new Vector2(0.5f, 0.5f);
+            rRt.anchorMax = new Vector2(0.5f, 0.5f);
+            rRt.sizeDelta = new Vector2(500f, 64f);
+            rRt.anchoredPosition = new Vector2(0f, localY);
+        }
 
         // Başlık TMP
-        GameObject lblObj = new GameObject("Label");
+        GameObject lblObj = new GameObject("Label", typeof(RectTransform));
         lblObj.transform.SetParent(row.transform, false);
-        RectTransform lblRt = lblObj.AddComponent<RectTransform>();
-        lblRt.anchorMin = new Vector2(0f, 0.55f);
-        lblRt.anchorMax = new Vector2(0.6f, 0.55f);
-        lblRt.pivot = new Vector2(0f, 0.5f);
-        lblRt.sizeDelta = new Vector2(0f, 30f);
+        RectTransform lblRt = lblObj.GetComponent<RectTransform>();
+        if (lblRt != null)
+        {
+            lblRt.anchorMin = new Vector2(0f, 0.55f);
+            lblRt.anchorMax = new Vector2(0.6f, 0.55f);
+            lblRt.pivot = new Vector2(0f, 0.5f);
+            lblRt.sizeDelta = new Vector2(0f, 30f);
+        }
 
         TextMeshProUGUI lblTMP = lblObj.AddComponent<TextMeshProUGUI>();
+        lblTMP.font = GetTacticalFont();
         lblTMP.text = title;
-        lblTMP.fontSize = 22f; // Büyütüldü
+        lblTMP.fontSize = 20f;
         lblTMP.fontStyle = FontStyles.Bold;
+        lblTMP.characterSpacing = 2.0f;
         lblTMP.color = new Color(0.2f, 0.9f, 1f);
         lblTMP.extraPadding = true;
 
         // Yüzde Metni
-        GameObject valObj = new GameObject("ValText");
+        GameObject valObj = new GameObject("ValText", typeof(RectTransform));
         valObj.transform.SetParent(row.transform, false);
-        RectTransform valRt = valObj.AddComponent<RectTransform>();
-        valRt.anchorMin = new Vector2(0.6f, 0.55f);
-        valRt.anchorMax = new Vector2(1f, 0.55f);
-        valRt.pivot = new Vector2(1f, 0.5f);
-        valRt.sizeDelta = new Vector2(0f, 30f);
+        RectTransform valRt = valObj.GetComponent<RectTransform>();
+        if (valRt != null)
+        {
+            valRt.anchorMin = new Vector2(0.6f, 0.55f);
+            valRt.anchorMax = new Vector2(1f, 0.55f);
+            valRt.pivot = new Vector2(1f, 0.5f);
+            valRt.sizeDelta = new Vector2(0f, 30f);
+        }
 
         TextMeshProUGUI valTMP = valObj.AddComponent<TextMeshProUGUI>();
-        valTMP.fontSize = 22f; // Büyütüldü
+        valTMP.font = GetTacticalFont();
+        valTMP.fontSize = 20f;
         valTMP.fontStyle = FontStyles.Bold;
+        valTMP.characterSpacing = 2.0f;
         valTMP.alignment = TextAlignmentOptions.Right;
         valTMP.color = Color.white;
         valTMP.extraPadding = true;
 
         // [-] Butonu
-        GameObject minusObj = new GameObject("MinusBtn");
+        GameObject minusObj = new GameObject("MinusBtn", typeof(RectTransform));
         minusObj.transform.SetParent(row.transform, false);
-        RectTransform mRt = minusObj.AddComponent<RectTransform>();
-        mRt.anchorMin = new Vector2(0f, 0.1f);
-        mRt.anchorMax = new Vector2(0f, 0.1f);
-        mRt.pivot = new Vector2(0f, 0.5f);
-        mRt.sizeDelta = new Vector2(52f, 38f);
+        RectTransform mRt = minusObj.GetComponent<RectTransform>();
+        if (mRt != null)
+        {
+            mRt.anchorMin = new Vector2(0f, 0.1f);
+            mRt.anchorMax = new Vector2(0f, 0.1f);
+            mRt.pivot = new Vector2(0f, 0.5f);
+            mRt.sizeDelta = new Vector2(52f, 38f);
+        }
 
         Image mImg = minusObj.AddComponent<Image>();
-        mImg.color = new Color(0.18f, 0.25f, 0.35f);
+        mImg.sprite = GetHudSprite("hud_btn_slate", new Color(0.5f, 0.6f, 0.7f), new Color(0.1f, 0.15f, 0.22f), false);
+        mImg.type = Image.Type.Sliced;
+        mImg.color = Color.white;
         Button mBtn = minusObj.AddComponent<Button>();
 
-        GameObject mTxtObj = new GameObject("Text");
+        GameObject mTxtObj = new GameObject("Text", typeof(RectTransform));
         mTxtObj.transform.SetParent(minusObj.transform, false);
-        RectTransform mTxtRt = mTxtObj.AddComponent<RectTransform>();
-        mTxtRt.anchorMin = Vector2.zero;
-        mTxtRt.anchorMax = Vector2.one;
-        mTxtRt.offsetMin = Vector2.zero;
-        mTxtRt.offsetMax = Vector2.zero;
+        RectTransform mTxtRt = mTxtObj.GetComponent<RectTransform>();
+        if (mTxtRt != null)
+        {
+            mTxtRt.anchorMin = Vector2.zero;
+            mTxtRt.anchorMax = Vector2.one;
+            mTxtRt.offsetMin = Vector2.zero;
+            mTxtRt.offsetMax = Vector2.zero;
+        }
         TextMeshProUGUI mTMP = mTxtObj.AddComponent<TextMeshProUGUI>();
+        mTMP.font = GetTacticalFont();
         mTMP.text = "-";
-        mTMP.fontSize = 28f;
+        mTMP.fontSize = 26f;
         mTMP.fontStyle = FontStyles.Bold;
         mTMP.alignment = TextAlignmentOptions.Center;
         mTMP.color = Color.white;
         mTMP.extraPadding = true;
 
         // [+] Butonu
-        GameObject plusObj = new GameObject("PlusBtn");
+        GameObject plusObj = new GameObject("PlusBtn", typeof(RectTransform));
         plusObj.transform.SetParent(row.transform, false);
-        RectTransform pRt = plusObj.AddComponent<RectTransform>();
-        pRt.anchorMin = new Vector2(1f, 0.1f);
-        pRt.anchorMax = new Vector2(1f, 0.1f);
-        pRt.pivot = new Vector2(1f, 0.5f);
-        pRt.sizeDelta = new Vector2(52f, 38f);
+        RectTransform pRt = plusObj.GetComponent<RectTransform>();
+        if (pRt != null)
+        {
+            pRt.anchorMin = new Vector2(1f, 0.1f);
+            pRt.anchorMax = new Vector2(1f, 0.1f);
+            pRt.pivot = new Vector2(1f, 0.5f);
+            pRt.sizeDelta = new Vector2(52f, 38f);
+        }
 
         Image pImg = plusObj.AddComponent<Image>();
-        pImg.color = new Color(0.18f, 0.25f, 0.35f);
+        pImg.sprite = GetHudSprite("hud_btn_slate", new Color(0.5f, 0.6f, 0.7f), new Color(0.1f, 0.15f, 0.22f), false);
+        pImg.type = Image.Type.Sliced;
+        pImg.color = Color.white;
         Button pBtn = plusObj.AddComponent<Button>();
 
-        GameObject pTxtObj = new GameObject("Text");
+        GameObject pTxtObj = new GameObject("Text", typeof(RectTransform));
         pTxtObj.transform.SetParent(plusObj.transform, false);
-        RectTransform pTxtRt = pTxtObj.AddComponent<RectTransform>();
-        pTxtRt.anchorMin = Vector2.zero;
-        pTxtRt.anchorMax = Vector2.one;
-        pTxtRt.offsetMin = Vector2.zero;
-        pTxtRt.offsetMax = Vector2.zero;
+        RectTransform pTxtRt = pTxtObj.GetComponent<RectTransform>();
+        if (pTxtRt != null)
+        {
+            pTxtRt.anchorMin = Vector2.zero;
+            pTxtRt.anchorMax = Vector2.one;
+            pTxtRt.offsetMin = Vector2.zero;
+            pTxtRt.offsetMax = Vector2.zero;
+        }
         TextMeshProUGUI pTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
+        pTMP.font = GetTacticalFont();
         pTMP.text = "+";
-        pTMP.fontSize = 26f;
+        pTMP.fontSize = 24f;
         pTMP.fontStyle = FontStyles.Bold;
         pTMP.alignment = TextAlignmentOptions.Center;
         pTMP.color = Color.white;
         pTMP.extraPadding = true;
 
         // Slider
-        GameObject sObj = new GameObject("Slider");
+        GameObject sObj = new GameObject("Slider", typeof(RectTransform));
         sObj.transform.SetParent(row.transform, false);
-        RectTransform sRt = sObj.AddComponent<RectTransform>();
-        sRt.anchorMin = new Vector2(0.5f, 0.1f);
-        sRt.anchorMax = new Vector2(0.5f, 0.1f);
-        sRt.pivot = new Vector2(0.5f, 0.5f);
-        sRt.sizeDelta = new Vector2(330f, 26f);
+        RectTransform sRt = sObj.GetComponent<RectTransform>();
+        if (sRt != null)
+        {
+            sRt.anchorMin = new Vector2(0.5f, 0.1f);
+            sRt.anchorMax = new Vector2(0.5f, 0.1f);
+            sRt.pivot = new Vector2(0.5f, 0.5f);
+            sRt.sizeDelta = new Vector2(330f, 26f);
+        }
 
         Slider s = sObj.AddComponent<Slider>();
         s.minValue = 0f;
         s.maxValue = 1f;
 
-        GameObject bgObj = new GameObject("Background");
+        GameObject bgObj = new GameObject("Background", typeof(RectTransform));
         bgObj.transform.SetParent(sObj.transform, false);
-        RectTransform bgRt = bgObj.AddComponent<RectTransform>();
-        bgRt.anchorMin = Vector2.zero;
-        bgRt.anchorMax = Vector2.one;
-        bgRt.offsetMin = Vector2.zero;
-        bgRt.offsetMax = Vector2.zero;
+        RectTransform bgRt = bgObj.GetComponent<RectTransform>();
+        if (bgRt != null)
+        {
+            bgRt.anchorMin = Vector2.zero;
+            bgRt.anchorMax = Vector2.one;
+            bgRt.offsetMin = Vector2.zero;
+            bgRt.offsetMax = Vector2.zero;
+        }
         Image bgImg = bgObj.AddComponent<Image>();
-        bgImg.color = new Color(0.1f, 0.15f, 0.22f);
+        bgImg.color = new Color(0.04f, 0.08f, 0.14f, 0.95f);
 
-        GameObject faObj = new GameObject("Fill Area");
+        GameObject faObj = new GameObject("Fill Area", typeof(RectTransform));
         faObj.transform.SetParent(sObj.transform, false);
-        RectTransform faRt = faObj.AddComponent<RectTransform>();
-        faRt.anchorMin = Vector2.zero;
-        faRt.anchorMax = Vector2.one;
-        faRt.offsetMin = Vector2.zero;
-        faRt.offsetMax = Vector2.zero;
+        RectTransform faRt = faObj.GetComponent<RectTransform>();
+        if (faRt != null)
+        {
+            faRt.anchorMin = Vector2.zero;
+            faRt.anchorMax = Vector2.one;
+            faRt.offsetMin = Vector2.zero;
+            faRt.offsetMax = Vector2.zero;
+        }
 
-        GameObject fObj = new GameObject("Fill");
+        GameObject fObj = new GameObject("Fill", typeof(RectTransform));
         fObj.transform.SetParent(faObj.transform, false);
-        RectTransform fRt = fObj.AddComponent<RectTransform>();
-        fRt.anchorMin = Vector2.zero;
-        fRt.anchorMax = Vector2.one;
-        fRt.offsetMin = Vector2.zero;
-        fRt.offsetMax = Vector2.zero;
+        RectTransform fRt = fObj.GetComponent<RectTransform>();
+        if (fRt != null)
+        {
+            fRt.anchorMin = Vector2.zero;
+            fRt.anchorMax = Vector2.one;
+            fRt.offsetMin = Vector2.zero;
+            fRt.offsetMax = Vector2.zero;
+        }
         Image fImg = fObj.AddComponent<Image>();
-        fImg.color = new Color(0f, 0.85f, 1f);
+        fImg.color = new Color(0f, 0.90f, 1f, 0.95f);
 
         s.fillRect = fRt;
         s.targetGraphic = fImg;
@@ -1123,61 +1336,46 @@ public class MainMenuManager : MonoBehaviour
             TextMeshProUGUI qTmp = _quickDiffButton.GetComponentInChildren<TextMeshProUGUI>();
             if (qTmp != null)
             {
-                qTmp.text = $"ZORLUK: <color={diffHex}><b>[ {diffName.ToUpper()} ]</b></color> <size=68%>(Dokun Değiştir)</size>";
+                qTmp.font = GetTacticalFont();
+                qTmp.text = $"<b>PROTOCOL // DIFF-06</b>  <color={diffHex}><b>[ {diffName.ToUpper()} ]</b></color> <size=68%><color=#90A4AE>(Dokun Değiştir)</color></size>";
+                qTmp.characterSpacing = 2.0f;
             }
             Image qImg = _quickDiffButton.GetComponent<Image>();
             if (qImg != null)
             {
-                qImg.color = diff switch
+                string diffSp = diff switch
                 {
-                    GameSettings.Difficulty.Kolay => new Color(0.12f, 0.35f, 0.22f),
-                    GameSettings.Difficulty.Zor   => new Color(0.48f, 0.14f, 0.14f),
-                    _                             => new Color(0.42f, 0.32f, 0.10f)
+                    GameSettings.Difficulty.Kolay => "hud_btn_emerald",
+                    GameSettings.Difficulty.Zor   => "hud_btn_red",
+                    _                             => "hud_btn_amber"
                 };
+                qImg.sprite = GetHudSprite(diffSp, Color.white, new Color(0.04f, 0.08f, 0.12f, 0.94f), true);
+                qImg.type = Image.Type.Sliced;
+                qImg.color = Color.white;
             }
+            Outline qOut = _quickDiffButton.GetComponent<Outline>();
+            if (qOut != null) Destroy(qOut);
         }
 
-        // 6. Ana Menüdeki "HAREKATA BAŞLA" Butonu Başlığı
+        // 6. Ana Menüdeki "HAREKÂTI BAŞLAT" Butonu Başlığı
         if (playButton != null)
         {
             TextMeshProUGUI playTMP = playButton.GetComponentInChildren<TextMeshProUGUI>();
             if (playTMP != null)
             {
+                playTMP.font = GetTacticalFont();
                 playTMP.raycastTarget = false;
-                if (isOnline)
-                {
-                    playTMP.text = "HAREKATA BAŞLA\n<size=62%><color=#D1C4E9>[ONLINE: 2 OYUNCULU DÜELLO]</color></size>";
-                }
-                else if (isEndless)
-                {
-                    int best = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
-                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#4FC3F7>[SONSUZ İT DALAŞI (Rekor: {best})]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
-                }
-                else if (isBossRush)
-                {
-                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FF8A80>[BOSS RUSH: 4 AS]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
-                }
-                else if (isBulletHell)
-                {
-                    float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
-                    int m = (int)(bestTime / 60);
-                    int s = (int)(bestTime % 60);
-                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FF4081>[MERMİ CEHENNEMİ (Rekor: {m:00}:{s:00})]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
-                }
-                else if (isTimeAttack)
-                {
-                    int best = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
-                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FFD54F>[ZAMAN TAARRUZU (Rekor: {best} İMHA)]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
-                }
-                else if (isHardcore)
-                {
-                    int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
-                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FF2A2A>[HARDCORE (Rekor: {bestHc} Boss)]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
-                }
-                else
-                {
-                    playTMP.text = $"HAREKATA BAŞLA\n<size=62%><color=#FFE082>[{StoryCampaignManager.GetCampaignName(activeCamp)}]</color> • <color={diffHex}><b>[ZORLUK: {diffName}]</b></color></size>";
-                }
+                playTMP.characterSpacing = 2.5f;
+
+                string modeBadge = isOnline ? "<color=#D1C4E9>[ONLINE: 2P DÜELLO]</color>"
+                    : isEndless ? $"<color=#4FC3F7>[SONSUZ İT DALAŞI (Rekor: {PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1)})]</color>"
+                    : isBossRush ? "<color=#FF8A80>[BOSS RUSH: 4 AS]</color>"
+                    : isBulletHell ? $"<color=#FF4081>[MERMİ FIRTINASI]</color>"
+                    : isTimeAttack ? $"<color=#FFD54F>[ZAMAN TAARRUZU]</color>"
+                    : isHardcore ? $"<color=#FF2A2A>[HARDCORE (Tek Can)]</color>"
+                    : $"<color=#FFE082>[{StoryCampaignManager.GetCampaignName(activeCamp)}]</color>";
+
+                playTMP.text = $"<b><color=#00FFA3>SYS // OPS-01  ✈ HAREKÂTI BAŞLAT</color></b>\n<size=54%>{modeBadge} • <color={diffHex}><b>[{diffName.ToUpper()}]</b></color></size>";
             }
         }
     }
@@ -1189,28 +1387,40 @@ public class MainMenuManager : MonoBehaviour
         Image img = btn.GetComponent<Image>();
         TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
         var outline = btn.GetComponent<Outline>();
+        if (outline != null) Destroy(outline);
 
-        if (isSelected)
+        string spriteKey = isSelected
+            ? (activeColor.r > 0.7f && activeColor.g < 0.35f ? "hud_btn_red"
+               : activeColor.g > 0.7f && activeColor.r < 0.35f ? "hud_btn_emerald"
+               : "hud_btn_amber")
+            : "hud_btn_slate";
+
+        if (img != null)
         {
-            if (img != null) img.color = activeColor;
-            if (tmp != null)
-            {
-                tmp.text = $"[SEÇİLİ] {baseTitle}";
-                tmp.color = Color.white;
-            }
-            if (outline == null) outline = btn.gameObject.AddComponent<Outline>();
-            outline.effectColor = Color.yellow;
-            outline.effectDistance = new Vector2(3f, -3f);
+            img.sprite = GetHudSprite(spriteKey, activeColor, new Color(0.03f, 0.05f, 0.08f, 0.88f), hasLeftBar: isSelected);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
         }
-        else
+
+        if (tmp != null)
         {
-            if (img != null) img.color = new Color(activeColor.r * 0.40f, activeColor.g * 0.40f, activeColor.b * 0.40f, 0.70f);
-            if (tmp != null)
+            tmp.font = GetTacticalFont();
+            if (isSelected)
+            {
+                tmp.text = $"<b>[► AKTİF] {baseTitle}</b>";
+                tmp.color = Color.white;
+                tmp.characterSpacing = 2.0f;
+                tmp.outlineWidth = 0.10f;
+                tmp.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
+            }
+            else
             {
                 tmp.text = baseTitle;
-                tmp.color = new Color(0.80f, 0.80f, 0.80f, 0.85f);
+                tmp.color = new Color(0.72f, 0.78f, 0.86f, 0.85f);
+                tmp.characterSpacing = 1.5f;
+                tmp.outlineWidth = 0.08f;
+                tmp.outlineColor = new Color(0.01f, 0.02f, 0.04f, 0.90f);
             }
-            if (outline != null) Destroy(outline);
         }
     }
 
@@ -1297,15 +1507,34 @@ public class MainMenuManager : MonoBehaviour
     {
         if (btn == null) return;
         var outline = btn.GetComponent<Outline>();
+        if (outline == null) outline = btn.gameObject.AddComponent<Outline>();
+
+        Image img = btn.GetComponent<Image>();
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
+
         if (isSelected)
         {
-            if (outline == null) outline = btn.gameObject.AddComponent<Outline>();
-            outline.effectColor = Color.yellow;
-            outline.effectDistance = new Vector2(3f, -3f);
+            if (img != null)
+                img.color = new Color(0.05f, 0.14f, 0.22f, 0.96f);
+            outline.effectColor = new Color(0f, 0.92f, 1f, 0.95f);
+            outline.effectDistance = new Vector2(2.5f, -2.5f);
+            if (tmp != null)
+            {
+                tmp.color = Color.white;
+                tmp.characterSpacing = 2.0f;
+            }
         }
-        else if (outline != null)
+        else
         {
-            Destroy(outline);
+            if (img != null)
+                img.color = new Color(0.03f, 0.06f, 0.10f, 0.88f);
+            outline.effectColor = new Color(0.25f, 0.35f, 0.45f, 0.60f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+            if (tmp != null)
+            {
+                tmp.color = new Color(0.75f, 0.82f, 0.90f, 0.85f);
+                tmp.characterSpacing = 1.5f;
+            }
         }
     }
 

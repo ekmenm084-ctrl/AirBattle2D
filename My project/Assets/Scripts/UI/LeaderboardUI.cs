@@ -76,7 +76,7 @@ public class LeaderboardUI : MonoBehaviour
         {
             _panelRoot.SetActive(true);
             _panelRoot.transform.SetAsLastSibling();
-            PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar();
+            PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar(showGoldBadge: false);
         }
 
         UpdateTabVisuals();
