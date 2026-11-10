@@ -82,6 +82,45 @@ public class LootDropManager : MonoBehaviour
                     item.type = LootItem.LootType.Gold;
             }
         }
+
+        // ==========================================
+        // 20+ SEVİYE BOSS SANDIK ANAHTARI DÜŞÜŞÜ (1/10 İhtimal)
+        // ==========================================
+        // 20. seviyeden sonra (veya 20. dalgadan sonra) herhangi bir boss düştüğünde
+        // 1/10 (%10) toplam ihtimalle rastgele anahtar düşer:
+        // - En nadir: Altın Anahtar (1/100 - %1)
+        // - Gümüş Anahtar (3/100 - %3)
+        // - Bronz Anahtar (6/100 - %6)
+        // Düşme sırası tamamen rastgeledir; ilk boss'ta bile Altın Anahtar düşebilir!
+        if (isBoss)
+        {
+            int pilotLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+            int currentWaveIndex = (GameManager.Instance != null) ? GameManager.Instance.currentPlaneIndex : 1;
+
+            if (pilotLvl >= 20 || currentWaveIndex >= 20)
+            {
+                float keyRoll = Random.value;
+                if (keyRoll < 0.10f) // 1/10 Genel Anahtar İhtimali
+                {
+                    GameObject keyLootObj = new GameObject("BossKeyDrop");
+                    keyLootObj.transform.position = position + new Vector3(0f, 0.45f, 0f);
+                    LootItem keyItem = keyLootObj.AddComponent<LootItem>();
+
+                    if (keyRoll < 0.01f) // 1/100 Şans ile Altın Anahtar!
+                    {
+                        keyItem.type = LootItem.LootType.GoldKey;
+                    }
+                    else if (keyRoll < 0.04f) // 3/100 Şans ile Gümüş Anahtar
+                    {
+                        keyItem.type = LootItem.LootType.SilverKey;
+                    }
+                    else // 6/100 Şans ile Bronz Anahtar
+                    {
+                        keyItem.type = LootItem.LootType.BronzeKey;
+                    }
+                }
+            }
+        }
     }
 }
 

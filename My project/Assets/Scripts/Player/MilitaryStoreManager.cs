@@ -398,6 +398,18 @@ public class MilitaryStoreManager : MonoBehaviour
         return PlayerPrefs.GetInt(PREF_PART_UNLOCKED_PREFIX + partId, 0) == 1;
     }
 
+    /// <summary>
+    /// Sandık anahtarı veya özel ikramiyeden çıkan parçayı ücretsiz olarak kalıcı açar.
+    /// </summary>
+    public bool UnlockPartDirectly(string partId)
+    {
+        if (string.IsNullOrEmpty(partId)) return false;
+        PlayerPrefs.SetInt(PREF_PART_UNLOCKED_PREFIX + partId, 1);
+        PlayerPrefs.Save();
+        OnStoreDataChanged?.Invoke();
+        return true;
+    }
+
     public bool BuyPart(string partId, out string message)
     {
         AircraftPart part = GetPartById(partId);

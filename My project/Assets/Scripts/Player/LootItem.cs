@@ -16,7 +16,10 @@ public class LootItem : MonoBehaviour
         Health,
         Shield,
         Overdrive,
-        Gold
+        Gold,
+        BronzeKey,
+        SilverKey,
+        GoldKey
     }
 
     public LootType type = LootType.Health;
@@ -142,11 +145,30 @@ public class LootItem : MonoBehaviour
                 PlayerUpgradeManager.Instance?.AddGold(dropGold);
                 gameUI?.ShowWaveAlert($"💰 <b>[ +{dropGold} HANGAR ALTINI KAZANILDI ]</b>", new Color(1f, 0.88f, 0.2f), 1.4f);
                 break;
+
+            case LootType.BronzeKey:
+                HangarManager.EnsureInstance()?.AddKey(HangarManager.KeyType.Bronze, 1);
+                gameUI?.ShowWaveAlert("🗝️ <b>[ BRONZ SANDIK ANAHTARI KAZANILDI! ]</b>", new Color(0.85f, 0.55f, 0.25f), 2.5f);
+                break;
+
+            case LootType.SilverKey:
+                HangarManager.EnsureInstance()?.AddKey(HangarManager.KeyType.Silver, 1);
+                gameUI?.ShowWaveAlert("🗝️ <b>[ GÜMÜŞ CEPHANE ANAHTARI KAZANILDI! ]</b>", new Color(0.35f, 0.80f, 1f), 2.8f);
+                break;
+
+            case LootType.GoldKey:
+                HangarManager.EnsureInstance()?.AddKey(HangarManager.KeyType.Gold, 1);
+                gameUI?.ShowWaveAlert("👑🗝️ <b>[ EFSANEVİ ALTIN AS ANAHTARI DÜŞTÜ! ]</b>", new Color(1f, 0.85f, 0.15f), 3.2f);
+                CameraShake.Shake(0.3f, 0.12f);
+                break;
         }
 
         // Parlak kıvılcım & ses efekti
         VFXManager.SpawnHitSparks(transform.position, _themeColor);
-        AudioManager.Instance?.PlayGunfire(false);
+        if (type == LootType.GoldKey || type == LootType.SilverKey || type == LootType.BronzeKey)
+            AudioManager.Instance?.PlayRewardFanfare();
+        else
+            AudioManager.Instance?.PlayGunfire(false);
 
         Destroy(gameObject);
     }
@@ -173,6 +195,18 @@ public class LootItem : MonoBehaviour
                 resName = "loot_overdrive";
                 break;
             case LootType.Gold:
+                _themeColor = new Color(1f, 0.85f, 0.15f);
+                resName = "loot_gold";
+                break;
+            case LootType.BronzeKey:
+                _themeColor = new Color(0.85f, 0.50f, 0.20f);
+                resName = "loot_gold";
+                break;
+            case LootType.SilverKey:
+                _themeColor = new Color(0.70f, 0.85f, 0.98f);
+                resName = "loot_shield";
+                break;
+            case LootType.GoldKey:
                 _themeColor = new Color(1f, 0.85f, 0.15f);
                 resName = "loot_gold";
                 break;
@@ -239,6 +273,15 @@ public class LootItem : MonoBehaviour
                 break;
             case LootType.Gold:
                 _labelTMP.text = "<color=#FFD700><b>[ +50 ALTIN ]</b></color>";
+                break;
+            case LootType.BronzeKey:
+                _labelTMP.text = "<color=#CD7F32><b>🗝️ [ BRONZ ANAHTAR ]</b></color>";
+                break;
+            case LootType.SilverKey:
+                _labelTMP.text = "<color=#C0C0C0><b>🗝️ [ GÜMÜŞ ANAHTAR ]</b></color>";
+                break;
+            case LootType.GoldKey:
+                _labelTMP.text = "<color=#FFD700><b>👑 [ ALTIN ANAHTAR ]</b></color>";
                 break;
         }
 

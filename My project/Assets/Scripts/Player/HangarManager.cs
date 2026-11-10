@@ -28,6 +28,13 @@ public class HangarManager : MonoBehaviour
         GoldAce     // 1100 G - Altın As Sandığı
     }
 
+    public enum KeyType
+    {
+        Bronze,     // Bronz Sandık Anahtarı
+        Silver,     // Gümüş Cephane Anahtarı
+        Gold        // Altın As Sandık Anahtarı (1/100 Efsanevi Düşüş)
+    }
+
     [System.Serializable]
     public class CrateReward
     {
@@ -50,6 +57,12 @@ public class HangarManager : MonoBehaviour
     private const string PREF_LVL_SPEED = "AirBattle_Lvl_Speed";
     private const string PREF_LVL_CRIT = "AirBattle_Lvl_Crit";
 
+    // Sandık Anahtarları Prefs
+    private const string PREF_KEY_BRONZE = "AirBattle_Key_Bronze";
+    private const string PREF_KEY_SILVER = "AirBattle_Key_Silver";
+    private const string PREF_KEY_GOLD = "AirBattle_Key_Gold";
+    private const string PREF_SUPER_PLANES = "AirBattle_SingleUse_SuperPlanes";
+
     // Drone Prefs (5 Aşamalı Model & Can / Dayanıklılık Sistemi)
     public const string PREF_DRONE_LEFT = "AirBattle_Drone_Left";
     public const string PREF_DRONE_RIGHT = "AirBattle_Drone_Right";
@@ -67,6 +80,15 @@ public class HangarManager : MonoBehaviour
     public AircraftType activeAircraft = AircraftType.F16Viper;
     public int gold = 250; // Başlangıç hoş geldin hediyesi
     public int totalCratesOpened = 0;
+
+    [Header("Sandık Anahtarları (20+ Seviye Boss Ganimetleri)")]
+    public int bronzeKeys = 0;
+    public int silverKeys = 0;
+    public int goldKeys = 0;
+
+    [Header("Tek Kullanımlık Prototip Süper Uçaklar")]
+    public int singleUseSuperPlanes = 0;
+    public bool isSingleUseSuperPlaneActive = true;
 
     [Header("Kalıcı Atölye Seviyeleri (Maks 5)")]
     public int armorLevel = 0;
@@ -192,6 +214,11 @@ public class HangarManager : MonoBehaviour
         chipBonusDamage = PlayerPrefs.GetFloat(PREF_CHIP_BONUS_DMG, 0f);
         chipBonusHealth = PlayerPrefs.GetFloat(PREF_CHIP_BONUS_HP, 0f);
         totalCratesOpened = PlayerPrefs.GetInt(PREF_TOTAL_CRATES, 0);
+
+        bronzeKeys = PlayerPrefs.GetInt(PREF_KEY_BRONZE, 0);
+        silverKeys = PlayerPrefs.GetInt(PREF_KEY_SILVER, 0);
+        goldKeys = PlayerPrefs.GetInt(PREF_KEY_GOLD, 0);
+        singleUseSuperPlanes = PlayerPrefs.GetInt(PREF_SUPER_PLANES, 0);
     }
 
     public void SaveHangarData()
@@ -211,7 +238,65 @@ public class HangarManager : MonoBehaviour
         PlayerPrefs.SetFloat(PREF_CHIP_BONUS_DMG, chipBonusDamage);
         PlayerPrefs.SetFloat(PREF_CHIP_BONUS_HP, chipBonusHealth);
 
+        PlayerPrefs.SetInt(PREF_KEY_BRONZE, bronzeKeys);
+        PlayerPrefs.SetInt(PREF_KEY_SILVER, silverKeys);
+        PlayerPrefs.SetInt(PREF_KEY_GOLD, goldKeys);
+        PlayerPrefs.SetInt(PREF_SUPER_PLANES, singleUseSuperPlanes);
+
         PlayerPrefs.Save();
+    }
+
+    public int GetKeyCount(KeyType type)
+    {
+        return type switch
+        {
+            KeyType.Bronze => bronzeKeys,
+            KeyType.Silver => silverKeys,
+            KeyType.Gold   => goldKeys,
+            _              => 0
+        };
+    }
+
+    public void AddKey(KeyType type, int amount = 1)
+    {
+        LoadHangarData();
+        switch (type)
+        {
+            case KeyType.Bronze: bronzeKeys = Mathf.Max(0, bronzeKeys + amount); break;
+            case KeyType.Silver: silverKeys = Mathf.Max(0, silverKeys + amount); break;
+            case KeyType.Gold:   goldKeys = Mathf.Max(0, goldKeys + amount); break;
+        }
+        SaveHangarData();
+    }
+
+    public bool ConsumeKey(KeyType type)
+    {
+        LoadHangarData();
+        if (GetKeyCount(type) <= 0) return false;
+        switch (type)
+        {
+            case KeyType.Bronze: bronzeKeys = Mathf.Max(0, bronzeKeys - 1); break;
+            case KeyType.Silver: silverKeys = Mathf.Max(0, silverKeys - 1); break;
+            case KeyType.Gold:   goldKeys = Mathf.Max(0, goldKeys - 1); break;
+        }
+        SaveHangarData();
+        return true;
+    }
+
+    public void AddSingleUseSuperPlane(int count = 1)
+    {
+        LoadHangarData();
+        singleUseSuperPlanes = Mathf.Max(0, singleUseSuperPlanes + count);
+        SaveHangarData();
+    }
+
+    public bool ConsumeSingleUseSuperPlane()
+    {
+        LoadHangarData();
+        if (singleUseSuperPlanes <= 0) return false;
+        singleUseSuperPlanes = Mathf.Max(0, singleUseSuperPlanes - 1);
+        SaveHangarData();
+        return true;
     }
 
     /// <summary>
@@ -951,6 +1036,14 @@ public class HangarManager : MonoBehaviour
     // Geriye dönük uyumluluk yardımcıları
     public int GetDroneUnlockCost(DroneCompanion.DroneType type) => GetDroneCost(type);
     public bool TryUnlockDrone(DroneCompanion.DroneType type) => TryBuyDrone(type);
+    public void UnlockDrone(DroneCompanion.DroneType type)
+    {
+        if (type == DroneCompanion.DroneType.None) return;
+        PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 1);
+        SetDroneDeaths(type, 0);
+        SetDroneHealth(type, GetDroneMaxHealth(type));
+        SaveHangarData();
+    }
     public int GetDroneLevel(DroneCompanion.DroneType type) => (int)type;
     public bool TryUpgradeDrone(DroneCompanion.DroneType type) => TryRepairDrone(type);
 
@@ -1123,6 +1216,211 @@ public class HangarManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Sandığı özel düşen anahtar (Bronz, Gümüş, Altın) ile açar.
+    /// Her sandıktan çok üst düzey tek kullanımlık uçaklar, en üst düzey dronelar (MK-5 Titan),
+    /// veya 10.000 - 30.000 Altınlık en nadir askeri geliştirme parçaları çıkar!
+    /// </summary>
+    public CrateReward OpenCrateWithKey(CrateType type)
+    {
+        KeyType keyNeeded = type switch
+        {
+            CrateType.Bronze  => KeyType.Bronze,
+            CrateType.Silver  => KeyType.Silver,
+            CrateType.GoldAce => KeyType.Gold,
+            _                 => KeyType.Bronze
+        };
+
+        if (!ConsumeKey(keyNeeded)) return null;
+
+        CrateReward reward = new CrateReward();
+        MilitaryStoreManager store = MilitaryStoreManager.EnsureInstance();
+        float roll = UnityEngine.Random.value;
+
+        if (type == CrateType.GoldAce)
+        {
+            // ==========================================
+            // ALTIN ANAHTAR (1/100 Efsanevi Anahtar Ödülleri)
+            // ==========================================
+            if (roll < 0.35f)
+            {
+                // ÖDÜL 1: Çok Üst Düzey Tek Kullanımlık Süper Uçak (veya kalıcı süper jet kilidi!)
+                if (!IsAircraftUnlocked(AircraftType.KaanApex) && UnityEngine.Random.value < 0.40f)
+                {
+                    PlayerPrefs.SetInt(PREF_UNLOCKED_KAAN, 1);
+                    reward.title = "👑 5.+ NESİL KAAN APEX AÇILDI!";
+                    reward.description = "MİLLİ HAVA HÂKİMİYETİ ZİRVESİ! KAAN Apex savaş uçağı filonuza kalıcı olarak katıldı!";
+                    reward.rarityColorHex = "#FFD700";
+                }
+                else
+                {
+                    AddSingleUseSuperPlane(1);
+                    reward.title = "✈️ PROTOTİP 6. NESİL DARKSTAR SÜPER AVCI!";
+                    reward.description = "Tek kullanımlık gizli 6. Nesil Prototip Jet kazandınız!\nBir sonraki harekâtta devasa +160 Can, 3'lü Plazma Salvosu ve zırh kalkanı ile uçacaksınız!";
+                    reward.rarityColorHex = "#00FFFF";
+                }
+            }
+            else if (roll < 0.68f)
+            {
+                // ÖDÜL 2: En Üst Düzey Drone (MK-5 Titan Aegis - Apex Nihai İHA)
+                UnlockDrone(DroneCompanion.DroneType.MK5_TitanAegis);
+                SetDroneHealth(DroneCompanion.DroneType.MK5_TitanAegis, GetDroneMaxHealth(DroneCompanion.DroneType.MK5_TitanAegis));
+
+                if (rightDroneType != DroneCompanion.DroneType.MK5_TitanAegis)
+                    rightDroneType = DroneCompanion.DroneType.MK5_TitanAegis;
+                else
+                    leftDroneType = DroneCompanion.DroneType.MK5_TitanAegis;
+
+                PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
+                PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
+
+                reward.title = "🛡️ MK-5 TİTAN AEGIS (NİHAİ İHA) AÇILDI!";
+                reward.description = "Oyunun en üst düzey Apex Dronu! Düşman mermilerini yutan enerji kalkanı ve plazma salvosuyla donatıldı!";
+                reward.rarityColorHex = "#FF0055";
+            }
+            else
+            {
+                // ÖDÜL 3: 26.000 - 30.000 Altınlık En Pahalı ve Nadir Askeri Parça
+                string[] highTierParts = {
+                    "air_kaan_graphene",      // 30.000G
+                    "ew_kaan_cyber_suite",   // 28.000G
+                    "eng_kaan_adaptive",     // 26.000G
+                    "radar_aselsan_murad",   // 25.000G
+                    "eng_al41_3dtvc"         // 10.500G
+                };
+
+                string awardedPartId = highTierParts[0];
+                foreach (var pid in highTierParts)
+                {
+                    if (store != null && !store.IsPartUnlocked(pid))
+                    {
+                        awardedPartId = pid;
+                        break;
+                    }
+                }
+
+                AircraftPart partObj = store?.GetPartById(awardedPartId);
+                store?.UnlockPartDirectly(awardedPartId);
+
+                string pName = partObj != null ? partObj.name : "KAAN Grafen Kompozit Zırh";
+                reward.title = "⚙️ EFSANEVİ ASKERİ PARÇA HEDİYESİ!";
+                reward.description = $"{pName} (Değer: 30.000 Altın) envanterinize kalıcı olarak eklendi!";
+                reward.rarityColorHex = "#FFA500";
+            }
+        }
+        else if (type == CrateType.Silver)
+        {
+            // ==========================================
+            // GÜMÜŞ ANAHTAR Ödülleri
+            // ==========================================
+            if (roll < 0.35f)
+            {
+                AddSingleUseSuperPlane(1);
+                reward.title = "✈️ PROTOTİP SÜPER AVCI SORTİ KUPONU!";
+                reward.description = "Tek kullanımlık 6. Nesil Süper Avcı Sortisi kazandınız! Savaşa devasa güçlendirmeyle başlayacaksınız.";
+                reward.rarityColorHex = "#00E5FF";
+            }
+            else if (roll < 0.68f)
+            {
+                // Üst Düzey Drone (MK-4 Valkyrie Roket İHA)
+                DroneCompanion.DroneType awardedDrone = DroneCompanion.DroneType.MK4_Missile;
+                UnlockDrone(awardedDrone);
+                SetDroneHealth(awardedDrone, GetDroneMaxHealth(awardedDrone));
+                if (rightDroneType == DroneCompanion.DroneType.None)
+                    rightDroneType = awardedDrone;
+
+                reward.title = "🚀 MK-4 VALKYRIE (FÜZELİ İHA) AÇILDI!";
+                reward.description = "Güdümlü mikro roketlerle donatılmış ağır taarruz dronu filonuza katıldı!";
+                reward.rarityColorHex = "#9B59B6";
+            }
+            else
+            {
+                // 5.000 - 11.500 Altınlık Tier 3-4 Parça
+                string[] midTierParts = {
+                    "air_carbon_matrix",    // 11.500G
+                    "ew_aaq24_dircm",      // 11.000G
+                    "ew_drfm_jammer",       // 5.000G
+                    "eng_f119_2dtvc"        // 4.800G
+                };
+                string awardedPartId = midTierParts[UnityEngine.Random.Range(0, midTierParts.Length)];
+                foreach (var pid in midTierParts)
+                {
+                    if (store != null && !store.IsPartUnlocked(pid))
+                    {
+                        awardedPartId = pid;
+                        break;
+                    }
+                }
+                AircraftPart partObj = store?.GetPartById(awardedPartId);
+                store?.UnlockPartDirectly(awardedPartId);
+
+                string pName = partObj != null ? partObj.name : "Karbon Nanotüp Matris Gövde";
+                reward.title = "📡 GELİŞMİŞ DONANIM HEDİYESİ!";
+                reward.description = $"{pName} ücretsiz açıldı ve askeri envantere eklendi!";
+                reward.rarityColorHex = "#3498DB";
+            }
+        }
+        else // Bronze Key
+        {
+            // ==========================================
+            // BRONZ ANAHTAR Ödülleri
+            // ==========================================
+            if (roll < 0.35f)
+            {
+                // MK-2 Avcı Drone
+                DroneCompanion.DroneType awardedDrone = DroneCompanion.DroneType.MK2_Interceptor;
+                UnlockDrone(awardedDrone);
+                SetDroneHealth(awardedDrone, GetDroneMaxHealth(awardedDrone));
+                reward.title = "⚡ MK-2 AVCI İHA HEDİYESİ!";
+                reward.description = "Seri çift siber lazerli avcı destek dronu kanadınıza monte edildi!";
+                reward.rarityColorHex = "#2ECC71";
+            }
+            else if (roll < 0.70f)
+            {
+                // 1.800 - 2.000 Altınlık Donatım Parçası
+                string[] lowTierParts = {
+                    "eng_tf34_turbofan",    // 1.800G
+                    "ew_alq131_pod",        // 1.900G
+                    "air_titanium_tub"      // 2.000G
+                };
+                string awardedPartId = lowTierParts[UnityEngine.Random.Range(0, lowTierParts.Length)];
+                foreach (var pid in lowTierParts)
+                {
+                    if (store != null && !store.IsPartUnlocked(pid))
+                    {
+                        awardedPartId = pid;
+                        break;
+                    }
+                }
+                AircraftPart partObj = store?.GetPartById(awardedPartId);
+                store?.UnlockPartDirectly(awardedPartId);
+
+                string pName = partObj != null ? partObj.name : "GE TF34 Çift Turbofan";
+                reward.title = "🔧 ASKERİ DONATIM PARÇASI!";
+                reward.description = $"{pName} envanterinize eklendi!";
+                reward.rarityColorHex = "#CD7F32";
+            }
+            else
+            {
+                int goldWon = UnityEngine.Random.Range(1500, 3000);
+                gold += goldWon;
+                reward.title = "💰 ASKERİ ÖZEL İKMAL ALTINI!";
+                reward.description = $"+{goldWon:N0} Altın doğrudan kasaya aktarıldı!";
+                reward.goldGain = goldWon;
+                reward.rarityColorHex = "#F1C40F";
+            }
+        }
+
+        totalCratesOpened++;
+        reward.description += "\n<color=#FFD700>★ ÖZEL ANAHTAR ÖDÜLÜ ★</color>";
+        SaveHangarData();
+
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.UpdateGoldHUD(gold, reward.goldGain);
+
+        return reward;
+    }
+
+    /// <summary>
     /// Seçili uçağın temel özelliklerini ve kalıcı atölye geliştirmelerini oyuncunun uçağına uygular.
     /// </summary>
     public void ApplyActiveAircraftStats(PlaneController pc)
@@ -1208,6 +1506,20 @@ public class HangarManager : MonoBehaviour
         float finalSpd = baseSpd + loadout.bonusSpeed;
         float finalDmg = baseDmg + chipBonusDamage + loadout.bonusDamage;
         float finalCrit = baseCrit + loadout.bonusCrit;
+
+        // TEK KULLANIMLIK 6. NESİL SÜPER AVCI SORTİSİ KONTROLÜ
+        if (singleUseSuperPlanes > 0 && isSingleUseSuperPlaneActive)
+        {
+            ConsumeSingleUseSuperPlane();
+            finalHp += 160f;
+            finalSpd += 3.0f;
+            finalDmg += 15f;
+            baseBullets = Mathf.Max(baseBullets, 3);
+            finalCrit += 25f;
+
+            var gameUI = FindObjectOfType<GameUI>();
+            gameUI?.ShowWaveAlert("✈️ <b>[ 6. NESİL PROTOTİP SÜPER AVCI SORTİSİ AKTİF! ]</b>\n<color=#FFD700>+160 Can | +15 Hasar | 3'lü Plazma Salvosu</color>", new Color(0f, 1f, 0.9f), 3.5f);
+        }
 
         pc.moveSpeed = finalSpd;
 

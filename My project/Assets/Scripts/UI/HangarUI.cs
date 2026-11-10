@@ -1291,7 +1291,7 @@ public class HangarUI : MonoBehaviour
 
         TextMeshProUGUI stTMP = stTxtObj.AddComponent<TextMeshProUGUI>();
         stTMP.text = "🛒 ASKERİ MAĞAZA";
-        stTMP.fontSize = 20f;
+        stTMP.fontSize = 24f;
         stTMP.fontStyle = FontStyles.Bold;
         stTMP.alignment = TextAlignmentOptions.Center;
         stTMP.color = Color.white;

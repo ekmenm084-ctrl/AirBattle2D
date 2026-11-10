@@ -182,12 +182,12 @@ public class MilitaryStoreUI : MonoBehaviour
         hRt.anchorMin = new Vector2(0.5f, 1f);
         hRt.anchorMax = new Vector2(0.5f, 1f);
         hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -14f);
-        hRt.sizeDelta = new Vector2(900f, 60f);
+        hRt.anchoredPosition = new Vector2(0f, -10f);
+        hRt.sizeDelta = new Vector2(1100f, 75f);
 
         TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "<b>🛒 ASKERİ MÜHİMMAT & TEKNOLOJİ MAĞAZASI</b>\n<size=55%><color=#94A3B8>GERÇEK SAVAŞ UÇAĞI AVİYONİK, MOTOR, ZIRH & ELEKTRONİK HARP TEDARİK HATTI</color></size>";
-        titleTMP.fontSize = 26f;
+        titleTMP.text = "<b>🛒 ASKERİ MÜHİMMAT & TEKNOLOJİ MAĞAZASI</b>\n<size=72%><color=#94A3B8>GERÇEK SAVAŞ UÇAĞI AVİYONİK, MOTOR, ZIRH & ELEKTRONİK HARP TEDARİK HATTI</color></size>";
+        titleTMP.fontSize = 32f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(0.92f, 0.96f, 1.0f);
@@ -200,7 +200,7 @@ public class MilitaryStoreUI : MonoBehaviour
         bRt.anchorMax = Vector2.zero;
         bRt.pivot = Vector2.zero;
         bRt.anchoredPosition = new Vector2(40f, 25f);
-        bRt.sizeDelta = new Vector2(220f, 52f);
+        bRt.sizeDelta = new Vector2(240f, 58f);
 
         Image bImg = backBtnObj.AddComponent<Image>();
         bImg.color = new Color(0.18f, 0.28f, 0.40f);
@@ -222,7 +222,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         TextMeshProUGUI bTMP = bTxtObj.AddComponent<TextMeshProUGUI>();
         bTMP.text = "< GERİ DÖN";
-        bTMP.fontSize = 20f;
+        bTMP.fontSize = 25f;
         bTMP.fontStyle = FontStyles.Bold;
         bTMP.alignment = TextAlignmentOptions.Center;
         bTMP.color = Color.white;
@@ -234,8 +234,8 @@ public class MilitaryStoreUI : MonoBehaviour
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-25f, -14f);
-        gRt.sizeDelta = new Vector2(240f, 48f);
+        gRt.anchoredPosition = new Vector2(-25f, -12f);
+        gRt.sizeDelta = new Vector2(260f, 54f);
 
         Image gBg = goldBadgeObj.AddComponent<Image>();
         gBg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
@@ -254,7 +254,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
         _goldTMP.text = "🪙 0 G";
-        _goldTMP.fontSize = 20f;
+        _goldTMP.fontSize = 25f;
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
@@ -268,8 +268,8 @@ public class MilitaryStoreUI : MonoBehaviour
         barRt.anchorMin = new Vector2(0f, 1f);
         barRt.anchorMax = new Vector2(1f, 1f);
         barRt.pivot = new Vector2(0.5f, 1f);
-        barRt.anchoredPosition = new Vector2(0f, -76f);
-        barRt.sizeDelta = new Vector2(0f, 58f);
+        barRt.anchoredPosition = new Vector2(0f, -80f);
+        barRt.sizeDelta = new Vector2(0f, 66f);
 
         Image barBg = barObj.AddComponent<Image>();
         barBg.color = new Color(0.08f, 0.12f, 0.18f, 0.90f);
@@ -282,7 +282,7 @@ public class MilitaryStoreUI : MonoBehaviour
         prevRt.anchorMax = new Vector2(0f, 0.5f);
         prevRt.pivot = new Vector2(0f, 0.5f);
         prevRt.anchoredPosition = new Vector2(25f, 0f);
-        prevRt.sizeDelta = new Vector2(130f, 42f);
+        prevRt.sizeDelta = new Vector2(150f, 48f);
 
         Image prevImg = prevBtnObj.AddComponent<Image>();
         prevImg.color = new Color(0.16f, 0.24f, 0.35f);
@@ -294,7 +294,7 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(prevTxtObj));
         TextMeshProUGUI prevTMP = prevTxtObj.AddComponent<TextMeshProUGUI>();
         prevTMP.text = "◀ ÖNCEKİ";
-        prevTMP.fontSize = 17f;
+        prevTMP.fontSize = 22f;
         prevTMP.fontStyle = FontStyles.Bold;
         prevTMP.alignment = TextAlignmentOptions.Center;
         prevTMP.color = Color.white;
@@ -307,7 +307,7 @@ public class MilitaryStoreUI : MonoBehaviour
         nextRt.anchorMax = new Vector2(1f, 0.5f);
         nextRt.pivot = new Vector2(1f, 0.5f);
         nextRt.anchoredPosition = new Vector2(-25f, 0f);
-        nextRt.sizeDelta = new Vector2(130f, 42f);
+        nextRt.sizeDelta = new Vector2(150f, 48f);
 
         Image nextImg = nextBtnObj.AddComponent<Image>();
         nextImg.color = new Color(0.16f, 0.24f, 0.35f);
@@ -319,7 +319,7 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(nextTxtObj));
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.text = "SONRAKİ ▶";
-        nextTMP.fontSize = 17f;
+        nextTMP.fontSize = 22f;
         nextTMP.fontStyle = FontStyles.Bold;
         nextTMP.alignment = TextAlignmentOptions.Center;
         nextTMP.color = Color.white;
@@ -332,11 +332,11 @@ public class MilitaryStoreUI : MonoBehaviour
         infoRt.anchorMax = new Vector2(0.5f, 0.5f);
         infoRt.pivot = new Vector2(0.5f, 0.5f);
         infoRt.anchoredPosition = new Vector2(-70f, 0f);
-        infoRt.sizeDelta = new Vector2(600f, 50f);
+        infoRt.sizeDelta = new Vector2(620f, 55f);
 
         _planeInfoTMP = infoObj.AddComponent<TextMeshProUGUI>();
         _planeInfoTMP.text = "<b>F-16C Viper</b> (SEVİYE 20)";
-        _planeInfoTMP.fontSize = 19f;
+        _planeInfoTMP.fontSize = 25f;
         _planeInfoTMP.alignment = TextAlignmentOptions.Center;
         _planeInfoTMP.color = Color.white;
 
@@ -347,8 +347,8 @@ public class MilitaryStoreUI : MonoBehaviour
         atRt.anchorMin = new Vector2(0.5f, 0.5f);
         atRt.anchorMax = new Vector2(0.5f, 0.5f);
         atRt.pivot = new Vector2(0.5f, 0.5f);
-        atRt.anchoredPosition = new Vector2(320f, 0f);
-        atRt.sizeDelta = new Vector2(170f, 40f);
+        atRt.anchoredPosition = new Vector2(330f, 0f);
+        atRt.sizeDelta = new Vector2(200f, 48f);
 
         Image atImg = activeToggleObj.AddComponent<Image>();
         atImg.color = new Color(0.18f, 0.55f, 0.34f);
@@ -360,7 +360,7 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(atTxtObj));
         _activePlaneToggleTMP = atTxtObj.AddComponent<TextMeshProUGUI>();
         _activePlaneToggleTMP.text = "HAREKÂTA SEÇ";
-        _activePlaneToggleTMP.fontSize = 16f;
+        _activePlaneToggleTMP.fontSize = 21f;
         _activePlaneToggleTMP.fontStyle = FontStyles.Bold;
         _activePlaneToggleTMP.alignment = TextAlignmentOptions.Center;
         _activePlaneToggleTMP.color = Color.white;
@@ -374,8 +374,8 @@ public class MilitaryStoreUI : MonoBehaviour
         tRt.anchorMin = new Vector2(0f, 1f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.pivot = new Vector2(0.5f, 1f);
-        tRt.anchoredPosition = new Vector2(0f, -142f);
-        tRt.sizeDelta = new Vector2(0f, 46f);
+        tRt.anchoredPosition = new Vector2(0f, -156f);
+        tRt.sizeDelta = new Vector2(0f, 54f);
 
         HorizontalLayoutGroup hlg = tabsObj.AddComponent<HorizontalLayoutGroup>();
         hlg.spacing = 10f;
@@ -385,7 +385,7 @@ public class MilitaryStoreUI : MonoBehaviour
         hlg.childForceExpandWidth = false;
         hlg.childForceExpandHeight = true;
 
-        float tabW = 205f;
+        float tabW = 225f;
         _tabEngineBtn = CreateTabButton(tabsObj.transform, "⚡ MOTOR & İTKİ", tabW, () => SwitchTab(StoreTab.Engine));
         _tabRadarBtn = CreateTabButton(tabsObj.transform, "📡 RADAR / AVİYONİK", tabW, () => SwitchTab(StoreTab.Radar));
         _tabAirframeBtn = CreateTabButton(tabsObj.transform, "🛡️ GÖVDE & ZIRH", tabW, () => SwitchTab(StoreTab.Airframe));
@@ -398,7 +398,7 @@ public class MilitaryStoreUI : MonoBehaviour
         GameObject btnObj = new GameObject("Tab_" + title);
         btnObj.transform.SetParent(parent, false);
         RectTransform rt = GetRect(btnObj);
-        rt.sizeDelta = new Vector2(width, 44f);
+        rt.sizeDelta = new Vector2(width, 50f);
 
         Image img = btnObj.AddComponent<Image>();
         img.color = new Color(0.10f, 0.15f, 0.22f);
@@ -416,7 +416,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
         tmp.text = title;
-        tmp.fontSize = 17f;
+        tmp.fontSize = 22f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = new Color(0.70f, 0.80f, 0.90f);
@@ -431,8 +431,8 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform sRt = GetRect(_cardsScrollContainer);
         sRt.anchorMin = new Vector2(0f, 0f);
         sRt.anchorMax = new Vector2(1f, 1f);
-        sRt.offsetMin = new Vector2(25f, 85f);
-        sRt.offsetMax = new Vector2(-25f, -196f);
+        sRt.offsetMin = new Vector2(25f, 90f);
+        sRt.offsetMax = new Vector2(-25f, -218f);
 
         Image scrollBg = _cardsScrollContainer.AddComponent<Image>();
         scrollBg.color = new Color(0.06f, 0.09f, 0.14f, 0.85f);
@@ -475,8 +475,8 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform lRt = GetRect(_loadoutContainer);
         lRt.anchorMin = new Vector2(0f, 0f);
         lRt.anchorMax = new Vector2(1f, 1f);
-        lRt.offsetMin = new Vector2(25f, 85f);
-        lRt.offsetMax = new Vector2(-25f, -196f);
+        lRt.offsetMin = new Vector2(25f, 90f);
+        lRt.offsetMax = new Vector2(-25f, -218f);
 
         Image lBg = _loadoutContainer.AddComponent<Image>();
         lBg.color = new Color(0.05f, 0.08f, 0.13f, 0.95f);
@@ -502,7 +502,7 @@ public class MilitaryStoreUI : MonoBehaviour
         bRt.anchorMin = new Vector2(0.5f, 0.5f);
         bRt.anchorMax = new Vector2(0.5f, 0.5f);
         bRt.pivot = new Vector2(0.5f, 0.5f);
-        bRt.sizeDelta = new Vector2(620f, 340f);
+        bRt.sizeDelta = new Vector2(700f, 400f);
 
         Image bBg = boxObj.AddComponent<Image>();
         bBg.color = new Color(0.12f, 0.06f, 0.08f, 0.98f);
@@ -518,12 +518,12 @@ public class MilitaryStoreUI : MonoBehaviour
         tRt.anchorMin = new Vector2(0f, 1f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.pivot = new Vector2(0.5f, 1f);
-        tRt.anchoredPosition = new Vector2(0f, -20f);
-        tRt.sizeDelta = new Vector2(-30f, 40f);
+        tRt.anchoredPosition = new Vector2(0f, -22f);
+        tRt.sizeDelta = new Vector2(-30f, 48f);
 
         _warningTitleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         _warningTitleTMP.text = "⚠️ <b>UYUMSUZLUK / AŞIRI YÜKLEME UYARISI</b>";
-        _warningTitleTMP.fontSize = 22f;
+        _warningTitleTMP.fontSize = 28f;
         _warningTitleTMP.fontStyle = FontStyles.Bold;
         _warningTitleTMP.alignment = TextAlignmentOptions.Center;
         _warningTitleTMP.color = new Color(1f, 0.35f, 0.35f);
@@ -534,12 +534,12 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform dRt = GetRect(descObj);
         dRt.anchorMin = new Vector2(0f, 0f);
         dRt.anchorMax = new Vector2(1f, 1f);
-        dRt.offsetMin = new Vector2(25f, 75f);
-        dRt.offsetMax = new Vector2(-25f, -65f);
+        dRt.offsetMin = new Vector2(25f, 85f);
+        dRt.offsetMax = new Vector2(-25f, -75f);
 
         _warningDescTMP = descObj.AddComponent<TextMeshProUGUI>();
         _warningDescTMP.text = "Bu parça seçili uçağa monte edilemez!";
-        _warningDescTMP.fontSize = 17f;
+        _warningDescTMP.fontSize = 22f;
         _warningDescTMP.alignment = TextAlignmentOptions.Center;
         _warningDescTMP.color = new Color(0.92f, 0.92f, 0.95f);
 
@@ -550,8 +550,8 @@ public class MilitaryStoreUI : MonoBehaviour
         okRt.anchorMin = new Vector2(0.5f, 0f);
         okRt.anchorMax = new Vector2(0.5f, 0f);
         okRt.pivot = new Vector2(0.5f, 0f);
-        okRt.anchoredPosition = new Vector2(0f, 20f);
-        okRt.sizeDelta = new Vector2(200f, 44f);
+        okRt.anchoredPosition = new Vector2(0f, 22f);
+        okRt.sizeDelta = new Vector2(220f, 52f);
 
         Image okImg = okBtnObj.AddComponent<Image>();
         okImg.color = new Color(0.65f, 0.18f, 0.22f);
@@ -565,7 +565,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         TextMeshProUGUI okTMP = okTxtObj.AddComponent<TextMeshProUGUI>();
         okTMP.text = "ANLADIM";
-        okTMP.fontSize = 18f;
+        okTMP.fontSize = 23f;
         okTMP.fontStyle = FontStyles.Bold;
         okTMP.alignment = TextAlignmentOptions.Center;
         okTMP.color = Color.white;
@@ -746,7 +746,7 @@ public class MilitaryStoreUI : MonoBehaviour
         GameObject cardObj = new GameObject("Card_" + part.id);
         cardObj.transform.SetParent(_cardsContentTransform, false);
         RectTransform cRt = GetRect(cardObj);
-        cRt.sizeDelta = new Vector2(0f, 138f);
+        cRt.sizeDelta = new Vector2(0f, 185f);
 
         Image cBg = cardObj.AddComponent<Image>();
         cBg.color = isEquipped ? new Color(0.08f, 0.20f, 0.16f, 0.95f) : new Color(0.09f, 0.13f, 0.20f, 0.95f);
@@ -762,12 +762,12 @@ public class MilitaryStoreUI : MonoBehaviour
         tRt.anchorMin = new Vector2(0f, 1f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.pivot = new Vector2(0f, 1f);
-        tRt.anchoredPosition = new Vector2(20f, -8f);
-        tRt.sizeDelta = new Vector2(-280f, 44f);
+        tRt.anchoredPosition = new Vector2(24f, -12f);
+        tRt.sizeDelta = new Vector2(-320f, 56f);
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        tTMP.text = $"{part.GetCategoryIcon()} <b>{part.name}</b>\n<size=82%><color=#38BDF8>✈ Uyumlu Uçaklar: <b>{compPlanes}</b></color></size>";
-        tTMP.fontSize = 17f;
+        tTMP.text = $"{part.GetCategoryIcon()} <b>{part.name}</b>\n<size=85%><color=#38BDF8>✈ Uyumlu Uçaklar: <b>{compPlanes}</b></color></size>";
+        tTMP.fontSize = 23f;
         tTMP.color = Color.white;
 
         // Gerçek Askeri Bilgi (Lore) (Orta)
@@ -777,12 +777,12 @@ public class MilitaryStoreUI : MonoBehaviour
         lRt.anchorMin = new Vector2(0f, 1f);
         lRt.anchorMax = new Vector2(1f, 1f);
         lRt.pivot = new Vector2(0f, 1f);
-        lRt.anchoredPosition = new Vector2(20f, -54f);
-        lRt.sizeDelta = new Vector2(-280f, 40f);
+        lRt.anchoredPosition = new Vector2(24f, -70f);
+        lRt.sizeDelta = new Vector2(-320f, 52f);
 
         TextMeshProUGUI lTMP = loreObj.AddComponent<TextMeshProUGUI>();
         lTMP.text = $"<color=#94A3B8><i>{part.realWorldLore}</i></color>";
-        lTMP.fontSize = 13f;
+        lTMP.fontSize = 18f;
 
         // Muharebe Bonusları (Sol Alt)
         GameObject statsObj = new GameObject("Stats");
@@ -791,12 +791,12 @@ public class MilitaryStoreUI : MonoBehaviour
         stRt.anchorMin = new Vector2(0f, 0f);
         stRt.anchorMax = new Vector2(1f, 0f);
         stRt.pivot = new Vector2(0f, 0f);
-        stRt.anchoredPosition = new Vector2(20f, 10f);
-        stRt.sizeDelta = new Vector2(-280f, 28f);
+        stRt.anchoredPosition = new Vector2(24f, 14f);
+        stRt.sizeDelta = new Vector2(-320f, 36f);
 
         TextMeshProUGUI stTMP = statsObj.AddComponent<TextMeshProUGUI>();
         stTMP.text = $"<b>BONUS:</b> {part.GetStatsSummary()}";
-        stTMP.fontSize = 15f;
+        stTMP.fontSize = 20f;
 
         // Sağ Aksiyon Butonu (Satın Al / Donat / Çıkar / Uyumsuzluk Uyarısı)
         GameObject actBtnObj = new GameObject("ActionButton");
@@ -805,8 +805,8 @@ public class MilitaryStoreUI : MonoBehaviour
         aRt.anchorMin = new Vector2(1f, 0.5f);
         aRt.anchorMax = new Vector2(1f, 0.5f);
         aRt.pivot = new Vector2(1f, 0.5f);
-        aRt.anchoredPosition = new Vector2(-20f, 0f);
-        aRt.sizeDelta = new Vector2(220f, 75f);
+        aRt.anchoredPosition = new Vector2(-22f, 0f);
+        aRt.sizeDelta = new Vector2(260f, 90f);
 
         Image aImg = actBtnObj.AddComponent<Image>();
         Button aBtn = actBtnObj.AddComponent<Button>();
@@ -822,8 +822,8 @@ public class MilitaryStoreUI : MonoBehaviour
         {
             // DURUM 1: SATIN ALINMAMIŞ
             aImg.color = (hm.gold >= part.price) ? new Color(0.18f, 0.55f, 0.34f) : new Color(0.35f, 0.22f, 0.22f);
-            aTMP.text = $"SATIN AL\n<size=80%><color=#FDE047>{part.price:N0} ALTIN</color></size>";
-            aTMP.fontSize = 17f;
+            aTMP.text = $"SATIN AL\n<size=88%><color=#FDE047>{part.price:N0} ALTIN</color></size>";
+            aTMP.fontSize = 22f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -842,8 +842,8 @@ public class MilitaryStoreUI : MonoBehaviour
         {
             // DURUM 2: BU UÇAKTA DONATILMIŞ (ÇIKAR)
             aImg.color = new Color(0.15f, 0.45f, 0.28f);
-            aTMP.text = "✔ DONATILDI\n<size=75%><color=#FCA5A5>(Çıkarmak İçin Tıkla)</color></size>";
-            aTMP.fontSize = 15f;
+            aTMP.text = "✔ DONATILDI\n<size=80%><color=#FCA5A5>(Çıkarmak İçin Tıkla)</color></size>";
+            aTMP.fontSize = 21f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -856,7 +856,7 @@ public class MilitaryStoreUI : MonoBehaviour
             // DURUM 3: SATIN ALINMIŞ & UYUMLU (DONAT)
             aImg.color = new Color(0.16f, 0.45f, 0.72f);
             aTMP.text = "UÇAĞA MONTE ET";
-            aTMP.fontSize = 16f;
+            aTMP.fontSize = 21f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -871,8 +871,8 @@ public class MilitaryStoreUI : MonoBehaviour
         {
             // DURUM 4: SATIN ALINMIŞ ANCAK SEÇİLİ UÇAK DESTEKLEMİYOR
             aImg.color = new Color(0.50f, 0.18f, 0.18f);
-            aTMP.text = $"⚠️ {currentPlaneShort} DESTEKLEMEZ\n<size=75%><color=#FECACA>(Uçak Uyumsuz)</color></size>";
-            aTMP.fontSize = 14f;
+            aTMP.text = $"⚠️ {currentPlaneShort} DESTEKLEMEZ\n<size=80%><color=#FECACA>(Uçak Uyumsuz)</color></size>";
+            aTMP.fontSize = 19f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -900,12 +900,12 @@ public class MilitaryStoreUI : MonoBehaviour
         hRt.anchorMin = new Vector2(0f, 1f);
         hRt.anchorMax = new Vector2(1f, 1f);
         hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -12f);
-        hRt.sizeDelta = new Vector2(-40f, 40f);
+        hRt.anchoredPosition = new Vector2(0f, -10f);
+        hRt.sizeDelta = new Vector2(-40f, 48f);
 
         TextMeshProUGUI hTMP = headerObj.AddComponent<TextMeshProUGUI>();
         hTMP.text = $"<b>{MilitaryStoreManager.GetAircraftDisplayName(_selectedAircraft)} — 4 ASKERİ DONATIM YUVASI</b>";
-        hTMP.fontSize = 20f;
+        hTMP.fontSize = 26f;
         hTMP.alignment = TextAlignmentOptions.Center;
         hTMP.color = new Color(0.38f, 0.74f, 0.97f);
 
@@ -917,9 +917,9 @@ public class MilitaryStoreUI : MonoBehaviour
             AircraftPartCategory.ElectronicWarfare
         };
 
-        float startY = -60f;
-        float slotHeight = 85f;
-        float spacing = 10f;
+        float startY = -68f;
+        float slotHeight = 105f;
+        float spacing = 12f;
 
         for (int i = 0; i < cats.Length; i++)
         {
@@ -937,8 +937,8 @@ public class MilitaryStoreUI : MonoBehaviour
         sRt.anchorMin = new Vector2(0f, 0f);
         sRt.anchorMax = new Vector2(1f, 0f);
         sRt.pivot = new Vector2(0.5f, 0f);
-        sRt.anchoredPosition = new Vector2(0f, 15f);
-        sRt.sizeDelta = new Vector2(-40f, 75f);
+        sRt.anchoredPosition = new Vector2(0f, 12f);
+        sRt.sizeDelta = new Vector2(-40f, 95f);
 
         Image sBg = summaryObj.AddComponent<Image>();
         sBg.color = new Color(0.08f, 0.14f, 0.22f, 0.95f);
@@ -953,7 +953,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         TextMeshProUGUI sTMP = sTxtObj.AddComponent<TextMeshProUGUI>();
         sTMP.alignment = TextAlignmentOptions.Center;
-        sTMP.fontSize = 16f;
+        sTMP.fontSize = 21f;
 
         string statsStr = $"<b>TOPLAM DONATIM GÜÇLENDİRMELERİ:</b>\n" +
             $"<color=#38BDF8>+{totalStats.bonusSpeed:0.1f} Hız</color>  |  " +
@@ -975,7 +975,7 @@ public class MilitaryStoreUI : MonoBehaviour
         rRt.anchorMax = new Vector2(1f, 1f);
         rRt.pivot = new Vector2(0.5f, 1f);
         rRt.anchoredPosition = new Vector2(0f, yPos);
-        rRt.sizeDelta = new Vector2(-40f, 85f);
+        rRt.sizeDelta = new Vector2(-40f, 105f);
 
         Image rBg = rowObj.AddComponent<Image>();
         rBg.color = (part != null) ? new Color(0.08f, 0.16f, 0.24f, 0.95f) : new Color(0.06f, 0.09f, 0.13f, 0.85f);
@@ -1000,16 +1000,16 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform tRt = GetRect(textObj);
         tRt.anchorMin = Vector2.zero;
         tRt.anchorMax = Vector2.one;
-        tRt.offsetMin = new Vector2(20f, 0f);
-        tRt.offsetMax = new Vector2(-180f, 0f);
+        tRt.offsetMin = new Vector2(24f, 0f);
+        tRt.offsetMax = new Vector2(-220f, 0f);
 
         TextMeshProUGUI tTMP = textObj.AddComponent<TextMeshProUGUI>();
         tTMP.alignment = TextAlignmentOptions.MidlineLeft;
 
         if (part != null)
         {
-            tTMP.text = $"<size=80%><color=#7DD3FC>{catIcon} {catName}</color></size>\n<b>{part.name}</b>  •  {part.GetStatsSummary()}";
-            tTMP.fontSize = 17f;
+            tTMP.text = $"<size=85%><color=#7DD3FC>{catIcon} {catName}</color></size>\n<b>{part.name}</b>  •  {part.GetStatsSummary()}";
+            tTMP.fontSize = 22f;
 
             // Çıkar Butonu (Sağ)
             GameObject unequipBtnObj = new GameObject("UnequipBtn");
@@ -1019,7 +1019,7 @@ public class MilitaryStoreUI : MonoBehaviour
             uRt.anchorMax = new Vector2(1f, 0.5f);
             uRt.pivot = new Vector2(1f, 0.5f);
             uRt.anchoredPosition = new Vector2(-20f, 0f);
-            uRt.sizeDelta = new Vector2(140f, 44f);
+            uRt.sizeDelta = new Vector2(180f, 54f);
 
             Image uImg = unequipBtnObj.AddComponent<Image>();
             uImg.color = new Color(0.55f, 0.20f, 0.20f);
@@ -1036,15 +1036,15 @@ public class MilitaryStoreUI : MonoBehaviour
             MakeFullScreenRect(GetRect(uTxtObj));
             TextMeshProUGUI uTMP = uTxtObj.AddComponent<TextMeshProUGUI>();
             uTMP.text = "ÇIKAR";
-            uTMP.fontSize = 17f;
+            uTMP.fontSize = 22f;
             uTMP.fontStyle = FontStyles.Bold;
             uTMP.alignment = TextAlignmentOptions.Center;
             uTMP.color = Color.white;
         }
         else
         {
-            tTMP.text = $"<size=80%><color=#64748B>{catIcon} {catName}</color></size>\n<color=#94A3B8><i>[BOŞ YUVA - Henüz bir parça monte edilmedi]</i></color>";
-            tTMP.fontSize = 16f;
+            tTMP.text = $"<size=85%><color=#64748B>{catIcon} {catName}</color></size>\n<color=#94A3B8><i>[BOŞ YUVA - Henüz bir parça monte edilmedi]</i></color>";
+            tTMP.fontSize = 21f;
 
             // Parça Seç / Mağazaya Git Butonu
             GameObject goBtnObj = new GameObject("GoToStoreBtn");
@@ -1054,7 +1054,7 @@ public class MilitaryStoreUI : MonoBehaviour
             gRt.anchorMax = new Vector2(1f, 0.5f);
             gRt.pivot = new Vector2(1f, 0.5f);
             gRt.anchoredPosition = new Vector2(-20f, 0f);
-            gRt.sizeDelta = new Vector2(140f, 44f);
+            gRt.sizeDelta = new Vector2(180f, 54f);
 
             Image gImg = goBtnObj.AddComponent<Image>();
             gImg.color = new Color(0.18f, 0.38f, 0.60f);
@@ -1075,7 +1075,7 @@ public class MilitaryStoreUI : MonoBehaviour
             MakeFullScreenRect(GetRect(gTxtObj));
             TextMeshProUGUI gTMP = gTxtObj.AddComponent<TextMeshProUGUI>();
             gTMP.text = "PARÇA SEÇ";
-            gTMP.fontSize = 16f;
+            gTMP.fontSize = 22f;
             gTMP.fontStyle = FontStyles.Bold;
             gTMP.alignment = TextAlignmentOptions.Center;
             gTMP.color = Color.white;
