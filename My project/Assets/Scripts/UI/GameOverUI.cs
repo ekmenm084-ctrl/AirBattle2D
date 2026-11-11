@@ -64,10 +64,10 @@ public class GameOverUI : MonoBehaviour
         }
         if (canvas == null) return;
 
-        panel = new GameObject("GameOverPanel");
+        panel = new GameObject("GameOverPanel", typeof(RectTransform));
         panel.transform.SetParent(canvas.transform, false);
 
-        RectTransform pRt = panel.AddComponent<RectTransform>();
+        RectTransform pRt = panel.GetComponent<RectTransform>();
         pRt.anchorMin = Vector2.zero;
         pRt.anchorMax = Vector2.one;
         pRt.offsetMin = Vector2.zero;
@@ -77,9 +77,9 @@ public class GameOverUI : MonoBehaviour
         bg.color = new Color(0.04f, 0.08f, 0.14f, 0.94f);
 
         // Winner / Message Text
-        GameObject tObj = new GameObject("WinnerText");
+        GameObject tObj = new GameObject("WinnerText", typeof(RectTransform));
         tObj.transform.SetParent(panel.transform, false);
-        RectTransform tRt = tObj.AddComponent<RectTransform>();
+        RectTransform tRt = tObj.GetComponent<RectTransform>();
         tRt.anchorMin = new Vector2(0.1f, 0.42f);
         tRt.anchorMax = new Vector2(0.9f, 0.88f);
         tRt.offsetMin = Vector2.zero;
@@ -120,9 +120,9 @@ public class GameOverUI : MonoBehaviour
 
     private Button CreateBtn(Transform parent, string name, string text, Vector2 pos, Color col, UnityEngine.Events.UnityAction action)
     {
-        GameObject bObj = new GameObject(name);
+        GameObject bObj = new GameObject(name, typeof(RectTransform));
         bObj.transform.SetParent(parent, false);
-        RectTransform rt = bObj.AddComponent<RectTransform>();
+        RectTransform rt = bObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
@@ -136,9 +136,9 @@ public class GameOverUI : MonoBehaviour
         btn.targetGraphic = img;
         btn.onClick.AddListener(action);
 
-        GameObject tObj = new GameObject("Text");
+        GameObject tObj = new GameObject("Text", typeof(RectTransform));
         tObj.transform.SetParent(bObj.transform, false);
-        RectTransform tRt = tObj.AddComponent<RectTransform>();
+        RectTransform tRt = tObj.GetComponent<RectTransform>();
         tRt.anchorMin = Vector2.zero;
         tRt.anchorMax = Vector2.one;
         tRt.offsetMin = Vector2.zero;
@@ -166,10 +166,10 @@ public class GameOverUI : MonoBehaviour
             return;
         }
 
-        GameObject hObj = new GameObject("DirectHangarButton");
+        GameObject hObj = new GameObject("DirectHangarButton", typeof(RectTransform));
         hObj.transform.SetParent(panel.transform, false);
 
-        RectTransform rt = hObj.AddComponent<RectTransform>();
+        RectTransform rt = hObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
@@ -188,9 +188,9 @@ public class GameOverUI : MonoBehaviour
             menu?.OpenHangarPanel();
         });
 
-        GameObject txtObj = new GameObject("Text");
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(hObj.transform, false);
-        RectTransform tRt = txtObj.AddComponent<RectTransform>();
+        RectTransform tRt = txtObj.GetComponent<RectTransform>();
         tRt.anchorMin = Vector2.zero;
         tRt.anchorMax = Vector2.one;
         tRt.offsetMin = Vector2.zero;

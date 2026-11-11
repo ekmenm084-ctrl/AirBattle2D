@@ -38,7 +38,7 @@ public class UpgradeSelectionUI : MonoBehaviour
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null)
         {
-            GameObject canvasObj = new GameObject("CombatCanvas");
+            GameObject canvasObj = new GameObject("CombatCanvas", typeof(RectTransform));
             canvas = canvasObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvasObj.AddComponent<CanvasScaler>();
@@ -50,7 +50,7 @@ public class UpgradeSelectionUI : MonoBehaviour
 
         if (modalObj == null)
         {
-            modalObj = new GameObject("UpgradeSelectionUI");
+            modalObj = new GameObject("UpgradeSelectionUI", typeof(RectTransform));
             modalObj.transform.SetParent(canvas.transform, false);
         }
 
@@ -88,10 +88,10 @@ public class UpgradeSelectionUI : MonoBehaviour
     {
         if (modalRoot == null)
         {
-            modalRoot = new GameObject("ModalRoot");
+            modalRoot = new GameObject("ModalRoot", typeof(RectTransform));
             modalRoot.transform.SetParent(transform, false);
 
-            RectTransform rootRt = modalRoot.AddComponent<RectTransform>();
+            RectTransform rootRt = modalRoot.GetComponent<RectTransform>();
             rootRt.anchorMin = Vector2.zero;
             rootRt.anchorMax = Vector2.one;
             rootRt.offsetMin = Vector2.zero;
@@ -110,18 +110,18 @@ public class UpgradeSelectionUI : MonoBehaviour
         }
 
         // 1. Üst Başlık ve Bilgilendirme
-        GameObject headerObj = new GameObject("HeaderContainer");
+        GameObject headerObj = new GameObject("HeaderContainer", typeof(RectTransform));
         headerObj.transform.SetParent(modalRoot.transform, false);
-        RectTransform headerRt = headerObj.AddComponent<RectTransform>();
+        RectTransform headerRt = headerObj.GetComponent<RectTransform>();
         headerRt.anchorMin = new Vector2(0.5f, 0.89f);
         headerRt.anchorMax = new Vector2(0.5f, 0.89f);
         headerRt.pivot = new Vector2(0.5f, 0.5f);
         headerRt.sizeDelta = new Vector2(1050f, 130f);
 
         // Başlık TMP
-        GameObject titleObj = new GameObject("TitleText");
+        GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
         titleObj.transform.SetParent(headerObj.transform, false);
-        RectTransform titleRt = titleObj.AddComponent<RectTransform>();
+        RectTransform titleRt = titleObj.GetComponent<RectTransform>();
         titleRt.anchorMin = new Vector2(0.5f, 0.65f);
         titleRt.anchorMax = new Vector2(0.5f, 0.65f);
         titleRt.sizeDelta = new Vector2(1050f, 60f);
@@ -134,9 +134,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         titleTMP.color = new Color(1f, 0.85f, 0.2f); // Parlak Altın Sarısı
 
         // Alt Başlık TMP
-        GameObject subObj = new GameObject("SubText");
+        GameObject subObj = new GameObject("SubText", typeof(RectTransform));
         subObj.transform.SetParent(headerObj.transform, false);
-        RectTransform subRt = subObj.AddComponent<RectTransform>();
+        RectTransform subRt = subObj.GetComponent<RectTransform>();
         subRt.anchorMin = new Vector2(0.5f, 0.18f);
         subRt.anchorMax = new Vector2(0.5f, 0.18f);
         subRt.sizeDelta = new Vector2(1050f, 46f);
@@ -149,9 +149,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         subTMP.color = new Color(0.25f, 0.92f, 1f); // Neon Cyan
 
         // 2. Kartlar Konteynırı (Genişletilmiş ve Ferah)
-        GameObject cardsObj = new GameObject("CardsContainer");
+        GameObject cardsObj = new GameObject("CardsContainer", typeof(RectTransform));
         cardsObj.transform.SetParent(modalRoot.transform, false);
-        RectTransform cardsRt = cardsObj.AddComponent<RectTransform>();
+        RectTransform cardsRt = cardsObj.GetComponent<RectTransform>();
         cardsRt.anchorMin = new Vector2(0.5f, 0.44f);
         cardsRt.anchorMax = new Vector2(0.5f, 0.44f);
         cardsRt.pivot = new Vector2(0.5f, 0.5f);
@@ -169,10 +169,10 @@ public class UpgradeSelectionUI : MonoBehaviour
 
     private void CreateCardUI(Transform parent, UpgradeOption opt, float xPos)
     {
-        GameObject card = new GameObject("Card_" + opt.type);
+        GameObject card = new GameObject("Card_" + opt.type, typeof(RectTransform));
         card.transform.SetParent(parent, false);
 
-        RectTransform cardRt = card.AddComponent<RectTransform>();
+        RectTransform cardRt = card.GetComponent<RectTransform>();
         cardRt.anchorMin = new Vector2(0.5f, 0.5f);
         cardRt.anchorMax = new Vector2(0.5f, 0.5f);
         cardRt.pivot = new Vector2(0.5f, 0.5f);
@@ -188,9 +188,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         cardOutline.effectDistance = new Vector2(3f, -3f);
 
         // Üst Renkli Aksan Şeridi
-        GameObject accentObj = new GameObject("AccentBar");
+        GameObject accentObj = new GameObject("AccentBar", typeof(RectTransform));
         accentObj.transform.SetParent(card.transform, false);
-        RectTransform accentRt = accentObj.AddComponent<RectTransform>();
+        RectTransform accentRt = accentObj.GetComponent<RectTransform>();
         accentRt.anchorMin = new Vector2(0f, 1f);
         accentRt.anchorMax = new Vector2(1f, 1f);
         accentRt.pivot = new Vector2(0.5f, 1f);
@@ -201,9 +201,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         accentImg.color = opt.themeColor;
 
         // Rozet / Kategori TMP
-        GameObject badgeObj = new GameObject("Badge");
+        GameObject badgeObj = new GameObject("Badge", typeof(RectTransform));
         badgeObj.transform.SetParent(card.transform, false);
-        RectTransform badgeRt = badgeObj.AddComponent<RectTransform>();
+        RectTransform badgeRt = badgeObj.GetComponent<RectTransform>();
         badgeRt.anchorMin = new Vector2(0.5f, 0.93f);
         badgeRt.anchorMax = new Vector2(0.5f, 0.93f);
         badgeRt.sizeDelta = new Vector2(330f, 34f);
@@ -216,9 +216,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         badgeTMP.color = opt.themeColor;
 
         // İkon / Emoji
-        GameObject iconObj = new GameObject("Icon");
+        GameObject iconObj = new GameObject("Icon", typeof(RectTransform));
         iconObj.transform.SetParent(card.transform, false);
-        RectTransform iconRt = iconObj.AddComponent<RectTransform>();
+        RectTransform iconRt = iconObj.GetComponent<RectTransform>();
         iconRt.anchorMin = new Vector2(0.5f, 0.80f);
         iconRt.anchorMax = new Vector2(0.5f, 0.80f);
         iconRt.sizeDelta = new Vector2(330f, 54f);
@@ -231,9 +231,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         iconTMP.alignment = TextAlignmentOptions.Center;
 
         // Başlık (Büyük ve Çok Okunabilir)
-        GameObject titleObj = new GameObject("Title");
+        GameObject titleObj = new GameObject("Title", typeof(RectTransform));
         titleObj.transform.SetParent(card.transform, false);
-        RectTransform titleRt = titleObj.AddComponent<RectTransform>();
+        RectTransform titleRt = titleObj.GetComponent<RectTransform>();
         titleRt.anchorMin = new Vector2(0.5f, 0.65f);
         titleRt.anchorMax = new Vector2(0.5f, 0.65f);
         titleRt.sizeDelta = new Vector2(340f, 60f);
@@ -246,9 +246,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         titleTMP.color = Color.white;
 
         // Açıklama (Net, Büyük ve Ferah Satır Aralığı)
-        GameObject descObj = new GameObject("Desc");
+        GameObject descObj = new GameObject("Desc", typeof(RectTransform));
         descObj.transform.SetParent(card.transform, false);
-        RectTransform descRt = descObj.AddComponent<RectTransform>();
+        RectTransform descRt = descObj.GetComponent<RectTransform>();
         descRt.anchorMin = new Vector2(0.5f, 0.44f);
         descRt.anchorMax = new Vector2(0.5f, 0.44f);
         descRt.sizeDelta = new Vector2(330f, 105f);
@@ -262,9 +262,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         descTMP.textWrappingMode = TextWrappingModes.Normal;
 
         // Avantaj Kutusu (Stat Box)
-        GameObject statBox = new GameObject("StatBox");
+        GameObject statBox = new GameObject("StatBox", typeof(RectTransform));
         statBox.transform.SetParent(card.transform, false);
-        RectTransform statRt = statBox.AddComponent<RectTransform>();
+        RectTransform statRt = statBox.GetComponent<RectTransform>();
         statRt.anchorMin = new Vector2(0.5f, 0.23f);
         statRt.anchorMax = new Vector2(0.5f, 0.23f);
         statRt.sizeDelta = new Vector2(330f, 48f);
@@ -272,9 +272,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         Image statBg = statBox.AddComponent<Image>();
         statBg.color = new Color(0.04f, 0.08f, 0.14f, 0.95f);
 
-        GameObject statTxtObj = new GameObject("StatText");
+        GameObject statTxtObj = new GameObject("StatText", typeof(RectTransform));
         statTxtObj.transform.SetParent(statBox.transform, false);
-        RectTransform statTxtRt = statTxtObj.AddComponent<RectTransform>();
+        RectTransform statTxtRt = statTxtObj.GetComponent<RectTransform>();
         statTxtRt.anchorMin = Vector2.zero;
         statTxtRt.anchorMax = Vector2.one;
         statTxtRt.offsetMin = Vector2.zero;
@@ -288,9 +288,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         statTMP.color = opt.themeColor;
 
         // SEÇ & DONAT BUTONU (Geniş, Yüksek ve Okunabilir)
-        GameObject btnObj = new GameObject("SelectButton");
+        GameObject btnObj = new GameObject("SelectButton", typeof(RectTransform));
         btnObj.transform.SetParent(card.transform, false);
-        RectTransform btnRt = btnObj.AddComponent<RectTransform>();
+        RectTransform btnRt = btnObj.GetComponent<RectTransform>();
         btnRt.anchorMin = new Vector2(0.5f, 0.08f);
         btnRt.anchorMax = new Vector2(0.5f, 0.08f);
         btnRt.sizeDelta = new Vector2(320f, 60f);
@@ -307,9 +307,9 @@ public class UpgradeSelectionUI : MonoBehaviour
         cb.pressedColor = new Color(opt.themeColor.r * 0.7f, opt.themeColor.g * 0.7f, opt.themeColor.b * 0.7f);
         btn.colors = cb;
 
-        GameObject btnTxtObj = new GameObject("BtnText");
+        GameObject btnTxtObj = new GameObject("BtnText", typeof(RectTransform));
         btnTxtObj.transform.SetParent(btnObj.transform, false);
-        RectTransform btnTxtRt = btnTxtObj.AddComponent<RectTransform>();
+        RectTransform btnTxtRt = btnTxtObj.GetComponent<RectTransform>();
         btnTxtRt.anchorMin = Vector2.zero;
         btnTxtRt.anchorMax = Vector2.one;
         btnTxtRt.offsetMin = Vector2.zero;

@@ -50,7 +50,7 @@ public class PlayerProfileUI : MonoBehaviour
         if (canvas == null) return null;
 
         Transform existing = canvas.transform.Find("PlayerProfileUI");
-        GameObject go = existing != null ? existing.gameObject : new GameObject("PlayerProfileUI");
+        GameObject go = existing != null ? existing.gameObject : new GameObject("PlayerProfileUI", typeof(RectTransform));
         go.transform.SetParent(canvas.transform, false);
 
         Instance = go.GetComponent<PlayerProfileUI>();
@@ -567,29 +567,42 @@ public class PlayerProfileUI : MonoBehaviour
         mRt.anchorMax = new Vector2(0.5f, 0.5f);
         mRt.pivot = new Vector2(0.5f, 0.5f);
         mRt.anchoredPosition = Vector2.zero;
-        mRt.sizeDelta = new Vector2(850f, 680f);
+        mRt.sizeDelta = new Vector2(880f, 680f);
 
         Image bg = _dossierModal.AddComponent<Image>();
-        bg.color = new Color(0.03f, 0.06f, 0.12f, 0.98f);
+        bg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.06f, 0.12f, 0.96f), false);
+        bg.type = Image.Type.Sliced;
+        bg.color = Color.white;
 
-        Outline outline = _dossierModal.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
-        outline.effectDistance = new Vector2(3f, -3f);
+        // Üst Başlık Visor Plate
+        GameObject visorObj = new GameObject("HeaderVisor", typeof(RectTransform));
+        visorObj.transform.SetParent(_dossierModal.transform, false);
+        RectTransform vRt = visorObj.GetComponent<RectTransform>();
+        vRt.anchorMin = new Vector2(0f, 1f);
+        vRt.anchorMax = new Vector2(1f, 1f);
+        vRt.pivot = new Vector2(0.5f, 1f);
+        vRt.anchoredPosition = new Vector2(0f, -14f);
+        vRt.sizeDelta = new Vector2(840f, 52f);
 
-        // Başlık
+        Image vImg = visorObj.AddComponent<Image>();
+        vImg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.10f, 0.18f, 1f), true);
+        vImg.type = Image.Type.Sliced;
+        vImg.color = Color.white;
+
         GameObject tObj = new GameObject("Title", typeof(RectTransform));
-        tObj.transform.SetParent(_dossierModal.transform, false);
+        tObj.transform.SetParent(visorObj.transform, false);
         RectTransform tRt = tObj.GetComponent<RectTransform>();
-        tRt.anchorMin = new Vector2(0f, 1f);
-        tRt.anchorMax = new Vector2(1f, 1f);
-        tRt.pivot = new Vector2(0.5f, 1f);
-        tRt.anchoredPosition = new Vector2(0f, -25f);
-        tRt.sizeDelta = new Vector2(800f, 50f);
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
-        tTMP.text = "<b>HAVA KUVVETLERİ ASKERİ PİLOT HİZMET BELGESİ</b>";
-        tTMP.fontSize = 28f;
+        tTMP.font = MainMenuManager.GetTacticalFont();
+        tTMP.text = "DEFCON // HAVA KUVVETLERİ ASKERİ PİLOT HİZMET BELGESİ";
+        tTMP.fontSize = 20f;
         tTMP.fontStyle = FontStyles.Bold;
+        tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = Color.white;
 
@@ -597,17 +610,15 @@ public class PlayerProfileUI : MonoBehaviour
         GameObject rObj = new GameObject("RankArea", typeof(RectTransform));
         rObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform rRt = rObj.GetComponent<RectTransform>();
-        rRt.anchorMin = new Vector2(0.06f, 0.72f);
-        rRt.anchorMax = new Vector2(0.94f, 0.90f);
+        rRt.anchorMin = new Vector2(0.04f, 0.73f);
+        rRt.anchorMax = new Vector2(0.96f, 0.89f);
         rRt.offsetMin = Vector2.zero;
         rRt.offsetMax = Vector2.zero;
 
         Image rBg = rObj.AddComponent<Image>();
-        rBg.color = new Color(0.06f, 0.11f, 0.19f, 0.9f);
-
-        Outline rOutline = rObj.AddComponent<Outline>();
-        rOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
-        rOutline.effectDistance = new Vector2(2f, -2f);
+        rBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(1f, 0.85f, 0.2f, 0.85f), new Color(0.05f, 0.10f, 0.16f, 0.95f), false);
+        rBg.type = Image.Type.Sliced;
+        rBg.color = Color.white;
 
         GameObject rTxtObj = new GameObject("Text", typeof(RectTransform));
         rTxtObj.transform.SetParent(rObj.transform, false);
@@ -618,7 +629,10 @@ public class PlayerProfileUI : MonoBehaviour
         rtRt.offsetMax = Vector2.zero;
 
         _dossierRankTMP = rTxtObj.AddComponent<TextMeshProUGUI>();
-        _dossierRankTMP.fontSize = 24f;
+        _dossierRankTMP.font = MainMenuManager.GetTacticalFont();
+        _dossierRankTMP.fontSize = 21f;
+        _dossierRankTMP.fontStyle = FontStyles.Bold;
+        _dossierRankTMP.characterSpacing = 1.6f;
         _dossierRankTMP.alignment = TextAlignmentOptions.Center;
         _dossierRankTMP.color = Color.white;
 
@@ -626,13 +640,15 @@ public class PlayerProfileUI : MonoBehaviour
         GameObject sObj = new GameObject("StatsBox", typeof(RectTransform));
         sObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform sRt = sObj.GetComponent<RectTransform>();
-        sRt.anchorMin = new Vector2(0.06f, 0.22f);
-        sRt.anchorMax = new Vector2(0.48f, 0.70f);
+        sRt.anchorMin = new Vector2(0.04f, 0.20f);
+        sRt.anchorMax = new Vector2(0.485f, 0.70f);
         sRt.offsetMin = Vector2.zero;
         sRt.offsetMax = Vector2.zero;
 
         Image sBg = sObj.AddComponent<Image>();
-        sBg.color = new Color(0.05f, 0.09f, 0.16f, 0.9f);
+        sBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.7f), new Color(0.03f, 0.07f, 0.12f, 0.92f), false);
+        sBg.type = Image.Type.Sliced;
+        sBg.color = Color.white;
 
         GameObject sTxtObj = new GameObject("Text", typeof(RectTransform));
         sTxtObj.transform.SetParent(sObj.transform, false);
@@ -643,7 +659,9 @@ public class PlayerProfileUI : MonoBehaviour
         stRt.offsetMax = Vector2.zero;
 
         _dossierStatsTMP = sTxtObj.AddComponent<TextMeshProUGUI>();
-        _dossierStatsTMP.fontSize = 20f;
+        _dossierStatsTMP.font = MainMenuManager.GetTacticalFont();
+        _dossierStatsTMP.fontSize = 17f;
+        _dossierStatsTMP.characterSpacing = 1.3f;
         _dossierStatsTMP.lineSpacing = 6f;
         _dossierStatsTMP.alignment = TextAlignmentOptions.MidlineLeft;
         _dossierStatsTMP.margin = new Vector4(20f, 15f, 15f, 15f);
@@ -653,13 +671,15 @@ public class PlayerProfileUI : MonoBehaviour
         GameObject pObj = new GameObject("PerksBox", typeof(RectTransform));
         pObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform pRt = pObj.GetComponent<RectTransform>();
-        pRt.anchorMin = new Vector2(0.52f, 0.22f);
-        pRt.anchorMax = new Vector2(0.94f, 0.70f);
+        pRt.anchorMin = new Vector2(0.515f, 0.20f);
+        pRt.anchorMax = new Vector2(0.96f, 0.70f);
         pRt.offsetMin = Vector2.zero;
         pRt.offsetMax = Vector2.zero;
 
         Image pBg = pObj.AddComponent<Image>();
-        pBg.color = new Color(0.05f, 0.09f, 0.16f, 0.9f);
+        pBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.7f), new Color(0.03f, 0.07f, 0.12f, 0.92f), false);
+        pBg.type = Image.Type.Sliced;
+        pBg.color = Color.white;
 
         GameObject pTxtObj = new GameObject("Text", typeof(RectTransform));
         pTxtObj.transform.SetParent(pObj.transform, false);
@@ -670,7 +690,9 @@ public class PlayerProfileUI : MonoBehaviour
         ptRt.offsetMax = Vector2.zero;
 
         _dossierPerksTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
-        _dossierPerksTMP.fontSize = 19f;
+        _dossierPerksTMP.font = MainMenuManager.GetTacticalFont();
+        _dossierPerksTMP.fontSize = 17f;
+        _dossierPerksTMP.characterSpacing = 1.3f;
         _dossierPerksTMP.lineSpacing = 5f;
         _dossierPerksTMP.alignment = TextAlignmentOptions.MidlineLeft;
         _dossierPerksTMP.margin = new Vector4(20f, 15f, 15f, 15f);
@@ -680,17 +702,15 @@ public class PlayerProfileUI : MonoBehaviour
         GameObject editNameObj = new GameObject("EditNameBtn", typeof(RectTransform));
         editNameObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform enRt = editNameObj.GetComponent<RectTransform>();
-        enRt.anchorMin = new Vector2(0.18f, 0.05f);
-        enRt.anchorMax = new Vector2(0.48f, 0.16f);
+        enRt.anchorMin = new Vector2(0.12f, 0.04f);
+        enRt.anchorMax = new Vector2(0.48f, 0.14f);
         enRt.offsetMin = Vector2.zero;
         enRt.offsetMax = Vector2.zero;
 
         Image enImg = editNameObj.AddComponent<Image>();
-        enImg.color = new Color(0.12f, 0.45f, 0.65f);
-
-        Outline enOutline = editNameObj.AddComponent<Outline>();
-        enOutline.effectColor = new Color(0f, 0.85f, 1f, 1f);
-        enOutline.effectDistance = new Vector2(2f, -2f);
+        enImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), true);
+        enImg.type = Image.Type.Sliced;
+        enImg.color = Color.white;
 
         Button enBtn = editNameObj.AddComponent<Button>();
         enBtn.onClick.AddListener(() =>
@@ -711,9 +731,11 @@ public class PlayerProfileUI : MonoBehaviour
         entRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI enTMP = enTxtObj.AddComponent<TextMeshProUGUI>();
-        enTMP.text = "<b>✏️ ÇAĞRI KODUNU DEĞİŞTİR</b>";
-        enTMP.fontSize = 17f;
+        enTMP.font = MainMenuManager.GetTacticalFont();
+        enTMP.text = "✏️ ÇAĞRI KODUNU DEĞİŞTİR";
+        enTMP.fontSize = 15f;
         enTMP.fontStyle = FontStyles.Bold;
+        enTMP.characterSpacing = 1.4f;
         enTMP.alignment = TextAlignmentOptions.Center;
         enTMP.color = Color.white;
 
@@ -721,17 +743,15 @@ public class PlayerProfileUI : MonoBehaviour
         GameObject closeObj = new GameObject("CloseBtn", typeof(RectTransform));
         closeObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform cRt = closeObj.GetComponent<RectTransform>();
-        cRt.anchorMin = new Vector2(0.52f, 0.05f);
-        cRt.anchorMax = new Vector2(0.82f, 0.16f);
+        cRt.anchorMin = new Vector2(0.52f, 0.04f);
+        cRt.anchorMax = new Vector2(0.88f, 0.14f);
         cRt.offsetMin = Vector2.zero;
         cRt.offsetMax = Vector2.zero;
 
         Image cImg = closeObj.AddComponent<Image>();
-        cImg.color = new Color(0.20f, 0.32f, 0.48f);
-
-        Outline cOutline = closeObj.AddComponent<Outline>();
-        cOutline.effectColor = new Color(0f, 0.85f, 1f, 1f);
-        cOutline.effectDistance = new Vector2(2f, -2f);
+        cImg.sprite = MainMenuManager.GetHudSprite("hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), true);
+        cImg.type = Image.Type.Sliced;
+        cImg.color = Color.white;
 
         Button cBtn = closeObj.AddComponent<Button>();
         cBtn.onClick.AddListener(CloseDossierModal);
@@ -745,9 +765,11 @@ public class PlayerProfileUI : MonoBehaviour
         ctRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI ctTMP = cTxtObj.AddComponent<TextMeshProUGUI>();
-        ctTMP.text = "<b>KAPAT</b>";
-        ctTMP.fontSize = 22f;
+        ctTMP.font = MainMenuManager.GetTacticalFont();
+        ctTMP.text = "◀ KAPAT";
+        ctTMP.fontSize = 18f;
         ctTMP.fontStyle = FontStyles.Bold;
+        ctTMP.characterSpacing = 1.6f;
         ctTMP.alignment = TextAlignmentOptions.Center;
         ctTMP.color = Color.white;
     }

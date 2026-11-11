@@ -158,6 +158,14 @@ public class PlayerProfileManager : MonoBehaviour
         int expGain = isBoss ? 80 : (isElite ? 25 : 10);
         string tag = isBoss ? "BOSS İMHA EDİLDİ" : (isElite ? "ELİT DÜŞMAN" : "DÜŞMAN İMHA");
         AddExp(expGain, tag);
+
+        var ops = DailyOpsManager.EnsureInstance();
+        if (ops != null)
+        {
+            ops.RecordEvent(DailyOpsManager.OpsEventType.EnemyPlaneKill, 1);
+            if (isBoss)
+                ops.RecordEvent(DailyOpsManager.OpsEventType.BossKill, 1);
+        }
     }
 
     /// <summary>
@@ -168,6 +176,8 @@ public class PlayerProfileManager : MonoBehaviour
         totalWavesCleared++;
         int expGain = 20 + (wave * 2);
         AddExp(expGain, $"DALGA {wave} GEÇİLDİ");
+
+        DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.WaveCleared, 1);
     }
 
     /// <summary>

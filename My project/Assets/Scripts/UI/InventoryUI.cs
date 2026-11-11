@@ -23,9 +23,7 @@ public class InventoryUI : MonoBehaviour
     private static RectTransform GetRect(GameObject go)
     {
         if (go == null) return null;
-        RectTransform rt = go.GetComponent<RectTransform>();
-        if (rt == null) rt = go.AddComponent<RectTransform>();
-        return rt;
+        return go.GetComponent<RectTransform>();
     }
 
     public static void MakeFullScreenRect(RectTransform rt)
@@ -59,7 +57,7 @@ public class InventoryUI : MonoBehaviour
         if (canvas == null) return null;
 
         Transform existing = canvas.transform.Find("InventoryUI");
-        GameObject go = existing != null ? existing.gameObject : new GameObject("InventoryUI");
+        GameObject go = existing != null ? existing.gameObject : new GameObject("InventoryUI", typeof(RectTransform));
         go.transform.SetParent(canvas.transform, false);
         MakeFullScreenRect(GetRect(go));
         Instance = go.GetComponent<InventoryUI>();
@@ -257,14 +255,16 @@ public class InventoryUI : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
 
-        _panelRoot = new GameObject("InventoryPanelRoot");
+        _panelRoot = new GameObject("InventoryPanelRoot", typeof(RectTransform));
         _panelRoot.transform.SetParent(transform, false);
 
         RectTransform rootRt = GetRect(_panelRoot);
         MakeFullScreenRect(rootRt);
 
         Image panelBg = _panelRoot.AddComponent<Image>();
-        panelBg.color = new Color(0.02f, 0.05f, 0.09f, 1.0f);
+        panelBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.65f), new Color(0.02f, 0.05f, 0.09f, 0.92f), false);
+        panelBg.type = Image.Type.Sliced;
+        panelBg.color = Color.white;
 
         // 1. ÜST BAŞLIK & ALTIN ROZETİ
         BuildHeader();
@@ -280,39 +280,57 @@ public class InventoryUI : MonoBehaviour
 
     private void BuildHeader()
     {
-        GameObject headerObj = new GameObject("HeaderTitle");
+        GameObject headerObj = new GameObject("HeaderTitle", typeof(RectTransform));
         headerObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform hRt = GetRect(headerObj);
         hRt.anchorMin = new Vector2(0.5f, 1f);
         hRt.anchorMax = new Vector2(0.5f, 1f);
         hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -22f);
-        hRt.sizeDelta = new Vector2(1100f, 65f);
+        hRt.anchoredPosition = new Vector2(0f, -14f);
+        hRt.sizeDelta = new Vector2(1080f, 66f);
 
-        TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "<b>ASKERİ ENVANTER VE DONANIM DEPOSU</b>\n<size=55%><color=#8AB4F8>Kazanılan tüm kalıcı As çipleri, drone hangarı ve filo güç değerlendirmesi.</color></size>";
-        titleTMP.fontSize = 28f;
+        Image hBg = headerObj.AddComponent<Image>();
+        hBg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), false);
+        hBg.type = Image.Type.Sliced;
+        hBg.color = Color.white;
+        hBg.raycastTarget = false;
+
+        GameObject textObj = new GameObject("TitleText", typeof(RectTransform));
+        textObj.transform.SetParent(headerObj.transform, false);
+        RectTransform tRt = GetRect(textObj);
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = new Vector2(10f, 4f);
+        tRt.offsetMax = new Vector2(-10f, -4f);
+
+        TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
+        titleTMP.font = MainMenuManager.GetTacticalFont();
+        titleTMP.text = "<b><color=#00E5FF>DEPOT // ASKERİ ENVANTER VE DONANIM DEPOSU</color></b>\n<size=52%><color=#94A3B8>Kazanılan tüm kalıcı As çipleri, drone hangarı ve filo güç değerlendirmesi</color></size>";
+        titleTMP.fontSize = 26f;
+        titleTMP.characterSpacing = 2.2f;
+        titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = Color.white;
+        titleTMP.outlineWidth = 0.10f;
+        titleTMP.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
 
         // Üst Sağda Altın Rozeti
-        GameObject goldBadgeObj = new GameObject("GoldBadge");
+        GameObject goldBadgeObj = new GameObject("GoldBadge", typeof(RectTransform));
         goldBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform gRt = GetRect(goldBadgeObj);
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-40f, -22f);
-        gRt.sizeDelta = new Vector2(320f, 52f);
+        gRt.anchoredPosition = new Vector2(-40f, -16f);
+        gRt.sizeDelta = new Vector2(280f, 52f);
 
         Image gBg = goldBadgeObj.AddComponent<Image>();
-        gBg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
+        gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.08f, 0.12f, 0.18f, 0.95f), true);
+        gBg.type = Image.Type.Sliced;
+        gBg.color = Color.white;
+        gBg.raycastTarget = false;
 
-        Outline gOutline = goldBadgeObj.AddComponent<Outline>();
-        gOutline.effectColor = new Color(1f, 0.85f, 0.2f);
-        gOutline.effectDistance = new Vector2(2f, -2f);
-
-        GameObject goldTxtObj = new GameObject("GoldText");
+        GameObject goldTxtObj = new GameObject("GoldText", typeof(RectTransform));
         goldTxtObj.transform.SetParent(goldBadgeObj.transform, false);
         RectTransform gtRt = GetRect(goldTxtObj);
         gtRt.anchorMin = Vector2.zero;
@@ -321,11 +339,14 @@ public class InventoryUI : MonoBehaviour
         gtRt.offsetMax = new Vector2(-10f, 0f);
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
+        _goldTMP.font = MainMenuManager.GetTacticalFont();
         _goldTMP.text = "ALTIN: 0 G";
-        _goldTMP.fontSize = 24f;
+        _goldTMP.fontSize = 22f;
+        _goldTMP.characterSpacing = 2.0f;
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
+        _goldTMP.raycastTarget = false;
     }
 
     private void BuildInventoryCards()
@@ -340,7 +361,7 @@ public class InventoryUI : MonoBehaviour
 
     private void CreateCard(string objName, float posX, float posY, string headerTitle, Color accentColor, out TextMeshProUGUI contentTMP)
     {
-        GameObject cardObj = new GameObject(objName);
+        GameObject cardObj = new GameObject(objName, typeof(RectTransform));
         cardObj.transform.SetParent(_panelRoot.transform, false);
 
         RectTransform cRt = GetRect(cardObj);
@@ -351,29 +372,29 @@ public class InventoryUI : MonoBehaviour
         cRt.sizeDelta = new Vector2(450f, 540f);
 
         Image cBg = cardObj.AddComponent<Image>();
-        cBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
-
-        Outline outline = cardObj.AddComponent<Outline>();
-        outline.effectColor = accentColor;
-        outline.effectDistance = new Vector2(3f, -3f);
+        cBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", accentColor, new Color(0.03f, 0.06f, 0.11f, 0.95f), false);
+        cBg.type = Image.Type.Sliced;
+        cBg.color = Color.white;
 
         // Başlık
-        GameObject tObj = new GameObject("Title");
+        GameObject tObj = new GameObject("Title", typeof(RectTransform));
         tObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(tObj);
-        tRt.anchorMin = new Vector2(0f, 0.86f);
+        tRt.anchorMin = new Vector2(0f, 0.88f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.offsetMin = Vector2.zero;
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
+        tTMP.font = MainMenuManager.GetTacticalFont();
         tTMP.text = $"<b>{headerTitle}</b>";
         tTMP.fontSize = 22f;
+        tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = accentColor;
 
         // İçerik Metni
-        GameObject dObj = new GameObject("ContentText");
+        GameObject dObj = new GameObject("ContentText", typeof(RectTransform));
         dObj.transform.SetParent(cardObj.transform, false);
         RectTransform dRt = GetRect(dObj);
         dRt.anchorMin = new Vector2(0.06f, 0.04f);
@@ -382,9 +403,11 @@ public class InventoryUI : MonoBehaviour
         dRt.offsetMax = Vector2.zero;
 
         contentTMP = dObj.AddComponent<TextMeshProUGUI>();
+        contentTMP.font = MainMenuManager.GetTacticalFont();
         contentTMP.text = "Yükleniyor...";
         contentTMP.fontSize = 19f;
-        contentTMP.lineSpacing = 5f;
+        contentTMP.characterSpacing = 1.2f;
+        contentTMP.lineSpacing = 3.5f;
         contentTMP.alignment = TextAlignmentOptions.TopLeft;
         contentTMP.color = new Color(0.92f, 0.95f, 1f);
     }
@@ -392,40 +415,18 @@ public class InventoryUI : MonoBehaviour
     private void BuildBottomLeftBackButton()
     {
         // EKRANIN SOL EN ALTINDA GERİ DÖN BUTONU (Anchor 0,0 - Pivot 0,0)
-        GameObject backBtnObj = new GameObject("BottomLeftBackButton");
+        GameObject backBtnObj = new GameObject("BottomLeftBackButton", typeof(RectTransform));
         backBtnObj.transform.SetParent(_panelRoot.transform, false);
 
-        RectTransform bRt = GetRect(backBtnObj);
-        bRt.anchorMin = Vector2.zero;
-        bRt.anchorMax = Vector2.zero;
-        bRt.pivot = Vector2.zero;
-        bRt.anchoredPosition = new Vector2(40f, 25f);
-        bRt.sizeDelta = new Vector2(260f, 54f);
-        backBtnObj.transform.SetAsLastSibling();
-
         Image bImg = backBtnObj.AddComponent<Image>();
-        bImg.color = new Color(0.20f, 0.30f, 0.44f);
-
-        Outline bOutline = backBtnObj.AddComponent<Outline>();
-        bOutline.effectColor = new Color(0.35f, 0.75f, 1f);
-        bOutline.effectDistance = new Vector2(2f, -2f);
-
+        bImg.raycastTarget = true;
         Button bBtn = backBtnObj.AddComponent<Button>();
-        bBtn.onClick.AddListener(CloseInventory);
-
-        GameObject bTxtObj = new GameObject("Text");
+        bBtn.targetGraphic = bImg;
+        GameObject bTxtObj = new GameObject("Text", typeof(RectTransform));
         bTxtObj.transform.SetParent(backBtnObj.transform, false);
-        RectTransform bTxtRt = GetRect(bTxtObj);
-        bTxtRt.anchorMin = Vector2.zero;
-        bTxtRt.anchorMax = Vector2.one;
-        bTxtRt.offsetMin = Vector2.zero;
-        bTxtRt.offsetMax = Vector2.zero;
+        bTxtObj.AddComponent<TextMeshProUGUI>();
 
-        TextMeshProUGUI bTMP = bTxtObj.AddComponent<TextMeshProUGUI>();
-        bTMP.text = "< GERİ DÖN";
-        bTMP.fontSize = 22f;
-        bTMP.fontStyle = FontStyles.Bold;
-        bTMP.alignment = TextAlignmentOptions.Center;
-        bTMP.color = Color.white;
+        MainMenuManager.FormatBottomLeftBackBtn(bBtn, CloseInventory);
+        backBtnObj.transform.SetAsLastSibling();
     }
 }

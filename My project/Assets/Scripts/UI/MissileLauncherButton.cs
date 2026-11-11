@@ -110,7 +110,7 @@ public class MissileLauncherButton : MonoBehaviour
     private void SetupUI()
     {
         RectTransform rt = GetComponent<RectTransform>();
-        if (rt == null) rt = gameObject.AddComponent<RectTransform>();
+        if (rt == null) return;
 
         // Ateş Butonunun (-180, 180) hemen üzerinde (-180, 310) konumlanma
         rt.anchorMin = new Vector2(1f, 0f);
@@ -135,9 +135,9 @@ public class MissileLauncherButton : MonoBehaviour
         _button.onClick.AddListener(TryLaunchMissiles);
 
         // Dolum Karartma Göstergesi
-        GameObject fillObj = new GameObject("CooldownFill");
+        GameObject fillObj = new GameObject("CooldownFill", typeof(RectTransform));
         fillObj.transform.SetParent(transform, false);
-        RectTransform fillRt = fillObj.AddComponent<RectTransform>();
+        RectTransform fillRt = fillObj.GetComponent<RectTransform>();
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = Vector2.one;
         fillRt.offsetMin = Vector2.zero;
@@ -152,9 +152,9 @@ public class MissileLauncherButton : MonoBehaviour
         _cooldownFillImg.raycastTarget = false;
 
         // Metin
-        GameObject txtObj = new GameObject("Text");
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(transform, false);
-        RectTransform txtRt = txtObj.AddComponent<RectTransform>();
+        RectTransform txtRt = txtObj.GetComponent<RectTransform>();
         txtRt.anchorMin = Vector2.zero;
         txtRt.anchorMax = Vector2.one;
         txtRt.offsetMin = Vector2.zero;

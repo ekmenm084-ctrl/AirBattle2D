@@ -51,9 +51,7 @@ public class CratesUI : MonoBehaviour
     private static RectTransform GetRect(GameObject go)
     {
         if (go == null) return null;
-        RectTransform rt = go.GetComponent<RectTransform>();
-        if (rt == null) rt = go.AddComponent<RectTransform>();
-        return rt;
+        return go.GetComponent<RectTransform>();
     }
 
     public static void MakeFullScreenRect(RectTransform rt)
@@ -87,7 +85,7 @@ public class CratesUI : MonoBehaviour
         if (canvas == null) return null;
 
         Transform existing = canvas.transform.Find("CratesUI");
-        GameObject go = existing != null ? existing.gameObject : new GameObject("CratesUI");
+        GameObject go = existing != null ? existing.gameObject : new GameObject("CratesUI", typeof(RectTransform));
         go.transform.SetParent(canvas.transform, false);
         MakeFullScreenRect(GetRect(go));
         Instance = go.GetComponent<CratesUI>();
@@ -178,6 +176,7 @@ public class CratesUI : MonoBehaviour
     {
         if (badgeTMP != null)
         {
+            badgeTMP.font = MainMenuManager.GetTacticalFont();
             badgeTMP.text = $"🗝️ <b>{keyName} ANAHTAR: {keyCount} ADET</b>";
             badgeTMP.color = (keyCount > 0) ? keyCol : new Color(0.6f, 0.65f, 0.7f);
         }
@@ -189,9 +188,15 @@ public class CratesUI : MonoBehaviour
         Image img = btn.GetComponent<Image>();
         if (img != null)
         {
-            img.color = hasKey ? new Color(keyCol.r * 0.45f, keyCol.g * 0.45f, keyCol.b * 0.45f, 0.98f) : new Color(0.20f, 0.20f, 0.22f, 0.85f);
+            string spriteName = hasKey ? "hud_btn_amber" : "hud_btn_slate";
+            Color borderCol = hasKey ? keyCol : new Color(0.35f, 0.35f, 0.40f);
+            Color glassCol = hasKey ? new Color(0.12f, 0.08f, 0.04f, 0.95f) : new Color(0.04f, 0.05f, 0.08f, 0.90f);
+            img.sprite = MainMenuManager.GetHudSprite(spriteName, borderCol, glassCol, true);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
         }
 
+        tmp.font = MainMenuManager.GetTacticalFont();
         if (hasKey)
         {
             tmp.text = $"<b>🗝️ {keyName} ANAHTARLA AÇ (1x)</b>\n<size=72%><color=#FFD700>★ ÇOK DEĞERLİ EŞYA GARANTİSİ ★</color></size>";
@@ -209,13 +214,19 @@ public class CratesUI : MonoBehaviour
         if (btn == null || tmp == null) return;
         bool canAfford = (currentGold >= cost) && !_isOpeningCrate;
         btn.interactable = canAfford;
+        tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = canAfford ? $"ALTINLA AÇ ({cost:N0}G)" : $"YETERSİZ ALTIN ({cost:N0}G)";
         tmp.color = canAfford ? Color.white : new Color(0.9f, 0.6f, 0.6f);
 
         Image img = btn.GetComponent<Image>();
         if (img != null)
         {
-            img.color = canAfford ? new Color(0.18f, 0.50f, 0.30f) : new Color(0.30f, 0.22f, 0.22f);
+            string spriteName = canAfford ? "hud_btn_emerald" : "hud_btn_slate";
+            Color borderCol = canAfford ? new Color(0.18f, 0.85f, 0.45f) : new Color(0.40f, 0.30f, 0.32f);
+            Color glassCol = canAfford ? new Color(0.04f, 0.12f, 0.07f, 0.95f) : new Color(0.08f, 0.04f, 0.05f, 0.90f);
+            img.sprite = MainMenuManager.GetHudSprite(spriteName, borderCol, glassCol, true);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
         }
     }
 
@@ -225,14 +236,16 @@ public class CratesUI : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
 
-        _panelRoot = new GameObject("CratesPanelRoot");
+        _panelRoot = new GameObject("CratesPanelRoot", typeof(RectTransform));
         _panelRoot.transform.SetParent(transform, false);
 
         RectTransform rootRt = GetRect(_panelRoot);
         MakeFullScreenRect(rootRt);
 
         Image panelBg = _panelRoot.AddComponent<Image>();
-        panelBg.color = new Color(0.02f, 0.05f, 0.09f, 1.0f);
+        panelBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.65f), new Color(0.02f, 0.05f, 0.09f, 0.92f), false);
+        panelBg.type = Image.Type.Sliced;
+        panelBg.color = Color.white;
 
         // 1. ÜST PANEL & ALTIN GÖSTERGESİ
         BuildHeader();
@@ -251,57 +264,76 @@ public class CratesUI : MonoBehaviour
 
     private void BuildHeader()
     {
-        GameObject headerObj = new GameObject("HeaderTitle");
+        GameObject headerObj = new GameObject("HeaderTitle", typeof(RectTransform));
         headerObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform hRt = GetRect(headerObj);
         hRt.anchorMin = new Vector2(0.5f, 1f);
         hRt.anchorMax = new Vector2(0.5f, 1f);
         hRt.pivot = new Vector2(0.5f, 1f);
         hRt.anchoredPosition = new Vector2(0f, -14f);
-        hRt.sizeDelta = new Vector2(1100f, 65f);
+        hRt.sizeDelta = new Vector2(1080f, 66f);
 
-        TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "<b>ASKERİ HAVA İKMAL VE GANİMET SANDIKLARI</b>\n<size=58%><color=#8AB4F8>Anahtarla açıldığında süper uçaklar, MK-5 Titan droneları ve 30.000G askeri parçalar kazanın!</color></size>";
-        titleTMP.fontSize = 28f;
+        Image hBg = headerObj.AddComponent<Image>();
+        hBg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), false);
+        hBg.type = Image.Type.Sliced;
+        hBg.color = Color.white;
+        hBg.raycastTarget = false;
+
+        GameObject textObj = new GameObject("TitleText", typeof(RectTransform));
+        textObj.transform.SetParent(headerObj.transform, false);
+        RectTransform tRt = GetRect(textObj);
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = new Vector2(10f, 4f);
+        tRt.offsetMax = new Vector2(-10f, -4f);
+
+        TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
+        titleTMP.font = MainMenuManager.GetTacticalFont();
+        titleTMP.text = "<b><color=#00E5FF>SUPPLY // ASKERİ HAVA İKMAL VE GANİMET SANDIKLARI</color></b>\n<size=52%><color=#94A3B8>Boss anahtarlarıyla açıldığında 6. Nesil jet sortileri, MK-5 Titan droneları ve nadir parçalar</color></size>";
+        titleTMP.fontSize = 26f;
+        titleTMP.characterSpacing = 2.2f;
+        titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = Color.white;
+        titleTMP.outlineWidth = 0.10f;
+        titleTMP.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
 
         // Üstte Anahtar Rozeti
-        GameObject keysBadgeObj = new GameObject("KeysBadge");
+        GameObject keysBadgeObj = new GameObject("KeysBadge", typeof(RectTransform));
         keysBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform kRt = GetRect(keysBadgeObj);
         kRt.anchorMin = new Vector2(0.5f, 1f);
         kRt.anchorMax = new Vector2(0.5f, 1f);
         kRt.pivot = new Vector2(0.5f, 1f);
-        kRt.anchoredPosition = new Vector2(0f, -74f);
+        kRt.anchoredPosition = new Vector2(0f, -84f);
         kRt.sizeDelta = new Vector2(900f, 36f);
 
         _keysTMP = keysBadgeObj.AddComponent<TextMeshProUGUI>();
+        _keysTMP.font = MainMenuManager.GetTacticalFont();
         _keysTMP.text = "🗝️ <b>ANAHTARLARINIZ:</b> <color=#CD7F32>🥉 Bronz: 0</color>  |  <color=#C0C0C0>🥈 Gümüş: 0</color>  |  <color=#FFD700>👑 Altın As: 0</color>";
         _keysTMP.fontSize = 19f;
+        _keysTMP.characterSpacing = 1.6f;
         _keysTMP.fontStyle = FontStyles.Bold;
         _keysTMP.alignment = TextAlignmentOptions.Center;
         _keysTMP.color = new Color(0.9f, 0.95f, 1f);
 
         // Üst Sağda Belirgin Altın Gösterge Rozeti
-        GameObject goldBadgeObj = new GameObject("GoldBadge");
+        GameObject goldBadgeObj = new GameObject("GoldBadge", typeof(RectTransform));
         goldBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform gRt = GetRect(goldBadgeObj);
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-40f, -14f);
-        gRt.sizeDelta = new Vector2(280f, 50f);
+        gRt.anchoredPosition = new Vector2(-40f, -16f);
+        gRt.sizeDelta = new Vector2(280f, 52f);
 
         Image gBg = goldBadgeObj.AddComponent<Image>();
-        gBg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
+        gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.08f, 0.12f, 0.18f, 0.95f), true);
+        gBg.type = Image.Type.Sliced;
+        gBg.color = Color.white;
         gBg.raycastTarget = false;
 
-        Outline gOutline = goldBadgeObj.AddComponent<Outline>();
-        gOutline.effectColor = new Color(1f, 0.85f, 0.2f);
-        gOutline.effectDistance = new Vector2(2f, -2f);
-
-        GameObject goldTxtObj = new GameObject("GoldText");
+        GameObject goldTxtObj = new GameObject("GoldText", typeof(RectTransform));
         goldTxtObj.transform.SetParent(goldBadgeObj.transform, false);
         RectTransform gtRt = GetRect(goldTxtObj);
         gtRt.anchorMin = Vector2.zero;
@@ -310,8 +342,10 @@ public class CratesUI : MonoBehaviour
         gtRt.offsetMax = new Vector2(-10f, 0f);
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
+        _goldTMP.font = MainMenuManager.GetTacticalFont();
         _goldTMP.text = "ALTIN: 0 G";
         _goldTMP.fontSize = 22f;
+        _goldTMP.characterSpacing = 2.0f;
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
@@ -360,7 +394,7 @@ public class CratesUI : MonoBehaviour
         out Button keyBtn, out TextMeshProUGUI keyBtnTMP, out TextMeshProUGUI keyBadgeTMP,
         out Image crateImgRef)
     {
-        GameObject cardObj = new GameObject(objName);
+        GameObject cardObj = new GameObject(objName, typeof(RectTransform));
         cardObj.transform.SetParent(_panelRoot.transform, false);
 
         RectTransform cRt = GetRect(cardObj);
@@ -371,14 +405,12 @@ public class CratesUI : MonoBehaviour
         cRt.sizeDelta = new Vector2(440f, 570f);
 
         Image cBg = cardObj.AddComponent<Image>();
-        cBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
-
-        Outline outline = cardObj.AddComponent<Outline>();
-        outline.effectColor = accentColor;
-        outline.effectDistance = new Vector2(3f, -3f);
+        cBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", accentColor, new Color(0.03f, 0.06f, 0.11f, 0.95f), false);
+        cBg.type = Image.Type.Sliced;
+        cBg.color = Color.white;
 
         // 1. Başlık Kutusu
-        GameObject tObj = new GameObject("Title");
+        GameObject tObj = new GameObject("Title", typeof(RectTransform));
         tObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(tObj);
         tRt.anchorMin = new Vector2(0f, 0.88f);
@@ -387,13 +419,15 @@ public class CratesUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
+        tTMP.font = MainMenuManager.GetTacticalFont();
         tTMP.text = $"<b>{title}</b>";
         tTMP.fontSize = 22f;
+        tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = Color.white;
 
         // 1.1 Anahtar Rozeti
-        GameObject kbObj = new GameObject("KeyBadge");
+        GameObject kbObj = new GameObject("KeyBadge", typeof(RectTransform));
         kbObj.transform.SetParent(cardObj.transform, false);
         RectTransform kbRt = GetRect(kbObj);
         kbRt.anchorMin = new Vector2(0.05f, 0.80f);
@@ -402,14 +436,16 @@ public class CratesUI : MonoBehaviour
         kbRt.offsetMax = Vector2.zero;
 
         keyBadgeTMP = kbObj.AddComponent<TextMeshProUGUI>();
+        keyBadgeTMP.font = MainMenuManager.GetTacticalFont();
         keyBadgeTMP.text = "🗝️ <b>ANAHTAR: 0 ADET</b>";
         keyBadgeTMP.fontSize = 17f;
+        keyBadgeTMP.characterSpacing = 1.6f;
         keyBadgeTMP.fontStyle = FontStyles.Bold;
         keyBadgeTMP.alignment = TextAlignmentOptions.Center;
         keyBadgeTMP.color = accentColor;
 
         // 2. GERÇEK ASKERİ SANDIK GÖRSELİ
-        GameObject crateObj = new GameObject("CrateGraphic");
+        GameObject crateObj = new GameObject("CrateGraphic", typeof(RectTransform));
         crateObj.transform.SetParent(cardObj.transform, false);
         RectTransform crtRt = GetRect(crateObj);
         crtRt.anchorMin = new Vector2(0.5f, 0.60f);
@@ -423,7 +459,7 @@ public class CratesUI : MonoBehaviour
         crateImgRef.preserveAspect = true;
 
         // Sandık arkasında hafif atmosferik parlama efekti
-        GameObject glowObj = new GameObject("GlowBackdrop");
+        GameObject glowObj = new GameObject("GlowBackdrop", typeof(RectTransform));
         glowObj.transform.SetParent(crateObj.transform, false);
         glowObj.transform.SetAsFirstSibling();
         RectTransform gRt = GetRect(glowObj);
@@ -435,7 +471,7 @@ public class CratesUI : MonoBehaviour
         glowImg.color = new Color(accentColor.r, accentColor.g, accentColor.b, 0.22f);
 
         // 3. Sandık İçerik Açıklaması
-        GameObject dObj = new GameObject("LootDetails");
+        GameObject dObj = new GameObject("LootDetails", typeof(RectTransform));
         dObj.transform.SetParent(cardObj.transform, false);
         RectTransform dRt = GetRect(dObj);
         dRt.anchorMin = new Vector2(0.05f, 0.22f);
@@ -444,14 +480,16 @@ public class CratesUI : MonoBehaviour
         dRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI dTMP = dObj.AddComponent<TextMeshProUGUI>();
+        dTMP.font = MainMenuManager.GetTacticalFont();
         dTMP.text = lootDetails;
         dTMP.fontSize = 16f;
-        dTMP.lineSpacing = 4f;
+        dTMP.characterSpacing = 1.2f;
+        dTMP.lineSpacing = 3f;
         dTMP.alignment = TextAlignmentOptions.Center;
         dTMP.color = new Color(0.9f, 0.95f, 1f);
 
         // 4. EFSANEVİ ANAHTARLA AÇ BUTONU
-        GameObject kBtnObj = new GameObject("OpenWithKeyBtn");
+        GameObject kBtnObj = new GameObject("OpenWithKeyBtn", typeof(RectTransform));
         kBtnObj.transform.SetParent(cardObj.transform, false);
         RectTransform kbBtnRt = GetRect(kBtnObj);
         kbBtnRt.anchorMin = new Vector2(0.06f, 0.115f);
@@ -460,11 +498,9 @@ public class CratesUI : MonoBehaviour
         kbBtnRt.offsetMax = Vector2.zero;
 
         Image kbImg = kBtnObj.AddComponent<Image>();
-        kbImg.color = new Color(0.20f, 0.20f, 0.22f);
-
-        Outline kbOut = kBtnObj.AddComponent<Outline>();
-        kbOut.effectColor = accentColor;
-        kbOut.effectDistance = new Vector2(2f, -2f);
+        kbImg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", accentColor, new Color(0.12f, 0.08f, 0.04f, 0.95f), true);
+        kbImg.type = Image.Type.Sliced;
+        kbImg.color = Color.white;
 
         keyBtn = kBtnObj.AddComponent<Button>();
         HangarManager.CrateType capturedType = type;
@@ -473,18 +509,20 @@ public class CratesUI : MonoBehaviour
             OpenCrateWithKey(capturedType);
         });
 
-        GameObject ktTxtObj = new GameObject("Text");
+        GameObject ktTxtObj = new GameObject("Text", typeof(RectTransform));
         ktTxtObj.transform.SetParent(kBtnObj.transform, false);
         MakeFullScreenRect(GetRect(ktTxtObj));
         keyBtnTMP = ktTxtObj.AddComponent<TextMeshProUGUI>();
+        keyBtnTMP.font = MainMenuManager.GetTacticalFont();
         keyBtnTMP.text = "🗝️ ANAHTAR İLE AÇ";
         keyBtnTMP.fontSize = 17f;
+        keyBtnTMP.characterSpacing = 1.6f;
         keyBtnTMP.fontStyle = FontStyles.Bold;
         keyBtnTMP.alignment = TextAlignmentOptions.Center;
         keyBtnTMP.color = Color.white;
 
         // 5. NORMAL ALTINLA AÇ BUTONU
-        GameObject bObj = new GameObject("OpenWithGoldBtn");
+        GameObject bObj = new GameObject("OpenWithGoldBtn", typeof(RectTransform));
         bObj.transform.SetParent(cardObj.transform, false);
         RectTransform bRt = GetRect(bObj);
         bRt.anchorMin = new Vector2(0.06f, 0.02f);
@@ -493,7 +531,9 @@ public class CratesUI : MonoBehaviour
         bRt.offsetMax = Vector2.zero;
 
         Image bImg = bObj.AddComponent<Image>();
-        bImg.color = new Color(0.18f, 0.50f, 0.30f);
+        bImg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.10f, 0.06f, 0.95f), true);
+        bImg.type = Image.Type.Sliced;
+        bImg.color = Color.white;
 
         openBtn = bObj.AddComponent<Button>();
         openBtn.onClick.AddListener(() =>
@@ -501,13 +541,15 @@ public class CratesUI : MonoBehaviour
             OpenCrate(capturedType);
         });
 
-        GameObject txtObj = new GameObject("Text");
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(bObj.transform, false);
         MakeFullScreenRect(GetRect(txtObj));
 
         btnTMP = txtObj.AddComponent<TextMeshProUGUI>();
+        btnTMP.font = MainMenuManager.GetTacticalFont();
         btnTMP.text = $"ALTINLA AÇ ({costSub})";
         btnTMP.fontSize = 17f;
+        btnTMP.characterSpacing = 1.6f;
         btnTMP.fontStyle = FontStyles.Bold;
         btnTMP.alignment = TextAlignmentOptions.Center;
         btnTMP.color = Color.white;
@@ -516,54 +558,32 @@ public class CratesUI : MonoBehaviour
     private void BuildBottomBar()
     {
         // 1. GERİ DÖN BUTONU
-        GameObject backBtnObj = new GameObject("BackFromCratesButton");
+        GameObject backBtnObj = new GameObject("BackFromCratesButton", typeof(RectTransform));
         backBtnObj.transform.SetParent(_panelRoot.transform, false);
-        RectTransform bRt = GetRect(backBtnObj);
-        bRt.anchorMin = Vector2.zero;
-        bRt.anchorMax = Vector2.zero;
-        bRt.pivot = Vector2.zero;
-        bRt.anchoredPosition = new Vector2(40f, 22f);
-        bRt.sizeDelta = new Vector2(260f, 54f);
-
         Image bImg = backBtnObj.AddComponent<Image>();
-        bImg.color = new Color(0.20f, 0.30f, 0.44f);
-
-        Outline bOutline = backBtnObj.AddComponent<Outline>();
-        bOutline.effectColor = new Color(0.35f, 0.75f, 1f);
-        bOutline.effectDistance = new Vector2(2f, -2f);
-
+        bImg.raycastTarget = true;
         Button bBtn = backBtnObj.AddComponent<Button>();
-        bBtn.onClick.AddListener(CloseCratesPanel);
-
-        GameObject bTxtObj = new GameObject("Text");
+        bBtn.targetGraphic = bImg;
+        GameObject bTxtObj = new GameObject("Text", typeof(RectTransform));
         bTxtObj.transform.SetParent(backBtnObj.transform, false);
-        RectTransform bTxtRt = GetRect(bTxtObj);
-        bTxtRt.anchorMin = Vector2.zero;
-        bTxtRt.anchorMax = Vector2.one;
-        bTxtRt.offsetMin = Vector2.zero;
-        bTxtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI bTMP = bTxtObj.AddComponent<TextMeshProUGUI>();
-        bTMP.text = "< GERİ DÖN";
-        bTMP.fontSize = 22f;
-        bTMP.fontStyle = FontStyles.Bold;
-        bTMP.alignment = TextAlignmentOptions.Center;
-        bTMP.color = Color.white;
+        bTxtObj.AddComponent<TextMeshProUGUI>();
+        MainMenuManager.FormatBottomLeftBackBtn(bBtn, CloseCratesPanel);
+        backBtnObj.transform.SetAsLastSibling();
 
         // 2. HANGAR ENVANTERİNİ GÖR BUTONU
-        GameObject invBtnObj = new GameObject("GoToInventoryButton");
+        GameObject invBtnObj = new GameObject("GoToInventoryButton", typeof(RectTransform));
         invBtnObj.transform.SetParent(_panelRoot.transform, false);
+        Button iBtn = invBtnObj.AddComponent<Button>();
+        GameObject iTxtObj = new GameObject("Text", typeof(RectTransform));
+        iTxtObj.transform.SetParent(invBtnObj.transform, false);
+        iTxtObj.AddComponent<TextMeshProUGUI>();
+
         RectTransform iRt = GetRect(invBtnObj);
         iRt.anchorMin = new Vector2(1f, 0f);
         iRt.anchorMax = new Vector2(1f, 0f);
         iRt.pivot = new Vector2(1f, 0f);
-        iRt.anchoredPosition = new Vector2(-40f, 22f);
-        iRt.sizeDelta = new Vector2(300f, 54f);
+        MainMenuManager.FormatBtn(iBtn, 22f, "ASKERİ ENVANTER", new Color(0.35f, 0.65f, 0.95f), 280f, 50f, posX: -40f, hudSpriteName: "hud_btn_blue");
 
-        Image iImg = invBtnObj.AddComponent<Image>();
-        iImg.color = new Color(0.18f, 0.48f, 0.72f);
-
-        Button iBtn = invBtnObj.AddComponent<Button>();
         iBtn.onClick.AddListener(() =>
         {
             Action savedBack = _onBackCallback;
@@ -571,28 +591,13 @@ public class CratesUI : MonoBehaviour
             InventoryUI.EnsureUI()?.OpenInventory(() => OpenCratesPanel(savedBack));
         });
 
-        GameObject iTxtObj = new GameObject("Text");
-        iTxtObj.transform.SetParent(invBtnObj.transform, false);
-        RectTransform iTxtRt = GetRect(iTxtObj);
-        iTxtRt.anchorMin = Vector2.zero;
-        iTxtRt.anchorMax = Vector2.one;
-        iTxtRt.offsetMin = Vector2.zero;
-        iTxtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI iTMP = iTxtObj.AddComponent<TextMeshProUGUI>();
-        iTMP.text = "[ENVANTER] HANGAR ENVANTERİ";
-        iTMP.fontSize = 20f;
-        iTMP.fontStyle = FontStyles.Bold;
-        iTMP.alignment = TextAlignmentOptions.Center;
-        iTMP.color = Color.white;
-
         backBtnObj.transform.SetAsLastSibling();
     }
 
     // ==================== SİNEMATİK SANDIK AÇILMA SAHNESİ ====================
     private void BuildCinematicOpeningStage()
     {
-        _cinematicOverlayObj = new GameObject("CinematicCrateOpeningOverlay");
+        _cinematicOverlayObj = new GameObject("CinematicCrateOpeningOverlay", typeof(RectTransform));
         _cinematicOverlayObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform oRt = GetRect(_cinematicOverlayObj);
         MakeFullScreenRect(oRt);
@@ -601,7 +606,7 @@ public class CratesUI : MonoBehaviour
         overlayBg.color = new Color(0f, 0.02f, 0.05f, 0.94f); // Karartılmış odak arka planı
 
         // 1. Dönen Işık Huzmesi / Sunburst Efekti
-        GameObject rayObj = new GameObject("CinematicSunburst");
+        GameObject rayObj = new GameObject("CinematicSunburst", typeof(RectTransform));
         rayObj.transform.SetParent(_cinematicOverlayObj.transform, false);
         RectTransform rayRt = GetRect(rayObj);
         rayRt.anchorMin = new Vector2(0.5f, 0.52f);
@@ -613,7 +618,7 @@ public class CratesUI : MonoBehaviour
         _cinematicSunburstImg.color = new Color(1f, 0.88f, 0.35f, 0.35f);
 
         // 2. Büyük Merkez Sandık Görseli
-        GameObject crateCenterObj = new GameObject("CinematicCrateImage");
+        GameObject crateCenterObj = new GameObject("CinematicCrateImage", typeof(RectTransform));
         crateCenterObj.transform.SetParent(_cinematicOverlayObj.transform, false);
         _cinematicCrateRt = GetRect(crateCenterObj);
         _cinematicCrateRt.anchorMin = new Vector2(0.5f, 0.44f);
@@ -626,7 +631,7 @@ public class CratesUI : MonoBehaviour
         _cinematicCrateImg.preserveAspect = true;
 
         // 3. Sandıktan Havaya Yükselen Ödül Kartı
-        _cinematicRewardCardObj = new GameObject("RewardFloatingCard");
+        _cinematicRewardCardObj = new GameObject("RewardFloatingCard", typeof(RectTransform));
         _cinematicRewardCardObj.transform.SetParent(_cinematicOverlayObj.transform, false);
         _cinematicRewardCardRt = GetRect(_cinematicRewardCardObj);
         _cinematicRewardCardRt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -636,14 +641,12 @@ public class CratesUI : MonoBehaviour
         _cinematicRewardCardRt.sizeDelta = new Vector2(660f, 330f);
 
         Image cardBg = _cinematicRewardCardObj.AddComponent<Image>();
-        cardBg.color = new Color(0.04f, 0.07f, 0.14f, 0.98f);
-
-        _rewardCardBorder = _cinematicRewardCardObj.AddComponent<Outline>();
-        _rewardCardBorder.effectColor = Color.yellow;
-        _rewardCardBorder.effectDistance = new Vector2(3.5f, -3.5f);
+        cardBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(1f, 0.82f, 0.2f), new Color(0.04f, 0.07f, 0.14f, 0.98f), false);
+        cardBg.type = Image.Type.Sliced;
+        cardBg.color = Color.white;
 
         // Ödül Başlığı
-        GameObject tObj = new GameObject("RewardTitle");
+        GameObject tObj = new GameObject("RewardTitle", typeof(RectTransform));
         tObj.transform.SetParent(_cinematicRewardCardObj.transform, false);
         RectTransform tRt = GetRect(tObj);
         tRt.anchorMin = new Vector2(0f, 0.65f);
@@ -652,13 +655,15 @@ public class CratesUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         _rewardTitleTMP = tObj.AddComponent<TextMeshProUGUI>();
+        _rewardTitleTMP.font = MainMenuManager.GetTacticalFont();
         _rewardTitleTMP.fontSize = 28f;
+        _rewardTitleTMP.characterSpacing = 2.0f;
         _rewardTitleTMP.fontStyle = FontStyles.Bold;
         _rewardTitleTMP.alignment = TextAlignmentOptions.Center;
-        _rewardTitleTMP.color = Color.yellow;
+        _rewardTitleTMP.color = new Color(1f, 0.88f, 0.25f);
 
         // Ödül Açıklaması
-        GameObject dObj = new GameObject("RewardDesc");
+        GameObject dObj = new GameObject("RewardDesc", typeof(RectTransform));
         dObj.transform.SetParent(_cinematicRewardCardObj.transform, false);
         RectTransform dRt = GetRect(dObj);
         dRt.anchorMin = new Vector2(0.05f, 0.28f);
@@ -667,13 +672,15 @@ public class CratesUI : MonoBehaviour
         dRt.offsetMax = Vector2.zero;
 
         _rewardDescTMP = dObj.AddComponent<TextMeshProUGUI>();
+        _rewardDescTMP.font = MainMenuManager.GetTacticalFont();
         _rewardDescTMP.fontSize = 22f;
-        _rewardDescTMP.lineSpacing = 5f;
+        _rewardDescTMP.characterSpacing = 1.4f;
+        _rewardDescTMP.lineSpacing = 4f;
         _rewardDescTMP.alignment = TextAlignmentOptions.Center;
         _rewardDescTMP.color = Color.white;
 
         // Ödülü Al ve Envantere Ekle Butonu
-        GameObject okObj = new GameObject("ClaimRewardBtn");
+        GameObject okObj = new GameObject("ClaimRewardBtn", typeof(RectTransform));
         okObj.transform.SetParent(_cinematicRewardCardObj.transform, false);
         RectTransform okRt = GetRect(okObj);
         okRt.anchorMin = new Vector2(0.22f, 0.06f);
@@ -682,7 +689,9 @@ public class CratesUI : MonoBehaviour
         okRt.offsetMax = Vector2.zero;
 
         Image okImg = okObj.AddComponent<Image>();
-        okImg.color = new Color(0.18f, 0.65f, 0.35f);
+        okImg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.12f, 0.08f, 0.95f), true);
+        okImg.type = Image.Type.Sliced;
+        okImg.color = Color.white;
 
         _claimRewardBtn = okObj.AddComponent<Button>();
         _claimRewardBtn.onClick.AddListener(() =>
@@ -692,7 +701,7 @@ public class CratesUI : MonoBehaviour
             RefreshVisuals();
         });
 
-        GameObject okTxt = new GameObject("Text");
+        GameObject okTxt = new GameObject("Text", typeof(RectTransform));
         okTxt.transform.SetParent(okObj.transform, false);
         RectTransform otRt = GetRect(okTxt);
         otRt.anchorMin = Vector2.zero;
@@ -701,8 +710,10 @@ public class CratesUI : MonoBehaviour
         otRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI okTMP = okTxt.AddComponent<TextMeshProUGUI>();
+        okTMP.font = MainMenuManager.GetTacticalFont();
         okTMP.text = "<b>ÖDÜLÜ AL VE DEVAM ET</b>";
         okTMP.fontSize = 22f;
+        okTMP.characterSpacing = 2.0f;
         okTMP.fontStyle = FontStyles.Bold;
         okTMP.alignment = TextAlignmentOptions.Center;
         okTMP.color = Color.white;

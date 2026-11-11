@@ -185,7 +185,19 @@ public class LeaderboardManager : MonoBehaviour
         using (UnityWebRequest req = UnityWebRequest.Get(url))
         {
             req.timeout = 5;
-            yield return req.SendWebRequest();
+            UnityWebRequestAsyncOperation op = null;
+            try
+            {
+                op = req.SendWebRequest();
+            }
+            catch (Exception)
+            {
+                op = null;
+            }
+            if (op != null)
+            {
+                yield return op;
+            }
             // Arka planda sessizce yüklenir
         }
     }
@@ -210,14 +222,27 @@ public class LeaderboardManager : MonoBehaviour
         using (UnityWebRequest req = UnityWebRequest.Get(url))
         {
             req.timeout = 3; // 3 saniyede yanıt gelmezse hemen çevrimdışı aslar devreye girer
-            yield return req.SendWebRequest();
-
-            if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler.text))
+            UnityWebRequestAsyncOperation op = null;
+            try
             {
-                entries = ParseDreamloPipeData(req.downloadHandler.text, mode);
-                if (entries != null && entries.Count > 0)
+                op = req.SendWebRequest();
+            }
+            catch (Exception)
+            {
+                op = null;
+            }
+
+            if (op != null)
+            {
+                yield return op;
+
+                if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler.text))
                 {
-                    isLiveOnline = true;
+                    entries = ParseDreamloPipeData(req.downloadHandler.text, mode);
+                    if (entries != null && entries.Count > 0)
+                    {
+                        isLiveOnline = true;
+                    }
                 }
             }
         }

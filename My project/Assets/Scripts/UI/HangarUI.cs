@@ -60,9 +60,7 @@ public class HangarUI : MonoBehaviour
     private static RectTransform GetRect(GameObject go)
     {
         if (go == null) return null;
-        RectTransform rt = go.GetComponent<RectTransform>();
-        if (rt == null) rt = go.AddComponent<RectTransform>();
-        return rt;
+        return go.GetComponent<RectTransform>();
     }
 
     public static void MakeFullScreenRect(RectTransform rt)
@@ -96,7 +94,7 @@ public class HangarUI : MonoBehaviour
         if (canvas == null) return null;
 
         Transform existing = canvas.transform.Find("HangarUI");
-        GameObject go = existing != null ? existing.gameObject : new GameObject("HangarUI");
+        GameObject go = existing != null ? existing.gameObject : new GameObject("HangarUI", typeof(RectTransform));
         go.transform.SetParent(canvas.transform, false);
         MakeFullScreenRect(GetRect(go));
         Instance = go.GetComponent<HangarUI>();
@@ -170,12 +168,21 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
 
         if (img != null)
-            img.color = isActive ? new Color(0.18f, 0.52f, 0.78f) : new Color(0.10f, 0.14f, 0.22f);
+        {
+            string spriteName = isActive ? "hud_btn_cyan" : "hud_btn_slate";
+            Color borderCol = isActive ? new Color(0f, 0.90f, 1f) : new Color(0.40f, 0.50f, 0.65f);
+            Color glassCol = isActive ? new Color(0.04f, 0.12f, 0.20f, 0.95f) : new Color(0.03f, 0.05f, 0.09f, 0.88f);
+            img.sprite = MainMenuManager.GetHudSprite(spriteName, borderCol, glassCol, true);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
 
         if (tmp != null)
         {
+            tmp.font = MainMenuManager.GetTacticalFont();
             tmp.text = isActive ? $"<b>{title}</b>" : title;
-            tmp.color = isActive ? Color.white : new Color(0.70f, 0.78f, 0.88f);
+            tmp.characterSpacing = 2.2f;
+            tmp.color = isActive ? Color.white : new Color(0.65f, 0.75f, 0.85f);
         }
     }
 
@@ -393,14 +400,24 @@ public class HangarUI : MonoBehaviour
                 card.actionBtnTMP.text = "[AKTİF] GÖREVDE";
                 card.actionBtnTMP.color = Color.white;
                 card.actionBtn.interactable = true;
-                if (bg != null) bg.color = new Color(0.18f, 0.55f, 0.32f);
+                if (bg != null)
+                {
+                    bg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.14f, 0.08f, 0.95f), true);
+                    bg.type = Image.Type.Sliced;
+                    bg.color = Color.white;
+                }
             }
             else if (isUnlocked)
             {
                 card.actionBtnTMP.text = "GÖREVE SEÇ";
                 card.actionBtnTMP.color = Color.white;
                 card.actionBtn.interactable = true;
-                if (bg != null) bg.color = new Color(0.18f, 0.45f, 0.72f);
+                if (bg != null)
+                {
+                    bg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f), new Color(0.04f, 0.10f, 0.18f, 0.95f), true);
+                    bg.type = Image.Type.Sliced;
+                    bg.color = Color.white;
+                }
             }
             else
             {
@@ -409,7 +426,12 @@ public class HangarUI : MonoBehaviour
                     card.actionBtnTMP.text = $"SEV. {reqLvl} KİLİDİ ({unlockCost:N0}G)";
                     card.actionBtnTMP.color = new Color(0.85f, 0.5f, 0.5f);
                     card.actionBtn.interactable = false;
-                    if (bg != null) bg.color = new Color(0.24f, 0.18f, 0.20f);
+                    if (bg != null)
+                    {
+                        bg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.35f, 0.25f, 0.30f), new Color(0.08f, 0.05f, 0.07f, 0.95f), true);
+                        bg.type = Image.Type.Sliced;
+                        bg.color = Color.white;
+                    }
                 }
                 else
                 {
@@ -417,7 +439,12 @@ public class HangarUI : MonoBehaviour
                     bool canAfford = (hm.gold >= unlockCost);
                     card.actionBtnTMP.color = canAfford ? Color.yellow : new Color(0.85f, 0.5f, 0.5f);
                     card.actionBtn.interactable = canAfford;
-                    if (bg != null) bg.color = canAfford ? new Color(0.38f, 0.25f, 0.15f) : new Color(0.25f, 0.20f, 0.20f);
+                    if (bg != null)
+                    {
+                        bg.sprite = MainMenuManager.GetHudSprite(canAfford ? "hud_btn_amber" : "hud_btn_slate", canAfford ? new Color(1f, 0.82f, 0.2f) : new Color(0.4f, 0.35f, 0.35f), new Color(0.12f, 0.08f, 0.04f, 0.95f), true);
+                        bg.type = Image.Type.Sliced;
+                        bg.color = Color.white;
+                    }
                 }
             }
         }
@@ -428,7 +455,7 @@ public class HangarUI : MonoBehaviour
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
 
-        _panelRoot = new GameObject("HangarPanelRoot");
+        _panelRoot = new GameObject("HangarPanelRoot", typeof(RectTransform));
         _panelRoot.transform.SetParent(transform, false);
 
         RectTransform rootRt = GetRect(_panelRoot);
@@ -438,7 +465,9 @@ public class HangarUI : MonoBehaviour
         rootRt.offsetMax = Vector2.zero;
 
         Image panelBg = _panelRoot.AddComponent<Image>();
-        panelBg.color = new Color(0.02f, 0.05f, 0.09f, 1.0f);
+        panelBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.65f), new Color(0.02f, 0.05f, 0.09f, 0.92f), false);
+        panelBg.type = Image.Type.Sliced;
+        panelBg.color = Color.white;
 
         // 1. ÜST PANEL & ALTIN ROZETİ
         BuildHeader();
@@ -460,40 +489,56 @@ public class HangarUI : MonoBehaviour
 
     private void BuildHeader()
     {
-        GameObject headerObj = new GameObject("HeaderTitle");
+        GameObject headerObj = new GameObject("HeaderTitle", typeof(RectTransform));
         headerObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform hRt = GetRect(headerObj);
         hRt.anchorMin = new Vector2(0.5f, 1f);
         hRt.anchorMax = new Vector2(0.5f, 1f);
         hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -22f);
-        hRt.sizeDelta = new Vector2(1000f, 50f);
+        hRt.anchoredPosition = new Vector2(0f, -14f);
+        hRt.sizeDelta = new Vector2(1060f, 66f);
 
-        TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "<b>ASKERİ HANGAR</b>";
-        titleTMP.fontSize = 30f;
+        Image hBg = headerObj.AddComponent<Image>();
+        hBg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), false);
+        hBg.type = Image.Type.Sliced;
+        hBg.color = Color.white;
+        hBg.raycastTarget = false;
+
+        GameObject textObj = new GameObject("TitleText", typeof(RectTransform));
+        textObj.transform.SetParent(headerObj.transform, false);
+        RectTransform tRt = GetRect(textObj);
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = new Vector2(10f, 4f);
+        tRt.offsetMax = new Vector2(-10f, -4f);
+
+        TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
+        titleTMP.font = MainMenuManager.GetTacticalFont();
+        titleTMP.text = "<b><color=#00E5FF>DEFCON-1 // ASKERİ HANGAR</color> & FİLO ÜSSÜ</b>\n<size=52%><color=#94A3B8>Gelişmiş 5.+ nesil savaş jetleri ve taktik otonom destek filosu</color></size>";
+        titleTMP.fontSize = 26f;
+        titleTMP.characterSpacing = 2.4f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = Color.white;
+        titleTMP.outlineWidth = 0.10f;
+        titleTMP.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
 
         // Üst Sağ Altın Rozeti
-        GameObject goldBadgeObj = new GameObject("GoldBadge");
+        GameObject goldBadgeObj = new GameObject("GoldBadge", typeof(RectTransform));
         goldBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform gRt = GetRect(goldBadgeObj);
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-40f, -20f);
-        gRt.sizeDelta = new Vector2(320f, 52f);
+        gRt.anchoredPosition = new Vector2(-40f, -16f);
+        gRt.sizeDelta = new Vector2(300f, 52f);
 
         Image gBg = goldBadgeObj.AddComponent<Image>();
-        gBg.color = new Color(0.08f, 0.12f, 0.18f, 0.95f);
+        gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.08f, 0.12f, 0.18f, 0.95f), true);
+        gBg.type = Image.Type.Sliced;
+        gBg.color = Color.white;
 
-        Outline gOutline = goldBadgeObj.AddComponent<Outline>();
-        gOutline.effectColor = new Color(1f, 0.85f, 0.2f);
-        gOutline.effectDistance = new Vector2(2f, -2f);
-
-        GameObject goldTxtObj = new GameObject("GoldText");
+        GameObject goldTxtObj = new GameObject("GoldText", typeof(RectTransform));
         goldTxtObj.transform.SetParent(goldBadgeObj.transform, false);
         RectTransform gtRt = GetRect(goldTxtObj);
         gtRt.anchorMin = Vector2.zero;
@@ -502,23 +547,26 @@ public class HangarUI : MonoBehaviour
         gtRt.offsetMax = new Vector2(-10f, 0f);
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
+        _goldTMP.font = MainMenuManager.GetTacticalFont();
         _goldTMP.text = "ALTIN: 0 G";
-        _goldTMP.fontSize = 24f;
+        _goldTMP.fontSize = 22f;
+        _goldTMP.characterSpacing = 2.0f;
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
+        _goldTMP.raycastTarget = false;
     }
 
     private void BuildTabsHeader()
     {
-        GameObject tabsObj = new GameObject("TabsHeader");
+        GameObject tabsObj = new GameObject("TabsHeader", typeof(RectTransform));
         tabsObj.transform.SetParent(_panelRoot.transform, false);
 
         RectTransform tRt = GetRect(tabsObj);
         tRt.anchorMin = new Vector2(0.5f, 1f);
         tRt.anchorMax = new Vector2(0.5f, 1f);
         tRt.pivot = new Vector2(0.5f, 1f);
-        tRt.anchoredPosition = new Vector2(0f, -80f);
+        tRt.anchoredPosition = new Vector2(0f, -84f);
         tRt.sizeDelta = new Vector2(1200f, 50f);
 
         float tabWidth = 520f;
@@ -530,7 +578,7 @@ public class HangarUI : MonoBehaviour
 
     private Button CreateTabButton(Transform parent, float posX, string text, UnityEngine.Events.UnityAction action, float width)
     {
-        GameObject btnObj = new GameObject("TabBtn_" + text);
+        GameObject btnObj = new GameObject("TabBtn_" + text, typeof(RectTransform));
         btnObj.transform.SetParent(parent, false);
 
         RectTransform rt = GetRect(btnObj);
@@ -541,12 +589,14 @@ public class HangarUI : MonoBehaviour
         rt.sizeDelta = new Vector2(width, 48f);
 
         Image img = btnObj.AddComponent<Image>();
-        img.color = new Color(0.10f, 0.14f, 0.22f);
+        img.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.40f, 0.50f, 0.65f), new Color(0.03f, 0.05f, 0.09f, 0.88f), true);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
 
         Button btn = btnObj.AddComponent<Button>();
         btn.onClick.AddListener(action);
 
-        GameObject txtObj = new GameObject("Text");
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(btnObj.transform, false);
         RectTransform tRt = GetRect(txtObj);
         tRt.anchorMin = Vector2.zero;
@@ -555,8 +605,10 @@ public class HangarUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = text;
         tmp.fontSize = 20f;
+        tmp.characterSpacing = 2.0f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
@@ -567,7 +619,7 @@ public class HangarUI : MonoBehaviour
     // ==================== TAB 1: UÇAK FİLOSU (6 İLERİ DÜZEY ASKERİ JET) ====================
     private void BuildPlanesContainer()
     {
-        _planesContainer = new GameObject("PlanesContainer");
+        _planesContainer = new GameObject("PlanesContainer", typeof(RectTransform));
         _planesContainer.transform.SetParent(_panelRoot.transform, false);
 
         RectTransform rt = GetRect(_planesContainer);
@@ -577,7 +629,7 @@ public class HangarUI : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         // 1. Filo Durum Başlığı
-        GameObject statusObj = new GameObject("FleetStatus");
+        GameObject statusObj = new GameObject("FleetStatus", typeof(RectTransform));
         statusObj.transform.SetParent(_planesContainer.transform, false);
         RectTransform sRt = GetRect(statusObj);
         sRt.anchorMin = new Vector2(0.5f, 1f);
@@ -592,7 +644,7 @@ public class HangarUI : MonoBehaviour
         _fleetStatusTMP.color = Color.white;
 
         // 2. Yatay ScrollView (6 Jet Vitrini)
-        GameObject scrollObj = new GameObject("PlanesScrollView");
+        GameObject scrollObj = new GameObject("PlanesScrollView", typeof(RectTransform));
         scrollObj.transform.SetParent(_planesContainer.transform, false);
         RectTransform scRt = GetRect(scrollObj);
         scRt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -609,7 +661,7 @@ public class HangarUI : MonoBehaviour
         _planesScrollRect.scrollSensitivity = 35f;
 
         // Scroll Content
-        GameObject contentObj = new GameObject("PlanesContent");
+        GameObject contentObj = new GameObject("PlanesContent", typeof(RectTransform));
         contentObj.transform.SetParent(scrollObj.transform, false);
         RectTransform cRt = GetRect(contentObj);
         cRt.anchorMin = new Vector2(0f, 0.5f);
@@ -718,7 +770,7 @@ public class HangarUI : MonoBehaviour
 
     private void CreateNavButton(string objName, float posX, float posY, string arrowText, UnityEngine.Events.UnityAction onClick)
     {
-        GameObject btnObj = new GameObject(objName);
+        GameObject btnObj = new GameObject(objName, typeof(RectTransform));
         btnObj.transform.SetParent(_planesContainer.transform, false);
 
         RectTransform rt = GetRect(btnObj);
@@ -729,16 +781,14 @@ public class HangarUI : MonoBehaviour
         rt.sizeDelta = new Vector2(55f, 110f);
 
         Image img = btnObj.AddComponent<Image>();
-        img.color = new Color(0.08f, 0.15f, 0.26f, 0.90f);
-
-        Outline outline = btnObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0.0f, 0.85f, 1f, 0.8f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        img.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f), new Color(0.04f, 0.08f, 0.16f, 0.95f), false);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
 
         Button btn = btnObj.AddComponent<Button>();
         btn.onClick.AddListener(onClick);
 
-        GameObject txtObj = new GameObject("Text");
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(btnObj.transform, false);
         RectTransform tRt = GetRect(txtObj);
         tRt.anchorMin = Vector2.zero;
@@ -747,16 +797,17 @@ public class HangarUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = arrowText;
         tmp.fontSize = 32f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = new Color(0.0f, 0.9f, 1.0f);
+        tmp.color = new Color(0.0f, 0.95f, 1.0f);
     }
 
     private void CreatePlaneCard(string objName, Transform parent, float posX, float posY, float width, float height, string name, string subtitle, string badgeTag, string stats, Color borderColor, HangarManager.AircraftType type)
     {
-        GameObject cardObj = new GameObject(objName);
+        GameObject cardObj = new GameObject(objName, typeof(RectTransform));
         cardObj.transform.SetParent(parent, false);
 
         RectTransform cRt = GetRect(cardObj);
@@ -767,14 +818,12 @@ public class HangarUI : MonoBehaviour
         cRt.sizeDelta = new Vector2(width, height);
 
         Image cardBg = cardObj.AddComponent<Image>();
-        cardBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
-
-        Outline outline = cardObj.AddComponent<Outline>();
-        outline.effectColor = borderColor;
-        outline.effectDistance = new Vector2(2.5f, -2.5f);
+        cardBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", borderColor, new Color(0.03f, 0.06f, 0.11f, 0.95f), false);
+        cardBg.type = Image.Type.Sliced;
+        cardBg.color = Color.white;
 
         // 1. Başlık & Model Tanımı
-        GameObject titleObj = new GameObject("CardTitle");
+        GameObject titleObj = new GameObject("CardTitle", typeof(RectTransform));
         titleObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(titleObj);
         tRt.anchorMin = new Vector2(0f, 0.87f);
@@ -783,13 +832,15 @@ public class HangarUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
+        tTMP.font = MainMenuManager.GetTacticalFont();
         tTMP.text = $"<b>{name}</b>\n<size=70%><color=#8AB4F8>{subtitle}</color></size>";
         tTMP.fontSize = 20f;
+        tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = Color.white;
 
         // 2. UÇAK GÖRSEL VİTRİNİ
-        GameObject showcaseObj = new GameObject("PlaneVisualShowcase");
+        GameObject showcaseObj = new GameObject("PlaneVisualShowcase", typeof(RectTransform));
         showcaseObj.transform.SetParent(cardObj.transform, false);
         RectTransform scRt = GetRect(showcaseObj);
         scRt.anchorMin = new Vector2(0.06f, 0.52f);
@@ -798,14 +849,12 @@ public class HangarUI : MonoBehaviour
         scRt.offsetMax = Vector2.zero;
 
         Image scBg = showcaseObj.AddComponent<Image>();
-        scBg.color = new Color(0.02f, 0.05f, 0.10f, 0.95f);
-
-        Outline scOutline = showcaseObj.AddComponent<Outline>();
-        scOutline.effectColor = new Color(borderColor.r, borderColor.g, borderColor.b, 0.65f);
-        scOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        scBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(borderColor.r, borderColor.g, borderColor.b, 0.5f), new Color(0.02f, 0.04f, 0.08f, 0.92f), false);
+        scBg.type = Image.Type.Sliced;
+        scBg.color = Color.white;
 
         // Uçak Resmi
-        GameObject planeImgObj = new GameObject("PlaneSpriteImage");
+        GameObject planeImgObj = new GameObject("PlaneSpriteImage", typeof(RectTransform));
         planeImgObj.transform.SetParent(showcaseObj.transform, false);
         RectTransform imgRt = GetRect(planeImgObj);
         imgRt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -819,7 +868,7 @@ public class HangarUI : MonoBehaviour
         planeImg.preserveAspect = true;
 
         // Model Rol Rozeti
-        GameObject tagObj = new GameObject("PlaneTag");
+        GameObject tagObj = new GameObject("PlaneTag", typeof(RectTransform));
         tagObj.transform.SetParent(showcaseObj.transform, false);
         RectTransform tagRt = GetRect(tagObj);
         tagRt.anchorMin = new Vector2(0f, 0f);
@@ -828,14 +877,16 @@ public class HangarUI : MonoBehaviour
         tagRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tagTMP = tagObj.AddComponent<TextMeshProUGUI>();
+        tagTMP.font = MainMenuManager.GetTacticalFont();
         tagTMP.text = $"[ {badgeTag} ]";
         tagTMP.fontSize = 12f;
+        tagTMP.characterSpacing = 1.6f;
         tagTMP.fontStyle = FontStyles.Bold;
         tagTMP.alignment = TextAlignmentOptions.Center;
         tagTMP.color = borderColor;
 
         // 3. Teknik Özellikler
-        GameObject statObj = new GameObject("Stats");
+        GameObject statObj = new GameObject("Stats", typeof(RectTransform));
         statObj.transform.SetParent(cardObj.transform, false);
         RectTransform sRt = GetRect(statObj);
         sRt.anchorMin = new Vector2(0.06f, 0.16f);
@@ -844,14 +895,15 @@ public class HangarUI : MonoBehaviour
         sRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI sTMP = statObj.AddComponent<TextMeshProUGUI>();
+        sTMP.font = MainMenuManager.GetTacticalFont();
         sTMP.text = stats;
         sTMP.fontSize = 15f;
-        sTMP.lineSpacing = 2.5f;
+        sTMP.lineSpacing = 2.0f;
         sTMP.alignment = TextAlignmentOptions.Center;
         sTMP.color = new Color(0.9f, 0.95f, 1f);
 
         // 4. Göreve Seç / Kilidi Aç Butonu
-        GameObject btnObj = new GameObject("ActionButton");
+        GameObject btnObj = new GameObject("ActionButton", typeof(RectTransform));
         btnObj.transform.SetParent(cardObj.transform, false);
         RectTransform bRt = GetRect(btnObj);
         bRt.anchorMin = new Vector2(0.08f, 0.035f);
@@ -860,7 +912,9 @@ public class HangarUI : MonoBehaviour
         bRt.offsetMax = Vector2.zero;
 
         Image btnImg = btnObj.AddComponent<Image>();
-        btnImg.color = new Color(0.18f, 0.55f, 0.32f);
+        btnImg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.12f, 0.08f, 0.95f), true);
+        btnImg.type = Image.Type.Sliced;
+        btnImg.color = Color.white;
 
         Button actionBtn = btnObj.AddComponent<Button>();
         actionBtn.onClick.AddListener(() =>
@@ -877,7 +931,7 @@ public class HangarUI : MonoBehaviour
             RefreshAllVisuals();
         });
 
-        GameObject btnTxtObj = new GameObject("Text");
+        GameObject btnTxtObj = new GameObject("Text", typeof(RectTransform));
         btnTxtObj.transform.SetParent(btnObj.transform, false);
         RectTransform btRt = GetRect(btnTxtObj);
         btRt.anchorMin = Vector2.zero;
@@ -886,8 +940,10 @@ public class HangarUI : MonoBehaviour
         btRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI actionBtnTMP = btnTxtObj.AddComponent<TextMeshProUGUI>();
+        actionBtnTMP.font = MainMenuManager.GetTacticalFont();
         actionBtnTMP.text = "GÖREVE SEÇ";
         actionBtnTMP.fontSize = 18f;
+        actionBtnTMP.characterSpacing = 2.0f;
         actionBtnTMP.fontStyle = FontStyles.Bold;
         actionBtnTMP.alignment = TextAlignmentOptions.Center;
         actionBtnTMP.color = Color.white;
@@ -903,7 +959,7 @@ public class HangarUI : MonoBehaviour
     // ==================== TAB 2: DESTEK DRONELARI (5 AŞAMALI GÜÇ DÜZEYİ & DAYANIKLILIK) ====================
     private void BuildDronesContainer()
     {
-        _dronesContainer = new GameObject("DronesContainer");
+        _dronesContainer = new GameObject("DronesContainer", typeof(RectTransform));
         _dronesContainer.transform.SetParent(_panelRoot.transform, false);
 
         RectTransform rt = GetRect(_dronesContainer);
@@ -913,7 +969,7 @@ public class HangarUI : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         // Kanat Yuva Durumu
-        GameObject statusObj = new GameObject("DroneSlotsStatus");
+        GameObject statusObj = new GameObject("DroneSlotsStatus", typeof(RectTransform));
         statusObj.transform.SetParent(_dronesContainer.transform, false);
         RectTransform sRt = GetRect(statusObj);
         sRt.anchorMin = new Vector2(0.5f, 1f);
@@ -976,7 +1032,7 @@ public class HangarUI : MonoBehaviour
 
     private void CreateDroneCard(string objName, float posX, float posY, string title, string subtitle, string description, Color accentColor, DroneCompanion.DroneType type, string tierBadge)
     {
-        GameObject cardObj = new GameObject(objName);
+        GameObject cardObj = new GameObject(objName, typeof(RectTransform));
         cardObj.transform.SetParent(_dronesContainer.transform, false);
 
         RectTransform cRt = GetRect(cardObj);
@@ -987,14 +1043,12 @@ public class HangarUI : MonoBehaviour
         cRt.sizeDelta = new Vector2(275f, 545f);
 
         Image cBg = cardObj.AddComponent<Image>();
-        cBg.color = new Color(0.06f, 0.10f, 0.17f, 0.95f);
-
-        Outline outline = cardObj.AddComponent<Outline>();
-        outline.effectColor = accentColor;
-        outline.effectDistance = new Vector2(2.5f, -2.5f);
+        cBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", accentColor, new Color(0.03f, 0.06f, 0.11f, 0.95f), false);
+        cBg.type = Image.Type.Sliced;
+        cBg.color = Color.white;
 
         // 1. Başlık & Alt Başlık
-        GameObject tObj = new GameObject("Title");
+        GameObject tObj = new GameObject("Title", typeof(RectTransform));
         tObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(tObj);
         tRt.anchorMin = new Vector2(0f, 0.88f);
@@ -1003,13 +1057,15 @@ public class HangarUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
+        tTMP.font = MainMenuManager.GetTacticalFont();
         tTMP.text = $"<b>{title}</b>\n<size=70%><color=#8AB4F8>{subtitle}</color></size>";
         tTMP.fontSize = 20f;
+        tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
         tTMP.color = Color.white;
 
         // 2. Drone Görsel Vitrini
-        GameObject showcaseObj = new GameObject("DroneVisualShowcase");
+        GameObject showcaseObj = new GameObject("DroneVisualShowcase", typeof(RectTransform));
         showcaseObj.transform.SetParent(cardObj.transform, false);
         RectTransform scRt = GetRect(showcaseObj);
         scRt.anchorMin = new Vector2(0.06f, 0.63f);
@@ -1018,14 +1074,12 @@ public class HangarUI : MonoBehaviour
         scRt.offsetMax = Vector2.zero;
 
         Image scBg = showcaseObj.AddComponent<Image>();
-        scBg.color = new Color(0.03f, 0.06f, 0.12f, 0.95f);
-
-        Outline scOutline = showcaseObj.AddComponent<Outline>();
-        scOutline.effectColor = new Color(accentColor.r, accentColor.g, accentColor.b, 0.65f);
-        scOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        scBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(accentColor.r, accentColor.g, accentColor.b, 0.5f), new Color(0.02f, 0.04f, 0.08f, 0.92f), false);
+        scBg.type = Image.Type.Sliced;
+        scBg.color = Color.white;
 
         // Drone İkonu
-        GameObject iconObj = new GameObject("DroneIconImage");
+        GameObject iconObj = new GameObject("DroneIconImage", typeof(RectTransform));
         iconObj.transform.SetParent(showcaseObj.transform, false);
         RectTransform iconRt = GetRect(iconObj);
         iconRt.anchorMin = new Vector2(0.5f, 0.5f);
@@ -1039,7 +1093,7 @@ public class HangarUI : MonoBehaviour
         iconImg.preserveAspect = true;
 
         // Drone Tip Rozeti
-        GameObject tagObj = new GameObject("DroneTag");
+        GameObject tagObj = new GameObject("DroneTag", typeof(RectTransform));
         tagObj.transform.SetParent(showcaseObj.transform, false);
         RectTransform tagRt = GetRect(tagObj);
         tagRt.anchorMin = new Vector2(0f, 0f);
@@ -1048,14 +1102,16 @@ public class HangarUI : MonoBehaviour
         tagRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tagTMP = tagObj.AddComponent<TextMeshProUGUI>();
+        tagTMP.font = MainMenuManager.GetTacticalFont();
         tagTMP.text = $"[ {tierBadge} ]";
         tagTMP.fontSize = 12f;
+        tagTMP.characterSpacing = 1.6f;
         tagTMP.fontStyle = FontStyles.Bold;
         tagTMP.alignment = TextAlignmentOptions.Center;
         tagTMP.color = accentColor;
 
         // 3. Dayanıklılık (Can) Barı
-        GameObject hpBarBgObj = new GameObject("HpBarBg");
+        GameObject hpBarBgObj = new GameObject("HpBarBg", typeof(RectTransform));
         hpBarBgObj.transform.SetParent(cardObj.transform, false);
         RectTransform hpBgRt = GetRect(hpBarBgObj);
         hpBgRt.anchorMin = new Vector2(0.06f, 0.53f);
@@ -1066,7 +1122,7 @@ public class HangarUI : MonoBehaviour
         Image hpBgImg = hpBarBgObj.AddComponent<Image>();
         hpBgImg.color = new Color(0.03f, 0.05f, 0.08f, 1f);
 
-        GameObject hpFillObj = new GameObject("HpFill");
+        GameObject hpFillObj = new GameObject("HpFill", typeof(RectTransform));
         hpFillObj.transform.SetParent(hpBarBgObj.transform, false);
         RectTransform hpFillRt = GetRect(hpFillObj);
         hpFillRt.anchorMin = Vector2.zero;
@@ -1080,7 +1136,7 @@ public class HangarUI : MonoBehaviour
         hpFill.fillOrigin = (int)Image.OriginHorizontal.Left;
         hpFill.color = new Color(0.2f, 0.9f, 0.4f);
 
-        GameObject hpTxtObj = new GameObject("HpText");
+        GameObject hpTxtObj = new GameObject("HpText", typeof(RectTransform));
         hpTxtObj.transform.SetParent(hpBarBgObj.transform, false);
         RectTransform htRt = GetRect(hpTxtObj);
         htRt.anchorMin = Vector2.zero;
@@ -1089,13 +1145,14 @@ public class HangarUI : MonoBehaviour
         htRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI hpTMP = hpTxtObj.AddComponent<TextMeshProUGUI>();
+        hpTMP.font = MainMenuManager.GetTacticalFont();
         hpTMP.fontSize = 12f;
         hpTMP.fontStyle = FontStyles.Bold;
         hpTMP.alignment = TextAlignmentOptions.Center;
         hpTMP.color = Color.white;
 
         // 4. Açıklama & Savaş Nitelikleri
-        GameObject dObj = new GameObject("Desc");
+        GameObject dObj = new GameObject("Desc", typeof(RectTransform));
         dObj.transform.SetParent(cardObj.transform, false);
         RectTransform dRt = GetRect(dObj);
         dRt.anchorMin = new Vector2(0.06f, 0.32f);
@@ -1104,14 +1161,15 @@ public class HangarUI : MonoBehaviour
         dRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI dTMP = dObj.AddComponent<TextMeshProUGUI>();
+        dTMP.font = MainMenuManager.GetTacticalFont();
         dTMP.text = description;
         dTMP.fontSize = 14f;
-        dTMP.lineSpacing = 3f;
+        dTMP.lineSpacing = 2.0f;
         dTMP.alignment = TextAlignmentOptions.Center;
         dTMP.color = new Color(0.9f, 0.95f, 1f);
 
         // 5. Satın Alma / Tekrar Al Butonu (Kilitli veya Canı bitince)
-        GameObject unlObj = new GameObject("BuyBtn");
+        GameObject unlObj = new GameObject("BuyBtn", typeof(RectTransform));
         unlObj.transform.SetParent(cardObj.transform, false);
         RectTransform unlRt = GetRect(unlObj);
         unlRt.anchorMin = new Vector2(0.06f, 0.04f);
@@ -1119,7 +1177,11 @@ public class HangarUI : MonoBehaviour
         unlRt.offsetMin = Vector2.zero;
         unlRt.offsetMax = Vector2.zero;
 
-        unlObj.AddComponent<Image>();
+        Image unlImg = unlObj.AddComponent<Image>();
+        unlImg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.12f, 0.08f, 0.95f), true);
+        unlImg.type = Image.Type.Sliced;
+        unlImg.color = Color.white;
+
         Button buyBtn = unlObj.AddComponent<Button>();
         buyBtn.onClick.AddListener(() =>
         {
@@ -1131,7 +1193,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI buyTMP = CreateButtonTMP(unlObj, "SATIN AL");
 
         // 6. Kuşanma Butonları (Sol Kanat & Sağ Kanat)
-        GameObject eqLObj = new GameObject("EquipLeftBtn");
+        GameObject eqLObj = new GameObject("EquipLeftBtn", typeof(RectTransform));
         eqLObj.transform.SetParent(cardObj.transform, false);
         RectTransform elRt = GetRect(eqLObj);
         elRt.anchorMin = new Vector2(0.06f, 0.16f);
@@ -1139,7 +1201,11 @@ public class HangarUI : MonoBehaviour
         elRt.offsetMin = Vector2.zero;
         elRt.offsetMax = Vector2.zero;
 
-        eqLObj.AddComponent<Image>();
+        Image eqLImg = eqLObj.AddComponent<Image>();
+        eqLImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f), new Color(0.04f, 0.09f, 0.18f, 0.95f), true);
+        eqLImg.type = Image.Type.Sliced;
+        eqLImg.color = Color.white;
+
         Button equipLBtn = eqLObj.AddComponent<Button>();
         equipLBtn.onClick.AddListener(() =>
         {
@@ -1148,7 +1214,7 @@ public class HangarUI : MonoBehaviour
         });
         TextMeshProUGUI eqLTMP = CreateButtonTMP(eqLObj, "SOL TAK");
 
-        GameObject eqRObj = new GameObject("EquipRightBtn");
+        GameObject eqRObj = new GameObject("EquipRightBtn", typeof(RectTransform));
         eqRObj.transform.SetParent(cardObj.transform, false);
         RectTransform erRt = GetRect(eqRObj);
         erRt.anchorMin = new Vector2(0.52f, 0.16f);
@@ -1156,7 +1222,11 @@ public class HangarUI : MonoBehaviour
         erRt.offsetMin = Vector2.zero;
         erRt.offsetMax = Vector2.zero;
 
-        eqRObj.AddComponent<Image>();
+        Image eqRImg = eqRObj.AddComponent<Image>();
+        eqRImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f), new Color(0.04f, 0.09f, 0.18f, 0.95f), true);
+        eqRImg.type = Image.Type.Sliced;
+        eqRImg.color = Color.white;
+
         Button equipRBtn = eqRObj.AddComponent<Button>();
         equipRBtn.onClick.AddListener(() =>
         {
@@ -1166,7 +1236,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI eqRTMP = CreateButtonTMP(eqRObj, "SAĞ TAK");
 
         // 7. Onarım Butonu
-        GameObject repObj = new GameObject("RepairBtn");
+        GameObject repObj = new GameObject("RepairBtn", typeof(RectTransform));
         repObj.transform.SetParent(cardObj.transform, false);
         RectTransform repRt = GetRect(repObj);
         repRt.anchorMin = new Vector2(0.06f, 0.03f);
@@ -1174,7 +1244,11 @@ public class HangarUI : MonoBehaviour
         repRt.offsetMin = Vector2.zero;
         repRt.offsetMax = Vector2.zero;
 
-        repObj.AddComponent<Image>();
+        Image repImg = repObj.AddComponent<Image>();
+        repImg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.18f, 0.12f, 0.04f, 0.95f), true);
+        repImg.type = Image.Type.Sliced;
+        repImg.color = Color.white;
+
         Button repBtn = repObj.AddComponent<Button>();
         repBtn.onClick.AddListener(() =>
         {
@@ -1205,7 +1279,7 @@ public class HangarUI : MonoBehaviour
 
     private TextMeshProUGUI CreateButtonTMP(GameObject parent, string text)
     {
-        GameObject tObj = new GameObject("Text");
+        GameObject tObj = new GameObject("Text", typeof(RectTransform));
         tObj.transform.SetParent(parent.transform, false);
         RectTransform rt = GetRect(tObj);
         rt.anchorMin = Vector2.zero;
@@ -1214,8 +1288,10 @@ public class HangarUI : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = tObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = text;
         tmp.fontSize = 18f;
+        tmp.characterSpacing = 1.8f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
@@ -1225,150 +1301,78 @@ public class HangarUI : MonoBehaviour
     private void BuildBottomBar()
     {
         // 1. GERİ DÖN BUTONU (EKRANIN SOL EN ALTINDA)
-        GameObject backBtnObj = new GameObject("BackFromHangarButton");
+        GameObject backBtnObj = new GameObject("BackFromHangarButton", typeof(RectTransform));
         backBtnObj.transform.SetParent(_panelRoot.transform, false);
-
-        RectTransform bRt = GetRect(backBtnObj);
-        bRt.anchorMin = Vector2.zero;
-        bRt.anchorMax = Vector2.zero;
-        bRt.pivot = Vector2.zero;
-        bRt.anchoredPosition = new Vector2(40f, 25f);
-        bRt.sizeDelta = new Vector2(260f, 54f);
-
         Image bImg = backBtnObj.AddComponent<Image>();
-        bImg.color = new Color(0.20f, 0.30f, 0.44f);
-
-        Outline bOutline = backBtnObj.AddComponent<Outline>();
-        bOutline.effectColor = new Color(0.35f, 0.75f, 1f);
-        bOutline.effectDistance = new Vector2(2f, -2f);
-
+        bImg.raycastTarget = true;
         Button bBtn = backBtnObj.AddComponent<Button>();
-        bBtn.onClick.AddListener(CloseHangar);
-
-        GameObject bTxtObj = new GameObject("Text");
+        bBtn.targetGraphic = bImg;
+        GameObject bTxtObj = new GameObject("Text", typeof(RectTransform));
         bTxtObj.transform.SetParent(backBtnObj.transform, false);
-        RectTransform bTxtRt = GetRect(bTxtObj);
-        bTxtRt.anchorMin = Vector2.zero;
-        bTxtRt.anchorMax = Vector2.one;
-        bTxtRt.offsetMin = Vector2.zero;
-        bTxtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI bTMP = bTxtObj.AddComponent<TextMeshProUGUI>();
-        bTMP.text = "< GERİ DÖN";
-        bTMP.fontSize = 22f;
-        bTMP.fontStyle = FontStyles.Bold;
-        bTMP.alignment = TextAlignmentOptions.Center;
-        bTMP.color = Color.white;
+        bTxtObj.AddComponent<TextMeshProUGUI>();
+        MainMenuManager.FormatBottomLeftBackBtn(bBtn, CloseHangar);
+        backBtnObj.transform.SetAsLastSibling();
 
         // 2. ASKERİ MAĞAZA VE DONATIM BUTONU
-        GameObject storeBtnObj = new GameObject("OpenMilitaryStoreButton");
+        GameObject storeBtnObj = new GameObject("OpenMilitaryStoreButton", typeof(RectTransform));
         storeBtnObj.transform.SetParent(_panelRoot.transform, false);
+        Button stBtn = storeBtnObj.AddComponent<Button>();
+        GameObject stTxtObj = new GameObject("Text", typeof(RectTransform));
+        stTxtObj.transform.SetParent(storeBtnObj.transform, false);
+        stTxtObj.AddComponent<TextMeshProUGUI>();
 
         RectTransform stRt = GetRect(storeBtnObj);
         stRt.anchorMin = new Vector2(1f, 0f);
         stRt.anchorMax = new Vector2(1f, 0f);
         stRt.pivot = new Vector2(1f, 0f);
-        stRt.anchoredPosition = new Vector2(-640f, 25f);
-        stRt.sizeDelta = new Vector2(280f, 54f);
+        MainMenuManager.FormatBtn(stBtn, 25f, "🛒 ASKERİ MAĞAZA", new Color(0f, 0.85f, 1f), 280f, 50f, posX: -640f, hudSpriteName: "hud_btn_teal");
 
-        Image stImg = storeBtnObj.AddComponent<Image>();
-        stImg.color = new Color(0.15f, 0.58f, 0.65f);
-
-        Outline stOutline = storeBtnObj.AddComponent<Outline>();
-        stOutline.effectColor = new Color(0.38f, 0.85f, 0.95f);
-        stOutline.effectDistance = new Vector2(2f, -2f);
-
-        Button stBtn = storeBtnObj.AddComponent<Button>();
         stBtn.onClick.AddListener(() =>
         {
             CloseDirectly();
             MilitaryStoreUI.EnsureUI()?.OpenStore();
         });
 
-        GameObject stTxtObj = new GameObject("Text");
-        stTxtObj.transform.SetParent(storeBtnObj.transform, false);
-        MakeFullScreenRect(GetRect(stTxtObj));
-
-        TextMeshProUGUI stTMP = stTxtObj.AddComponent<TextMeshProUGUI>();
-        stTMP.text = "🛒 ASKERİ MAĞAZA";
-        stTMP.fontSize = 24f;
-        stTMP.fontStyle = FontStyles.Bold;
-        stTMP.alignment = TextAlignmentOptions.Center;
-        stTMP.color = Color.white;
-
-        // 3. ASKERİ ENVANTERİ AÇ BUTONU (ÖNCEKİ MENÜ KAPANIR, YENİ SAYFADA AÇILIR)
-        GameObject invBtnObj = new GameObject("OpenInventoryButton");
+        // 3. ASKERİ ENVANTERİ AÇ BUTONU
+        GameObject invBtnObj = new GameObject("OpenInventoryButton", typeof(RectTransform));
         invBtnObj.transform.SetParent(_panelRoot.transform, false);
+        Button iBtn = invBtnObj.AddComponent<Button>();
+        GameObject iTxtObj = new GameObject("Text", typeof(RectTransform));
+        iTxtObj.transform.SetParent(invBtnObj.transform, false);
+        iTxtObj.AddComponent<TextMeshProUGUI>();
 
         RectTransform iRt = GetRect(invBtnObj);
         iRt.anchorMin = new Vector2(1f, 0f);
         iRt.anchorMax = new Vector2(1f, 0f);
         iRt.pivot = new Vector2(1f, 0f);
-        iRt.anchoredPosition = new Vector2(-340f, 25f);
-        iRt.sizeDelta = new Vector2(280f, 54f);
+        MainMenuManager.FormatBtn(iBtn, 25f, "ASKERİ ENVANTER", new Color(0.35f, 0.65f, 0.95f), 280f, 50f, posX: -340f, hudSpriteName: "hud_btn_blue");
 
-        Image iImg = invBtnObj.AddComponent<Image>();
-        iImg.color = new Color(0.18f, 0.48f, 0.72f);
-
-        Button iBtn = invBtnObj.AddComponent<Button>();
         iBtn.onClick.AddListener(() =>
         {
             CloseDirectly();
             InventoryUI.EnsureUI()?.OpenInventory(() => OpenHangar());
         });
 
-        GameObject iTxtObj = new GameObject("Text");
-        iTxtObj.transform.SetParent(invBtnObj.transform, false);
-        RectTransform iTxtRt = GetRect(iTxtObj);
-        iTxtRt.anchorMin = Vector2.zero;
-        iTxtRt.anchorMax = Vector2.one;
-        iTxtRt.offsetMin = Vector2.zero;
-        iTxtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI iTMP = iTxtObj.AddComponent<TextMeshProUGUI>();
-        iTMP.text = "ASKERİ ENVANTER";
-        iTMP.fontSize = 22f;
-        iTMP.fontStyle = FontStyles.Bold;
-        iTMP.alignment = TextAlignmentOptions.Center;
-        iTMP.color = Color.white;
-
-        // 3. İKMAL SANDIKLARI MERKEZİ BUTONU (SANDIKLAR AYRI MENÜDE)
-        GameObject crateBtnObj = new GameObject("OpenCratesMenuButton");
+        // 4. İKMAL SANDIKLARI MERKEZİ BUTONU
+        GameObject crateBtnObj = new GameObject("OpenCratesMenuButton", typeof(RectTransform));
         crateBtnObj.transform.SetParent(_panelRoot.transform, false);
+        Button cBtn = crateBtnObj.AddComponent<Button>();
+        GameObject cTxtObj = new GameObject("Text", typeof(RectTransform));
+        cTxtObj.transform.SetParent(crateBtnObj.transform, false);
+        cTxtObj.AddComponent<TextMeshProUGUI>();
 
         RectTransform cRt = GetRect(crateBtnObj);
         cRt.anchorMin = new Vector2(1f, 0f);
         cRt.anchorMax = new Vector2(1f, 0f);
         cRt.pivot = new Vector2(1f, 0f);
-        cRt.anchoredPosition = new Vector2(-40f, 25f);
-        cRt.sizeDelta = new Vector2(300f, 54f);
+        MainMenuManager.FormatBtn(cBtn, 25f, "İKMAL SANDIKLARI", new Color(1.0f, 0.80f, 0.22f), 290f, 50f, posX: -40f, hudSpriteName: "hud_btn_amber");
 
-        Image cImg = crateBtnObj.AddComponent<Image>();
-        cImg.color = new Color(0.72f, 0.48f, 0.12f);
-
-        Button cBtn = crateBtnObj.AddComponent<Button>();
         cBtn.onClick.AddListener(() =>
         {
             CloseDirectly();
             CratesUI.EnsureUI()?.OpenCratesPanel(() => OpenHangar());
         });
 
-        GameObject cTxtObj = new GameObject("Text");
-        cTxtObj.transform.SetParent(crateBtnObj.transform, false);
-        RectTransform cTxtRt = GetRect(cTxtObj);
-        cTxtRt.anchorMin = Vector2.zero;
-        cTxtRt.anchorMax = Vector2.one;
-        cTxtRt.offsetMin = Vector2.zero;
-        cTxtRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI cTMP = cTxtObj.AddComponent<TextMeshProUGUI>();
-        cTMP.text = "İKMAL SANDIKLARI";
-        cTMP.fontSize = 22f;
-        cTMP.fontStyle = FontStyles.Bold;
-        cTMP.alignment = TextAlignmentOptions.Center;
-        cTMP.color = Color.white;
-
-        // Geri Dön Butonunu hiyerarşide en öne al
         backBtnObj.transform.SetAsLastSibling();
     }
 }

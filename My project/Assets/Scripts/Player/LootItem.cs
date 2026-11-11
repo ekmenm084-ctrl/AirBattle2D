@@ -163,6 +163,8 @@ public class LootItem : MonoBehaviour
                 break;
         }
 
+        DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.LootCollected, 1);
+
         // Parlak kıvılcım & ses efekti
         VFXManager.SpawnHitSparks(transform.position, _themeColor);
         if (type == LootType.GoldKey || type == LootType.SilverKey || type == LootType.BronzeKey)

@@ -239,6 +239,7 @@ public class SwarmEnemy : MonoBehaviour
             // Oyuncuya küçük ödül (Altın & Ulti)
             PlayerUpgradeManager.Instance?.AddGold(Random.Range(4, 10));
             PlayerCombatManeuvers.Instance?.AddUltiEnergy(3.5f);
+            DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.SwarmDroneKill, 1);
 
             // %25 İhtimalle Ganimet Kutusu Bırak
             if (Random.value < 0.25f)

@@ -38,11 +38,13 @@ public class AudioSettingsUI : MonoBehaviour
 
         // Kendi RectTransform'unu Canvas'a tam oturt
         RectTransform rt = GetComponent<RectTransform>();
-        if (rt == null) rt = gameObject.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
+        if (rt != null)
+        {
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
     }
 
     private void Start()
@@ -58,7 +60,8 @@ public class AudioSettingsUI : MonoBehaviour
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy) ||
                           (HangarUI.Instance != null && HangarUI.Instance.gameObject.activeInHierarchy) ||
                           (CratesUI.Instance != null && CratesUI.Instance.gameObject.activeInHierarchy) ||
-                          (InventoryUI.Instance != null && InventoryUI.Instance.gameObject.activeInHierarchy);
+                          (InventoryUI.Instance != null && InventoryUI.Instance.gameObject.activeInHierarchy) ||
+                          (DailyOpsUI.Instance != null && DailyOpsUI.Instance.gameObject.activeInHierarchy);
 
         if (soundButtonObj != null)
         {
@@ -99,9 +102,9 @@ public class AudioSettingsUI : MonoBehaviour
 
         if (go == null)
         {
-            go = new GameObject("AudioSettingsUI");
+            go = new GameObject("AudioSettingsUI", typeof(RectTransform));
             go.transform.SetParent(canvas.transform, false);
-            RectTransform rt = go.AddComponent<RectTransform>();
+            RectTransform rt = go.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
             rt.offsetMin = Vector2.zero;
@@ -135,7 +138,7 @@ public class AudioSettingsUI : MonoBehaviour
             }
             else
             {
-                soundButtonObj = new GameObject("SoundToggleButton");
+                soundButtonObj = new GameObject("SoundToggleButton", typeof(RectTransform));
                 soundButtonObj.transform.SetParent(transform, false);
             }
         }
@@ -144,7 +147,6 @@ public class AudioSettingsUI : MonoBehaviour
 
         // İkon boyutunu ve konumunu şık ve orijinal pause ikonuna göre ayarla
         RectTransform rt = soundButtonObj.GetComponent<RectTransform>();
-        if (rt == null) rt = soundButtonObj.AddComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
@@ -208,71 +210,72 @@ public class AudioSettingsUI : MonoBehaviour
 
     private void BuildPauseAndSettingsPanel()
     {
-        settingsPanelObj = new GameObject("AudioSettingsPanel");
+        settingsPanelObj = new GameObject("AudioSettingsPanel", typeof(RectTransform));
         settingsPanelObj.transform.SetParent(transform, false);
 
-        RectTransform panelRt = settingsPanelObj.AddComponent<RectTransform>();
+        RectTransform panelRt = settingsPanelObj.GetComponent<RectTransform>();
         panelRt.anchorMin = new Vector2(0.5f, 0.5f);
         panelRt.anchorMax = new Vector2(0.5f, 0.5f);
         panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
-        panelRt.sizeDelta = new Vector2(680f, 700f);
+        panelRt.sizeDelta = new Vector2(700f, 680f);
 
         Image bg = settingsPanelObj.AddComponent<Image>();
-        bg.color = new Color(0.04f, 0.07f, 0.13f, 0.98f);
+        bg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.06f, 0.12f, 0.96f), false);
+        bg.type = Image.Type.Sliced;
+        bg.color = Color.white;
 
-        Outline outline = settingsPanelObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
-        outline.effectDistance = new Vector2(3f, -3f);
+        // Üst Başlık Visor Plate
+        GameObject visorObj = new GameObject("HeaderVisor", typeof(RectTransform));
+        visorObj.transform.SetParent(settingsPanelObj.transform, false);
+        RectTransform vRt = visorObj.GetComponent<RectTransform>();
+        vRt.anchorMin = new Vector2(0.5f, 0.94f);
+        vRt.anchorMax = new Vector2(0.5f, 0.94f);
+        vRt.pivot = new Vector2(0.5f, 1f);
+        vRt.sizeDelta = new Vector2(660f, 64f);
 
-        // Başlık: OYUN DURDURULDU
-        GameObject titleObj = new GameObject("PanelTitle");
-        titleObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform titleRt = titleObj.AddComponent<RectTransform>();
-        titleRt.anchorMin = new Vector2(0.5f, 0.92f);
-        titleRt.anchorMax = new Vector2(0.5f, 0.92f);
-        titleRt.sizeDelta = new Vector2(640f, 58f);
+        Image vImg = visorObj.AddComponent<Image>();
+        vImg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.10f, 0.18f, 1f), true);
+        vImg.type = Image.Type.Sliced;
+        vImg.color = Color.white;
+
+        // Başlık: DEFCON // HAVA SAHASI DURAKLATILDI
+        GameObject titleObj = new GameObject("PanelTitle", typeof(RectTransform));
+        titleObj.transform.SetParent(visorObj.transform, false);
+        RectTransform titleRt = titleObj.GetComponent<RectTransform>();
+        titleRt.anchorMin = Vector2.zero;
+        titleRt.anchorMax = Vector2.one;
+        titleRt.offsetMin = Vector2.zero;
+        titleRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "OYUN DURDURULDU";
-        titleTMP.fontSize = 48f; // Büyütüldü
+        titleTMP.font = MainMenuManager.GetTacticalFont();
+        titleTMP.text = "DEFCON // SAVAŞ HAREKATI DURAKLATILDI\n<size=52%><color=#8AB4F8>AVIONICS KOKPİT & SES KONTROL PANELİ</color></size>";
+        titleTMP.fontSize = 20f;
         titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.characterSpacing = 2.0f;
         titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.color = new Color(1f, 0.85f, 0.2f); // Parlak Altın Sarısı
+        titleTMP.color = Color.white;
         titleTMP.extraPadding = true;
 
-        // Alt Başlık: Hava sahası duraklatıldı
-        GameObject subObj = new GameObject("PanelSubtitle");
-        subObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform subRt = subObj.AddComponent<RectTransform>();
-        subRt.anchorMin = new Vector2(0.5f, 0.85f);
-        subRt.anchorMax = new Vector2(0.5f, 0.85f);
-        subRt.sizeDelta = new Vector2(640f, 38f);
-
-        TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
-        subTMP.text = "Hava Sahasi ve Operasyon Duraklatildi";
-        subTMP.fontSize = 26f; // Büyütüldü
-        subTMP.fontStyle = FontStyles.Bold;
-        subTMP.alignment = TextAlignmentOptions.Center;
-        subTMP.color = new Color(0.35f, 0.9f, 1f);
-        subTMP.extraPadding = true;
-
         // 1. Savaş Müziği Satırı: [-]  Slider  [+]
-        _musicSlider = CreateVolumeRow("SAVAS MUZIGI", 0.71f, isMusic: true, out _musicValTMP);
+        _musicSlider = CreateVolumeRow("SAVAS MUZIGI", 0.68f, isMusic: true, out _musicValTMP);
 
         // 2. Mermi / Efekt Sesi Satırı: [-]  Slider  [+]
-        _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 0.53f, isMusic: false, out _sfxValTMP);
+        _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 0.50f, isMusic: false, out _sfxValTMP);
 
         // 3. Mute Butonu
-        GameObject muteBtnObj = new GameObject("MuteButton");
+        GameObject muteBtnObj = new GameObject("MuteButton", typeof(RectTransform));
         muteBtnObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform muteRt = muteBtnObj.AddComponent<RectTransform>();
-        muteRt.anchorMin = new Vector2(0.5f, 0.38f);
-        muteRt.anchorMax = new Vector2(0.5f, 0.38f);
-        muteRt.sizeDelta = new Vector2(440f, 60f);
+        RectTransform muteRt = muteBtnObj.GetComponent<RectTransform>();
+        muteRt.anchorMin = new Vector2(0.5f, 0.35f);
+        muteRt.anchorMax = new Vector2(0.5f, 0.35f);
+        muteRt.sizeDelta = new Vector2(460f, 54f);
 
         Image muteBg = muteBtnObj.AddComponent<Image>();
-        muteBg.color = new Color(0.12f, 0.20f, 0.30f, 0.95f);
+        muteBg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.11f, 0.18f, 0.95f), true);
+        muteBg.type = Image.Type.Sliced;
+        muteBg.color = Color.white;
 
         Button muteBtn = muteBtnObj.AddComponent<Button>();
         muteBtn.targetGraphic = muteBg;
@@ -282,89 +285,91 @@ public class AudioSettingsUI : MonoBehaviour
             UpdateMuteVisuals();
         });
 
-        GameObject muteTxtObj = new GameObject("MuteText");
+        GameObject muteTxtObj = new GameObject("MuteText", typeof(RectTransform));
         muteTxtObj.transform.SetParent(muteBtnObj.transform, false);
-        RectTransform muteTxtRt = muteTxtObj.AddComponent<RectTransform>();
+        RectTransform muteTxtRt = muteTxtObj.GetComponent<RectTransform>();
         muteTxtRt.anchorMin = Vector2.zero;
         muteTxtRt.anchorMax = Vector2.one;
         muteTxtRt.offsetMin = Vector2.zero;
         muteTxtRt.offsetMax = Vector2.zero;
 
         _muteBtnTMP = muteTxtObj.AddComponent<TextMeshProUGUI>();
-        _muteBtnTMP.fontSize = 27f; // Büyütüldü
+        _muteBtnTMP.font = MainMenuManager.GetTacticalFont();
+        _muteBtnTMP.fontSize = 17f;
         _muteBtnTMP.fontStyle = FontStyles.Bold;
+        _muteBtnTMP.characterSpacing = 1.6f;
         _muteBtnTMP.alignment = TextAlignmentOptions.Center;
         _muteBtnTMP.color = Color.white;
         _muteBtnTMP.extraPadding = true;
         _muteBtnTMP.raycastTarget = false;
 
-        // 4. DEVAM ET BUTONU (Büyük Yeşil Buton)
-        GameObject resumeBtnObj = new GameObject("ResumeButton");
+        // 4. DEVAM ET BUTONU (Büyük Zümrüt Yeşili HUD Buton)
+        GameObject resumeBtnObj = new GameObject("ResumeButton", typeof(RectTransform));
         resumeBtnObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform resumeRt = resumeBtnObj.AddComponent<RectTransform>();
-        resumeRt.anchorMin = new Vector2(0.5f, 0.23f);
-        resumeRt.anchorMax = new Vector2(0.5f, 0.23f);
-        resumeRt.sizeDelta = new Vector2(500f, 78f);
+        RectTransform resumeRt = resumeBtnObj.GetComponent<RectTransform>();
+        resumeRt.anchorMin = new Vector2(0.5f, 0.20f);
+        resumeRt.anchorMax = new Vector2(0.5f, 0.20f);
+        resumeRt.sizeDelta = new Vector2(520f, 62f);
 
         Image resumeBg = resumeBtnObj.AddComponent<Image>();
-        resumeBg.color = new Color(0.12f, 0.58f, 0.32f, 0.98f);
-
-        Outline resumeOutline = resumeBtnObj.AddComponent<Outline>();
-        resumeOutline.effectColor = new Color(0.2f, 1f, 0.5f, 0.7f);
-        resumeOutline.effectDistance = new Vector2(2.5f, -2.5f);
+        resumeBg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.18f, 0.08f, 1f), true);
+        resumeBg.type = Image.Type.Sliced;
+        resumeBg.color = Color.white;
 
         Button resumeBtn = resumeBtnObj.AddComponent<Button>();
         resumeBtn.targetGraphic = resumeBg;
         resumeBtn.onClick.AddListener(ResumeGame);
 
-        GameObject resumeTxtObj = new GameObject("ResumeText");
+        GameObject resumeTxtObj = new GameObject("ResumeText", typeof(RectTransform));
         resumeTxtObj.transform.SetParent(resumeBtnObj.transform, false);
-        RectTransform resumeTxtRt = resumeTxtObj.AddComponent<RectTransform>();
+        RectTransform resumeTxtRt = resumeTxtObj.GetComponent<RectTransform>();
         resumeTxtRt.anchorMin = Vector2.zero;
         resumeTxtRt.anchorMax = Vector2.one;
         resumeTxtRt.offsetMin = Vector2.zero;
         resumeTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI resumeTMP = resumeTxtObj.AddComponent<TextMeshProUGUI>();
-        resumeTMP.text = "DEVAM ET";
-        resumeTMP.fontSize = 34f; // Büyütüldü
+        resumeTMP.font = MainMenuManager.GetTacticalFont();
+        resumeTMP.text = "▶ HAREKATA DEVAM ET";
+        resumeTMP.fontSize = 21f;
         resumeTMP.fontStyle = FontStyles.Bold;
+        resumeTMP.characterSpacing = 2.0f;
         resumeTMP.alignment = TextAlignmentOptions.Center;
         resumeTMP.color = Color.white;
         resumeTMP.extraPadding = true;
         resumeTMP.raycastTarget = false;
 
-        // 5. ANA SAYFAYA DÖN BUTONU (Kırmızı / Lacivert Buton)
-        GameObject homeBtnObj = new GameObject("HomeButton");
+        // 5. ANA SAYFAYA DÖN BUTONU (Kırmızı HUD Buton)
+        GameObject homeBtnObj = new GameObject("HomeButton", typeof(RectTransform));
         homeBtnObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform homeRt = homeBtnObj.AddComponent<RectTransform>();
-        homeRt.anchorMin = new Vector2(0.5f, 0.09f);
-        homeRt.anchorMax = new Vector2(0.5f, 0.09f);
-        homeRt.sizeDelta = new Vector2(500f, 66f);
+        RectTransform homeRt = homeBtnObj.GetComponent<RectTransform>();
+        homeRt.anchorMin = new Vector2(0.5f, 0.08f);
+        homeRt.anchorMax = new Vector2(0.5f, 0.08f);
+        homeRt.sizeDelta = new Vector2(520f, 56f);
 
         Image homeBg = homeBtnObj.AddComponent<Image>();
-        homeBg.color = new Color(0.68f, 0.18f, 0.18f, 0.98f);
-
-        Outline homeOutline = homeBtnObj.AddComponent<Outline>();
-        homeOutline.effectColor = new Color(1f, 0.3f, 0.3f, 0.7f);
-        homeOutline.effectDistance = new Vector2(2.5f, -2.5f);
+        homeBg.sprite = MainMenuManager.GetHudSprite("hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), true);
+        homeBg.type = Image.Type.Sliced;
+        homeBg.color = Color.white;
 
         Button homeBtn = homeBtnObj.AddComponent<Button>();
         homeBtn.targetGraphic = homeBg;
         homeBtn.onClick.AddListener(ReturnToHome);
 
-        GameObject homeTxtObj = new GameObject("HomeText");
+        GameObject homeTxtObj = new GameObject("HomeText", typeof(RectTransform));
         homeTxtObj.transform.SetParent(homeBtnObj.transform, false);
-        RectTransform homeTxtRt = homeTxtObj.AddComponent<RectTransform>();
+        RectTransform homeTxtRt = homeTxtObj.GetComponent<RectTransform>();
         homeTxtRt.anchorMin = Vector2.zero;
         homeTxtRt.anchorMax = Vector2.one;
         homeTxtRt.offsetMin = Vector2.zero;
         homeTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI homeTMP = homeTxtObj.AddComponent<TextMeshProUGUI>();
-        homeTMP.text = "ANA SAYFAYA DON";
-        homeTMP.fontSize = 29f; // Büyütüldü
+        homeTMP.font = MainMenuManager.GetTacticalFont();
+        homeTMP.text = "◀ ANA ÜSSE GERİ DÖN";
+        homeTMP.fontSize = 19f;
         homeTMP.fontStyle = FontStyles.Bold;
+        homeTMP.characterSpacing = 1.8f;
         homeTMP.alignment = TextAlignmentOptions.Center;
         homeTMP.color = Color.white;
         homeTMP.extraPadding = true;
@@ -376,100 +381,110 @@ public class AudioSettingsUI : MonoBehaviour
     private Slider CreateVolumeRow(string label, float yAnchor, bool isMusic, out TextMeshProUGUI valueTMP)
     {
         // Satır Başlığı
-        GameObject headerObj = new GameObject(label + "_Header");
+        GameObject headerObj = new GameObject(label + "_Header", typeof(RectTransform));
         headerObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform hRt = headerObj.AddComponent<RectTransform>();
+        RectTransform hRt = headerObj.GetComponent<RectTransform>();
         hRt.anchorMin = new Vector2(0.08f, yAnchor + 0.075f);
         hRt.anchorMax = new Vector2(0.92f, yAnchor + 0.075f);
         hRt.sizeDelta = new Vector2(0f, 36f);
 
         TextMeshProUGUI titleTMP = headerObj.AddComponent<TextMeshProUGUI>();
+        titleTMP.font = MainMenuManager.GetTacticalFont();
         titleTMP.text = label;
-        titleTMP.fontSize = 30f; // Büyütüldü (30f Bold)
+        titleTMP.fontSize = 20f;
         titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.characterSpacing = 1.6f;
         titleTMP.color = new Color(0.2f, 0.9f, 1f);
         titleTMP.alignment = TextAlignmentOptions.Left;
 
         // Yüzde Metni (%70)
-        GameObject valObj = new GameObject(label + "_ValText");
+        GameObject valObj = new GameObject(label + "_ValText", typeof(RectTransform));
         valObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform valRt = valObj.AddComponent<RectTransform>();
+        RectTransform valRt = valObj.GetComponent<RectTransform>();
         valRt.anchorMin = new Vector2(0.65f, yAnchor + 0.075f);
         valRt.anchorMax = new Vector2(0.92f, yAnchor + 0.075f);
         valRt.sizeDelta = new Vector2(0f, 36f);
 
         valueTMP = valObj.AddComponent<TextMeshProUGUI>();
-        valueTMP.fontSize = 30f; // Büyütüldü (30f Bold)
+        valueTMP.font = MainMenuManager.GetTacticalFont();
+        valueTMP.fontSize = 20f;
         valueTMP.fontStyle = FontStyles.Bold;
+        valueTMP.characterSpacing = 1.6f;
         valueTMP.color = Color.white;
         valueTMP.alignment = TextAlignmentOptions.Right;
 
         // [-] Butonu (Sesi Kıs)
-        GameObject minusBtnObj = new GameObject(label + "_MinusBtn");
+        GameObject minusBtnObj = new GameObject(label + "_MinusBtn", typeof(RectTransform));
         minusBtnObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform minusRt = minusBtnObj.AddComponent<RectTransform>();
+        RectTransform minusRt = minusBtnObj.GetComponent<RectTransform>();
         minusRt.anchorMin = new Vector2(0.08f, yAnchor);
         minusRt.anchorMax = new Vector2(0.08f, yAnchor);
         minusRt.pivot = new Vector2(0f, 0.5f);
         minusRt.sizeDelta = new Vector2(58f, 46f);
 
         Image minusBg = minusBtnObj.AddComponent<Image>();
-        minusBg.color = new Color(0.15f, 0.24f, 0.36f);
+        minusBg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.11f, 0.18f, 1f), true);
+        minusBg.type = Image.Type.Sliced;
+        minusBg.color = Color.white;
 
         Button minusBtn = minusBtnObj.AddComponent<Button>();
         minusBtn.targetGraphic = minusBg;
 
-        GameObject minusTxtObj = new GameObject("Text");
+        GameObject minusTxtObj = new GameObject("Text", typeof(RectTransform));
         minusTxtObj.transform.SetParent(minusBtnObj.transform, false);
-        RectTransform mTxtRt = minusTxtObj.AddComponent<RectTransform>();
+        RectTransform mTxtRt = minusTxtObj.GetComponent<RectTransform>();
         mTxtRt.anchorMin = Vector2.zero;
         mTxtRt.anchorMax = Vector2.one;
         mTxtRt.offsetMin = Vector2.zero;
         mTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI minusTMP = minusTxtObj.AddComponent<TextMeshProUGUI>();
+        minusTMP.font = MainMenuManager.GetTacticalFont();
         minusTMP.text = "-";
-        minusTMP.fontSize = 34f; // 28f -> 34f
+        minusTMP.fontSize = 28f;
         minusTMP.fontStyle = FontStyles.Bold;
         minusTMP.alignment = TextAlignmentOptions.Center;
         minusTMP.color = Color.white;
         minusTMP.raycastTarget = false;
 
         // [+] Butonu (Sesi Yükselt)
-        GameObject plusBtnObj = new GameObject(label + "_PlusBtn");
+        GameObject plusBtnObj = new GameObject(label + "_PlusBtn", typeof(RectTransform));
         plusBtnObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform plusRt = plusBtnObj.AddComponent<RectTransform>();
+        RectTransform plusRt = plusBtnObj.GetComponent<RectTransform>();
         plusRt.anchorMin = new Vector2(0.92f, yAnchor);
         plusRt.anchorMax = new Vector2(0.92f, yAnchor);
         plusRt.pivot = new Vector2(1f, 0.5f);
         plusRt.sizeDelta = new Vector2(58f, 46f);
 
         Image plusBg = plusBtnObj.AddComponent<Image>();
-        plusBg.color = new Color(0.15f, 0.24f, 0.36f);
+        plusBg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.11f, 0.18f, 1f), true);
+        plusBg.type = Image.Type.Sliced;
+        plusBg.color = Color.white;
 
         Button plusBtn = plusBtnObj.AddComponent<Button>();
         plusBtn.targetGraphic = plusBg;
 
-        GameObject plusTxtObj = new GameObject("Text");
+        GameObject plusTxtObj = new GameObject("Text", typeof(RectTransform));
         plusTxtObj.transform.SetParent(plusBtnObj.transform, false);
-        RectTransform pTxtRt = plusTxtObj.AddComponent<RectTransform>();
+        RectTransform pTxtRt = plusTxtObj.GetComponent<RectTransform>();
         pTxtRt.anchorMin = Vector2.zero;
         pTxtRt.anchorMax = Vector2.one;
         pTxtRt.offsetMin = Vector2.zero;
         pTxtRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI plusTMP = plusTxtObj.AddComponent<TextMeshProUGUI>();
+        plusTMP.font = MainMenuManager.GetTacticalFont();
         plusTMP.text = "+";
-        plusTMP.fontSize = 32f; // 26f -> 32f
+        plusTMP.fontSize = 26f;
         plusTMP.fontStyle = FontStyles.Bold;
         plusTMP.alignment = TextAlignmentOptions.Center;
         plusTMP.color = Color.white;
         plusTMP.raycastTarget = false;
 
         // Ortadaki Kaydırıcı (Slider)
-        GameObject sliderObj = new GameObject(label + "_Slider");
+        GameObject sliderObj = new GameObject(label + "_Slider", typeof(RectTransform));
         sliderObj.transform.SetParent(settingsPanelObj.transform, false);
-        RectTransform sRt = sliderObj.AddComponent<RectTransform>();
+        RectTransform sRt = sliderObj.GetComponent<RectTransform>();
         sRt.anchorMin = new Vector2(0.5f, yAnchor);
         sRt.anchorMax = new Vector2(0.5f, yAnchor);
         sRt.pivot = new Vector2(0.5f, 0.5f);
@@ -480,9 +495,9 @@ public class AudioSettingsUI : MonoBehaviour
         slider.maxValue = 1f;
 
         // Slider Background
-        GameObject bgObj = new GameObject("Background");
+        GameObject bgObj = new GameObject("Background", typeof(RectTransform));
         bgObj.transform.SetParent(sliderObj.transform, false);
-        RectTransform bgRt = bgObj.AddComponent<RectTransform>();
+        RectTransform bgRt = bgObj.GetComponent<RectTransform>();
         bgRt.anchorMin = Vector2.zero;
         bgRt.anchorMax = Vector2.one;
         bgRt.offsetMin = Vector2.zero;
@@ -491,17 +506,17 @@ public class AudioSettingsUI : MonoBehaviour
         bgImg.color = new Color(0.1f, 0.15f, 0.22f);
 
         // Fill Area
-        GameObject fillArea = new GameObject("Fill Area");
+        GameObject fillArea = new GameObject("Fill Area", typeof(RectTransform));
         fillArea.transform.SetParent(sliderObj.transform, false);
-        RectTransform faRt = fillArea.AddComponent<RectTransform>();
+        RectTransform faRt = fillArea.GetComponent<RectTransform>();
         faRt.anchorMin = Vector2.zero;
         faRt.anchorMax = Vector2.one;
         faRt.offsetMin = Vector2.zero;
         faRt.offsetMax = Vector2.zero;
 
-        GameObject fillObj = new GameObject("Fill");
+        GameObject fillObj = new GameObject("Fill", typeof(RectTransform));
         fillObj.transform.SetParent(fillArea.transform, false);
-        RectTransform fillRt = fillObj.AddComponent<RectTransform>();
+        RectTransform fillRt = fillObj.GetComponent<RectTransform>();
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = Vector2.one;
         fillRt.offsetMin = Vector2.zero;

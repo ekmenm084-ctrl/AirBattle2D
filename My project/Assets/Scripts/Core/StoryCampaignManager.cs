@@ -521,10 +521,10 @@ public class StoryCampaignManager : MonoBehaviour
         }
         else
         {
-            _cinematicRoot = new GameObject("StoryCinematicUI");
+            _cinematicRoot = new GameObject("StoryCinematicUI", typeof(RectTransform));
             _cinematicRoot.transform.SetParent(canvas.transform, false);
 
-            RectTransform rootRt = _cinematicRoot.AddComponent<RectTransform>();
+            RectTransform rootRt = _cinematicRoot.GetComponent<RectTransform>();
             rootRt.anchorMin = Vector2.zero;
             rootRt.anchorMax = Vector2.one;
             rootRt.offsetMin = Vector2.zero;
@@ -532,9 +532,9 @@ public class StoryCampaignManager : MonoBehaviour
         }
 
         // 1. Ekran Dokunma Yakalayıcı (Herhangi bir yere tıklandığında cümleyi ilerletir)
-        GameObject clickObj = new GameObject("ScreenClickCatcher");
+        GameObject clickObj = new GameObject("ScreenClickCatcher", typeof(RectTransform));
         clickObj.transform.SetParent(_cinematicRoot.transform, false);
-        RectTransform clickRt = clickObj.AddComponent<RectTransform>();
+        RectTransform clickRt = clickObj.GetComponent<RectTransform>();
         clickRt.anchorMin = Vector2.zero;
         clickRt.anchorMax = Vector2.one;
         clickRt.offsetMin = Vector2.zero;
@@ -545,9 +545,9 @@ public class StoryCampaignManager : MonoBehaviour
         clickBtn.onClick.AddListener(() => _advanceSentenceRequested = true);
 
         // 2. Üst Sinematik Siyah Bant (Letterbox)
-        GameObject topBarObj = new GameObject("TopLetterbox");
+        GameObject topBarObj = new GameObject("TopLetterbox", typeof(RectTransform));
         topBarObj.transform.SetParent(_cinematicRoot.transform, false);
-        _topBar = topBarObj.AddComponent<RectTransform>();
+        _topBar = topBarObj.GetComponent<RectTransform>();
         _topBar.anchorMin = new Vector2(0f, 1f);
         _topBar.anchorMax = new Vector2(1f, 1f);
         _topBar.pivot = new Vector2(0.5f, 1f);
@@ -557,9 +557,9 @@ public class StoryCampaignManager : MonoBehaviour
         topImg.color = Color.black;
 
         // 3. Alt Sinematik Siyah Bant (Letterbox)
-        GameObject btmBarObj = new GameObject("BottomLetterbox");
+        GameObject btmBarObj = new GameObject("BottomLetterbox", typeof(RectTransform));
         btmBarObj.transform.SetParent(_cinematicRoot.transform, false);
-        _bottomBar = btmBarObj.AddComponent<RectTransform>();
+        _bottomBar = btmBarObj.GetComponent<RectTransform>();
         _bottomBar.anchorMin = new Vector2(0f, 0f);
         _bottomBar.anchorMax = new Vector2(1f, 0f);
         _bottomBar.pivot = new Vector2(0.5f, 0f);
@@ -569,9 +569,9 @@ public class StoryCampaignManager : MonoBehaviour
         btmImg.color = Color.black;
 
         // 4. Alt Yazı Kutusu (Subtitle Panel)
-        GameObject panelObj = new GameObject("SubtitlePanel");
+        GameObject panelObj = new GameObject("SubtitlePanel", typeof(RectTransform));
         panelObj.transform.SetParent(_cinematicRoot.transform, false);
-        _subtitlePanel = panelObj.AddComponent<RectTransform>();
+        _subtitlePanel = panelObj.GetComponent<RectTransform>();
         _subtitlePanel.anchorMin = new Vector2(0.5f, 0f);
         _subtitlePanel.anchorMax = new Vector2(0.5f, 0f);
         _subtitlePanel.pivot = new Vector2(0.5f, 0f);
@@ -586,9 +586,9 @@ public class StoryCampaignManager : MonoBehaviour
         panelOutline.effectDistance = new Vector2(2.5f, -2.5f);
 
         // 4.a Başlık / Konuşan Birim
-        GameObject spkObj = new GameObject("Speaker");
+        GameObject spkObj = new GameObject("Speaker", typeof(RectTransform));
         spkObj.transform.SetParent(panelObj.transform, false);
-        RectTransform spkRt = spkObj.AddComponent<RectTransform>();
+        RectTransform spkRt = spkObj.GetComponent<RectTransform>();
         spkRt.anchorMin = new Vector2(0.03f, 0.74f);
         spkRt.anchorMax = new Vector2(0.68f, 0.98f);
         spkRt.offsetMin = Vector2.zero;
@@ -603,9 +603,9 @@ public class StoryCampaignManager : MonoBehaviour
         _cinematicSpeakerTMP.outlineColor = Color.black;
 
         // 4.b Sayfa Göstergesi [1 / 4]
-        GameObject pageObj = new GameObject("PageIndicator");
+        GameObject pageObj = new GameObject("PageIndicator", typeof(RectTransform));
         pageObj.transform.SetParent(panelObj.transform, false);
-        RectTransform pageRt = pageObj.AddComponent<RectTransform>();
+        RectTransform pageRt = pageObj.GetComponent<RectTransform>();
         pageRt.anchorMin = new Vector2(0.68f, 0.74f);
         pageRt.anchorMax = new Vector2(0.83f, 0.98f);
         pageRt.offsetMin = Vector2.zero;
@@ -620,9 +620,9 @@ public class StoryCampaignManager : MonoBehaviour
         _pageIndicatorTMP.outlineColor = Color.black;
 
         // 4.c [GEÇ >>] Butonu
-        GameObject skipObj = new GameObject("SkipButton");
+        GameObject skipObj = new GameObject("SkipButton", typeof(RectTransform));
         skipObj.transform.SetParent(panelObj.transform, false);
-        RectTransform skipRt = skipObj.AddComponent<RectTransform>();
+        RectTransform skipRt = skipObj.GetComponent<RectTransform>();
         skipRt.anchorMin = new Vector2(0.85f, 0.70f);
         skipRt.anchorMax = new Vector2(0.98f, 0.97f);
         skipRt.offsetMin = Vector2.zero;
@@ -632,9 +632,9 @@ public class StoryCampaignManager : MonoBehaviour
         _skipBtn = skipObj.AddComponent<Button>();
         _skipBtn.onClick.AddListener(() => _skipRequested = true);
 
-        GameObject skipTxtObj = new GameObject("Text");
+        GameObject skipTxtObj = new GameObject("Text", typeof(RectTransform));
         skipTxtObj.transform.SetParent(skipObj.transform, false);
-        RectTransform skipTxtRt = skipTxtObj.AddComponent<RectTransform>();
+        RectTransform skipTxtRt = skipTxtObj.GetComponent<RectTransform>();
         skipTxtRt.anchorMin = Vector2.zero;
         skipTxtRt.anchorMax = Vector2.one;
         skipTxtRt.offsetMin = Vector2.zero;
@@ -648,9 +648,9 @@ public class StoryCampaignManager : MonoBehaviour
         skipTMP.extraPadding = true;
 
         // 4.d Alt Yazı Cümle Metni
-        GameObject subTextObj = new GameObject("SubtitleSentenceText");
+        GameObject subTextObj = new GameObject("SubtitleSentenceText", typeof(RectTransform));
         subTextObj.transform.SetParent(panelObj.transform, false);
-        RectTransform subRt = subTextObj.AddComponent<RectTransform>();
+        RectTransform subRt = subTextObj.GetComponent<RectTransform>();
         subRt.anchorMin = new Vector2(0.02f, 0.18f);
         subRt.anchorMax = new Vector2(0.98f, 0.74f);
         subRt.offsetMin = Vector2.zero;
@@ -667,9 +667,9 @@ public class StoryCampaignManager : MonoBehaviour
         _subtitleTextTMP.outlineColor = Color.black;
 
         // 4.e Alt İpucu Metni
-        GameObject hintObj = new GameObject("HintText");
+        GameObject hintObj = new GameObject("HintText", typeof(RectTransform));
         hintObj.transform.SetParent(panelObj.transform, false);
-        RectTransform hintRt = hintObj.AddComponent<RectTransform>();
+        RectTransform hintRt = hintObj.GetComponent<RectTransform>();
         hintRt.anchorMin = new Vector2(0.03f, 0.03f);
         hintRt.anchorMax = new Vector2(0.78f, 0.22f);
         hintRt.offsetMin = Vector2.zero;
@@ -681,9 +681,9 @@ public class StoryCampaignManager : MonoBehaviour
         hintTMP.extraPadding = true;
 
         // 4.f [İLERLE >>] Butonu
-        GameObject nextObj = new GameObject("NextButton");
+        GameObject nextObj = new GameObject("NextButton", typeof(RectTransform));
         nextObj.transform.SetParent(panelObj.transform, false);
-        RectTransform nextRt = nextObj.AddComponent<RectTransform>();
+        RectTransform nextRt = nextObj.GetComponent<RectTransform>();
         nextRt.anchorMin = new Vector2(0.81f, 0.04f);
         nextRt.anchorMax = new Vector2(0.98f, 0.26f);
         nextRt.offsetMin = Vector2.zero;
@@ -693,9 +693,9 @@ public class StoryCampaignManager : MonoBehaviour
         _nextBtn = nextObj.AddComponent<Button>();
         _nextBtn.onClick.AddListener(() => _advanceSentenceRequested = true);
 
-        GameObject nextTxtObj = new GameObject("Text");
+        GameObject nextTxtObj = new GameObject("Text", typeof(RectTransform));
         nextTxtObj.transform.SetParent(nextObj.transform, false);
-        RectTransform nextTxtRt = nextTxtObj.AddComponent<RectTransform>();
+        RectTransform nextTxtRt = nextTxtObj.GetComponent<RectTransform>();
         nextTxtRt.anchorMin = Vector2.zero;
         nextTxtRt.anchorMax = Vector2.one;
         nextTxtRt.offsetMin = Vector2.zero;
@@ -719,10 +719,10 @@ public class StoryCampaignManager : MonoBehaviour
 
     private void BuildEndingModalHierarchy()
     {
-        _endingModalObj = new GameObject("EndingModal");
+        _endingModalObj = new GameObject("EndingModal", typeof(RectTransform));
         _endingModalObj.transform.SetParent(_cinematicRoot.transform, false);
 
-        RectTransform modalRt = _endingModalObj.AddComponent<RectTransform>();
+        RectTransform modalRt = _endingModalObj.GetComponent<RectTransform>();
         modalRt.anchorMin = new Vector2(0.5f, 0.5f);
         modalRt.anchorMax = new Vector2(0.5f, 0.5f);
         modalRt.pivot = new Vector2(0.5f, 0.5f);
@@ -737,9 +737,9 @@ public class StoryCampaignManager : MonoBehaviour
         modalOutline.effectDistance = new Vector2(3f, -3f);
 
         // Başlık
-        GameObject tObj = new GameObject("Title");
+        GameObject tObj = new GameObject("Title", typeof(RectTransform));
         tObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform tRt = tObj.AddComponent<RectTransform>();
+        RectTransform tRt = tObj.GetComponent<RectTransform>();
         tRt.anchorMin = new Vector2(0.5f, 1f);
         tRt.anchorMax = new Vector2(0.5f, 1f);
         tRt.pivot = new Vector2(0.5f, 1f);
@@ -752,9 +752,9 @@ public class StoryCampaignManager : MonoBehaviour
         _endingTitleTMP.color = new Color(1f, 0.85f, 0.2f);
 
         // Sefer Adı
-        GameObject cObj = new GameObject("Campaign");
+        GameObject cObj = new GameObject("Campaign", typeof(RectTransform));
         cObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform cRt = cObj.AddComponent<RectTransform>();
+        RectTransform cRt = cObj.GetComponent<RectTransform>();
         cRt.anchorMin = new Vector2(0.5f, 1f);
         cRt.anchorMax = new Vector2(0.5f, 1f);
         cRt.pivot = new Vector2(0.5f, 1f);
@@ -767,9 +767,9 @@ public class StoryCampaignManager : MonoBehaviour
         _endingCampaignTMP.color = new Color(0.2f, 0.9f, 1f);
 
         // Rütbe
-        GameObject rObj = new GameObject("Rank");
+        GameObject rObj = new GameObject("Rank", typeof(RectTransform));
         rObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform rRt = rObj.AddComponent<RectTransform>();
+        RectTransform rRt = rObj.GetComponent<RectTransform>();
         rRt.anchorMin = new Vector2(0.5f, 1f);
         rRt.anchorMax = new Vector2(0.5f, 1f);
         rRt.pivot = new Vector2(0.5f, 1f);
@@ -782,9 +782,9 @@ public class StoryCampaignManager : MonoBehaviour
         _endingRankTMP.color = new Color(1f, 0.65f, 0.15f);
 
         // Hikaye Çözülüş Açıklaması
-        GameObject dObj = new GameObject("Description");
+        GameObject dObj = new GameObject("Description", typeof(RectTransform));
         dObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform dRt = dObj.AddComponent<RectTransform>();
+        RectTransform dRt = dObj.GetComponent<RectTransform>();
         dRt.anchorMin = new Vector2(0.5f, 0.5f);
         dRt.anchorMax = new Vector2(0.5f, 0.5f);
         dRt.pivot = new Vector2(0.5f, 0.5f);
@@ -798,9 +798,9 @@ public class StoryCampaignManager : MonoBehaviour
         _endingDescTMP.textWrappingMode = TextWrappingModes.Normal;
 
         // İstatistik
-        GameObject sObj = new GameObject("Stats");
+        GameObject sObj = new GameObject("Stats", typeof(RectTransform));
         sObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform sRt = sObj.AddComponent<RectTransform>();
+        RectTransform sRt = sObj.GetComponent<RectTransform>();
         sRt.anchorMin = new Vector2(0.5f, 0f);
         sRt.anchorMax = new Vector2(0.5f, 0f);
         sRt.pivot = new Vector2(0.5f, 0f);
@@ -813,9 +813,9 @@ public class StoryCampaignManager : MonoBehaviour
         _endingStatsTMP.color = new Color(0.2f, 0.9f, 0.4f);
 
         // 1. Buton: SONRAKİ SEFERE GEÇ ▶
-        GameObject nBtnObj = new GameObject("BtnNextCampaign");
+        GameObject nBtnObj = new GameObject("BtnNextCampaign", typeof(RectTransform));
         nBtnObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform nBtnRt = nBtnObj.AddComponent<RectTransform>();
+        RectTransform nBtnRt = nBtnObj.GetComponent<RectTransform>();
         nBtnRt.anchorMin = new Vector2(0.5f, 0f);
         nBtnRt.anchorMax = new Vector2(0.5f, 0f);
         nBtnRt.pivot = new Vector2(0.5f, 0f);
@@ -832,9 +832,9 @@ public class StoryCampaignManager : MonoBehaviour
             GameManager.Instance?.RestartGame();
         });
 
-        GameObject nTxtObj = new GameObject("Text");
+        GameObject nTxtObj = new GameObject("Text", typeof(RectTransform));
         nTxtObj.transform.SetParent(nBtnObj.transform, false);
-        RectTransform nTxtRt = nTxtObj.AddComponent<RectTransform>();
+        RectTransform nTxtRt = nTxtObj.GetComponent<RectTransform>();
         nTxtRt.anchorMin = Vector2.zero;
         nTxtRt.anchorMax = Vector2.one;
         nTxtRt.offsetMin = Vector2.zero;
@@ -847,9 +847,9 @@ public class StoryCampaignManager : MonoBehaviour
         nTMP.color = Color.white;
 
         // 2. Buton: ANA MENÜYE DÖN
-        GameObject mBtnObj = new GameObject("BtnMainMenu");
+        GameObject mBtnObj = new GameObject("BtnMainMenu", typeof(RectTransform));
         mBtnObj.transform.SetParent(_endingModalObj.transform, false);
-        RectTransform mBtnRt = mBtnObj.AddComponent<RectTransform>();
+        RectTransform mBtnRt = mBtnObj.GetComponent<RectTransform>();
         mBtnRt.anchorMin = new Vector2(0.5f, 0f);
         mBtnRt.anchorMax = new Vector2(0.5f, 0f);
         mBtnRt.pivot = new Vector2(0.5f, 0f);
@@ -865,9 +865,9 @@ public class StoryCampaignManager : MonoBehaviour
             GameManager.Instance?.GoToMainMenu();
         });
 
-        GameObject mTxtObj = new GameObject("Text");
+        GameObject mTxtObj = new GameObject("Text", typeof(RectTransform));
         mTxtObj.transform.SetParent(mBtnObj.transform, false);
-        RectTransform mTxtRt = mTxtObj.AddComponent<RectTransform>();
+        RectTransform mTxtRt = mTxtObj.GetComponent<RectTransform>();
         mTxtRt.anchorMin = Vector2.zero;
         mTxtRt.anchorMax = Vector2.one;
         mTxtRt.offsetMin = Vector2.zero;
@@ -1195,10 +1195,10 @@ public class StoryCampaignManager : MonoBehaviour
         }
         else
         {
-            _radioBannerObj = new GameObject("RadioTransmissionHUD");
+            _radioBannerObj = new GameObject("RadioTransmissionHUD", typeof(RectTransform));
             _radioBannerObj.transform.SetParent(canvas.transform, false);
 
-            RectTransform rt = _radioBannerObj.AddComponent<RectTransform>();
+            RectTransform rt = _radioBannerObj.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 1f);
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
@@ -1215,17 +1215,17 @@ public class StoryCampaignManager : MonoBehaviour
             _canvasGroup = _radioBannerObj.AddComponent<CanvasGroup>();
 
             // 1. Üst Satır: Konuşan Kişi & Frekans
-            GameObject headerObj = new GameObject("HeaderRow");
+            GameObject headerObj = new GameObject("HeaderRow", typeof(RectTransform));
             headerObj.transform.SetParent(_radioBannerObj.transform, false);
-            RectTransform hRt = headerObj.AddComponent<RectTransform>();
+            RectTransform hRt = headerObj.GetComponent<RectTransform>();
             hRt.anchorMin = new Vector2(0f, 0.65f);
             hRt.anchorMax = new Vector2(1f, 1f);
             hRt.offsetMin = new Vector2(20f, 0f);
             hRt.offsetMax = new Vector2(-20f, -4f);
 
-            GameObject spkObj = new GameObject("SpeakerText");
+            GameObject spkObj = new GameObject("SpeakerText", typeof(RectTransform));
             spkObj.transform.SetParent(headerObj.transform, false);
-            RectTransform spkRt = spkObj.AddComponent<RectTransform>();
+            RectTransform spkRt = spkObj.GetComponent<RectTransform>();
             spkRt.anchorMin = new Vector2(0f, 0f);
             spkRt.anchorMax = new Vector2(0.65f, 1f);
             spkRt.offsetMin = Vector2.zero;
@@ -1239,9 +1239,9 @@ public class StoryCampaignManager : MonoBehaviour
             _speakerTMP.outlineWidth = 0.22f;
             _speakerTMP.outlineColor = Color.black;
 
-            GameObject frqObj = new GameObject("FreqText");
+            GameObject frqObj = new GameObject("FreqText", typeof(RectTransform));
             frqObj.transform.SetParent(headerObj.transform, false);
-            RectTransform frqRt = frqObj.AddComponent<RectTransform>();
+            RectTransform frqRt = frqObj.GetComponent<RectTransform>();
             frqRt.anchorMin = new Vector2(0.65f, 0f);
             frqRt.anchorMax = new Vector2(1f, 1f);
             frqRt.offsetMin = Vector2.zero;
@@ -1255,9 +1255,9 @@ public class StoryCampaignManager : MonoBehaviour
             _freqTMP.extraPadding = true;
 
             // 2. Alt Satır: Mesaj Metni
-            GameObject msgObj = new GameObject("MessageText");
+            GameObject msgObj = new GameObject("MessageText", typeof(RectTransform));
             msgObj.transform.SetParent(_radioBannerObj.transform, false);
-            RectTransform msgRt = msgObj.AddComponent<RectTransform>();
+            RectTransform msgRt = msgObj.GetComponent<RectTransform>();
             msgRt.anchorMin = new Vector2(0f, 0f);
             msgRt.anchorMax = new Vector2(1f, 0.65f);
             msgRt.offsetMin = new Vector2(20f, 8f);

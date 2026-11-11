@@ -197,10 +197,11 @@ public class PlayerCombatManeuvers : MonoBehaviour
                         {
                             hadNearMiss = true;
                             AddUltiEnergy(6.0f);
+                            DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.PerfectDodge, 1);
                             VFXManager.SpawnHitSparks(transform.position, new Color(0.2f, 1f, 0.85f));
 
                             var gameUI = FindObjectOfType<GameUI>();
-                            gameUI?.ShowWaveAlert("⚡ MÜKEMMEL SIYRILMA! (+%6 ULTİ) ⚡", new Color(0.2f, 1f, 0.8f), 1.2f);
+                            gameUI?.ShowWaveAlert("MÜKEMMEL SIYRILMA! (+%6 ULTİ)", new Color(0.2f, 1f, 0.8f), 1.2f);
                             break;
                         }
                     }
@@ -290,6 +291,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
         if (_health != null && _health.IsDead) return false;
 
         currentUlti = 0f;
+        DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.OverdriveActivated, 1);
 
         if (_overdriveCoroutine != null) StopCoroutine(_overdriveCoroutine);
         _overdriveCoroutine = StartCoroutine(UltimateOverdriveRoutine());

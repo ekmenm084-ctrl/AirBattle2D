@@ -49,7 +49,7 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
         if (go == null)
         {
-            go = new GameObject("FireButton");
+            go = new GameObject("FireButton", typeof(RectTransform));
             go.transform.SetParent(canvas.transform, false);
         }
 
@@ -112,7 +112,7 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     public void ApplyMilitaryFireStyling()
     {
         RectTransform rt = GetComponent<RectTransform>();
-        if (rt == null) rt = gameObject.AddComponent<RectTransform>();
+        if (rt == null) return;
 
         if (autoPosition)
         {
@@ -151,9 +151,9 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         GameObject textObj = textChild != null ? textChild.gameObject : null;
         if (textObj == null)
         {
-            textObj = new GameObject("Text");
+            textObj = new GameObject("Text", typeof(RectTransform));
             textObj.transform.SetParent(transform, false);
-            RectTransform trt = textObj.AddComponent<RectTransform>();
+            RectTransform trt = textObj.GetComponent<RectTransform>();
             trt.anchorMin = Vector2.zero;
             trt.anchorMax = Vector2.one;
             trt.offsetMin = Vector2.zero;

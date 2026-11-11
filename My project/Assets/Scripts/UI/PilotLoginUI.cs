@@ -110,8 +110,8 @@ public class PilotLoginUI : MonoBehaviour
 
         if (_cancelButton != null)
         {
-            // İlk girişte iptal butonu gizlenir veya vazgeçme yerine varsayılanla devam ettirilir
-            _cancelButton.gameObject.SetActive(!_isFirstTimeLogin);
+            // Kullanıcı dilediğinde kapatıp ana menüye dönebilir veya varsayılan çağrı koduyla devam edebilir
+            _cancelButton.gameObject.SetActive(true);
         }
 
         string currentName = LeaderboardManager.PlayerCallsign;
@@ -154,7 +154,7 @@ public class PilotLoginUI : MonoBehaviour
         MainMenuManager.MakeFullScreenRect(rootRt);
 
         Image bg = _modalRoot.AddComponent<Image>();
-        bg.color = new Color(0.02f, 0.05f, 0.09f, 0.94f); // Derin askeri kokpit gecesi
+        bg.color = new Color(0.02f, 0.04f, 0.08f, 0.92f); // Derin aero-glass askeri kokpit gecesi
 
         // 2. Ana Askeri Kart / İletişim Kutusu (Modal Box)
         GameObject boxObj = new GameObject("PilotCardBox", typeof(RectTransform));
@@ -164,27 +164,27 @@ public class PilotLoginUI : MonoBehaviour
         bRt.anchorMax = new Vector2(0.5f, 0.5f);
         bRt.pivot = new Vector2(0.5f, 0.5f);
         bRt.anchoredPosition = Vector2.zero;
-        bRt.sizeDelta = new Vector2(620f, 440f);
+        bRt.sizeDelta = new Vector2(640f, 450f);
 
         Image bBg = boxObj.AddComponent<Image>();
-        bBg.color = new Color(0.06f, 0.11f, 0.18f, 0.98f);
+        bBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.07f, 0.14f, 0.96f), false);
+        bBg.type = Image.Type.Sliced;
+        bBg.color = Color.white;
 
-        Outline bOutline = boxObj.AddComponent<Outline>();
-        bOutline.effectColor = new Color(0f, 0.88f, 1f, 0.9f); // Neon Cyan
-        bOutline.effectDistance = new Vector2(3f, -3f);
-
-        // Şık Üst Başlık Şeridi
+        // Şık Üst Başlık Vizörü
         GameObject headerStrip = new GameObject("HeaderStrip", typeof(RectTransform));
         headerStrip.transform.SetParent(boxObj.transform, false);
         RectTransform hsRt = headerStrip.GetComponent<RectTransform>();
         hsRt.anchorMin = new Vector2(0f, 1f);
         hsRt.anchorMax = new Vector2(1f, 1f);
         hsRt.pivot = new Vector2(0.5f, 1f);
-        hsRt.anchoredPosition = Vector2.zero;
-        hsRt.sizeDelta = new Vector2(0f, 60f);
+        hsRt.anchoredPosition = new Vector2(0f, -10f);
+        hsRt.sizeDelta = new Vector2(600f, 54f);
 
         Image hsImg = headerStrip.AddComponent<Image>();
-        hsImg.color = new Color(0.09f, 0.18f, 0.28f, 1f);
+        hsImg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.11f, 0.20f, 1f), true);
+        hsImg.type = Image.Type.Sliced;
+        hsImg.color = Color.white;
 
         // Başlık Metni
         GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
@@ -196,9 +196,11 @@ public class PilotLoginUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.text = "[+] ASKERİ UÇUŞ KARTI & PİLOT GİRİŞİ [+]";
-        titleTMP.fontSize = 20f;
+        titleTMP.font = MainMenuManager.GetTacticalFont();
+        titleTMP.text = "DEFCON // PİLOT UÇUŞ KARTI & GİRİŞ";
+        titleTMP.fontSize = 19f;
         titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.characterSpacing = 2.0f;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(0f, 0.95f, 1f);
 
@@ -213,8 +215,10 @@ public class PilotLoginUI : MonoBehaviour
         sRt.sizeDelta = new Vector2(580f, 40f);
 
         TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
-        subTMP.text = "Liderlik tablosunda ve telsiz konuşmalarında diğer pilotların sizi göreceği <b>Çağrı Kodunuzu (Takma Ad)</b> belirleyin:";
-        subTMP.fontSize = 13.5f;
+        subTMP.font = MainMenuManager.GetTacticalFont();
+        subTMP.text = "Liderlik tablosunda ve telsiz anonslarında görünecek <b>Çağrı Kodunuzu</b> belirleyin:";
+        subTMP.fontSize = 13f;
+        subTMP.characterSpacing = 1.2f;
         subTMP.alignment = TextAlignmentOptions.Center;
         subTMP.color = new Color(0.85f, 0.9f, 0.95f);
 
@@ -225,15 +229,13 @@ public class PilotLoginUI : MonoBehaviour
         inRt.anchorMin = new Vector2(0.5f, 0.5f);
         inRt.anchorMax = new Vector2(0.5f, 0.5f);
         inRt.pivot = new Vector2(0.5f, 0.5f);
-        inRt.anchoredPosition = new Vector2(0f, 45f);
-        inRt.sizeDelta = new Vector2(440f, 52f);
+        inRt.anchoredPosition = new Vector2(0f, 48f);
+        inRt.sizeDelta = new Vector2(460f, 50f);
 
         Image inBg = inpObj.AddComponent<Image>();
-        inBg.color = new Color(0.03f, 0.07f, 0.12f, 1f);
-
-        Outline inOutline = inpObj.AddComponent<Outline>();
-        inOutline.effectColor = new Color(0f, 0.85f, 1f, 0.7f);
-        inOutline.effectDistance = new Vector2(2f, -2f);
+        inBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.7f), new Color(0.02f, 0.05f, 0.09f, 1f), false);
+        inBg.type = Image.Type.Sliced;
+        inBg.color = Color.white;
 
         // Text Component
         GameObject textObj = new GameObject("Text", typeof(RectTransform));
@@ -245,8 +247,10 @@ public class PilotLoginUI : MonoBehaviour
         textRt.offsetMax = new Vector2(-16f, -4f);
 
         TextMeshProUGUI inputText = textObj.AddComponent<TextMeshProUGUI>();
-        inputText.fontSize = 19f;
+        inputText.font = MainMenuManager.GetTacticalFont();
+        inputText.fontSize = 18f;
         inputText.fontStyle = FontStyles.Bold;
+        inputText.characterSpacing = 1.6f;
         inputText.alignment = TextAlignmentOptions.Center;
         inputText.color = Color.white;
 
@@ -260,9 +264,11 @@ public class PilotLoginUI : MonoBehaviour
         phRt.offsetMax = new Vector2(-16f, -4f);
 
         TextMeshProUGUI phText = phObj.AddComponent<TextMeshProUGUI>();
+        phText.font = MainMenuManager.GetTacticalFont();
         phText.text = "Çağrı Kodu Girin (Örn: Mustafa)...";
-        phText.fontSize = 17f;
+        phText.fontSize = 15f;
         phText.fontStyle = FontStyles.Italic;
+        phText.characterSpacing = 1.2f;
         phText.alignment = TextAlignmentOptions.Center;
         phText.color = new Color(0.5f, 0.6f, 0.7f, 0.6f);
 
@@ -280,11 +286,12 @@ public class PilotLoginUI : MonoBehaviour
         cntRt.anchorMin = new Vector2(0.5f, 0.5f);
         cntRt.anchorMax = new Vector2(0.5f, 0.5f);
         cntRt.pivot = new Vector2(1f, 0.5f);
-        cntRt.anchoredPosition = new Vector2(220f, 10f);
+        cntRt.anchoredPosition = new Vector2(230f, 12f);
         cntRt.sizeDelta = new Vector2(150f, 20f);
 
         _charCountTMP = countObj.AddComponent<TextMeshProUGUI>();
-        _charCountTMP.fontSize = 11.5f;
+        _charCountTMP.font = MainMenuManager.GetTacticalFont();
+        _charCountTMP.fontSize = 12f;
         _charCountTMP.alignment = TextAlignmentOptions.Right;
         _charCountTMP.color = new Color(0.6f, 0.75f, 0.9f);
 
@@ -299,33 +306,35 @@ public class PilotLoginUI : MonoBehaviour
         vRt.sizeDelta = new Vector2(500f, 26f);
 
         _validationTMP = valObj.AddComponent<TextMeshProUGUI>();
+        _validationTMP.font = MainMenuManager.GetTacticalFont();
         _validationTMP.fontSize = 12.5f;
+        _validationTMP.characterSpacing = 1.1f;
         _validationTMP.alignment = TextAlignmentOptions.Center;
         _validationTMP.color = new Color(0.9f, 0.9f, 0.9f);
 
         // Rastgele İsim Üret Butonu
-        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "RASTGELE ÇAĞRI KODU",
-            new Vector2(0f, -55f), new Vector2(260f, 38f),
-            new Color(0.12f, 0.22f, 0.35f), GenerateRandomCallsign);
+        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "🎲 RASTGELE ÇAĞRI KODU",
+            new Vector2(0f, -55f), new Vector2(270f, 38f),
+            "hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), GenerateRandomCallsign);
         _randomNameButton = rndBtnObj.GetComponent<Button>();
 
         // 3. Alt Aksiyon Butonları
         // Onayla ve Savaşa Katıl Butonu
-        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "ONAYLA VE GÖREVE BAŞLA",
-            new Vector2(0f, -125f), new Vector2(300f, 50f),
-            new Color(0.12f, 0.55f, 0.32f), OnSaveClicked);
+        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "✓ ONAYLA VE GÖREVE BAŞLA",
+            new Vector2(0f, -125f), new Vector2(320f, 50f),
+            "hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.16f, 0.08f, 1f), OnSaveClicked);
         _saveButton = saveBtnObj.GetComponent<Button>();
 
         // İptal Butonu
-        GameObject cancelBtnObj = CreateButton(boxObj.transform, "CancelBtn", "KAPAT",
-            new Vector2(0f, -182f), new Vector2(160f, 34f),
-            new Color(0.40f, 0.20f, 0.20f), CloseModal);
+        GameObject cancelBtnObj = CreateButton(boxObj.transform, "CancelBtn", "◀ KAPAT",
+            new Vector2(0f, -182f), new Vector2(170f, 36f),
+            "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), CloseModal);
         _cancelButton = cancelBtnObj.GetComponent<Button>();
 
         _modalRoot.SetActive(false);
     }
 
-    private GameObject CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, Color bgColor, Action onClick)
+    private GameObject CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, string spriteKey, Color borderColor, Color fillColor, Action onClick)
     {
         GameObject btnObj = new GameObject(name, typeof(RectTransform));
         btnObj.transform.SetParent(parent, false);
@@ -338,11 +347,9 @@ public class PilotLoginUI : MonoBehaviour
         rt.sizeDelta = size;
 
         Image img = btnObj.AddComponent<Image>();
-        img.color = bgColor;
-
-        Outline outline = btnObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.8f);
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        img.sprite = MainMenuManager.GetHudSprite(spriteKey, borderColor, fillColor, true);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
 
         Button btn = btnObj.AddComponent<Button>();
         btn.targetGraphic = img;
@@ -357,9 +364,11 @@ public class PilotLoginUI : MonoBehaviour
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = label;
         tmp.fontSize = 14f;
         tmp.fontStyle = FontStyles.Bold;
+        tmp.characterSpacing = 1.4f;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
         tmp.raycastTarget = false;

@@ -497,7 +497,7 @@ public class GameUI : MonoBehaviour
         }
         else
         {
-            _missileBtnObj = new GameObject("MissileLauncherButton");
+            _missileBtnObj = new GameObject("MissileLauncherButton", typeof(RectTransform));
             _missileBtnObj.transform.SetParent(canvas.transform, false);
             _missileBtnObj.AddComponent<MissileLauncherButton>();
         }

@@ -90,10 +90,10 @@ public class TwoPlayerInputRouter : MonoBehaviour
         }
         else
         {
-            p2ControlsRoot = new GameObject("P2_ControlsRoot");
+            p2ControlsRoot = new GameObject("P2_ControlsRoot", typeof(RectTransform));
             p2ControlsRoot.transform.SetParent(canvas.transform, false);
 
-            RectTransform rootRt = p2ControlsRoot.AddComponent<RectTransform>();
+            RectTransform rootRt = p2ControlsRoot.GetComponent<RectTransform>();
             rootRt.anchorMin = Vector2.zero;
             rootRt.anchorMax = Vector2.one;
             rootRt.offsetMin = Vector2.zero;
@@ -111,10 +111,10 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
         if (joyObj == null)
         {
-            joyObj = new GameObject("P2_Joystick");
+            joyObj = new GameObject("P2_Joystick", typeof(RectTransform));
             joyObj.transform.SetParent(p2ControlsRoot.transform, false);
 
-            RectTransform joyRt = joyObj.AddComponent<RectTransform>();
+            RectTransform joyRt = joyObj.GetComponent<RectTransform>();
             joyRt.anchorMin = new Vector2(1f, 1f); // Ekran Sağ Üst (P2'nin Sol Eli)
             joyRt.anchorMax = new Vector2(1f, 1f);
             joyRt.pivot = new Vector2(0.5f, 0.5f);
@@ -126,10 +126,10 @@ public class TwoPlayerInputRouter : MonoBehaviour
             joyBgImg.color = Color.white;
 
             // Handle (Dokunmatik top)
-            GameObject handleObj = new GameObject("P2_JoystickHandle");
+            GameObject handleObj = new GameObject("P2_JoystickHandle", typeof(RectTransform));
             handleObj.transform.SetParent(joyObj.transform, false);
 
-            RectTransform handleRt = handleObj.AddComponent<RectTransform>();
+            RectTransform handleRt = handleObj.GetComponent<RectTransform>();
             handleRt.sizeDelta = new Vector2(85f, 85f);
             handleRt.anchoredPosition = Vector2.zero;
 
@@ -161,10 +161,10 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
         if (fireObj == null)
         {
-            fireObj = new GameObject("P2_FireButton");
+            fireObj = new GameObject("P2_FireButton", typeof(RectTransform));
             fireObj.transform.SetParent(p2ControlsRoot.transform, false);
 
-            RectTransform fireRt = fireObj.AddComponent<RectTransform>();
+            RectTransform fireRt = fireObj.GetComponent<RectTransform>();
             fireRt.anchorMin = new Vector2(0f, 1f); // Ekran Sol Üst (P2'nin Sağ Eli)
             fireRt.anchorMax = new Vector2(0f, 1f);
             fireRt.pivot = new Vector2(0.5f, 0.5f);
@@ -178,9 +178,9 @@ public class TwoPlayerInputRouter : MonoBehaviour
             fireObj.AddComponent<Button>();
 
             // Buton İçi Metin
-            GameObject textObj = new GameObject("Text (TMP)");
+            GameObject textObj = new GameObject("Text (TMP)", typeof(RectTransform));
             textObj.transform.SetParent(fireObj.transform, false);
-            RectTransform textRt = textObj.AddComponent<RectTransform>();
+            RectTransform textRt = textObj.GetComponent<RectTransform>();
             textRt.anchorMin = Vector2.zero;
             textRt.anchorMax = Vector2.one;
             textRt.offsetMin = Vector2.zero;
