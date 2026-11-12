@@ -158,11 +158,23 @@ public class EnemyFormationManager : MonoBehaviour
         float baseSpeed = 4.0f + Mathf.Min(currentWave * 0.1f, 1.8f);
 
         Sprite droneSprite = GetRandomDroneSprite();
-        int formationChoice = Random.Range(0, 3);
+        int formationChoice = Random.Range(0, 5);
 
-        // Radar / Taktik Uyarı Bildirimi
+        // Radar / Taktik Uyarı Bildirimi (Her sınıf için özel uyarı)
         GameUI ui = FindObjectOfType<GameUI>();
-        ui?.ShowWaveAlert("! DÜŞMAN İHA FİLOSU YAKLAŞIYOR !", new Color(1f, 0.5f, 0.15f), 1.8f);
+        string alertMsg = "! DÜŞMAN İHA FİLOSU YAKLAŞIYOR !";
+        Color alertCol = new Color(1f, 0.5f, 0.15f);
+        if (formationChoice == 3)
+        {
+            alertMsg = "! DİKKAT: KAMİKAZE DRONE SÜRÜSÜ !";
+            alertCol = new Color(1f, 0.25f, 0.1f);
+        }
+        else if (formationChoice == 4)
+        {
+            alertMsg = "! AĞIR ZIRHLI İHA ESKORTU GİRDİ !";
+            alertCol = new Color(0.25f, 0.8f, 1f);
+        }
+        ui?.ShowWaveAlert(alertMsg, alertCol, 1.9f);
 
         yield return new WaitForSeconds(0.4f);
 
@@ -178,6 +190,14 @@ public class EnemyFormationManager : MonoBehaviour
 
             case 2:
                 yield return StartCoroutine(SpawnPincerFormationRoutine(droneSprite, baseHp, baseSpeed));
+                break;
+
+            case 3:
+                yield return StartCoroutine(SpawnKamikazeSquadRoutine(droneSprite, baseHp, baseSpeed));
+                break;
+
+            case 4:
+                yield return StartCoroutine(SpawnHeavyEscortRoutine(droneSprite, baseHp, baseSpeed));
                 break;
         }
     }
@@ -253,6 +273,72 @@ public class EnemyFormationManager : MonoBehaviour
         }
     }
 
+    private IEnumerator SpawnKamikazeSquadRoutine(Sprite droneSprite, float hp, float speed)
+    {
+        float[] xs = new float[] { -2.4f, 2.4f, -1.1f, 1.1f, 0f };
+        _currentWaveTotalCount = xs.Length;
+
+        for (int i = 0; i < xs.Length; i++)
+        {
+            if (IsGamePausedOrEnded()) yield break;
+
+            Vector2 spawnPos = new Vector2(xs[i], 6.4f);
+            SwarmEnemy enemy = CreateDroneObject("SwarmDrone_Kamikaze_" + i, spawnPos);
+            enemy.Initialize(SwarmEnemy.MovementPattern.StraightDown, speed * 1.05f, hp, droneSprite, null, SwarmEnemy.DroneClass.Kamikaze);
+            _activeWaveEnemies.Add(enemy);
+
+            yield return new WaitForSeconds(0.32f);
+        }
+    }
+
+    private IEnumerator SpawnHeavyEscortRoutine(Sprite droneSprite, float hp, float speed)
+    {
+        // 2 Ağır Zırhlı Öncü + 2 Plazma Bombacısı Eskort
+        _currentWaveTotalCount = 4;
+
+        Vector2[] heavyPos = new Vector2[] { new Vector2(-1.35f, 6.4f), new Vector2(1.35f, 6.4f) };
+        for (int i = 0; i < heavyPos.Length; i++)
+        {
+            SwarmEnemy heavy = CreateDroneObject("SwarmDrone_Heavy_" + i, heavyPos[i]);
+            heavy.Initialize(SwarmEnemy.MovementPattern.StraightDown, speed * 0.65f, hp, droneSprite, null, SwarmEnemy.DroneClass.HeavyShielded);
+            _activeWaveEnemies.Add(heavy);
+        }
+
+        yield return new WaitForSeconds(0.55f);
+        if (IsGamePausedOrEnded()) yield break;
+
+        Vector2[] bomberPos = new Vector2[] { new Vector2(-2.6f, 6.4f), new Vector2(2.6f, 6.4f) };
+        for (int i = 0; i < bomberPos.Length; i++)
+        {
+            SwarmEnemy bomber = CreateDroneObject("SwarmDrone_Bomber_" + i, bomberPos[i]);
+            bomber.Initialize(SwarmEnemy.MovementPattern.SineWave, speed * 0.85f, hp, droneSprite, null, SwarmEnemy.DroneClass.PlasmaBomber);
+            _activeWaveEnemies.Add(bomber);
+        }
+    }
+
+    /// <summary>
+    /// Boss Faz 2 veya seçkin dalgalar sırasında boss'un yan kanatlarından eskort İHA'lar konuşlandırır.
+    /// </summary>
+    public void SpawnEscortWingmen(Vector3 bossPos, int waveIndex)
+    {
+        if (IsGamePausedOrEnded()) return;
+
+        float hp = 26f + Mathf.Min(waveIndex * 2.5f, 40f);
+        float speed = 4.2f + Mathf.Min(waveIndex * 0.1f, 1.5f);
+        Sprite droneSprite = GetRandomDroneSprite();
+
+        float[] offsetsX = new float[] { -1.6f, 1.6f };
+        for (int i = 0; i < offsetsX.Length; i++)
+        {
+            float spawnX = Mathf.Clamp(bossPos.x + offsetsX[i], -3.6f, 3.6f);
+            Vector2 spawnPos = new Vector2(spawnX, Mathf.Max(bossPos.y + 0.5f, 4.8f));
+            SwarmEnemy wingman = CreateDroneObject("BossEscort_" + i, spawnPos);
+            SwarmEnemy.DroneClass cls = (i == 0) ? SwarmEnemy.DroneClass.HeavyShielded : SwarmEnemy.DroneClass.Kamikaze;
+            wingman.Initialize(SwarmEnemy.MovementPattern.StraightDown, speed, hp, droneSprite, null, cls);
+            _activeWaveEnemies.Add(wingman);
+        }
+    }
+
     private SwarmEnemy CreateDroneObject(string name, Vector2 position)
     {
         GameObject go = new GameObject(name);
@@ -302,7 +388,7 @@ public class EnemyFormationManager : MonoBehaviour
         AudioManager.Instance?.PlayRewardFanfare();
 
         GameUI ui = FindObjectOfType<GameUI>();
-        ui?.ShowWaveAlert("★ FİLO TAMAMEN İMHA EDİLDİ! (+50 ALTIN) ★", new Color(0.2f, 1f, 0.45f), 2.5f);
+        ui?.ShowWaveAlert(">> FİLO TAMAMEN İMHA EDİLDİ! (+50 ALTIN) <<", new Color(0.2f, 1f, 0.45f), 2.5f);
     }
 
     public void ClearAllSwarmEnemies()

@@ -13,10 +13,16 @@ public class Bullet : MonoBehaviour
     public float damage = 20f;
     public bool isCritical = false;    // 2 Kat Hasar veren altın kritik vuruş
 
+    [Header("Güdümlü Füze (Opsiyonel)")]
+    public Transform homingTarget;
+    public float homingTurnSpeed = 0f; // Derece/sn (0 = düz mermi)
+    public float homingDuration = 1.6f;
+
     [HideInInspector]
     public GameObject owner;
 
     private Rigidbody2D _rb;
+    private float _age = 0f;
 
     private void Awake()
     {
@@ -54,7 +60,22 @@ public class Bullet : MonoBehaviour
 
     private void Update()
     {
-        if (Mathf.Abs(transform.position.y) > 6.5f)
+        _age += Time.deltaTime;
+
+        if (homingTarget != null && homingTurnSpeed > 0f && _age < homingDuration && _rb != null)
+        {
+            Vector2 toTarget = ((Vector2)(homingTarget.position - transform.position)).normalized;
+            if (toTarget.sqrMagnitude > 0.001f)
+            {
+                float currentAngle = Mathf.Atan2(transform.up.y, transform.up.x) * Mathf.Rad2Deg;
+                float targetAngle = Mathf.Atan2(toTarget.y, toTarget.x) * Mathf.Rad2Deg;
+                float nextAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, homingTurnSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Euler(0f, 0f, nextAngle - 90f);
+                _rb.linearVelocity = transform.up * speed;
+            }
+        }
+
+        if (Mathf.Abs(transform.position.y) > 6.5f || Mathf.Abs(transform.position.x) > 10.5f)
         {
             Destroy(gameObject);
         }

@@ -11,6 +11,10 @@ public class PlaneHealth : MonoBehaviour
     public float currentHealth { get; private set; }
     public float damageReductionPercent = 0f; // Askeri Zırh / RAM Kaplama hasar azaltma oranı
 
+    public float maxEnemyShield { get; private set; }
+    public float currentEnemyShield { get; private set; }
+    public bool HasEnemyShield => currentEnemyShield > 0.01f;
+
     [Header("Görsel Efektler")]
     public GameObject explosionPrefab;
 
@@ -63,6 +67,23 @@ public class PlaneHealth : MonoBehaviour
 
                 GameUI uiShield = FindObjectOfType<GameUI>();
                 uiShield?.UpdateHealthBars();
+                return;
+            }
+        }
+        else if (!isP1 && currentEnemyShield > 0f)
+        {
+            float absorbed = Mathf.Min(currentEnemyShield, amount);
+            currentEnemyShield = Mathf.Max(0f, currentEnemyShield - absorbed);
+            amount -= absorbed;
+
+            pve?.TriggerHitFlash(isShieldHit: true);
+            VFXManager.SpawnHitSparks(hitPoint, Color.cyan);
+
+            if (amount <= 0.01f)
+            {
+                DamageNumberManager.EnsureInstance()?.SpawnDamageNumber(hitPoint, absorbed, isCrit, isPlayerDamage: false);
+                GameUI uiEnemyShield = FindObjectOfType<GameUI>();
+                uiEnemyShield?.UpdateHealthBars();
                 return;
             }
         }
@@ -133,6 +154,15 @@ public class PlaneHealth : MonoBehaviour
         GameManager.Instance?.OnPlaneDead(this);
     }
 
+    public void SetEnemyShield(float shieldAmount)
+    {
+        maxEnemyShield = Mathf.Max(0f, shieldAmount);
+        currentEnemyShield = maxEnemyShield;
+
+        GameUI ui = FindObjectOfType<GameUI>();
+        ui?.UpdateHealthBars();
+    }
+
     /// <summary>
     /// Uçağın canını yeni dalga için sıfırlar ve tüm bileşenlerini yeniden aktif eder.
     /// </summary>
@@ -140,6 +170,8 @@ public class PlaneHealth : MonoBehaviour
     {
         maxHealth = newMaxHealth;
         currentHealth = newMaxHealth;
+        maxEnemyShield = 0f;
+        currentEnemyShield = 0f;
         _isDead = false;
 
         PlaneController pc = GetComponent<PlaneController>();

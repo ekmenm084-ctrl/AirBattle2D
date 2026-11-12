@@ -16,7 +16,16 @@ public class SwarmEnemy : MonoBehaviour
         DivePincer
     }
 
+    public enum DroneClass
+    {
+        Scout,          // Hızlı klasik gözcü İHA
+        Kamikaze,       // Hedefe kilitlenip dalışa geçen intihar dronu
+        HeavyShielded,  // Çift namlulu ağır zırhlı dronu
+        PlasmaBomber    // Ağır plazma küresi bırakan bombardıman dronu
+    }
+
     [Header("Formasyon & Hareket")]
+    public DroneClass droneClass = DroneClass.Scout;
     public MovementPattern pattern = MovementPattern.StraightDown;
     public float moveSpeed = 4.2f;
     public float sineFrequency = 3.2f;
@@ -41,6 +50,12 @@ public class SwarmEnemy : MonoBehaviour
     private bool _isDead = false;
     private Coroutine _flashCoroutine;
     private float _nextShootTime;
+    private int _shotsRemaining = 1;
+
+    // Kamikaze kilitlenme durumu
+    private int _kamikazePhase = 0; // 0: alçalma, 1: kilitlenme beklemesi, 2: dalış
+    private float _kamikazePhaseEndTime;
+    private Vector2 _kamikazeDiveDir = Vector2.down;
 
     private void Awake()
     {
@@ -58,29 +73,65 @@ public class SwarmEnemy : MonoBehaviour
         }
     }
 
-    public void Initialize(MovementPattern movePattern, float speed, float hp, Sprite droneSprite = null, Color? tint = null)
+    public void Initialize(MovementPattern movePattern, float speed, float hp, Sprite droneSprite = null, Color? tint = null, DroneClass cls = DroneClass.Scout)
     {
+        droneClass = cls;
         pattern = movePattern;
         moveSpeed = speed;
-        maxHealth = hp;
-        currentHealth = hp;
         _spawnTime = Time.time;
         _baseX = transform.position.x;
-        _nextShootTime = Time.time + fireDelay + Random.Range(0.2f, 0.6f);
+        _kamikazePhase = 0;
+
+        float scale = 0.72f;
+        float hpMul = 1f;
+        Color defaultTint = new Color(1f, 0.35f, 0.35f, 1f);
+
+        switch (droneClass)
+        {
+            case DroneClass.Kamikaze:
+                canShoot = false;
+                _shotsRemaining = 0;
+                hpMul = 0.85f;
+                scale = 0.68f;
+                defaultTint = new Color(1f, 0.45f, 0.12f, 1f);
+                break;
+
+            case DroneClass.HeavyShielded:
+                canShoot = true;
+                _shotsRemaining = 2;
+                hpMul = 2.15f;
+                scale = 0.94f;
+                bulletDamage = 12f;
+                defaultTint = new Color(0.28f, 0.78f, 1f, 1f);
+                break;
+
+            case DroneClass.PlasmaBomber:
+                canShoot = true;
+                _shotsRemaining = 2;
+                hpMul = 1.55f;
+                scale = 0.88f;
+                moveSpeed *= 0.72f;
+                bulletDamage = 18f;
+                bulletSpeed = 5.6f;
+                defaultTint = new Color(0.88f, 0.32f, 1f, 1f);
+                break;
+
+            default:
+                canShoot = true;
+                _shotsRemaining = 1;
+                break;
+        }
+
+        maxHealth = hp * hpMul;
+        currentHealth = maxHealth;
+        _nextShootTime = Time.time + fireDelay + Random.Range(0.2f, 0.55f);
 
         if (droneSprite != null && _sr != null)
         {
             _sr.sprite = droneSprite;
         }
 
-        if (tint.HasValue)
-        {
-            _originalColor = tint.Value;
-        }
-        else
-        {
-            _originalColor = new Color(1f, 0.35f, 0.35f, 1f); // Taktiksel kırmızı tehdit tonu
-        }
+        _originalColor = tint.HasValue ? tint.Value : defaultTint;
 
         if (_sr != null)
         {
@@ -90,7 +141,7 @@ public class SwarmEnemy : MonoBehaviour
 
         // İHA'nın yönü varsayılan olarak aşağıya (Oyuncuya) bakar (180 derece)
         transform.rotation = Quaternion.Euler(0f, 0f, 180f);
-        transform.localScale = Vector3.one * 0.72f; // Standart uçaktan daha küçük ve seri
+        transform.localScale = Vector3.one * scale;
     }
 
     private void Update()
@@ -110,6 +161,12 @@ public class SwarmEnemy : MonoBehaviour
 
     private void UpdateMovement()
     {
+        if (droneClass == DroneClass.Kamikaze)
+        {
+            UpdateKamikazeMovement();
+            return;
+        }
+
         float elapsed = Time.time - _spawnTime;
 
         switch (pattern)
@@ -135,35 +192,102 @@ public class SwarmEnemy : MonoBehaviour
         }
     }
 
-    private void CheckShooting()
+    private void UpdateKamikazeMovement()
     {
-        if (!canShoot || _isDead) return;
-
-        // Yalnızca ekranın üst yarısındayken (y > 0.5f) 1 kez ateş etsin
-        if (Time.time >= _nextShootTime && transform.position.y > 0.5f && transform.position.y < 5.5f)
+        if (_kamikazePhase == 0)
         {
-            _nextShootTime = Time.time + 999f; // Her sürü uçağı dalga başına 1 kez salvoda bulunur
-            ShootLightBullet();
+            _rb.linearVelocity = Vector2.down * (moveSpeed * 0.9f);
+            if (transform.position.y <= 2.4f)
+            {
+                _kamikazePhase = 1;
+                _kamikazePhaseEndTime = Time.time + 0.55f;
+                _rb.linearVelocity = Vector2.zero;
+
+                Transform p1 = FindPlayerTarget();
+                _kamikazeDiveDir = (p1 != null)
+                    ? ((Vector2)(p1.position - transform.position)).normalized
+                    : Vector2.down;
+                if (_kamikazeDiveDir.y > -0.25f)
+                    _kamikazeDiveDir = new Vector2(_kamikazeDiveDir.x, -0.65f).normalized;
+            }
         }
-    }
-
-    private void ShootLightBullet()
-    {
-        // Standart mermi prefab'ı veya prosedürel mermi fırlat
-        PlaneShooter shooter = FindObjectOfType<PlaneShooter>();
-        GameObject prefab = shooter != null ? shooter.bulletPrefab : null;
-
-        Vector3 spawnPos = transform.position + Vector3.down * 0.45f;
-        Quaternion rot = Quaternion.Euler(0f, 0f, 180f);
-
-        GameObject bulletObj;
-        if (prefab != null)
+        else if (_kamikazePhase == 1)
         {
-            bulletObj = Instantiate(prefab, spawnPos, rot);
+            _rb.linearVelocity = Vector2.zero;
+            float angle = Mathf.Atan2(_kamikazeDiveDir.y, _kamikazeDiveDir.x) * Mathf.Rad2Deg + 90f;
+            transform.rotation = Quaternion.Euler(0f, 0f, angle);
+
+            if (_sr != null)
+            {
+                float flash = Mathf.PingPong(Time.time * 14f, 1f);
+                _sr.color = Color.Lerp(_originalColor, Color.white, flash * 0.7f);
+            }
+
+            if (Time.time >= _kamikazePhaseEndTime)
+            {
+                _kamikazePhase = 2;
+                if (_sr != null) _sr.color = _originalColor;
+            }
         }
         else
         {
-            bulletObj = new GameObject("SwarmBullet");
+            _rb.linearVelocity = _kamikazeDiveDir * (moveSpeed * 2.15f);
+        }
+    }
+
+    private Transform FindPlayerTarget()
+    {
+        PlaneController[] planes = FindObjectsOfType<PlaneController>();
+        foreach (PlaneController p in planes)
+        {
+            if (p != null && p.isPlayer1) return p.transform;
+        }
+        return null;
+    }
+
+    private void CheckShooting()
+    {
+        if (!canShoot || _isDead || _shotsRemaining <= 0) return;
+
+        if (Time.time >= _nextShootTime && transform.position.y > 0.4f && transform.position.y < 5.2f)
+        {
+            _shotsRemaining--;
+            _nextShootTime = Time.time + (droneClass == DroneClass.PlasmaBomber ? 1.15f : 0.95f);
+            ShootClassSalvo();
+        }
+    }
+
+    private void ShootClassSalvo()
+    {
+        Vector3 spawnPos = transform.position + Vector3.down * 0.45f;
+
+        if (droneClass == DroneClass.HeavyShielded)
+        {
+            Color twinColor = new Color(0.25f, 0.85f, 1f);
+            FireDroneBullet(spawnPos + Vector3.left * 0.18f, new Vector2(-0.18f, -1f).normalized, twinColor, 1.0f, 1.0f, 0.85f);
+            FireDroneBullet(spawnPos + Vector3.right * 0.18f, new Vector2(0.18f, -1f).normalized, twinColor, 1.0f, 1.0f, 0.85f);
+        }
+        else if (droneClass == DroneClass.PlasmaBomber)
+        {
+            FireDroneBullet(spawnPos, Vector2.down, new Color(0.95f, 0.35f, 1f), 0.78f, 1.4f, 1.35f);
+        }
+        else
+        {
+            FireDroneBullet(spawnPos, Vector2.down, new Color(1f, 0.25f, 0.15f), 1.0f, 1.0f, 0.85f);
+        }
+    }
+
+    private void FireDroneBullet(Vector3 spawnPos, Vector2 direction, Color color, float speedScale, float dmgScale, float scale)
+    {
+        PlaneShooter shooter = FindObjectOfType<PlaneShooter>();
+        GameObject prefab = shooter != null ? shooter.bulletPrefab : null;
+
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+        Quaternion rot = Quaternion.Euler(0f, 0f, angle);
+
+        GameObject bulletObj = (prefab != null) ? Instantiate(prefab, spawnPos, rot) : new GameObject("SwarmBullet");
+        if (prefab == null)
+        {
             bulletObj.transform.position = spawnPos;
             bulletObj.transform.rotation = rot;
         }
@@ -171,15 +295,15 @@ public class SwarmEnemy : MonoBehaviour
         Bullet b = bulletObj.GetComponent<Bullet>();
         if (b == null) b = bulletObj.AddComponent<Bullet>();
 
-        b.speed = bulletSpeed;
-        b.damage = bulletDamage;
+        b.speed = bulletSpeed * speedScale;
+        b.damage = bulletDamage * dmgScale;
         b.owner = gameObject;
 
         SpriteRenderer bSr = bulletObj.GetComponent<SpriteRenderer>();
         if (bSr != null)
         {
-            bSr.color = new Color(1f, 0.25f, 0.15f); // Kırmızı izli mermi
-            bulletObj.transform.localScale = Vector3.one * 0.85f;
+            bSr.color = color;
+            bulletObj.transform.localScale = Vector3.one * scale;
         }
     }
 
@@ -236,13 +360,16 @@ public class SwarmEnemy : MonoBehaviour
 
         if (killedByPlayer)
         {
-            // Oyuncuya küçük ödül (Altın & Ulti)
-            PlayerUpgradeManager.Instance?.AddGold(Random.Range(4, 10));
-            PlayerCombatManeuvers.Instance?.AddUltiEnergy(3.5f);
+            int minGold = (droneClass == DroneClass.HeavyShielded) ? 12 : (droneClass == DroneClass.PlasmaBomber ? 9 : 4);
+            int maxGold = (droneClass == DroneClass.HeavyShielded) ? 22 : (droneClass == DroneClass.PlasmaBomber ? 16 : 10);
+            float ultiGain = (droneClass == DroneClass.HeavyShielded || droneClass == DroneClass.PlasmaBomber) ? 6.5f : 3.5f;
+            float lootChance = (droneClass == DroneClass.HeavyShielded || droneClass == DroneClass.PlasmaBomber) ? 0.45f : 0.25f;
+
+            PlayerUpgradeManager.Instance?.AddGold(Random.Range(minGold, maxGold));
+            PlayerCombatManeuvers.Instance?.AddUltiEnergy(ultiGain);
             DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.SwarmDroneKill, 1);
 
-            // %25 İhtimalle Ganimet Kutusu Bırak
-            if (Random.value < 0.25f)
+            if (Random.value < lootChance)
             {
                 LootDropManager.TryDropLoot(transform.position, isBoss: false);
             }
@@ -264,7 +391,8 @@ public class SwarmEnemy : MonoBehaviour
             PlaneHealth health = pc.GetComponent<PlaneHealth>();
             if (health != null && !health.isInvulnerable)
             {
-                health.TakeDamage(18f, false, transform.position);
+                float ramDmg = (droneClass == DroneClass.Kamikaze) ? 24f : 18f;
+                health.TakeDamage(ramDmg, false, transform.position);
             }
             Die(killedByPlayer: false);
         }

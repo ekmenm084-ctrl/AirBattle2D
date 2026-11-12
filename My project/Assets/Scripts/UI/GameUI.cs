@@ -1099,21 +1099,28 @@ public class GameUI : MonoBehaviour
                 bool isBoss = GameManager.Instance != null && GameManager.Instance.IsBossPlane(wave);
                 string title = GameManager.GetPlaneTitle(wave);
 
+                string enemyShieldTxt = plane2Health.HasEnemyShield
+                    ? $" <color=#00E5FF>[KALKAN: {Mathf.CeilToInt(plane2Health.currentEnemyShield)}]</color>"
+                    : "";
+                string archTag = isBoss
+                    ? BossPatternController.GetArchetypeLabel(BossPatternController.GetBossArchetype(wave))
+                    : AIController.GetArchetypeTag(AIController.GetStandardArchetype(wave));
+
                 if (_p2TmpLabel != null)
                 {
                     if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.BulletHell)
                     {
-                        _p2TmpLabel.text = $"CEHENNEM KALESİ: %{hpInt} ({rawHp} HP)";
+                        _p2TmpLabel.text = $"CEHENNEM KALESİ: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
                         _p2TmpLabel.color = new Color(1f, 0.25f, 0.55f);
                     }
                     else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
                     {
-                        _p2TmpLabel.text = $"☠ HARDCORE BOSS #{wave}: %{hpInt} ({rawHp} HP)";
+                        _p2TmpLabel.text = $"HARDCORE BOSS #{wave} [{archTag}]: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
                         _p2TmpLabel.color = new Color(1f, 0.25f, 0.25f);
                     }
                     else if (isBoss)
                     {
-                        _p2TmpLabel.text = $"{title}: %{hpInt} ({rawHp} HP)";
+                        _p2TmpLabel.text = $"{title} [{archTag}]: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
                         _p2TmpLabel.color = new Color(1f, 0.85f, 0.2f); // Altın / Akkor Boss rengi
                     }
                     else
@@ -1121,7 +1128,7 @@ public class GameUI : MonoBehaviour
                         string waveLabel = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Endless)
                             ? $"DALGA {wave}"
                             : $"[{wave}/{totalPlanes}]";
-                        _p2TmpLabel.text = $"{waveLabel} {title}: %{hpInt}";
+                        _p2TmpLabel.text = $"{waveLabel} {title} [{archTag}]: %{hpInt}{enemyShieldTxt}";
                         _p2TmpLabel.color = new Color(1f, 0.45f, 0.45f);
                     }
                 }

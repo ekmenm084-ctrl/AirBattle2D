@@ -250,6 +250,13 @@ public class PlaneVisualEffects : MonoBehaviour
 
     #endregion
 
+    public void SetBaseColor(Color color)
+    {
+        _baseColor = color;
+        if (_sr != null)
+            _sr.color = color;
+    }
+
     public void ResetVisuals()
     {
         if (_sr != null) _sr.color = _baseColor;
