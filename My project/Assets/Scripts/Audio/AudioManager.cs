@@ -33,6 +33,8 @@ public class AudioManager : MonoBehaviour
     private AudioClip _missileLaunchClip;
     private AudioClip _synthExplosionClip;
     private AudioClip _synthFanfareClip;
+    private AudioClip _grazeClip;
+    private AudioClip _comboTierClip;
 
     private void Awake()
     {
@@ -220,6 +222,18 @@ public class AudioManager : MonoBehaviour
         PlaySynthEffect(ref _missileLaunchClip, 0.92f, 1.08f, 0.75f);
     }
 
+    public void PlayGraze(int comboCount = 1)
+    {
+        float pitchStep = Mathf.Clamp(1.0f + (comboCount * 0.02f), 1.0f, 1.35f);
+        PlaySynthEffect(ref _grazeClip, pitchStep - 0.03f, pitchStep + 0.03f, 0.48f);
+    }
+
+    public void PlayComboTierUp(float multiplier)
+    {
+        float pitch = Mathf.Clamp(0.95f + (multiplier - 1f) * 0.12f, 0.95f, 1.28f);
+        PlaySynthEffect(ref _comboTierClip, pitch, pitch + 0.02f, 0.62f);
+    }
+
     private void PlaySynthEffect(ref AudioClip clipField, float minPitch, float maxPitch, float volumeScale)
     {
         if (isMuted || _sfxSource == null) return;
@@ -284,6 +298,20 @@ public class AudioManager : MonoBehaviour
             float freq = (n < 0.33f) ? 523.25f : (n < 0.66f ? 659.25f : 783.99f);
             float env = Mathf.Clamp01(1f - n * 0.75f);
             return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
+        });
+
+        _grazeClip = BuildSynthClip("SynthGraze", sr, 0.09f, (t, n) =>
+        {
+            float freq = Mathf.Lerp(1350f, 2250f, n);
+            float env = Mathf.Sin(Mathf.PI * n);
+            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.42f;
+        });
+
+        _comboTierClip = BuildSynthClip("SynthComboTier", sr, 0.20f, (t, n) =>
+        {
+            float freq = n < 0.48f ? 740f : 1108.73f;
+            float env = Mathf.Clamp01(1f - n * 0.7f);
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.25f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.45f;
         });
     }
 

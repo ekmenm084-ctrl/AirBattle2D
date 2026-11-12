@@ -50,6 +50,7 @@ public class GameUI : MonoBehaviour
         SetupModeIntroBanner();
         SetupMissileButton();
         SetupGoldHUD();
+        SetupComboHUD();
         SetupUltiBar();
         SetupCombatManeuverButtons();
 
@@ -70,6 +71,7 @@ public class GameUI : MonoBehaviour
         if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(visible);
         if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
         if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
+        if (_comboHUDObj != null) _comboHUDObj.SetActive(visible);
         if (_ultiBarObj != null) _ultiBarObj.SetActive(visible);
         if (_dodgeBtnObj != null) _dodgeBtnObj.SetActive(visible);
         if (_ultiBtnObj != null) _ultiBtnObj.SetActive(visible);
@@ -480,6 +482,163 @@ public class GameUI : MonoBehaviour
         _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
         _goldHUDObj.transform.localScale = Vector3.one;
         _goldPulseCoroutine = null;
+    }
+
+    private GameObject _comboHUDObj;
+    private TextMeshProUGUI _comboMainTMP;
+    private TextMeshProUGUI _comboSubTMP;
+    private Image _comboFillImg;
+    private Outline _comboOutline;
+    private Coroutine _comboPulseCoroutine;
+
+    private void SetupComboHUD()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        _comboHUDObj = EnsureUIGameObject(canvas.transform, "HUD_ComboBadge");
+
+        RectTransform rt = EnsureComponent<RectTransform>(_comboHUDObj);
+        rt.anchorMin = new Vector2(1f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(1f, 1f);
+        rt.anchoredPosition = new Vector2(-26f, -82f);
+        rt.sizeDelta = new Vector2(262f, 58f);
+
+        Image bg = EnsureComponent<Image>(_comboHUDObj);
+        bg.color = new Color(0.05f, 0.08f, 0.14f, 0.88f);
+
+        _comboOutline = EnsureComponent<Outline>(_comboHUDObj);
+        _comboOutline.effectColor = new Color(0.18f, 0.85f, 1f, 0.70f);
+        _comboOutline.effectDistance = new Vector2(1.8f, -1.8f);
+
+        GameObject mainObj = EnsureUIGameObject(_comboHUDObj.transform, "MainText");
+        RectTransform mainRt = EnsureComponent<RectTransform>(mainObj);
+        mainRt.anchorMin = new Vector2(0f, 0.48f);
+        mainRt.anchorMax = new Vector2(1f, 0.96f);
+        mainRt.offsetMin = new Vector2(8f, 0f);
+        mainRt.offsetMax = new Vector2(-8f, -2f);
+
+        _comboMainTMP = EnsureComponent<TextMeshProUGUI>(mainObj);
+        _comboMainTMP.fontSize = 18f;
+        _comboMainTMP.fontStyle = FontStyles.Bold;
+        _comboMainTMP.alignment = TextAlignmentOptions.Center;
+        _comboMainTMP.color = new Color(0.75f, 0.88f, 1f);
+        _comboMainTMP.raycastTarget = false;
+        _comboMainTMP.text = "COMBO x1.0";
+
+        GameObject subObj = EnsureUIGameObject(_comboHUDObj.transform, "SubText");
+        RectTransform subRt = EnsureComponent<RectTransform>(subObj);
+        subRt.anchorMin = new Vector2(0f, 0.14f);
+        subRt.anchorMax = new Vector2(1f, 0.48f);
+        subRt.offsetMin = new Vector2(6f, 0f);
+        subRt.offsetMax = new Vector2(-6f, 0f);
+
+        _comboSubTMP = EnsureComponent<TextMeshProUGUI>(subObj);
+        _comboSubTMP.fontSize = 12f;
+        _comboSubTMP.fontStyle = FontStyles.Bold;
+        _comboSubTMP.alignment = TextAlignmentOptions.Center;
+        _comboSubTMP.color = new Color(0.85f, 0.92f, 0.98f);
+        _comboSubTMP.raycastTarget = false;
+        _comboSubTMP.text = "SIYIRMA: 0  |  <color=#00FFAA>HASARSIZ</color>";
+
+        GameObject barBgObj = EnsureUIGameObject(_comboHUDObj.transform, "DecayBarBg");
+        RectTransform barBgRt = EnsureComponent<RectTransform>(barBgObj);
+        barBgRt.anchorMin = new Vector2(0f, 0f);
+        barBgRt.anchorMax = new Vector2(1f, 0f);
+        barBgRt.pivot = new Vector2(0.5f, 0f);
+        barBgRt.anchoredPosition = new Vector2(0f, 2f);
+        barBgRt.sizeDelta = new Vector2(-10f, 5f);
+
+        Image barBgImg = EnsureComponent<Image>(barBgObj);
+        barBgImg.color = new Color(0.12f, 0.16f, 0.24f, 0.9f);
+        barBgImg.raycastTarget = false;
+
+        GameObject barFillObj = EnsureUIGameObject(barBgObj.transform, "DecayBarFill");
+        RectTransform barFillRt = EnsureComponent<RectTransform>(barFillObj);
+        barFillRt.anchorMin = Vector2.zero;
+        barFillRt.anchorMax = Vector2.one;
+        barFillRt.offsetMin = Vector2.zero;
+        barFillRt.offsetMax = Vector2.zero;
+
+        _comboFillImg = EnsureComponent<Image>(barFillObj);
+        _comboFillImg.type = Image.Type.Filled;
+        _comboFillImg.fillMethod = Image.FillMethod.Horizontal;
+        _comboFillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
+        _comboFillImg.color = new Color(0.18f, 0.90f, 1f, 0.95f);
+        _comboFillImg.fillAmount = 0f;
+        _comboFillImg.raycastTarget = false;
+    }
+
+    public void PulseComboHUD()
+    {
+        if (_comboHUDObj == null || !_comboHUDObj.activeInHierarchy) return;
+        if (_comboPulseCoroutine != null) StopCoroutine(_comboPulseCoroutine);
+        _comboPulseCoroutine = StartCoroutine(ComboPulseRoutine());
+    }
+
+    private IEnumerator ComboPulseRoutine()
+    {
+        if (_comboHUDObj == null) yield break;
+        _comboHUDObj.transform.localScale = Vector3.one * 1.12f;
+        yield return new WaitForSecondsRealtime(0.14f);
+        if (_comboHUDObj != null)
+            _comboHUDObj.transform.localScale = Vector3.one;
+        _comboPulseCoroutine = null;
+    }
+
+    private void UpdateComboHUD()
+    {
+        if (_comboHUDObj == null) return;
+
+        bool hideForMode = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
+        if (hideForMode)
+        {
+            if (_comboHUDObj.activeSelf) _comboHUDObj.SetActive(false);
+            return;
+        }
+
+        CombatComboManager combo = CombatComboManager.Instance;
+        if (combo == null)
+        {
+            if (_comboMainTMP != null) _comboMainTMP.text = "COMBO x1.0";
+            if (_comboSubTMP != null) _comboSubTMP.text = "SIYIRMA: 0  |  <color=#00FFAA>HASARSIZ</color>";
+            if (_comboFillImg != null) _comboFillImg.fillAmount = 0f;
+            return;
+        }
+
+        Color tierCol = combo.GetTierColor();
+        float mult = combo.GetMultiplier();
+
+        if (_comboMainTMP != null)
+        {
+            _comboMainTMP.color = tierCol;
+            _comboMainTMP.text = (combo.currentCombo > 0)
+                ? $"COMBO x{mult:0.0}  [{combo.currentCombo} {combo.GetTierLabel()}]"
+                : "COMBO x1.0";
+        }
+
+        if (_comboSubTMP != null)
+        {
+            string flawlessTxt = combo.waveTookDamage
+                ? "<color=#FF7043>HASAR ALINDI</color>"
+                : (combo.noDamageWavesStreak > 0
+                    ? $"<color=#00FFAA>HASARSIZ x{combo.noDamageWavesStreak}</color>"
+                    : "<color=#00FFAA>HASARSIZ</color>");
+            _comboSubTMP.text = $"SIYIRMA: {combo.totalGrazes}  |  {flawlessTxt}";
+        }
+
+        if (_comboFillImg != null)
+        {
+            _comboFillImg.fillAmount = combo.ComboTimerNormalized;
+            _comboFillImg.color = tierCol;
+        }
+
+        if (_comboOutline != null)
+        {
+            _comboOutline.effectColor = new Color(tierCol.r, tierCol.g, tierCol.b, combo.currentCombo > 0 ? 0.90f : 0.45f);
+        }
     }
 
     private GameObject _missileBtnObj;
@@ -998,9 +1157,16 @@ public class GameUI : MonoBehaviour
             _ultiBtnObj.SetActive(!isMenuOpen);
         }
 
+        bool showComboHud = !isMenuOpen && (GameManager.Instance == null || GameManager.Instance.CurrentMode != GameManager.GameMode.TwoPlayer);
+        if (_comboHUDObj != null && _comboHUDObj.activeSelf != showComboHud)
+        {
+            _comboHUDObj.SetActive(showComboHud);
+        }
+
         if (isMenuOpen) return;
 
         UpdateUltiAndManeuverVisuals();
+        UpdateComboHUD();
         if (plane1HealthBar != null)
         {
             plane1HealthBar.value = Mathf.MoveTowards(plane1HealthBar.value, _targetP1Health, Time.deltaTime * 2.5f);

@@ -96,6 +96,7 @@ public class GameManager : MonoBehaviour
         gameEnded = false;
         sessionGoldEarned = 0;
         GameSettings.LoadSettings();
+        CombatComboManager.EnsureInstance().ResetSession();
 
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         if (isOnline)
@@ -346,6 +347,7 @@ public class GameManager : MonoBehaviour
         // Dalga başlangıcında zaman hızının kesinlikle normale (1.0x) dönmesini sağla
         Time.timeScale = 1.0f;
         Time.fixedDeltaTime = 0.02f;
+        CombatComboManager.EnsureInstance().OnWaveStarted(waveIndex);
 
         int effIndex = GetEffectiveWaveIndex(waveIndex);
         bool isBoss = IsBossPlane(waveIndex);
@@ -568,7 +570,7 @@ public class GameManager : MonoBehaviour
                         : $"HAYATTA KALMA SONLANDI!\nSÜRE: {m:00}:{s:00}\nEN İYİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>";
 
                     if (gameOverUI != null)
-                        gameOverUI.Show(defeatMsg);
+                        gameOverUI.Show(AppendComboSummary(defeatMsg));
                     else
                         StartCoroutine(ReturnToMainMenuRoutine(2.8f));
                 }
@@ -656,7 +658,7 @@ public class GameManager : MonoBehaviour
                 }
 
                 if (gameOverUI != null)
-                    gameOverUI.Show(defeatMsg);
+                    gameOverUI.Show(AppendComboSummary(defeatMsg));
                 else
                     StartCoroutine(ReturnToMainMenuRoutine(2.0f));
             }
@@ -696,7 +698,7 @@ public class GameManager : MonoBehaviour
                 int m = (int)(bulletHellTime / 60f);
                 int s = (int)(bulletHellTime % 60f);
                 if (gameOverUI != null)
-                    gameOverUI.Show($"İNANILMAZ ZAFER!\nCEHENNEM KALESİ İMHA EDİLDİ!\nSÜRE: {m:00}:{s:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>");
+                    gameOverUI.Show(AppendComboSummary($"İNANILMAZ ZAFER!\nCEHENNEM KALESİ İMHA EDİLDİ!\nSÜRE: {m:00}:{s:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"));
 
                 AudioManager.Instance?.PlayRewardFanfare();
                 StartCoroutine(ReturnToMainMenuRoutine(3.5f));
@@ -710,18 +712,30 @@ public class GameManager : MonoBehaviour
                 float bonusSec = isBoss ? 8.0f : 4.0f;
                 timeAttackRemaining += bonusSec;
 
-                int killReward = 15 + (timeAttackKills * 2) + (isBoss ? 25 : 0);
+                CombatComboManager combo = CombatComboManager.EnsureInstance();
+                combo.AddCombo(isBoss ? 5 : 3, deadPlane != null ? deadPlane.transform.position : default);
+
+                int baseKillReward = 15 + (timeAttackKills * 2) + (isBoss ? 25 : 0);
+                int killReward = combo.ApplyGoldMultiplier(baseKillReward, out int comboBonus);
                 HangarManager.EnsureInstance()?.AddGold(killReward);
                 sessionGoldEarned += killReward;
+
+                var flawless = combo.EvaluateFlawlessWaveBonus(timeAttackKills, isBoss);
+                if (flawless.isFlawless)
+                    AudioManager.Instance?.PlayRewardFanfare();
 
                 PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: isBoss, isElite: isBoss);
                 plane1Health?.Heal(25f);
 
                 var gameUI = FindObjectOfType<GameUI>();
+                string multTag = comboBonus > 0 ? $" <color=#FFD54F>[x{combo.GetMultiplier():0.0}]</color>" : "";
+                string flawlessTag = flawless.isFlawless
+                    ? $"\n<size=75%><color=#00FFAA>HASARSIZ DALGA! (+{flawless.goldBonus}G • +{flawless.ultiBonus:0}% ULTİ)</color></size>"
+                    : "";
                 string bonusMsg = isBoss
-                    ? $"[BOSS] İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#2ECC71>TOPLAM İMHA: {timeAttackKills}</color>"
-                    : $"[+] UÇAK İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#00E5FF>TOPLAM İMHA: {timeAttackKills}</color>";
-                gameUI?.ShowWaveAlert(bonusMsg, isBoss ? new Color(1f, 0.85f, 0.2f) : new Color(0.2f, 0.95f, 0.4f), 1.1f);
+                    ? $"[BOSS] İMHA! (+{bonusSec:0} SN!) (+{killReward}G{multTag})\n<color=#2ECC71>TOPLAM İMHA: {timeAttackKills}</color>{flawlessTag}"
+                    : $"[+] UÇAK İMHA! (+{bonusSec:0} SN!) (+{killReward}G{multTag})\n<color=#00E5FF>TOPLAM İMHA: {timeAttackKills}</color>{flawlessTag}";
+                gameUI?.ShowWaveAlert(bonusMsg, isBoss ? new Color(1f, 0.85f, 0.2f) : new Color(0.2f, 0.95f, 0.4f), 1.35f);
 
                 currentPlaneIndex = timeAttackKills + 1;
                 StartCoroutine(SpawnNextEnemyRoutine(0.35f));
@@ -733,6 +747,10 @@ public class GameManager : MonoBehaviour
             // BOSS RUSH VE SOLO MOD ZAFER KONTROLÜ
             if (CurrentMode == GameMode.BossRush && currentPlaneIndex >= 4)
             {
+                CombatComboManager combo = CombatComboManager.EnsureInstance();
+                combo.AddCombo(5, deadPlane != null ? deadPlane.transform.position : default);
+                combo.EvaluateFlawlessWaveBonus(currentPlaneIndex, isBoss: true);
+
                 // BOSS RUSH TAMAMLANDI: Ağır çekim ve zincirleme devasa patlama sekansını başlat
                 StartCoroutine(FinalBossDefeatSlowMoRoutine(deadPlane));
             }
@@ -740,12 +758,22 @@ public class GameManager : MonoBehaviour
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
-                int campaignReward = 1000;
+                CombatComboManager combo = CombatComboManager.EnsureInstance();
+                combo.AddCombo(5, deadPlane != null ? deadPlane.transform.position : default);
+                var flawless = combo.EvaluateFlawlessWaveBonus(MaxPlanes, isBoss: true);
+
+                int campaignReward = combo.ApplyGoldMultiplier(1000, out _);
                 HangarManager.EnsureInstance()?.AddGold(campaignReward);
                 sessionGoldEarned += campaignReward;
 
                 PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
                 PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(20);
+
+                if (flawless.isFlawless)
+                {
+                    var gameUI = FindObjectOfType<GameUI>();
+                    gameUI?.ShowWaveAlert($"FİNAL BOSS HASARSIZ GEÇİLDİ! (+{flawless.goldBonus}G)", new Color(0f, 1f, 0.65f), 2.0f);
+                }
 
                 StoryCampaignManager.AdvanceToNextCampaign();
                 StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() => { });
@@ -754,34 +782,47 @@ public class GameManager : MonoBehaviour
             {
                 int justDefeated = currentPlaneIndex;
                 bool wasBoss = IsBossPlane(justDefeated);
+                CombatComboManager combo = CombatComboManager.EnsureInstance();
+                Vector3 deadPos = deadPlane != null ? deadPlane.transform.position : default;
 
                 if (wasBoss)
                 {
                     PlayerCombatManeuvers.Instance?.AddUltiEnergy(25f);
-                    int bossReward = (CurrentMode == GameMode.BossRush) ? 250 : (100 + justDefeated * 10);
+                    combo.AddCombo(5, deadPos);
+
+                    int baseBossReward = (CurrentMode == GameMode.BossRush) ? 250 : (100 + justDefeated * 10);
+                    int bossReward = combo.ApplyGoldMultiplier(baseBossReward, out int comboBonus);
                     HangarManager.EnsureInstance()?.AddGold(bossReward);
                     sessionGoldEarned += bossReward;
+
+                    var flawless = combo.EvaluateFlawlessWaveBonus(justDefeated, isBoss: true);
+                    if (flawless.isFlawless)
+                        AudioManager.Instance?.PlayRewardFanfare();
 
                     PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
                     PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(justDefeated);
 
                     var gameUI = FindObjectOfType<GameUI>();
+                    string multTag = comboBonus > 0 ? $" [x{combo.GetMultiplier():0.0}]" : "";
+                    string flawlessTag = flawless.isFlawless
+                        ? $"\n<size=72%><color=#00FFAA>HASARSIZ DALGA (x{flawless.streak}): +{flawless.goldBonus}G • +{flawless.ultiBonus:0}% ULTİ</color></size>"
+                        : "";
 
                     if (CurrentMode == GameMode.Hardcore)
                     {
                         plane1Health?.Heal(50f); // 200 HP can barı için gövde tamiri ödülü
-                        gameUI?.ShowWaveAlert($"[BOSS #{justDefeated} İMHA EDİLDİ!] (+{bossReward}G)\n<color=#FF3333>+50 HP TAMİR EDİLDİ • HANGAR AÇILIYOR</color>", new Color(1f, 0.25f, 0.25f), 2.2f);
+                        gameUI?.ShowWaveAlert($"[BOSS #{justDefeated} İMHA EDİLDİ!] (+{bossReward}G{multTag})\n<color=#FF3333>+50 HP TAMİR EDİLDİ • HANGAR AÇILIYOR</color>{flawlessTag}", new Color(1f, 0.25f, 0.25f), 2.4f);
                     }
                     else if (CurrentMode == GameMode.Endless && (justDefeated % 20 == 0 || (justDefeated / 5) % 20 == 0))
                     {
                         player1Lives++;
                         AudioManager.Instance?.PlayRewardFanfare();
-                        gameUI?.ShowWaveAlert($"[+] 20. BOSS İMHA EDİLDİ!\n<color=#2ECC71><b>OTOMATİK +1 YEDEK CAN EKLENDİ!</b></color>\n(TOPLAM CAN HAKKI: {player1Lives})", new Color(0.2f, 0.95f, 0.4f), 3.0f);
+                        gameUI?.ShowWaveAlert($"[+] 20. BOSS İMHA EDİLDİ! (+{bossReward}G{multTag})\n<color=#2ECC71><b>OTOMATİK +1 YEDEK CAN EKLENDİ!</b></color>\n(TOPLAM CAN HAKKI: {player1Lives}){flawlessTag}", new Color(0.2f, 0.95f, 0.4f), 3.0f);
                         gameUI?.UpdateHealthBars();
                     }
                     else
                     {
-                        gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ! (+{bossReward}G)\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>", new Color(1f, 0.85f, 0.2f), 2.0f);
+                        gameUI?.ShowWaveAlert($"BOSS DÜŞÜRÜLDÜ! (+{bossReward}G{multTag})\n<color=#F1C40F>HANGAR GÜÇLENDİRMESİ AÇILIYOR...</color>{flawlessTag}", new Color(1f, 0.85f, 0.2f), 2.2f);
                     }
 
                     StartCoroutine(OpenUpgradeHangarRoutine(justDefeated));
@@ -790,9 +831,16 @@ public class GameManager : MonoBehaviour
                 {
                     bool isElite = (justDefeated % 5 == 4);
                     PlayerCombatManeuvers.Instance?.AddUltiEnergy(isElite ? 15f : 10f);
-                    int killReward = 15 + (justDefeated * 2) + (isElite ? 15 : 0);
+                    combo.AddCombo(isElite ? 4 : 3, deadPos);
+
+                    int baseKillReward = 15 + (justDefeated * 2) + (isElite ? 15 : 0);
+                    int killReward = combo.ApplyGoldMultiplier(baseKillReward, out int comboBonus);
                     HangarManager.EnsureInstance()?.AddGold(killReward);
                     sessionGoldEarned += killReward;
+
+                    var flawless = combo.EvaluateFlawlessWaveBonus(justDefeated, isBoss: false);
+                    if (flawless.isFlawless)
+                        AudioManager.Instance?.PlayRewardFanfare();
 
                     PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: false, isElite: isElite);
                     PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(justDefeated);
@@ -803,14 +851,19 @@ public class GameManager : MonoBehaviour
                     currentPlaneIndex++;
                     bool nextIsBoss = IsBossPlane(currentPlaneIndex);
 
+                    string multTag = comboBonus > 0 ? $" [x{combo.GetMultiplier():0.0}]" : "";
+                    string flawlessLine = flawless.isFlawless
+                        ? $"\n<size=68%><color=#00FFAA>HASARSIZ DALGA (x{flawless.streak}): +{flawless.goldBonus}G • +{flawless.ultiBonus:0}% ULTİ</color></size>"
+                        : "";
+
                     if (nextIsBoss)
                     {
-                        gameUI?.ShowWaveAlert($"DİKKAT! {GetCurrentPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR!", new Color(1f, 0.3f, 0.2f), 2.2f);
+                        gameUI?.ShowWaveAlert($"DİKKAT! {GetCurrentPlaneTitle(currentPlaneIndex)} YAKLAŞIYOR!\n<size=70%><color=#FFE082>ÖNCEKİ ÖDÜL: +{killReward}G{multTag}</color></size>{flawlessLine}", new Color(1f, 0.3f, 0.2f), 2.2f);
                     }
                     else
                     {
                         string waveLabel = (CurrentMode == GameMode.Endless) ? $"DALGA {justDefeated}" : $"UÇAK [{justDefeated}/{totalPlanes}]";
-                        gameUI?.ShowWaveAlert($"{waveLabel} İMHA EDİLDİ! (+{killReward}G)\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>", new Color(0.2f, 0.9f, 1f), 1.6f);
+                        gameUI?.ShowWaveAlert($"{waveLabel} İMHA EDİLDİ! (+{killReward}G{multTag})\n<size=70%><color=#2ECC71>+35 CAN TAMİR EDİLDİ</color></size>{flawlessLine}", new Color(0.2f, 0.9f, 1f), 1.8f);
                     }
 
                     StartCoroutine(SpawnNextEnemyRoutine(1.3f));
@@ -979,7 +1032,7 @@ public class GameManager : MonoBehaviour
         AudioManager.Instance?.PlayRewardFanfare();
 
         if (gameOverUI != null)
-            gameOverUI.Show($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!");
+            gameOverUI.Show(AppendComboSummary($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!"));
         else
             StartCoroutine(ReturnToMainMenuRoutine(3.0f));
     }
@@ -1232,9 +1285,17 @@ public class GameManager : MonoBehaviour
             : $"TOPLAM İMHA: {timeAttackKills} UÇAK\nEN YÜKSEK REKOR: {bestKills}";
 
         if (gameOverUI != null)
-            gameOverUI.Show($"{title}\n{recordMsg}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>");
+            gameOverUI.Show(AppendComboSummary($"{title}\n{recordMsg}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"));
         else
             StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+    }
+
+    private string AppendComboSummary(string baseMessage)
+    {
+        if (CombatComboManager.Instance == null || CurrentMode == GameMode.TwoPlayer)
+            return baseMessage;
+
+        return baseMessage + "\n" + CombatComboManager.Instance.BuildSessionSummaryLine();
     }
 
     /// <summary>

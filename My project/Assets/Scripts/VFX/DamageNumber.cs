@@ -51,41 +51,59 @@ public class DamageNumber : MonoBehaviour
         transform.position = startPos;
         gameObject.SetActive(true);
 
-        _animCoroutine = StartCoroutine(AnimateRoutine(damage, isCrit, isPlayerDamage));
-    }
-
-    private IEnumerator AnimateRoutine(float damage, bool isCrit, bool isPlayerDamage)
-    {
         int displayVal = Mathf.Max(1, Mathf.RoundToInt(damage));
         float duration = isCrit ? 0.95f : 0.65f;
         float baseScale = isCrit ? 1.45f : 1.0f;
         float floatSpeedY = isCrit ? 2.2f : 1.6f;
-        float driftX = Random.Range(-0.45f, 0.45f);
 
-        Color startColor;
         if (isPlayerDamage)
         {
-            _tmp.text = "-" + displayVal;
-            _tmp.fontSize = 3.2f;
-            _tmp.fontStyle = FontStyles.Bold;
-            startColor = new Color(1f, 0.28f, 0.28f, 1f); // Kırmızı (Oyuncunun aldığı hasar)
+            _animCoroutine = StartCoroutine(AnimateLabelRoutine(
+                "-" + displayVal, 3.2f, FontStyles.Bold,
+                new Color(1f, 0.28f, 0.28f, 1f), duration, baseScale, floatSpeedY, 1.25f));
         }
         else if (isCrit)
         {
-            _tmp.text = "-" + displayVal + "! KRİTİK";
-            _tmp.fontSize = 4.2f;
-            _tmp.fontStyle = FontStyles.Bold;
-            startColor = new Color(1f, 0.78f, 0.12f, 1f); // Parlak Altın Sarısı
+            _animCoroutine = StartCoroutine(AnimateLabelRoutine(
+                "-" + displayVal + "! KRİTİK", 4.2f, FontStyles.Bold,
+                new Color(1f, 0.78f, 0.12f, 1f), duration, baseScale, floatSpeedY, 1.7f));
         }
         else
         {
-            _tmp.text = displayVal.ToString();
-            _tmp.fontSize = 2.9f;
-            _tmp.fontStyle = FontStyles.Normal;
-            startColor = new Color(1f, 0.96f, 0.75f, 1f); // Açık krem / beyaz
+            _animCoroutine = StartCoroutine(AnimateLabelRoutine(
+                displayVal.ToString(), 2.9f, FontStyles.Normal,
+                new Color(1f, 0.96f, 0.75f, 1f), duration, baseScale, floatSpeedY, 1.25f));
+        }
+    }
+
+    public void PlayCustomText(Vector3 startPos, string label, Color color, float baseScale = 1.05f)
+    {
+        EnsureTMP();
+
+        if (_animCoroutine != null)
+        {
+            StopCoroutine(_animCoroutine);
         }
 
-        Vector3 startScale = Vector3.one * (baseScale * (isCrit ? 1.7f : 1.25f));
+        transform.position = startPos;
+        gameObject.SetActive(true);
+
+        color.a = 1f;
+        _animCoroutine = StartCoroutine(AnimateLabelRoutine(
+            label, 3.1f, FontStyles.Bold, color, 0.85f, baseScale, 1.85f, 1.45f));
+    }
+
+    private IEnumerator AnimateLabelRoutine(
+        string label, float fontSize, FontStyles fontStyle, Color startColor,
+        float duration, float baseScale, float floatSpeedY, float popScaleFactor)
+    {
+        _tmp.text = label;
+        _tmp.fontSize = fontSize;
+        _tmp.fontStyle = fontStyle;
+        _tmp.color = startColor;
+
+        float driftX = Random.Range(-0.45f, 0.45f);
+        Vector3 startScale = Vector3.one * (baseScale * popScaleFactor);
         Vector3 targetScale = Vector3.one * baseScale;
         transform.localScale = startScale;
 

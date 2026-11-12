@@ -383,13 +383,20 @@ public class EnemyFormationManager : MonoBehaviour
 
     private void OnFormationWipedOutBonus()
     {
-        // Mükemmel Temizlik Bonusu
-        int bonusGold = 50;
-        PlayerUpgradeManager.Instance?.AddGold(bonusGold);
+        // Mükemmel Temizlik Bonusu (+ Combo Çarpanı)
+        CombatComboManager combo = CombatComboManager.EnsureInstance();
+        combo.AddCombo(2);
+        int bonusGold = combo.ApplyGoldMultiplier(50, out int comboBonus);
+
+        HangarManager.EnsureInstance()?.AddGold(bonusGold);
+        if (GameManager.Instance != null)
+            GameManager.Instance.sessionGoldEarned += bonusGold;
+
         AudioManager.Instance?.PlayRewardFanfare();
 
+        string multTag = comboBonus > 0 ? $" [x{combo.GetMultiplier():0.0}]" : "";
         GameUI ui = FindObjectOfType<GameUI>();
-        ui?.ShowWaveAlert(">> FİLO TAMAMEN İMHA EDİLDİ! (+50 ALTIN) <<", new Color(0.2f, 1f, 0.45f), 2.5f);
+        ui?.ShowWaveAlert($">> FİLO TAMAMEN İMHA EDİLDİ! (+{bonusGold} ALTIN{multTag}) <<", new Color(0.2f, 1f, 0.45f), 2.5f);
     }
 
     public void ClearAllSwarmEnemies()

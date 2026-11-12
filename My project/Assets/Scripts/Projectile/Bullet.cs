@@ -23,6 +23,9 @@ public class Bullet : MonoBehaviour
 
     private Rigidbody2D _rb;
     private float _age = 0f;
+    private bool _hasGrazedPlayer = false;
+    private GameObject _checkedOwner;
+    private bool _ownerIsPlayer1 = false;
 
     private void Awake()
     {
@@ -78,6 +81,45 @@ public class Bullet : MonoBehaviour
         if (Mathf.Abs(transform.position.y) > 6.5f || Mathf.Abs(transform.position.x) > 10.5f)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        CheckBulletGraze();
+    }
+
+    private void CheckBulletGraze()
+    {
+        if (_hasGrazedPlayer || Time.timeScale <= 0.01f) return;
+
+        if (owner != _checkedOwner)
+        {
+            _checkedOwner = owner;
+            _ownerIsPlayer1 = (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true);
+        }
+        if (_ownerIsPlayer1) return;
+
+        GameManager gm = GameManager.Instance;
+        if (gm == null || gm.IsGameEnded || gm.CurrentMode == GameManager.GameMode.TwoPlayer) return;
+
+        PlaneHealth p1 = gm.plane1Health;
+        if (p1 == null || p1.IsDead) return;
+
+        bool isDodging = PlayerCombatManeuvers.Instance != null && PlayerCombatManeuvers.Instance.isDodging;
+        float grazeRadius = isDodging ? 1.55f : 1.28f;
+
+        Vector2 toPlayer = (Vector2)(p1.transform.position - transform.position);
+        float distSq = toPlayer.sqrMagnitude;
+        if (distSq > grazeRadius * grazeRadius) return;
+
+        Vector2 vel = (_rb != null && _rb.linearVelocity.sqrMagnitude > 0.01f)
+            ? _rb.linearVelocity
+            : (Vector2)transform.up * speed;
+
+        // Mermi oyuncunun yanından/arkasından sıyrılıp geçiyorsa veya oyuncu Dodge I-Frame içindeyse sıyırma say
+        if (isDodging || p1.isInvulnerable || Vector2.Dot(vel, toPlayer) <= 0f)
+        {
+            _hasGrazedPlayer = true;
+            CombatComboManager.EnsureInstance().RegisterBulletGraze(transform.position, isDodging);
         }
     }
 
@@ -113,6 +155,7 @@ public class Bullet : MonoBehaviour
             if (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true)
             {
                 PlayerCombatManeuvers.Instance?.AddUltiEnergy(2.0f);
+                CombatComboManager.Instance?.RefreshComboTimer(2.6f);
             }
 
             VFXManager.SpawnHitSparks(transform.position, isCritical ? new Color(1f, 0.95f, 0.1f) : new Color(1f, 0.8f, 0.2f));
@@ -127,6 +170,12 @@ public class Bullet : MonoBehaviour
             if (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true)
             {
                 PlayerCombatManeuvers.Instance?.AddUltiEnergy(1.8f);
+                CombatComboManager.Instance?.RefreshComboTimer(2.6f);
+            }
+
+            if (health == GameManager.Instance?.plane1Health && !health.isInvulnerable)
+            {
+                _hasGrazedPlayer = true;
             }
 
             VFXManager.SpawnHitSparks(transform.position, isCritical ? new Color(1f, 0.95f, 0.1f) : new Color(1f, 0.9f, 0.2f));

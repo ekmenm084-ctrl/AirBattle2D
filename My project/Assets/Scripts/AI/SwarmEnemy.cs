@@ -364,8 +364,18 @@ public class SwarmEnemy : MonoBehaviour
             int maxGold = (droneClass == DroneClass.HeavyShielded) ? 22 : (droneClass == DroneClass.PlasmaBomber ? 16 : 10);
             float ultiGain = (droneClass == DroneClass.HeavyShielded || droneClass == DroneClass.PlasmaBomber) ? 6.5f : 3.5f;
             float lootChance = (droneClass == DroneClass.HeavyShielded || droneClass == DroneClass.PlasmaBomber) ? 0.45f : 0.25f;
+            int comboStep = (droneClass == DroneClass.HeavyShielded || droneClass == DroneClass.PlasmaBomber) ? 2 : 1;
 
-            PlayerUpgradeManager.Instance?.AddGold(Random.Range(minGold, maxGold));
+            CombatComboManager combo = CombatComboManager.EnsureInstance();
+            combo.AddCombo(comboStep, transform.position);
+
+            int baseGold = Random.Range(minGold, maxGold);
+            int finalGold = combo.ApplyGoldMultiplier(baseGold, out _);
+
+            HangarManager.EnsureInstance()?.AddGold(finalGold);
+            if (GameManager.Instance != null)
+                GameManager.Instance.sessionGoldEarned += finalGold;
+
             PlayerCombatManeuvers.Instance?.AddUltiEnergy(ultiGain);
             DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.SwarmDroneKill, 1);
 

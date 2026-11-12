@@ -83,24 +83,7 @@ public class DamageNumberManager : MonoBehaviour
 
         InitializePool();
 
-        DamageNumber dn = null;
-        if (_pool.Count > 0)
-        {
-            dn = _pool.Dequeue();
-        }
-        else if (_activeList.Count > 0)
-        {
-            // Havuz dolduysa en eski aktifi al
-            dn = _activeList[0];
-            _activeList.RemoveAt(0);
-        }
-        else
-        {
-            dn = CreatePooledInstance();
-            _pool.Dequeue(); // Az önce eklendi
-        }
-
-        _activeList.Add(dn);
+        DamageNumber dn = AcquirePooledInstance();
         dn.Play(worldPos, damage, isCrit, isPlayerDamage);
 
         // Kritik darbe görsel ve dokunsal geri bildirimi (Tok sarsıntı)
@@ -108,6 +91,41 @@ public class DamageNumberManager : MonoBehaviour
         {
             CameraShake.Shake(0.14f, 0.10f);
         }
+    }
+
+    /// <summary>
+    /// Dünyada özel metin (Mermi sıyırma, combo seviyesi vb.) uçuşan bildirimi oluşturur.
+    /// </summary>
+    public void SpawnCustomText(Vector3 worldPos, string text, Color color, float baseScale = 1.05f)
+    {
+        if (string.IsNullOrEmpty(text)) return;
+
+        InitializePool();
+
+        DamageNumber dn = AcquirePooledInstance();
+        dn.PlayCustomText(worldPos, text, color, baseScale);
+    }
+
+    private DamageNumber AcquirePooledInstance()
+    {
+        DamageNumber dn;
+        if (_pool.Count > 0)
+        {
+            dn = _pool.Dequeue();
+        }
+        else if (_activeList.Count > 0)
+        {
+            dn = _activeList[0];
+            _activeList.RemoveAt(0);
+        }
+        else
+        {
+            dn = CreatePooledInstance();
+            _pool.Dequeue();
+        }
+
+        _activeList.Add(dn);
+        return dn;
     }
 
     public void ReturnToPool(DamageNumber dn)

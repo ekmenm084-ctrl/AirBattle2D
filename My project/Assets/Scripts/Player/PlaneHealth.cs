@@ -95,7 +95,10 @@ public class PlaneHealth : MonoBehaviour
         VFXManager.SpawnHitSparks(transform.position, isCrit ? new Color(1f, 0.95f, 0.15f) : new Color(1f, 0.85f, 0.2f));
 
         if (isP1)
+        {
             CameraShake.ShakeHit();
+            CombatComboManager.Instance?.NotifyPlayerHullDamaged();
+        }
 
         // Taktik Uçuşan Hasar Sayısı
         DamageNumberManager.EnsureInstance()?.SpawnDamageNumber(hitPoint, amount, isCrit, isPlayerDamage: isP1);
