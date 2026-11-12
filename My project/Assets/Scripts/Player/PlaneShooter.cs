@@ -76,6 +76,9 @@ public class PlaneShooter : MonoBehaviour
 
     private void Update()
     {
+        if (Time.timeScale <= 0.01f) return;
+        if (GameManager.Instance != null && GameManager.Instance.IsGameEnded) return;
+
         PlaneController pc = GetComponent<PlaneController>();
         if (pc == null) return;
 

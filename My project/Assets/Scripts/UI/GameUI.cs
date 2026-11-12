@@ -627,7 +627,7 @@ public class GameUI : MonoBehaviour
         dTxtRt.offsetMax = Vector2.zero;
 
         _dodgeBtnTMP = EnsureComponent<TextMeshProUGUI>(dTxtObj);
-        _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SPACE]</size>";
+        _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SHIFT]</size>";
         _dodgeBtnTMP.fontSize = 17f;
         _dodgeBtnTMP.fontStyle = FontStyles.Bold;
         _dodgeBtnTMP.alignment = TextAlignmentOptions.Center;
@@ -743,7 +743,7 @@ public class GameUI : MonoBehaviour
             else
             {
                 _dodgeFillImg.fillAmount = 0f;
-                _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SPACE]</size>";
+                _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SHIFT]</size>";
                 _dodgeBtnTMP.color = Color.white;
                 if (_dodgeBtnOutline != null) _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
             }

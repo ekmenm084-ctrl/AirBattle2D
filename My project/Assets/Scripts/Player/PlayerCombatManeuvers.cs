@@ -68,17 +68,19 @@ public class PlayerCombatManeuvers : MonoBehaviour
     private void Update()
     {
         if (_health != null && _health.IsDead) return;
+        if (Time.timeScale <= 0.01f) return;
+        if (GameManager.Instance != null && GameManager.Instance.IsGameEnded) return;
 
-        // 1. Klavye Kısayolları ile Kaçış (LeftShift, C veya Space)
+        // 1. Klavye Kısayolları ile Kaçış (LeftShift veya C — Space sadece ateş içindir)
         try
         {
-            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.C) || Input.GetKeyDown(KeyCode.Space))
+            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.C))
             {
                 TryDodge();
             }
 
-            // 2. Klavye Kısayolları ile Ulti (E, R veya X)
-            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.X))
+            // 2. Klavye Kısayolları ile Ulti (E veya R — Q/X füze içindir)
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.R))
             {
                 TryActivateUltimate();
             }

@@ -5,7 +5,7 @@ using TMPro;
 
 /// <summary>
 /// Isı Güdümlü Mikro Füze Salvo Butonu (Ultimate Ability UI):
-/// - Dokunmatik buton ve klavye kısayolu (Q, E veya X tuşu).
+/// - Dokunmatik buton ve klavye kısayolu (Q veya X tuşu).
 /// - Sağ alt köşede Ateş butonunun hemen üzerinde ergonomik yerleşim.
 /// - 12 saniye bekleme süresi (cooldown) ve dinamik dolum göstergesi.
 /// - Aynı anda çift kanattan iki güdümlü roket ateşler.
@@ -43,10 +43,13 @@ public class MissileLauncherButton : MonoBehaviour
     {
         UpdateCooldownVisuals();
 
-        // Klavye Kısayolları (Q, E veya X)
+        if (Time.timeScale <= 0.01f) return;
+        if (GameManager.Instance != null && GameManager.Instance.IsGameEnded) return;
+
+        // Klavye Kısayolları (Q veya X — E/R Ulti içindir)
         try
         {
-            if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.X))
+            if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.X))
             {
                 TryLaunchMissiles();
             }
@@ -89,7 +92,7 @@ public class MissileLauncherButton : MonoBehaviour
         SpawnMissile(rightWing, Quaternion.Euler(0f, 0f, -15f));
 
         // Ses ve Hafif İtiş Titremesi
-        AudioManager.Instance?.PlayGunfire(isHeavy: true);
+        AudioManager.Instance?.PlayMissileLaunch();
         CameraShake.Shake(0.18f, 0.15f);
 
         // Ekran Uyarısı
@@ -161,7 +164,7 @@ public class MissileLauncherButton : MonoBehaviour
         txtRt.offsetMax = Vector2.zero;
 
         _btnTMP = txtObj.AddComponent<TextMeshProUGUI>();
-        _btnTMP.text = "FÜZE\n<size=75%>SALVO</size>";
+        _btnTMP.text = "FÜZE\n<size=68%>[Q]</size>";
         _btnTMP.fontSize = 20f;
         _btnTMP.fontStyle = FontStyles.Bold;
         _btnTMP.alignment = TextAlignmentOptions.Center;
@@ -186,7 +189,7 @@ public class MissileLauncherButton : MonoBehaviour
         else
         {
             _cooldownFillImg.fillAmount = 0f;
-            _btnTMP.text = "FÜZE\n<size=75%>SALVO</size>";
+            _btnTMP.text = "FÜZE\n<size=68%>[Q]</size>";
             _btnTMP.color = Color.white;
             if (_outline != null) _outline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
         }
