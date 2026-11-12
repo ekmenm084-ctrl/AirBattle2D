@@ -83,11 +83,11 @@ public class AircraftPart
     {
         switch (category)
         {
-            case AircraftPartCategory.Engine: return "⚡";
-            case AircraftPartCategory.Radar: return "📡";
-            case AircraftPartCategory.Airframe: return "🛡️";
-            case AircraftPartCategory.ElectronicWarfare: return "🛰️";
-            default: return "⚙️";
+            case AircraftPartCategory.Engine: return "[MTR]";
+            case AircraftPartCategory.Radar: return "[RDR]";
+            case AircraftPartCategory.Airframe: return "[ZRH]";
+            case AircraftPartCategory.ElectronicWarfare: return "[EHP]";
+            default: return "[PRÇ]";
         }
     }
 

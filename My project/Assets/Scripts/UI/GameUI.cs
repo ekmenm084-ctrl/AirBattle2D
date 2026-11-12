@@ -568,7 +568,7 @@ public class GameUI : MonoBehaviour
         _ultiBarTMP.fontStyle = FontStyles.Bold;
         _ultiBarTMP.alignment = TextAlignmentOptions.Center;
         _ultiBarTMP.color = Color.white;
-        _ultiBarTMP.text = "⚡ SÜPER GÜÇ: %0";
+        _ultiBarTMP.text = "[ULTİ] SÜPER GÜÇ: %0";
         _ultiBarTMP.raycastTarget = false;
     }
 
@@ -705,7 +705,7 @@ public class GameUI : MonoBehaviour
                 float fill = Mathf.Clamp01(pcm.overdriveRemaining / pcm.overdriveDuration);
                 _ultiBarFillImg.fillAmount = fill;
                 _ultiBarFillImg.color = new Color(1f, 0.6f, 0.1f);
-                _ultiBarTMP.text = $"🔥 AŞIRI YÜKLEME: {pcm.overdriveRemaining:F1}s";
+                _ultiBarTMP.text = $"[AŞIRI YÜK] {pcm.overdriveRemaining:F1}s";
                 if (_ultiBarOutline != null) _ultiBarOutline.effectColor = new Color(1f, 0.85f, 0.2f);
             }
             else
@@ -717,13 +717,13 @@ public class GameUI : MonoBehaviour
                 {
                     float pulse = Mathf.PingPong(Time.time * 4f, 1f);
                     _ultiBarFillImg.color = Color.Lerp(new Color(0f, 0.95f, 1f), new Color(1f, 0.85f, 0.2f), pulse);
-                    _ultiBarTMP.text = "⚡ SÜPER GÜÇ: %100 [HAZIR! • E] ⚡";
+                    _ultiBarTMP.text = "[ULTİ] SÜPER GÜÇ: %100 [HAZIR! • E]";
                     if (_ultiBarOutline != null) _ultiBarOutline.effectColor = Color.yellow;
                 }
                 else
                 {
                     _ultiBarFillImg.color = new Color(0f, 0.85f, 1f);
-                    _ultiBarTMP.text = $"⚡ SÜPER GÜÇ: %{(int)pcm.currentUlti}";
+                    _ultiBarTMP.text = $"[ULTİ] SÜPER GÜÇ: %{(int)pcm.currentUlti}";
                     if (_ultiBarOutline != null) _ultiBarOutline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
                 }
             }
@@ -755,7 +755,7 @@ public class GameUI : MonoBehaviour
             if (pcm.isOverdriveActive)
             {
                 _ultiFillImg.fillAmount = 0f;
-                _ultiBtnTMP.text = $"🔥 AKTİF 🔥\n<size=65%>{pcm.overdriveRemaining:F1}s</size>";
+                _ultiBtnTMP.text = $"[AKTİF]\n<size=65%>{pcm.overdriveRemaining:F1}s</size>";
                 _ultiBtnTMP.color = new Color(1f, 0.9f, 0.3f);
                 if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(1f, 0.5f, 0.1f);
                 _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
@@ -763,7 +763,7 @@ public class GameUI : MonoBehaviour
             else if (pcm.IsUltiReady)
             {
                 _ultiFillImg.fillAmount = 0f;
-                _ultiBtnTMP.text = "⚡ ULTİ ⚡\n<size=65%>HAZIR! [E]</size>";
+                _ultiBtnTMP.text = "[ULTİ]\n<size=65%>HAZIR! [E]</size>";
                 _ultiBtnTMP.color = Color.white;
                 if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = Color.yellow;
 
@@ -833,9 +833,10 @@ public class GameUI : MonoBehaviour
 
         if (_redZoneAlertTMP != null)
         {
-            _redZoneAlertTMP.text = "🚨 <color=#FFE600><b>[ RED ZONE: KRİTİK TEHLİKE ]</b></color> 🚨\n<size=75%><color=#FF2222>FİNAL BOSS HAVA SAHASINA GİRİYOR!</color></size>\n<size=52%><color=#FFFFFF>NÜKLEER AS TESPİT EDİLDİ - DİKKAT!</color></size>";
+            _redZoneAlertTMP.text = "[!] <color=#FFE600><b>[ RED ZONE: KRİTİK TEHLİKE ]</b></color> [!]\n<size=75%><color=#FF2222>FİNAL BOSS HAVA SAHASINA GİRİYOR!</color></size>\n<size=52%><color=#FFFFFF>NÜKLEER AS TESPİT EDİLDİ - DİKKAT!</color></size>";
         }
 
+        AudioManager.Instance?.PlayWarningAlarm();
         // Alarm süresince ekrana sürekli tok sarsıntı ver
         CameraShake.Shake(0.30f, duration);
 
@@ -915,7 +916,7 @@ public class GameUI : MonoBehaviour
 
         if (_modeIntroDescTMP != null)
         {
-            _modeIntroDescTMP.text = $"{description}\n<size=80%><color=#2ECC71><b>► HAVA SAHASINA GİRİLDİ • MOTORLAR ÇALIŞTI ◄</b></color></size>";
+            _modeIntroDescTMP.text = $"{description}\n<size=80%><color=#2ECC71><b>» HAVA SAHASINA GİRİLDİ • MOTORLAR ÇALIŞTI «</b></color></size>";
         }
 
         if (_modeIntroOutline != null)
@@ -923,8 +924,8 @@ public class GameUI : MonoBehaviour
             _modeIntroOutline.effectColor = themeColor;
         }
 
-        // Telsiz atış sesi ile bildirim
-        AudioManager.Instance?.PlayGunfire(false);
+        // Telsiz / uyarı sinyali ile bildirim
+        AudioManager.Instance?.PlayWarningAlarm();
 
         // Yumuşak Beliriş (Fade In)
         float fadeIn = 0.28f;
@@ -1060,7 +1061,7 @@ public class GameUI : MonoBehaviour
                     int lives = GameManager.Instance != null ? GameManager.Instance.player1Lives : 3;
                     string hearts = GetHeartsDisplay(lives);
                     string livesDisplay = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
-                        ? "<color=#FF2222><b>[TEK CAN: ☠]</b></color>"
+                        ? "<color=#FF2222><b>[TEK CAN!]</b></color>"
                         : hearts;
                     string shieldTxt = (PlayerUpgradeManager.Instance != null && PlayerUpgradeManager.Instance.currentShield > 0f)
                         ? $" <color=#00E5FF>[KALKAN: {Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color>"
@@ -1172,7 +1173,7 @@ public class GameUI : MonoBehaviour
                     else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
                     {
                         int best = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
-                        _waveBadgeTMP.text = $"<color=#FF2222>☠ HARDCORE BOSS #{wave}</color> (REKOR: {best}) {diffTag}";
+                        _waveBadgeTMP.text = $"<color=#FF2222>[HC] HARDCORE BOSS #{wave}</color> (REKOR: {best}) {diffTag}";
                     }
                     else
                     {

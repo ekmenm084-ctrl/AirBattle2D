@@ -174,6 +174,7 @@ public class BossPatternController : MonoBehaviour
 
         CameraShake.Shake(0.25f, 0.32f);
         AudioManager.Instance?.PlayExplosion(isBoss: true);
+        AudioManager.Instance?.PlayWarningAlarm();
 
         GameUI ui = FindObjectOfType<GameUI>();
         ui?.ShowWaveAlert($"[FAZ 2: {GetArchetypeLabel(_archetype)}] AŞIRI YÜK MODU AKTİF!", new Color(1f, 0.28f, 0.12f), 2.3f);
@@ -369,7 +370,7 @@ public class BossPatternController : MonoBehaviour
                 }
             }
 
-            AudioManager.Instance?.PlayGunfire(true);
+            AudioManager.Instance?.PlayMissileLaunch();
             yield return new WaitForSeconds(0.22f);
         }
     }

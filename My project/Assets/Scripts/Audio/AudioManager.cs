@@ -25,6 +25,15 @@ public class AudioManager : MonoBehaviour
     private const string PREF_SFX_VOL = "AirBattle_SFXVol";
     private const string PREF_MUTED = "AirBattle_IsMuted";
 
+    // Prosedürel sentezlenen ek SFX klipleri (Resources klibi yoksa veya özel efektler için)
+    private AudioClip _shieldHitClip;
+    private AudioClip _lootPickupClip;
+    private AudioClip _keyPickupClip;
+    private AudioClip _warningAlarmClip;
+    private AudioClip _missileLaunchClip;
+    private AudioClip _synthExplosionClip;
+    private AudioClip _synthFanfareClip;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -146,11 +155,15 @@ public class AudioManager : MonoBehaviour
         if (isMuted || _sfxSource == null) return;
 
         AudioClip clip = Resources.Load<AudioClip>("explosion");
-        if (clip == null) clip = gunfireClip;
+        if (clip == null)
+        {
+            EnsureSynthClips();
+            clip = _synthExplosionClip != null ? _synthExplosionClip : gunfireClip;
+        }
 
         if (clip != null)
         {
-            _sfxSource.pitch = isBoss ? Random.Range(0.50f, 0.65f) : Random.Range(0.70f, 0.85f);
+            _sfxSource.pitch = isBoss ? Random.Range(0.55f, 0.70f) : Random.Range(0.85f, 1.05f);
             float vol = sfxVolume * (isBoss ? 1.0f : 0.88f);
             _sfxSource.PlayOneShot(clip, vol);
         }
@@ -165,6 +178,12 @@ public class AudioManager : MonoBehaviour
 
         AudioClip clip = Resources.Load<AudioClip>("reward_fanfare");
         if (clip == null) clip = Resources.Load<AudioClip>("fanfare");
+        if (clip == null)
+        {
+            EnsureSynthClips();
+            clip = _synthFanfareClip;
+        }
+
         if (clip != null)
         {
             _sfxSource.pitch = 1.0f;
@@ -175,6 +194,112 @@ public class AudioManager : MonoBehaviour
             _sfxSource.pitch = 1.85f;
             _sfxSource.PlayOneShot(gunfireClip, sfxVolume * 0.75f);
         }
+    }
+
+    public void PlayShieldHit()
+    {
+        PlaySynthEffect(ref _shieldHitClip, 0.92f, 1.08f, 0.65f);
+    }
+
+    public void PlayLootPickup(bool isKey = false)
+    {
+        EnsureSynthClips();
+        AudioClip clip = isKey ? _keyPickupClip : _lootPickupClip;
+        if (isMuted || _sfxSource == null || clip == null) return;
+        _sfxSource.pitch = 1.0f;
+        _sfxSource.PlayOneShot(clip, sfxVolume * 0.85f);
+    }
+
+    public void PlayWarningAlarm()
+    {
+        PlaySynthEffect(ref _warningAlarmClip, 0.98f, 1.02f, 0.78f);
+    }
+
+    public void PlayMissileLaunch()
+    {
+        PlaySynthEffect(ref _missileLaunchClip, 0.92f, 1.08f, 0.75f);
+    }
+
+    private void PlaySynthEffect(ref AudioClip clipField, float minPitch, float maxPitch, float volumeScale)
+    {
+        if (isMuted || _sfxSource == null) return;
+        EnsureSynthClips();
+        if (clipField == null) return;
+        _sfxSource.pitch = Random.Range(minPitch, maxPitch);
+        _sfxSource.PlayOneShot(clipField, sfxVolume * volumeScale);
+    }
+
+    private void EnsureSynthClips()
+    {
+        if (_shieldHitClip != null) return;
+
+        const int sr = 22050;
+        _shieldHitClip = BuildSynthClip("SynthShieldHit", sr, 0.14f, (t, n) =>
+        {
+            float freq = Mathf.Lerp(1150f, 420f, n);
+            float env = (1f - n) * (1f - n);
+            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
+        });
+
+        _lootPickupClip = BuildSynthClip("SynthLoot", sr, 0.16f, (t, n) =>
+        {
+            float freq = n < 0.5f ? 660f : 990f;
+            float env = Mathf.Sin(Mathf.PI * n);
+            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.5f;
+        });
+
+        _keyPickupClip = BuildSynthClip("SynthKeyLoot", sr, 0.28f, (t, n) =>
+        {
+            float freq = (n < 0.33f) ? 587f : (n < 0.66f ? 880f : 1175f);
+            float env = Mathf.Clamp01(1f - n * 0.8f);
+            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
+        });
+
+        _warningAlarmClip = BuildSynthClip("SynthWarning", sr, 0.32f, (t, n) =>
+        {
+            float half = (n < 0.5f) ? n * 2f : (n - 0.5f) * 2f;
+            float freq = Mathf.Lerp(520f, 840f, half);
+            float env = Mathf.Sin(Mathf.PI * half);
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.35f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.45f;
+        });
+
+        _missileLaunchClip = BuildSynthClip("SynthMissile", sr, 0.22f, (t, n) =>
+        {
+            float freq = Mathf.Lerp(260f, 95f, n);
+            float noise = ((Mathf.Sin(t * 9876.5f) * 43758.54f) % 1f) * 2f - 1f;
+            float env = 1f - n;
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) * 0.5f + noise * 0.35f) * env * 0.6f;
+        });
+
+        _synthExplosionClip = BuildSynthClip("SynthExplosion", sr, 0.34f, (t, n) =>
+        {
+            float noise = ((Mathf.Sin(t * 14231.7f) * 29876.1f) % 1f) * 2f - 1f;
+            float thump = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(110f, 38f, n) * t);
+            float env = Mathf.Pow(1f - n, 1.7f);
+            return (noise * 0.55f + thump * 0.65f) * env * 0.7f;
+        });
+
+        _synthFanfareClip = BuildSynthClip("SynthFanfare", sr, 0.36f, (t, n) =>
+        {
+            float freq = (n < 0.33f) ? 523.25f : (n < 0.66f ? 659.25f : 783.99f);
+            float env = Mathf.Clamp01(1f - n * 0.75f);
+            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
+        });
+    }
+
+    private AudioClip BuildSynthClip(string clipName, int sampleRate, float duration, System.Func<float, float, float> sampleFunc)
+    {
+        int totalSamples = Mathf.Max(64, Mathf.RoundToInt(sampleRate * duration));
+        float[] data = new float[totalSamples];
+        for (int i = 0; i < totalSamples; i++)
+        {
+            float n = (float)i / totalSamples;
+            float t = (float)i / sampleRate;
+            data[i] = Mathf.Clamp(sampleFunc(t, n), -0.95f, 0.95f);
+        }
+        AudioClip clip = AudioClip.Create(clipName, totalSamples, 1, sampleRate, false);
+        clip.SetData(data, 0);
+        return clip;
     }
 
     /// <summary>

@@ -13,6 +13,8 @@ using System.Collections.Generic;
 public class MainMenuManager : MonoBehaviour
 {
     public static MainMenuManager Instance { get; private set; }
+    public static bool AutoPlayOnSceneLoad = false;
+    public static bool OpenHangarOnSceneLoad = false;
 
     // ==========================================
     // ASKERİ TAKTİK HUD SPRITE & FONT YÖNETİMİ
@@ -300,6 +302,18 @@ public class MainMenuManager : MonoBehaviour
 
         // İlk kez giriş yapan oyuncuya pilot çağrı kodu / isim belirleme ekranını göster
         try { PilotLoginUI.EnsureUI()?.CheckFirstTimeLogin(); } catch (System.Exception e) { Debug.LogError(e); }
+
+        // Oyun sonu ekranından "Hangar'a Git" veya "Yeniden Oyna" seçilmişse sahne yüklenince otomatik aç
+        if (OpenHangarOnSceneLoad)
+        {
+            OpenHangarOnSceneLoad = false;
+            OpenHangarPanel();
+        }
+        else if (AutoPlayOnSceneLoad)
+        {
+            AutoPlayOnSceneLoad = false;
+            OnPlayClicked();
+        }
     }
 
     private void TryLoadBackgroundArt()

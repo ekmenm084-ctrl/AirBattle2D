@@ -248,7 +248,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
         _goldTMP.font = MainMenuManager.GetTacticalFont();
-        _goldTMP.text = "🪙 0 G";
+        _goldTMP.text = "ALTIN: 0 G";
         _goldTMP.fontSize = 22f;
         _goldTMP.characterSpacing = 2.0f;
         _goldTMP.fontStyle = FontStyles.Bold;
@@ -296,7 +296,7 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(prevTxtObj));
         TextMeshProUGUI prevTMP = prevTxtObj.AddComponent<TextMeshProUGUI>();
         prevTMP.font = MainMenuManager.GetTacticalFont();
-        prevTMP.text = "◀ ÖNCEKİ";
+        prevTMP.text = "[<<] ÖNCEKİ";
         prevTMP.fontSize = 18f;
         prevTMP.characterSpacing = 1.8f;
         prevTMP.fontStyle = FontStyles.Bold;
@@ -326,7 +326,7 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(nextTxtObj));
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.font = MainMenuManager.GetTacticalFont();
-        nextTMP.text = "SONRAKİ ▶";
+        nextTMP.text = "SONRAKİ [>>]";
         nextTMP.fontSize = 18f;
         nextTMP.characterSpacing = 1.8f;
         nextTMP.fontStyle = FontStyles.Bold;
@@ -402,11 +402,11 @@ public class MilitaryStoreUI : MonoBehaviour
         hlg.childForceExpandHeight = true;
 
         float tabW = 230f;
-        _tabEngineBtn = CreateTabButton(tabsObj.transform, "⚡ MOTOR & İTKİ", tabW, () => SwitchTab(StoreTab.Engine));
-        _tabRadarBtn = CreateTabButton(tabsObj.transform, "📡 RADAR / AVİYONİK", tabW, () => SwitchTab(StoreTab.Radar));
-        _tabAirframeBtn = CreateTabButton(tabsObj.transform, "🛡️ GÖVDE & ZIRH", tabW, () => SwitchTab(StoreTab.Airframe));
-        _tabEwBtn = CreateTabButton(tabsObj.transform, "🛰️ ELEKTRONİK HARP", tabW, () => SwitchTab(StoreTab.ElectronicWarfare));
-        _tabLoadoutBtn = CreateTabButton(tabsObj.transform, "📋 MEVCUT DONATIM", tabW, () => SwitchTab(StoreTab.CurrentLoadout));
+        _tabEngineBtn = CreateTabButton(tabsObj.transform, "MOTOR & İTKİ", tabW, () => SwitchTab(StoreTab.Engine));
+        _tabRadarBtn = CreateTabButton(tabsObj.transform, "RADAR / AVİYONİK", tabW, () => SwitchTab(StoreTab.Radar));
+        _tabAirframeBtn = CreateTabButton(tabsObj.transform, "GÖVDE & ZIRH", tabW, () => SwitchTab(StoreTab.Airframe));
+        _tabEwBtn = CreateTabButton(tabsObj.transform, "ELEKTRONİK HARP", tabW, () => SwitchTab(StoreTab.ElectronicWarfare));
+        _tabLoadoutBtn = CreateTabButton(tabsObj.transform, "MEVCUT DONATIM", tabW, () => SwitchTab(StoreTab.CurrentLoadout));
     }
 
     private Button CreateTabButton(Transform parent, string title, float width, UnityEngine.Events.UnityAction action)
@@ -537,7 +537,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         _warningTitleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         _warningTitleTMP.font = MainMenuManager.GetTacticalFont();
-        _warningTitleTMP.text = "⚠️ <b>UYUMSUZLUK / AŞIRI YÜKLEME UYARISI</b>";
+        _warningTitleTMP.text = "[!] <b>UYUMSUZLUK / AŞIRI YÜKLEME UYARISI</b>";
         _warningTitleTMP.fontSize = 26f;
         _warningTitleTMP.characterSpacing = 2.0f;
         _warningTitleTMP.fontStyle = FontStyles.Bold;
@@ -617,11 +617,11 @@ public class MilitaryStoreUI : MonoBehaviour
         if (_cardsScrollContainer != null) _cardsScrollContainer.SetActive(!isLoadout);
         if (_loadoutContainer != null) _loadoutContainer.SetActive(isLoadout);
 
-        UpdateTabVisual(_tabEngineBtn, "⚡ MOTOR & İTKİ", tab == StoreTab.Engine);
-        UpdateTabVisual(_tabRadarBtn, "📡 RADAR / AVİYONİK", tab == StoreTab.Radar);
-        UpdateTabVisual(_tabAirframeBtn, "🛡️ GÖVDE & ZIRH", tab == StoreTab.Airframe);
-        UpdateTabVisual(_tabEwBtn, "🛰️ ELEKTRONİK HARP", tab == StoreTab.ElectronicWarfare);
-        UpdateTabVisual(_tabLoadoutBtn, "📋 MEVCUT DONATIM", tab == StoreTab.CurrentLoadout);
+        UpdateTabVisual(_tabEngineBtn, "MOTOR & İTKİ", tab == StoreTab.Engine);
+        UpdateTabVisual(_tabRadarBtn, "RADAR / AVİYONİK", tab == StoreTab.Radar);
+        UpdateTabVisual(_tabAirframeBtn, "GÖVDE & ZIRH", tab == StoreTab.Airframe);
+        UpdateTabVisual(_tabEwBtn, "ELEKTRONİK HARP", tab == StoreTab.ElectronicWarfare);
+        UpdateTabVisual(_tabLoadoutBtn, "MEVCUT DONATIM", tab == StoreTab.CurrentLoadout);
 
         RefreshAllVisuals();
     }
@@ -675,7 +675,7 @@ public class MilitaryStoreUI : MonoBehaviour
         // Uçak kilitli mi kontrol et
         if (!hm.IsAircraftUnlocked(_selectedAircraft))
         {
-            ShowWarningModal("⚠️ UÇAK KİLİTLİ!", $"{MilitaryStoreManager.GetAircraftDisplayName(_selectedAircraft)} henüz filonuzda açık değil!\nÖnce Hangar ekranından uçağın kilidini açmalısınız.");
+            ShowWarningModal("[!] UÇAK KİLİTLİ!", $"{MilitaryStoreManager.GetAircraftDisplayName(_selectedAircraft)} henüz filonuzda açık değil!\nÖnce Hangar ekranından uçağın kilidini açmalısınız.");
             return;
         }
 
@@ -695,7 +695,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         // 1. Altın Kasası
         if (_goldTMP != null)
-            _goldTMP.text = $"🪙 {hm.gold:N0} G";
+            _goldTMP.text = $"ALTIN: {hm.gold:N0} G";
 
         // 2. Seçili Uçak Başlığı
         int planeLevel = MilitaryStoreManager.GetAircraftLevel(_selectedAircraft);
@@ -714,7 +714,7 @@ public class MilitaryStoreUI : MonoBehaviour
         {
             if (isActiveJet)
             {
-                _activePlaneToggleTMP.text = "✔ AKTİF SAVAŞ JETİ";
+                _activePlaneToggleTMP.text = "[AKTİF] SAVAŞ JETİ";
                 _activePlaneToggleBtn.interactable = false;
                 _activePlaneToggleBtn.GetComponent<Image>().color = new Color(0.12f, 0.40f, 0.22f);
             }
@@ -798,7 +798,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
         tTMP.font = MainMenuManager.GetTacticalFont();
-        tTMP.text = $"{part.GetCategoryIcon()} <b>{part.name}</b>\n<size=85%><color=#38BDF8>✈ Uyumlu Uçaklar: <b>{compPlanes}</b></color></size>";
+        tTMP.text = $"{part.GetCategoryIcon()} <b>{part.name}</b>\n<size=85%><color=#38BDF8>» Uyumlu Uçaklar: <b>{compPlanes}</b></color></size>";
         tTMP.fontSize = 22f;
         tTMP.characterSpacing = 1.6f;
         tTMP.color = Color.white;
@@ -883,7 +883,7 @@ public class MilitaryStoreUI : MonoBehaviour
         {
             // DURUM 2: BU UÇAKTA DONATILMIŞ (ÇIKAR)
             aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.35f, 0.70f, 0.55f), new Color(0.04f, 0.10f, 0.07f, 0.95f), true);
-            aTMP.text = "✔ DONATILDI\n<size=80%><color=#FCA5A5>(Çıkarmak İçin Tıkla)</color></size>";
+            aTMP.text = "[DONATILDI]\n<size=80%><color=#FCA5A5>(Çıkarmak İçin Tıkla)</color></size>";
             aTMP.fontSize = 20f;
 
             aBtn.onClick.AddListener(() =>
@@ -912,14 +912,14 @@ public class MilitaryStoreUI : MonoBehaviour
         {
             // DURUM 4: SATIN ALINMIŞ ANCAK SEÇİLİ UÇAK DESTEKLEMİYOR
             aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_red", new Color(0.95f, 0.25f, 0.25f), new Color(0.12f, 0.04f, 0.05f, 0.95f), true);
-            aTMP.text = $"⚠️ {currentPlaneShort} DESTEKLEMEZ\n<size=80%><color=#FECACA>(Uçak Uyumsuz)</color></size>";
+            aTMP.text = $"[!] {currentPlaneShort} DESTEKLEMEZ\n<size=80%><color=#FECACA>(Uçak Uyumsuz)</color></size>";
             aTMP.fontSize = 19f;
 
             aBtn.onClick.AddListener(() =>
             {
                 string planeTitle = MilitaryStoreManager.GetAircraftDisplayName(_selectedAircraft);
-                string err = $"⚠️ <b>UÇAK DONANIM UYUMSUZLUĞU!</b>\n\n<b>{part.name}</b> donanımı şu uçaklar için özel üretilmiştir:\n<color=#38BDF8><b>{compPlanes}</b></color>\n\nSeçili uçağınız (<b>{planeTitle}</b>) bu parçayı desteklememektedir!\n\nLütfen bu parçayı takabilen bir uçak seçiniz.";
-                ShowWarningModal("⚠️ UÇAK UYUMSUZLUĞU", err);
+                string err = $"[!] <b>UÇAK DONANIM UYUMSUZLUĞU!</b>\n\n<b>{part.name}</b> donanımı şu uçaklar için özel üretilmiştir:\n<color=#38BDF8><b>{compPlanes}</b></color>\n\nSeçili uçağınız (<b>{planeTitle}</b>) bu parçayı desteklememektedir!\n\nLütfen bu parçayı takabilen bir uçak seçiniz.";
+                ShowWarningModal("[!] UÇAK UYUMSUZLUĞU", err);
             });
         }
     }
@@ -1026,14 +1026,14 @@ public class MilitaryStoreUI : MonoBehaviour
         rBg.color = Color.white;
 
         // Kategori Rozeti (Sol)
-        string catIcon = "⚙️";
+        string catIcon = "[PRÇ]";
         string catName = "YUVA";
         switch (cat)
         {
-            case AircraftPartCategory.Engine: catIcon = "⚡"; catName = "MOTOR & İTKİ YUVASI"; break;
-            case AircraftPartCategory.Radar: catIcon = "📡"; catName = "RADAR & AVİYONİK YUVASI"; break;
-            case AircraftPartCategory.Airframe: catIcon = "🛡️"; catName = "GÖVDE & ZIRH YUVASI"; break;
-            case AircraftPartCategory.ElectronicWarfare: catIcon = "🛰️"; catName = "ELEKTRONİK HARP YUVASI"; break;
+            case AircraftPartCategory.Engine: catIcon = "[MTR]"; catName = "MOTOR & İTKİ YUVASI"; break;
+            case AircraftPartCategory.Radar: catIcon = "[RDR]"; catName = "RADAR & AVİYONİK YUVASI"; break;
+            case AircraftPartCategory.Airframe: catIcon = "[ZRH]"; catName = "GÖVDE & ZIRH YUVASI"; break;
+            case AircraftPartCategory.ElectronicWarfare: catIcon = "[EHP]"; catName = "ELEKTRONİK HARP YUVASI"; break;
         }
 
         GameObject textObj = new GameObject("SlotText", typeof(RectTransform));

@@ -516,7 +516,7 @@ public class PlayerProfileUI : MonoBehaviour
         {
             HangarManager hm = HangarManager.EnsureInstance();
             int currentGold = (hm != null) ? hm.gold : PlayerPrefs.GetInt("AirBattle_Gold", 250);
-            _goldBadgeTMP.text = $"🪙 ALTIN: <b>{currentGold:N0} G</b>";
+            _goldBadgeTMP.text = $"ALTIN: <b>{currentGold:N0} G</b>";
         }
     }
 
@@ -732,7 +732,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         TextMeshProUGUI enTMP = enTxtObj.AddComponent<TextMeshProUGUI>();
         enTMP.font = MainMenuManager.GetTacticalFont();
-        enTMP.text = "✏️ ÇAĞRI KODUNU DEĞİŞTİR";
+        enTMP.text = "ÇAĞRI KODUNU DEĞİŞTİR";
         enTMP.fontSize = 15f;
         enTMP.fontStyle = FontStyles.Bold;
         enTMP.characterSpacing = 1.4f;
@@ -766,7 +766,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         TextMeshProUGUI ctTMP = cTxtObj.AddComponent<TextMeshProUGUI>();
         ctTMP.font = MainMenuManager.GetTacticalFont();
-        ctTMP.text = "◀ KAPAT";
+        ctTMP.text = "[<<] KAPAT";
         ctTMP.fontSize = 18f;
         ctTMP.fontStyle = FontStyles.Bold;
         ctTMP.characterSpacing = 1.6f;

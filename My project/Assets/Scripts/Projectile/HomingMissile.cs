@@ -38,6 +38,7 @@ public class HomingMissile : MonoBehaviour
     private void Start()
     {
         FindNearestTarget();
+        AudioManager.Instance?.PlayMissileLaunch();
         Destroy(gameObject, lifetime);
     }
 

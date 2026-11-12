@@ -96,7 +96,7 @@ public class GameOverUI : MonoBehaviour
         restartButton = CreateBtn(panel.transform, "RestartBtn", "YENİDEN OYNA", new Vector2(0f, -35f), new Color(0.16f, 0.55f, 0.32f), () => GameManager.Instance?.RestartGame());
 
         // Leaderboard Button
-        _leaderboardBtn = CreateBtn(panel.transform, "LeaderboardBtn", "🏆 KÜRESEL REKOR TABLOSU", new Vector2(0f, -95f), new Color(0.72f, 0.48f, 0.12f), OpenLeaderboardFromGameOver);
+        _leaderboardBtn = CreateBtn(panel.transform, "LeaderboardBtn", "[REKOR] KÜRESEL REKOR TABLOSU", new Vector2(0f, -95f), new Color(0.72f, 0.48f, 0.12f), OpenLeaderboardFromGameOver);
 
         // Main Menu Button
         mainMenuButton = CreateBtn(panel.transform, "MainMenuBtn", "ANA MENÜYE DÖN", new Vector2(0f, -215f), new Color(0.25f, 0.30f, 0.38f), () => GameManager.Instance?.GoToMainMenu());
@@ -113,6 +113,8 @@ public class GameOverUI : MonoBehaviour
                 bMode = LeaderboardManager.BoardMode.BulletHell;
             else if (GameManager.Instance.CurrentMode == GameManager.GameMode.BossRush)
                 bMode = LeaderboardManager.BoardMode.BossRush;
+            else if (GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
+                bMode = LeaderboardManager.BoardMode.Hardcore;
         }
 
         LeaderboardUI.EnsureUI()?.OpenLeaderboard(bMode, null);
@@ -183,9 +185,8 @@ public class GameOverUI : MonoBehaviour
         _hangarDirectBtn.targetGraphic = bg;
         _hangarDirectBtn.onClick.AddListener(() =>
         {
+            MainMenuManager.OpenHangarOnSceneLoad = true;
             GameManager.Instance?.GoToMainMenu();
-            MainMenuManager menu = FindAnyObjectByType<MainMenuManager>();
-            menu?.OpenHangarPanel();
         });
 
         GameObject txtObj = new GameObject("Text", typeof(RectTransform));

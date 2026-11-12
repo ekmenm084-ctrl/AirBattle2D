@@ -1325,7 +1325,7 @@ public class HangarUI : MonoBehaviour
         stRt.anchorMin = new Vector2(1f, 0f);
         stRt.anchorMax = new Vector2(1f, 0f);
         stRt.pivot = new Vector2(1f, 0f);
-        MainMenuManager.FormatBtn(stBtn, 25f, "🛒 ASKERİ MAĞAZA", new Color(0f, 0.85f, 1f), 280f, 50f, posX: -640f, hudSpriteName: "hud_btn_teal");
+        MainMenuManager.FormatBtn(stBtn, 25f, "ASKERİ MAĞAZA", new Color(0f, 0.85f, 1f), 280f, 50f, posX: -640f, hudSpriteName: "hud_btn_teal");
 
         stBtn.onClick.AddListener(() =>
         {

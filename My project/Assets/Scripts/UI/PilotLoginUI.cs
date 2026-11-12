@@ -313,20 +313,20 @@ public class PilotLoginUI : MonoBehaviour
         _validationTMP.color = new Color(0.9f, 0.9f, 0.9f);
 
         // Rastgele İsim Üret Butonu
-        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "🎲 RASTGELE ÇAĞRI KODU",
+        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "RASTGELE ÇAĞRI KODU",
             new Vector2(0f, -55f), new Vector2(270f, 38f),
             "hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), GenerateRandomCallsign);
         _randomNameButton = rndBtnObj.GetComponent<Button>();
 
         // 3. Alt Aksiyon Butonları
         // Onayla ve Savaşa Katıl Butonu
-        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "✓ ONAYLA VE GÖREVE BAŞLA",
+        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "ONAYLA VE GÖREVE BAŞLA",
             new Vector2(0f, -125f), new Vector2(320f, 50f),
             "hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.16f, 0.08f, 1f), OnSaveClicked);
         _saveButton = saveBtnObj.GetComponent<Button>();
 
         // İptal Butonu
-        GameObject cancelBtnObj = CreateButton(boxObj.transform, "CancelBtn", "◀ KAPAT",
+        GameObject cancelBtnObj = CreateButton(boxObj.transform, "CancelBtn", "[<<] KAPAT",
             new Vector2(0f, -182f), new Vector2(170f, 36f),
             "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), CloseModal);
         _cancelButton = cancelBtnObj.GetComponent<Button>();
@@ -414,7 +414,7 @@ public class PilotLoginUI : MonoBehaviour
         {
             if (_validationTMP != null)
             {
-                _validationTMP.text = "<color=#FF5252>⚠️ Çağrı kodu en az 3 karakter uzunluğunda olmalıdır!</color>";
+                _validationTMP.text = "<color=#FF5252>[!] Çağrı kodu en az 3 karakter uzunluğunda olmalıdır!</color>";
             }
             return;
         }

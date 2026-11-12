@@ -1204,7 +1204,7 @@ public class HangarManager : MonoBehaviour
         totalCratesOpened++;
         if (reward.goldGain <= 0)
         {
-            reward.description += "\n<color=#00E5FF>✦ Hangar Envanterine Eklendi!</color>";
+            reward.description += "\n<color=#00E5FF>» Hangar Envanterine Eklendi!</color>";
         }
 
         SaveHangarData();
@@ -1247,14 +1247,14 @@ public class HangarManager : MonoBehaviour
                 if (!IsAircraftUnlocked(AircraftType.KaanApex) && UnityEngine.Random.value < 0.40f)
                 {
                     PlayerPrefs.SetInt(PREF_UNLOCKED_KAAN, 1);
-                    reward.title = "👑 5.+ NESİL KAAN APEX AÇILDI!";
+                    reward.title = "[EFSANE] 5.+ NESİL KAAN APEX AÇILDI!";
                     reward.description = "MİLLİ HAVA HÂKİMİYETİ ZİRVESİ! KAAN Apex savaş uçağı filonuza kalıcı olarak katıldı!";
                     reward.rarityColorHex = "#FFD700";
                 }
                 else
                 {
                     AddSingleUseSuperPlane(1);
-                    reward.title = "✈️ PROTOTİP 6. NESİL DARKSTAR SÜPER AVCI!";
+                    reward.title = "[PROTOTİP] 6. NESİL DARKSTAR SÜPER AVCI!";
                     reward.description = "Tek kullanımlık gizli 6. Nesil Prototip Jet kazandınız!\nBir sonraki harekâtta devasa +160 Can, 3'lü Plazma Salvosu ve zırh kalkanı ile uçacaksınız!";
                     reward.rarityColorHex = "#00FFFF";
                 }
@@ -1273,7 +1273,7 @@ public class HangarManager : MonoBehaviour
                 PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
                 PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
 
-                reward.title = "🛡️ MK-5 TİTAN AEGIS (NİHAİ İHA) AÇILDI!";
+                reward.title = "[NİHAİ İHA] MK-5 TİTAN AEGIS AÇILDI!";
                 reward.description = "Oyunun en üst düzey Apex Dronu! Düşman mermilerini yutan enerji kalkanı ve plazma salvosuyla donatıldı!";
                 reward.rarityColorHex = "#FF0055";
             }
@@ -1302,7 +1302,7 @@ public class HangarManager : MonoBehaviour
                 store?.UnlockPartDirectly(awardedPartId);
 
                 string pName = partObj != null ? partObj.name : "KAAN Grafen Kompozit Zırh";
-                reward.title = "⚙️ EFSANEVİ ASKERİ PARÇA HEDİYESİ!";
+                reward.title = "[EFSANEVİ] ASKERİ PARÇA HEDİYESİ!";
                 reward.description = $"{pName} (Değer: 30.000 Altın) envanterinize kalıcı olarak eklendi!";
                 reward.rarityColorHex = "#FFA500";
             }
@@ -1315,7 +1315,7 @@ public class HangarManager : MonoBehaviour
             if (roll < 0.35f)
             {
                 AddSingleUseSuperPlane(1);
-                reward.title = "✈️ PROTOTİP SÜPER AVCI SORTİ KUPONU!";
+                reward.title = "[SORTİ] PROTOTİP SÜPER AVCI KUPONU!";
                 reward.description = "Tek kullanımlık 6. Nesil Süper Avcı Sortisi kazandınız! Savaşa devasa güçlendirmeyle başlayacaksınız.";
                 reward.rarityColorHex = "#00E5FF";
             }
@@ -1328,7 +1328,7 @@ public class HangarManager : MonoBehaviour
                 if (rightDroneType == DroneCompanion.DroneType.None)
                     rightDroneType = awardedDrone;
 
-                reward.title = "🚀 MK-4 VALKYRIE (FÜZELİ İHA) AÇILDI!";
+                reward.title = "[FÜZELİ İHA] MK-4 VALKYRIE AÇILDI!";
                 reward.description = "Güdümlü mikro roketlerle donatılmış ağır taarruz dronu filonuza katıldı!";
                 reward.rarityColorHex = "#9B59B6";
             }
@@ -1354,7 +1354,7 @@ public class HangarManager : MonoBehaviour
                 store?.UnlockPartDirectly(awardedPartId);
 
                 string pName = partObj != null ? partObj.name : "Karbon Nanotüp Matris Gövde";
-                reward.title = "📡 GELİŞMİŞ DONANIM HEDİYESİ!";
+                reward.title = "[DONANIM] GELİŞMİŞ PARÇA HEDİYESİ!";
                 reward.description = $"{pName} ücretsiz açıldı ve askeri envantere eklendi!";
                 reward.rarityColorHex = "#3498DB";
             }
@@ -1370,7 +1370,7 @@ public class HangarManager : MonoBehaviour
                 DroneCompanion.DroneType awardedDrone = DroneCompanion.DroneType.MK2_Interceptor;
                 UnlockDrone(awardedDrone);
                 SetDroneHealth(awardedDrone, GetDroneMaxHealth(awardedDrone));
-                reward.title = "⚡ MK-2 AVCI İHA HEDİYESİ!";
+                reward.title = "[İHA] MK-2 AVCI DRONU HEDİYESİ!";
                 reward.description = "Seri çift siber lazerli avcı destek dronu kanadınıza monte edildi!";
                 reward.rarityColorHex = "#2ECC71";
             }
@@ -1395,7 +1395,7 @@ public class HangarManager : MonoBehaviour
                 store?.UnlockPartDirectly(awardedPartId);
 
                 string pName = partObj != null ? partObj.name : "GE TF34 Çift Turbofan";
-                reward.title = "🔧 ASKERİ DONATIM PARÇASI!";
+                reward.title = "[PARÇA] ASKERİ DONATIM PARÇASI!";
                 reward.description = $"{pName} envanterinize eklendi!";
                 reward.rarityColorHex = "#CD7F32";
             }
@@ -1403,7 +1403,7 @@ public class HangarManager : MonoBehaviour
             {
                 int goldWon = UnityEngine.Random.Range(1500, 3000);
                 gold += goldWon;
-                reward.title = "💰 ASKERİ ÖZEL İKMAL ALTINI!";
+                reward.title = "[ALTIN] ASKERİ ÖZEL İKMAL ALTINI!";
                 reward.description = $"+{goldWon:N0} Altın doğrudan kasaya aktarıldı!";
                 reward.goldGain = goldWon;
                 reward.rarityColorHex = "#F1C40F";
@@ -1411,7 +1411,7 @@ public class HangarManager : MonoBehaviour
         }
 
         totalCratesOpened++;
-        reward.description += "\n<color=#FFD700>★ ÖZEL ANAHTAR ÖDÜLÜ ★</color>";
+        reward.description += "\n<color=#FFD700>» ÖZEL ANAHTAR ÖDÜLÜ «</color>";
         SaveHangarData();
 
         var gameUI = FindObjectOfType<GameUI>();
@@ -1518,7 +1518,7 @@ public class HangarManager : MonoBehaviour
             finalCrit += 25f;
 
             var gameUI = FindObjectOfType<GameUI>();
-            gameUI?.ShowWaveAlert("✈️ <b>[ 6. NESİL PROTOTİP SÜPER AVCI SORTİSİ AKTİF! ]</b>\n<color=#FFD700>+160 Can | +15 Hasar | 3'lü Plazma Salvosu</color>", new Color(0f, 1f, 0.9f), 3.5f);
+            gameUI?.ShowWaveAlert("[6. NESİL] <b>[ PROTOTİP SÜPER AVCI SORTİSİ AKTİF! ]</b>\n<color=#FFD700>+160 Can | +15 Hasar | 3'lü Plazma Salvosu</color>", new Color(0f, 1f, 0.9f), 3.5f);
         }
 
         pc.moveSpeed = finalSpd;

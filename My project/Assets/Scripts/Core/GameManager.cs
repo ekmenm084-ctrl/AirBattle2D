@@ -46,6 +46,7 @@ public class GameManager : MonoBehaviour
     public GameOverUI gameOverUI;
 
     private bool gameEnded = false;
+    public bool IsGameEnded => gameEnded;
     private Vector3 _plane2OriginalScale = Vector3.one;
 
     private void Awake()
@@ -427,9 +428,10 @@ public class GameManager : MonoBehaviour
         {
             if (CurrentMode == GameMode.Hardcore)
             {
-                gameUI?.ShowWaveAlert($"☠ HARDCORE BOSS #{waveIndex} GİRDİ! ☠\n<color=#FF2222>ZIRH: {hp} HP • TEK CANIN VAR!</color>", new Color(1f, 0.2f, 0.2f), 2.2f);
+                gameUI?.ShowWaveAlert($"[!] HARDCORE BOSS #{waveIndex} GİRDİ! [!]\n<color=#FF2222>ZIRH: {hp} HP • TEK CANIN VAR!</color>", new Color(1f, 0.2f, 0.2f), 2.2f);
                 CameraShake.Shake(0.28f, 0.35f);
                 AudioManager.Instance?.PlayExplosion(isBoss: true);
+                AudioManager.Instance?.PlayWarningAlarm();
             }
             else if (isBossRushFinal)
             {
@@ -521,8 +523,8 @@ public class GameManager : MonoBehaviour
                 gameEnded = true;
                 if (gameOverUI != null)
                     gameOverUI.Show("OYUNCU 2 KAZANDI!");
-
-                StartCoroutine(ReturnToMainMenuRoutine(1.8f));
+                else
+                    StartCoroutine(ReturnToMainMenuRoutine(1.8f));
                 return;
             }
 
@@ -565,8 +567,10 @@ public class GameManager : MonoBehaviour
                         ? $"<b><color=#2ECC71>YENİ HAYATTA KALMA REKORU!</color></b>\nSÜRE: {m:00}:{s:00}\nÖNCEKİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"
                         : $"HAYATTA KALMA SONLANDI!\nSÜRE: {m:00}:{s:00}\nEN İYİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>";
 
-                    if (gameOverUI != null) gameOverUI.Show(defeatMsg);
-                    StartCoroutine(ReturnToMainMenuRoutine(2.8f));
+                    if (gameOverUI != null)
+                        gameOverUI.Show(defeatMsg);
+                    else
+                        StartCoroutine(ReturnToMainMenuRoutine(2.8f));
                 }
                 return;
             }
@@ -643,8 +647,8 @@ public class GameManager : MonoBehaviour
                     sessionGoldEarned += rewardGold;
 
                     defeatMsg = newRecord
-                        ? $"☠ <b><color=#FF2222>YENİ HARDCORE REKORU!</color></b> ☠\n<color=#FFD54F>İMHA EDİLEN BOSS: {defeatedBosses}</color>\nÖNCEKİ REKOR: {bestHardcore}\n<color=#2ECC71>+{rewardGold} ALTIN KAZANILDI!</color>"
-                        : $"☠ <b>HARDCORE GÖREVİ SONA ERDİ</b> ☠\nİMHA EDİLEN BOSS: {defeatedBosses}\nEN İYİ REKOR: {bestHardcore}\n<color=#FFE082>+{rewardGold} ALTIN KAZANILDI!</color>";
+                        ? $"[!] <b><color=#FF2222>YENİ HARDCORE REKORU!</color></b> [!]\n<color=#FFD54F>İMHA EDİLEN BOSS: {defeatedBosses}</color>\nÖNCEKİ REKOR: {bestHardcore}\n<color=#2ECC71>+{rewardGold} ALTIN KAZANILDI!</color>"
+                        : $"[!] <b>HARDCORE GÖREVİ SONA ERDİ</b> [!]\nİMHA EDİLEN BOSS: {defeatedBosses}\nEN İYİ REKOR: {bestHardcore}\n<color=#FFE082>+{rewardGold} ALTIN KAZANILDI!</color>";
                 }
                 else
                 {
@@ -653,8 +657,8 @@ public class GameManager : MonoBehaviour
 
                 if (gameOverUI != null)
                     gameOverUI.Show(defeatMsg);
-
-                StartCoroutine(ReturnToMainMenuRoutine(2.0f));
+                else
+                    StartCoroutine(ReturnToMainMenuRoutine(2.0f));
             }
             return;
         }
@@ -665,8 +669,8 @@ public class GameManager : MonoBehaviour
             gameEnded = true;
             if (gameOverUI != null)
                 gameOverUI.Show("OYUNCU 1 KAZANDI!");
-
-            StartCoroutine(ReturnToMainMenuRoutine(1.8f));
+            else
+                StartCoroutine(ReturnToMainMenuRoutine(1.8f));
         }
         else
         {
@@ -715,7 +719,7 @@ public class GameManager : MonoBehaviour
 
                 var gameUI = FindObjectOfType<GameUI>();
                 string bonusMsg = isBoss
-                    ? $"[★] BOSS İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#2ECC71>TOPLAM İMHA: {timeAttackKills}</color>"
+                    ? $"[BOSS] İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#2ECC71>TOPLAM İMHA: {timeAttackKills}</color>"
                     : $"[+] UÇAK İMHA! (+{bonusSec:0} SN!) (+{killReward}G)\n<color=#00E5FF>TOPLAM İMHA: {timeAttackKills}</color>";
                 gameUI?.ShowWaveAlert(bonusMsg, isBoss ? new Color(1f, 0.85f, 0.2f) : new Color(0.2f, 0.95f, 0.4f), 1.1f);
 
@@ -766,7 +770,7 @@ public class GameManager : MonoBehaviour
                     if (CurrentMode == GameMode.Hardcore)
                     {
                         plane1Health?.Heal(50f); // 200 HP can barı için gövde tamiri ödülü
-                        gameUI?.ShowWaveAlert($"☠ BOSS #{justDefeated} İMHA EDİLDİ! (+{bossReward}G)\n<color=#FF3333>+50 HP TAMİR EDİLDİ • HANGAR AÇILIYOR</color>", new Color(1f, 0.25f, 0.25f), 2.2f);
+                        gameUI?.ShowWaveAlert($"[BOSS #{justDefeated} İMHA EDİLDİ!] (+{bossReward}G)\n<color=#FF3333>+50 HP TAMİR EDİLDİ • HANGAR AÇILIYOR</color>", new Color(1f, 0.25f, 0.25f), 2.2f);
                     }
                     else if (CurrentMode == GameMode.Endless && (justDefeated % 20 == 0 || (justDefeated / 5) % 20 == 0))
                     {
@@ -862,8 +866,9 @@ public class GameManager : MonoBehaviour
             // Oyuncuyu başlangıç pozisyonuna yerleştir
             plane1Health.transform.position = new Vector3(0f, -3.5f, 0f);
 
-            // Canını 100 HP olarak tazele ve 1.8 saniye dokunulmazlık ver
-            plane1Health.ResetHealth(100f);
+            // Mevcut maksimum gövde canını (Hangar/parça bonusu dahil) koruyarak canlandır ve 1.8 saniye dokunulmazlık ver
+            float restoreHp = Mathf.Max(100f, plane1Health.maxHealth);
+            plane1Health.ResetHealth(restoreHp);
             plane1Health.TriggerInvulnerability(1.8f);
 
             // Destek dronelarını yeniden kanatlara yerleştir
@@ -975,8 +980,8 @@ public class GameManager : MonoBehaviour
 
         if (gameOverUI != null)
             gameOverUI.Show($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!");
-
-        StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+        else
+            StartCoroutine(ReturnToMainMenuRoutine(3.0f));
     }
 
     // ==========================================
@@ -1022,7 +1027,7 @@ public class GameManager : MonoBehaviour
         }
 
         var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("🚨 [MERMİ CEHENNEMİ BAŞLADI!] 🚨\n<color=#FF4081>NE KADAR DAYANABİLİRSİN? HAYATTA KAL!</color>", new Color(1f, 0.2f, 0.5f), 2.8f);
+        gameUI?.ShowWaveAlert("[!] [MERMİ CEHENNEMİ BAŞLADI!] [!]\n<color=#FF4081>NE KADAR DAYANABİLİRSİN? HAYATTA KAL!</color>", new Color(1f, 0.2f, 0.5f), 2.8f);
 
         if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
         _bulletHellCoroutine = StartCoroutine(BulletHellDirectorRoutine());
@@ -1076,9 +1081,10 @@ public class GameManager : MonoBehaviour
             if (bulletHellTier > prevTier)
             {
                 var ui = FindObjectOfType<GameUI>();
-                ui?.ShowWaveAlert($"⚠️ <b>[KADEME {bulletHellTier} CEHENNEM!]</b> ⚠️\n<color=#FF1744>MERMİ YOĞUNLUĞU VE SALVO ARTTI!</color>", new Color(1f, 0.1f, 0.3f), 2.0f);
+                ui?.ShowWaveAlert($"[!] <b>[KADEME {bulletHellTier} CEHENNEM!]</b> [!]\n<color=#FF1744>MERMİ YOĞUNLUĞU VE SALVO ARTTI!</color>", new Color(1f, 0.1f, 0.3f), 2.0f);
                 CameraShake.Shake(0.35f, 1.2f);
                 AudioManager.Instance?.PlayExplosion(isBoss: true);
+                AudioManager.Instance?.PlayWarningAlarm();
             }
 
             // Uçak 2'yi sinüs dalgası ile sağa sola akıcı ve sarsıntısız süzdürelim (60 FPS)
@@ -1172,7 +1178,7 @@ public class GameManager : MonoBehaviour
         currentPlaneIndex = 1;
 
         var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("⏱️ [ZAMAN TAARRUZU BAŞLADI!] ⏱️\n<color=#FFD54F>60 SANİYEN VAR! DÜŞMANLARI HIZLA AVLA!</color>", new Color(1f, 0.85f, 0.2f), 2.5f);
+        gameUI?.ShowWaveAlert("[ZAMAN] [ZAMAN TAARRUZU BAŞLADI!]\n<color=#FFD54F>60 SANİYEN VAR! DÜŞMANLARI HIZLA AVLA!</color>", new Color(1f, 0.85f, 0.2f), 2.5f);
 
         ApplyEnemyWave(1);
 
@@ -1227,8 +1233,8 @@ public class GameManager : MonoBehaviour
 
         if (gameOverUI != null)
             gameOverUI.Show($"{title}\n{recordMsg}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>");
-
-        StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+        else
+            StartCoroutine(ReturnToMainMenuRoutine(3.0f));
     }
 
     /// <summary>
@@ -1305,7 +1311,7 @@ public class GameManager : MonoBehaviour
 
             case GameMode.Hardcore:
                 int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
-                title = "☠ HARDCORE MODU ☠";
+                title = "[!] HARDCORE MODU [!]";
                 subtitle = $"TEK CAN • 200 HP GÖVDE • EN İYİ REKOR: {bestHc} BOSS";
                 desc = "Her gelen düşman bir öncekinden daha zırhlı ve güçlü bir Boss! İkinci bir şansın yok, tek canla savaş!";
                 color = new Color(1f, 0.18f, 0.18f);
@@ -1331,6 +1337,8 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
+        MainMenuManager.OpenHangarOnSceneLoad = false;
+        MainMenuManager.AutoPlayOnSceneLoad = true;
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
@@ -1342,6 +1350,7 @@ public class GameManager : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        MainMenuManager.AutoPlayOnSceneLoad = false;
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();

@@ -63,6 +63,7 @@ public class PlaneHealth : MonoBehaviour
                 // Tüm darbe kalkan tarafından emildi! Can düşmez.
                 pve?.TriggerHitFlash(isShieldHit: true);
                 VFXManager.SpawnHitSparks(transform.position, Color.cyan);
+                AudioManager.Instance?.PlayShieldHit();
                 CameraShake.ShakeHit();
 
                 GameUI uiShield = FindObjectOfType<GameUI>();
@@ -78,6 +79,7 @@ public class PlaneHealth : MonoBehaviour
 
             pve?.TriggerHitFlash(isShieldHit: true);
             VFXManager.SpawnHitSparks(hitPoint, Color.cyan);
+            AudioManager.Instance?.PlayShieldHit();
 
             if (amount <= 0.01f)
             {

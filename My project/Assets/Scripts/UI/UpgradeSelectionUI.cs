@@ -20,6 +20,7 @@ public class UpgradeSelectionUI : MonoBehaviour
 
     private Action _onSelectedCallback;
     private bool _isSelecting = false;
+    public bool IsSelecting => _isSelecting;
 
     private void Awake()
     {

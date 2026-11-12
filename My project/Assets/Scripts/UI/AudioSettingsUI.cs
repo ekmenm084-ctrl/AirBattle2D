@@ -77,7 +77,11 @@ public class AudioSettingsUI : MonoBehaviour
         }
 
         // Klavye kısayolu ile duraklatma (ESC veya P tuşu)
-        if (!isMenuOpen)
+        bool gameEnded = (GameManager.Instance != null && GameManager.Instance.IsGameEnded);
+        bool upgrading = (UpgradeSelectionUI.Instance != null && UpgradeSelectionUI.Instance.IsSelecting);
+        bool modalPausedElsewhere = (!_isPaused && Time.timeScale <= 0.01f);
+
+        if (!isMenuOpen && !gameEnded && !upgrading && !modalPausedElsewhere)
         {
             try
             {
@@ -330,7 +334,7 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI resumeTMP = resumeTxtObj.AddComponent<TextMeshProUGUI>();
         resumeTMP.font = MainMenuManager.GetTacticalFont();
-        resumeTMP.text = "▶ HAREKATA DEVAM ET";
+        resumeTMP.text = "[>>] HAREKATA DEVAM ET";
         resumeTMP.fontSize = 21f;
         resumeTMP.fontStyle = FontStyles.Bold;
         resumeTMP.characterSpacing = 2.0f;
@@ -366,7 +370,7 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI homeTMP = homeTxtObj.AddComponent<TextMeshProUGUI>();
         homeTMP.font = MainMenuManager.GetTacticalFont();
-        homeTMP.text = "◀ ANA ÜSSE GERİ DÖN";
+        homeTMP.text = "[<<] ANA ÜSSE GERİ DÖN";
         homeTMP.fontSize = 19f;
         homeTMP.fontStyle = FontStyles.Bold;
         homeTMP.characterSpacing = 1.8f;

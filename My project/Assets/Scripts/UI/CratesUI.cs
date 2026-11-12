@@ -159,8 +159,8 @@ public class CratesUI : MonoBehaviour
 
         if (_keysTMP != null)
         {
-            string superJetStr = (hm.singleUseSuperPlanes > 0) ? $"  |  <color=#00FFFF>✈️ 6. Nesil Jet Sortisi: {hm.singleUseSuperPlanes}</color>" : "";
-            _keysTMP.text = $"🗝️ <b>ANAHTARLARINIZ:</b> <color=#CD7F32>🥉 Bronz: {hm.bronzeKeys}</color>  |  <color=#C0C0C0>🥈 Gümüş: {hm.silverKeys}</color>  |  <color=#FFD700>👑 Altın As: {hm.goldKeys}</color>{superJetStr}";
+            string superJetStr = (hm.singleUseSuperPlanes > 0) ? $"  |  <color=#00FFFF>[+] 6. Nesil Jet Sortisi: {hm.singleUseSuperPlanes}</color>" : "";
+            _keysTMP.text = $"<b>ANAHTARLARINIZ:</b> <color=#CD7F32>Bronz: {hm.bronzeKeys}</color>  |  <color=#C0C0C0>Gümüş: {hm.silverKeys}</color>  |  <color=#FFD700>Altın As: {hm.goldKeys}</color>{superJetStr}";
         }
 
         UpdateCrateButton(_bronzeBtn, _bronzeBtnTMP, HangarManager.CRATE_BRONZE_COST, hm.gold);
@@ -177,7 +177,7 @@ public class CratesUI : MonoBehaviour
         if (badgeTMP != null)
         {
             badgeTMP.font = MainMenuManager.GetTacticalFont();
-            badgeTMP.text = $"🗝️ <b>{keyName} ANAHTAR: {keyCount} ADET</b>";
+            badgeTMP.text = $"<b>{keyName} ANAHTAR: {keyCount} ADET</b>";
             badgeTMP.color = (keyCount > 0) ? keyCol : new Color(0.6f, 0.65f, 0.7f);
         }
 
@@ -199,12 +199,12 @@ public class CratesUI : MonoBehaviour
         tmp.font = MainMenuManager.GetTacticalFont();
         if (hasKey)
         {
-            tmp.text = $"<b>🗝️ {keyName} ANAHTARLA AÇ (1x)</b>\n<size=72%><color=#FFD700>★ ÇOK DEĞERLİ EŞYA GARANTİSİ ★</color></size>";
+            tmp.text = $"<b>{keyName} ANAHTARLA AÇ (1x)</b>\n<size=72%><color=#FFD700>» ÇOK DEĞERLİ EŞYA GARANTİSİ «</color></size>";
             tmp.color = Color.white;
         }
         else
         {
-            tmp.text = $"🗝️ {keyName} ANAHTARI GEREKLİ (0/1)\n<size=68%><color=#94A3B8>20+ Seviye Bosslardan 1/10 şansla düşer</color></size>";
+            tmp.text = $"{keyName} ANAHTARI GEREKLİ (0/1)\n<size=68%><color=#94A3B8>20+ Seviye Bosslardan 1/10 şansla düşer</color></size>";
             tmp.color = new Color(0.7f, 0.7f, 0.75f);
         }
     }
@@ -310,7 +310,7 @@ public class CratesUI : MonoBehaviour
 
         _keysTMP = keysBadgeObj.AddComponent<TextMeshProUGUI>();
         _keysTMP.font = MainMenuManager.GetTacticalFont();
-        _keysTMP.text = "🗝️ <b>ANAHTARLARINIZ:</b> <color=#CD7F32>🥉 Bronz: 0</color>  |  <color=#C0C0C0>🥈 Gümüş: 0</color>  |  <color=#FFD700>👑 Altın As: 0</color>";
+        _keysTMP.text = "<b>ANAHTARLARINIZ:</b> <color=#CD7F32>Bronz: 0</color>  |  <color=#C0C0C0>Gümüş: 0</color>  |  <color=#FFD700>Altın As: 0</color>";
         _keysTMP.fontSize = 19f;
         _keysTMP.characterSpacing = 1.6f;
         _keysTMP.fontStyle = FontStyles.Bold;
@@ -360,7 +360,7 @@ public class CratesUI : MonoBehaviour
         CreateCrateCard("BronzeCard", -spacingX, cardY,
             "BRONZ İKMAL KUTUSU",
             $"{HangarManager.CRATE_BRONZE_COST} ALTIN",
-            "• 100 - 250 Altın / Taktik As Çipleri\n• 🗝️ <b>BRONZ ANAHTAR İLE AÇILIRSA:</b>\n  MK-2 Avcı İHA / GE Turbofan / 1.800G Donatım!",
+            "• 100 - 250 Altın / Taktik As Çipleri\n• <b>BRONZ ANAHTAR İLE AÇILIRSA:</b>\n  MK-2 Avcı İHA / GE Turbofan / 1.800G Donatım!",
             new Color(0.85f, 0.50f, 0.20f),
             HangarManager.CrateType.Bronze,
             out _bronzeBtn, out _bronzeBtnTMP,
@@ -370,7 +370,7 @@ public class CratesUI : MonoBehaviour
         CreateCrateCard("SilverCard", 0f, cardY,
             "GÜMÜŞ CEPHANE KASASI",
             $"{HangarManager.CRATE_SILVER_COST} ALTIN",
-            "• 400 - 900 Altın / Titanyum Çipler\n• 🗝️ <b>GÜMÜŞ ANAHTAR İLE AÇILIRSA:</b>\n  6. Nesil Süper Avcı Sortisi / MK-4 Valkyrie İHA / 11.500G Donatım!",
+            "• 400 - 900 Altın / Titanyum Çipler\n• <b>GÜMÜŞ ANAHTAR İLE AÇILIRSA:</b>\n  6. Nesil Süper Avcı Sortisi / MK-4 Valkyrie İHA / 11.500G Donatım!",
             new Color(0.25f, 0.75f, 1f),
             HangarManager.CrateType.Silver,
             out _silverBtn, out _silverBtnTMP,
@@ -380,7 +380,7 @@ public class CratesUI : MonoBehaviour
         CreateCrateCard("GoldCard", spacingX, cardY,
             "ALTIN AS SANDIĞI",
             $"{HangarManager.CRATE_GOLD_COST} ALTIN",
-            "• 1.200 - 2.500 Altın / As Protokolü\n• 👑🗝️ <b>ALTIN ANAHTAR İLE AÇILIRSA:</b>\n  5.+ Nesil KAAN APEX / 6. Nesil Darkstar / MK-5 Titan / 30.000G Donatım!",
+            "• 1.200 - 2.500 Altın / As Protokolü\n• <b>ALTIN ANAHTAR İLE AÇILIRSA:</b>\n  5.+ Nesil KAAN APEX / 6. Nesil Darkstar / MK-5 Titan / 30.000G Donatım!",
             new Color(1f, 0.85f, 0.2f),
             HangarManager.CrateType.GoldAce,
             out _goldBtn, out _goldBtnTMP,
@@ -437,7 +437,7 @@ public class CratesUI : MonoBehaviour
 
         keyBadgeTMP = kbObj.AddComponent<TextMeshProUGUI>();
         keyBadgeTMP.font = MainMenuManager.GetTacticalFont();
-        keyBadgeTMP.text = "🗝️ <b>ANAHTAR: 0 ADET</b>";
+        keyBadgeTMP.text = "<b>ANAHTAR: 0 ADET</b>";
         keyBadgeTMP.fontSize = 17f;
         keyBadgeTMP.characterSpacing = 1.6f;
         keyBadgeTMP.fontStyle = FontStyles.Bold;
@@ -514,7 +514,7 @@ public class CratesUI : MonoBehaviour
         MakeFullScreenRect(GetRect(ktTxtObj));
         keyBtnTMP = ktTxtObj.AddComponent<TextMeshProUGUI>();
         keyBtnTMP.font = MainMenuManager.GetTacticalFont();
-        keyBtnTMP.text = "🗝️ ANAHTAR İLE AÇ";
+        keyBtnTMP.text = "ANAHTAR İLE AÇ";
         keyBtnTMP.fontSize = 17f;
         keyBtnTMP.characterSpacing = 1.6f;
         keyBtnTMP.fontStyle = FontStyles.Bold;

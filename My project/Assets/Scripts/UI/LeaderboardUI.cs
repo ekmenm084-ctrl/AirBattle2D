@@ -597,9 +597,9 @@ public class LeaderboardUI : MonoBehaviour
         // Madalya / Sıra İkonu
         string rankIcon = entry.rank switch
         {
-            1 => "<color=#FFD700>🥇 #1</color>",
-            2 => "<color=#C0C0C0>🥈 #2</color>",
-            3 => "<color=#CD7F32>🥉 #3</color>",
+            1 => "<color=#FFD700>[#1]</color>",
+            2 => "<color=#C0C0C0>[#2]</color>",
+            3 => "<color=#CD7F32>[#3]</color>",
             _ => $"    #{entry.rank}"
         };
 
@@ -733,7 +733,7 @@ public class LeaderboardUI : MonoBehaviour
         _nameInputField.text = LeaderboardManager.PlayerCallsign;
 
         // Kaydet Butonu
-        CreateActionButton(boxObj.transform, "SaveNameBtn", "✓ KAYDET", new Vector2(90f, 22f), new Vector2(150f, 42f), "hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.16f, 0.08f, 1f), SaveCallsignAndClose);
+        CreateActionButton(boxObj.transform, "SaveNameBtn", "KAYDET", new Vector2(90f, 22f), new Vector2(150f, 42f), "hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.16f, 0.08f, 1f), SaveCallsignAndClose);
 
         // İptal Butonu
         CreateActionButton(boxObj.transform, "CancelNameBtn", "İPTAL", new Vector2(280f, 22f), new Vector2(150f, 42f), "hud_btn_slate", new Color(0.5f, 0.6f, 0.7f, 0.9f), new Color(0.08f, 0.12f, 0.18f, 1f), () => _nameChangeModal.SetActive(false));

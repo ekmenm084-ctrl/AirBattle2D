@@ -278,7 +278,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
             CameraShake.Shake(0.2f, 0.3f);
 
             var gameUI = FindObjectOfType<GameUI>();
-            gameUI?.ShowWaveAlert("⚡ SÜPER YETENEK HAZIR! [E] / ULTİ BUTONU ⚡\n<color=#FFD54F>GÖKYÜZÜ HAKİMİYETİ İÇİN AKTİF ET!</color>", new Color(1f, 0.88f, 0.2f), 2.2f);
+            gameUI?.ShowWaveAlert("[ULTİ] SÜPER YETENEK HAZIR! [E] / ULTİ BUTONU\n<color=#FFD54F>GÖKYÜZÜ HAKİMİYETİ İÇİN AKTİF ET!</color>", new Color(1f, 0.88f, 0.2f), 2.2f);
         }
     }
 
@@ -349,7 +349,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
         Time.fixedDeltaTime = 0.02f;
 
         var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("⚡ [GÖKYÜZÜ HAKİMİYETİ DEVREDE!] ⚡\n<color=#00E5FF>EMP TÜM MERMİLERİ SİLDİ!</color> • <color=#FFD54F>4'LÜ SÜPER PLAZMA AŞIRI YÜKLEMESİ</color>", new Color(0f, 0.95f, 1f), 2.8f);
+        gameUI?.ShowWaveAlert("[GÖKYÜZÜ HAKİMİYETİ DEVREDE!]\n<color=#00E5FF>EMP TÜM MERMİLERİ SİLDİ!</color> • <color=#FFD54F>4'LÜ SÜPER PLAZMA AŞIRI YÜKLEMESİ</color>", new Color(0f, 0.95f, 1f), 2.8f);
 
         // ==============================================================
         // 2. FAZ: 6 SANİYELİK HİPER AŞIRI YÜKLEME (HYPER OVERDRIVE)

@@ -467,7 +467,7 @@ public class MilitaryStoreManager : MonoBehaviour
         if (planeLevel < part.minLevel)
         {
             string compPlanes = GetCompatibleAircraftNames(part.minLevel);
-            failureReason = $"⚠️ UÇAK UYUMSUZLUĞU!\n{planeName} bu parçayı desteklememektedir!\n\nBu parça şu uçaklar için uygundur:\n{compPlanes}";
+            failureReason = $"[!] UÇAK UYUMSUZLUĞU!\n{planeName} bu parçayı desteklememektedir!\n\nBu parça şu uçaklar için uygundur:\n{compPlanes}";
             return false;
         }
 

@@ -168,6 +168,7 @@ public class EnemyFormationManager : MonoBehaviour
         {
             alertMsg = "! DİKKAT: KAMİKAZE DRONE SÜRÜSÜ !";
             alertCol = new Color(1f, 0.25f, 0.1f);
+            AudioManager.Instance?.PlayWarningAlarm();
         }
         else if (formationChoice == 4)
         {
