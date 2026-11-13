@@ -24,8 +24,15 @@ public class TwoPlayerInputRouter : MonoBehaviour
     [Header("P2 Ateş Butonu")]
     public FireButton p2FireButton;
 
+    [Header("P2 Manevra Butonu")]
+    public Button p2DodgeButton;
+
+    [Header("P2 Füze Butonu")]
+    public Button p2MissileButton;
+
     [Header("Referanslar")]
     public PlaneShooter plane2Shooter;
+    public PlayerCombatManeuvers plane2Maneuvers;
 
     [Header("Giriş Ayarları")]
     [Tooltip("P2 uçağı aşağı baktığı ve joystick 180° ters durduğu için P2'nin sağı ekranın soluna denk gelir.")]
@@ -210,6 +217,130 @@ public class TwoPlayerInputRouter : MonoBehaviour
             }
         }
 
+        // 4. P2_DodgeButton (Manevra Butonu) Oluştur/Bul
+        Transform existingDodge = p2ControlsRoot.transform.Find("P2_DodgeButton");
+        GameObject dodgeObj = existingDodge != null ? existingDodge.gameObject : null;
+
+        if (dodgeObj == null)
+        {
+            dodgeObj = new GameObject("P2_DodgeButton", typeof(RectTransform));
+            dodgeObj.transform.SetParent(p2ControlsRoot.transform, false);
+
+            RectTransform dodgeRt = dodgeObj.GetComponent<RectTransform>();
+            dodgeRt.anchorMin = new Vector2(0f, 1f);
+            dodgeRt.anchorMax = new Vector2(0f, 1f);
+            dodgeRt.pivot = new Vector2(0.5f, 0.5f);
+            dodgeRt.anchoredPosition = new Vector2(305f, -180f);
+            dodgeRt.sizeDelta = new Vector2(96f, 96f);
+            dodgeRt.localEulerAngles = new Vector3(0f, 0f, 180f);
+
+            Image dodgeImg = dodgeObj.AddComponent<Image>();
+            dodgeImg.color = new Color(0.08f, 0.16f, 0.25f, 0.92f);
+
+            Outline dodgeOutline = dodgeObj.AddComponent<Outline>();
+            dodgeOutline.effectColor = new Color(1f, 0.5f, 0.2f, 0.85f);
+            dodgeOutline.effectDistance = new Vector2(2f, -2f);
+
+            p2DodgeButton = dodgeObj.AddComponent<Button>();
+            p2DodgeButton.targetGraphic = dodgeImg;
+            p2DodgeButton.onClick.RemoveAllListeners();
+            p2DodgeButton.onClick.AddListener(() =>
+            {
+                if (plane2Maneuvers == null) FindPlane2Shooter();
+                plane2Maneuvers?.TryDodge();
+            });
+
+            GameObject dTextObj = new GameObject("Text (TMP)", typeof(RectTransform));
+            dTextObj.transform.SetParent(dodgeObj.transform, false);
+            RectTransform dtRt = dTextObj.GetComponent<RectTransform>();
+            dtRt.anchorMin = Vector2.zero;
+            dtRt.anchorMax = Vector2.one;
+            dtRt.offsetMin = Vector2.zero;
+            dtRt.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI dTmp = dTextObj.AddComponent<TextMeshProUGUI>();
+            dTmp.text = "MANEVRA";
+            dTmp.fontSize = 14f;
+            dTmp.fontStyle = FontStyles.Bold;
+            dTmp.alignment = TextAlignmentOptions.Center;
+            dTmp.color = new Color(1f, 0.75f, 0.4f);
+            dTmp.raycastTarget = false;
+        }
+        else
+        {
+            p2DodgeButton = dodgeObj.GetComponent<Button>();
+            if (p2DodgeButton != null)
+            {
+                p2DodgeButton.onClick.RemoveAllListeners();
+                p2DodgeButton.onClick.AddListener(() =>
+                {
+                    if (plane2Maneuvers == null) FindPlane2Shooter();
+                    plane2Maneuvers?.TryDodge();
+                });
+            }
+        }
+
+        // 5. P2_MissileButton (Füze Butonu) Oluştur/Bul
+        Transform existingMissile = p2ControlsRoot.transform.Find("P2_MissileButton");
+        GameObject missileObj = existingMissile != null ? existingMissile.gameObject : null;
+
+        if (missileObj == null)
+        {
+            missileObj = new GameObject("P2_MissileButton", typeof(RectTransform));
+            missileObj.transform.SetParent(p2ControlsRoot.transform, false);
+
+            RectTransform missileRt = missileObj.GetComponent<RectTransform>();
+            missileRt.anchorMin = new Vector2(0f, 1f);
+            missileRt.anchorMax = new Vector2(0f, 1f);
+            missileRt.pivot = new Vector2(0.5f, 0.5f);
+            missileRt.anchoredPosition = new Vector2(180f, -305f);
+            missileRt.sizeDelta = new Vector2(96f, 96f);
+            missileRt.localEulerAngles = new Vector3(0f, 0f, 180f);
+
+            Image missileImg = missileObj.AddComponent<Image>();
+            missileImg.color = new Color(0.12f, 0.16f, 0.28f, 0.92f);
+
+            Outline missileOutline = missileObj.AddComponent<Outline>();
+            missileOutline.effectColor = new Color(0.2f, 0.85f, 1f, 0.85f);
+            missileOutline.effectDistance = new Vector2(2f, -2f);
+
+            p2MissileButton = missileObj.AddComponent<Button>();
+            p2MissileButton.targetGraphic = missileImg;
+            p2MissileButton.onClick.RemoveAllListeners();
+            p2MissileButton.onClick.AddListener(() =>
+            {
+                MissileLauncherButton.Instance?.TryLaunchMissilesForP2();
+            });
+
+            GameObject mTextObj = new GameObject("Text (TMP)", typeof(RectTransform));
+            mTextObj.transform.SetParent(missileObj.transform, false);
+            RectTransform mtRt = mTextObj.GetComponent<RectTransform>();
+            mtRt.anchorMin = Vector2.zero;
+            mtRt.anchorMax = Vector2.one;
+            mtRt.offsetMin = Vector2.zero;
+            mtRt.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI mTmp = mTextObj.AddComponent<TextMeshProUGUI>();
+            mTmp.text = "FÜZE\n<size=65%>[P]</size>";
+            mTmp.fontSize = 14f;
+            mTmp.fontStyle = FontStyles.Bold;
+            mTmp.alignment = TextAlignmentOptions.Center;
+            mTmp.color = Color.white;
+            mTmp.raycastTarget = false;
+        }
+        else
+        {
+            p2MissileButton = missileObj.GetComponent<Button>();
+            if (p2MissileButton != null)
+            {
+                p2MissileButton.onClick.RemoveAllListeners();
+                p2MissileButton.onClick.AddListener(() =>
+                {
+                    MissileLauncherButton.Instance?.TryLaunchMissilesForP2();
+                });
+            }
+        }
+
         // Menü arkasında kalmaması için en öne getir
         p2ControlsRoot.transform.SetAsLastSibling();
         p2ControlsRoot.SetActive(isOnline && !isMenuOpen);
@@ -217,18 +348,19 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
     private void FindPlane2Shooter()
     {
-        if (plane2Shooter != null) return;
+        if (plane2Shooter != null && plane2Maneuvers != null) return;
 
-        var shooters = FindObjectsOfType<PlaneShooter>();
-        foreach (var s in shooters)
+        var planes = FindObjectsOfType<PlaneController>();
+        foreach (var pc in planes)
         {
-            var pc = s.GetComponent<PlaneController>();
             if (pc != null && !pc.isPlayer1)
             {
-                plane2Shooter = s;
-                if (p2FireButton != null)
+                plane2Shooter = pc.GetComponent<PlaneShooter>();
+                plane2Maneuvers = pc.GetComponent<PlayerCombatManeuvers>();
+
+                if (p2FireButton != null && plane2Shooter != null)
                 {
-                    p2FireButton.targetShooter = s;
+                    p2FireButton.targetShooter = plane2Shooter;
                 }
                 break;
             }

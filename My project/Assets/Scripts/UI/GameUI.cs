@@ -1227,9 +1227,14 @@ public class GameUI : MonoBehaviour
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
 
-        if (_waveBadgeObj != null && _waveBadgeObj.activeSelf == isMenuOpen)
+        if (_waveBadgeObj != null)
         {
-            _waveBadgeObj.SetActive(!isMenuOpen);
+            bool isTwoPlayer = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
+            bool shouldShow = !isMenuOpen && !isTwoPlayer;
+            if (_waveBadgeObj.activeSelf != shouldShow)
+            {
+                _waveBadgeObj.SetActive(shouldShow);
+            }
         }
 
         if (plane1HealthBar != null && plane1HealthBar.gameObject.activeSelf == isMenuOpen)

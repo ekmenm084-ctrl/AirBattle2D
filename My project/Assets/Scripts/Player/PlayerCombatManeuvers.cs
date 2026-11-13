@@ -51,7 +51,11 @@ public class PlayerCombatManeuvers : MonoBehaviour
 
     private void Awake()
     {
-        Instance = this;
+        var pc = GetComponent<PlaneController>();
+        if (pc == null || pc.isPlayer1)
+        {
+            Instance = this;
+        }
     }
 
     private void Start()
@@ -71,21 +75,47 @@ public class PlayerCombatManeuvers : MonoBehaviour
         if (Time.timeScale <= 0.01f) return;
         if (GameManager.Instance != null && GameManager.Instance.IsGameEnded) return;
 
-        // 1. Klavye Kısayolları ile Kaçış (LeftShift veya C — Space sadece ateş içindir)
-        try
-        {
-            if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.C))
-            {
-                TryDodge();
-            }
+        bool isP1 = (_controller == null || _controller.isPlayer1);
+        bool isTwoPlayer = (GameSettings.SelectedMode == GameSettings.GameMode.Online) ||
+                           (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
 
-            // 2. Klavye Kısayolları ile Ulti (E veya R — Q/X füze içindir)
-            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.R))
+        if (isP1)
+        {
+            // P1: Klavye Kısayolları ile Kaçış (LeftShift veya C — Space sadece ateş içindir)
+            try
             {
-                TryActivateUltimate();
+                if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.C))
+                {
+                    TryDodge();
+                }
+
+                // P1: Klavye Kısayolları ile Ulti (E veya R — Q/X füze içindir)
+                if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.R))
+                {
+                    TryActivateUltimate();
+                }
             }
+            catch { }
         }
-        catch { }
+        else if (isTwoPlayer)
+        {
+            // P2: Klavye Kısayolları:
+            // Kaçış: Yukarı Ok, Keypad 1, Sağ Shift, veya I
+            // Ulti: Keypad 2, O, veya Sağ Alt
+            try
+            {
+                if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.Keypad1) || Input.GetKeyDown(KeyCode.RightShift) || Input.GetKeyDown(KeyCode.I))
+                {
+                    TryDodge();
+                }
+
+                if (Input.GetKeyDown(KeyCode.Keypad2) || Input.GetKeyDown(KeyCode.O) || Input.GetKeyDown(KeyCode.RightAlt))
+                {
+                    TryActivateUltimate();
+                }
+            }
+            catch { }
+        }
 
         // Pasif Yavaş Ulti Dolumu (Savaşta olmasa dahi saniyede +0.75 enerji)
         if (!isOverdriveActive && currentUlti < maxUlti)
@@ -116,8 +146,16 @@ public class PlayerCombatManeuvers : MonoBehaviour
         // Giriş yoksa klavye A/D veya Sol/Sağ kontrol et
         if (Mathf.Abs(rollDir) < 0.1f)
         {
-            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) rollDir = -1f;
-            else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) rollDir = 1f;
+            if (_controller != null && !_controller.isPlayer1)
+            {
+                if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.Keypad4) || Input.GetKey(KeyCode.J)) rollDir = -1f;
+                else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.Keypad6) || Input.GetKey(KeyCode.L)) rollDir = 1f;
+            }
+            else
+            {
+                if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) rollDir = -1f;
+                else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) rollDir = 1f;
+            }
         }
 
         // Hâlâ sıfırsa ekran pozisyonuna göre ters duvara kaç
@@ -331,12 +369,15 @@ public class PlayerCombatManeuvers : MonoBehaviour
         }
 
         var planes = FindObjectsOfType<PlaneHealth>();
+        bool isTwoPlayerDuel = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
+        float empPlaneDamage = isTwoPlayerDuel ? 30f : 160f;
+
         foreach (var p in planes)
         {
             if (p != null && p.gameObject != gameObject)
             {
                 VFXManager.SpawnHitSparks(p.transform.position, Color.yellow);
-                p.TakeDamage(160f, true, p.transform.position);
+                p.TakeDamage(empPlaneDamage, true, p.transform.position);
             }
         }
 

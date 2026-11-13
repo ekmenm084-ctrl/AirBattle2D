@@ -1827,8 +1827,11 @@ public class MainMenuManager : MonoBehaviour
         {
             if (p.isPlayer1)
             {
-                // Hangar ve Kalıcı Geliştirme Özelliklerini Oyuncuya Uygula (Savaş başlangıcında tek kullanımlık sortiyi uygula)
-                HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p, isActualCombatStart: true);
+                // Hangar ve Kalıcı Geliştirme Özelliklerini Oyuncuya Uygula (2 Oyunculu Düello modunda adil yarış için tek kullanımlık sorti tüketilmez)
+                if (!isOnline)
+                {
+                    HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p, isActualCombatStart: true);
+                }
             }
             else
             {

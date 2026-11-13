@@ -39,6 +39,9 @@ public class MissileLauncherButton : MonoBehaviour
         FindPlayerPlane();
     }
 
+    private float _lastP2FiredTime = -999f;
+    public bool IsP2Ready => (Time.time >= _lastP2FiredTime + cooldownDuration);
+
     private void Update()
     {
         UpdateCooldownVisuals();
@@ -46,12 +49,24 @@ public class MissileLauncherButton : MonoBehaviour
         if (Time.timeScale <= 0.01f) return;
         if (GameManager.Instance != null && GameManager.Instance.IsGameEnded) return;
 
-        // Klavye Kısayolları (Q veya X — E/R Ulti içindir)
+        bool isTwoPlayer = (GameSettings.SelectedMode == GameSettings.GameMode.Online) ||
+                           (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
+
+        // P1 Klavye Kısayolları (Q veya X)
         try
         {
             if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.X))
             {
                 TryLaunchMissiles();
+            }
+
+            // P2 Klavye Kısayolları (Keypad 3, P, veya /)
+            if (isTwoPlayer)
+            {
+                if (Input.GetKeyDown(KeyCode.Keypad3) || Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.Slash))
+                {
+                    TryLaunchMissilesForP2();
+                }
             }
         }
         catch { }
@@ -88,8 +103,8 @@ public class MissileLauncherButton : MonoBehaviour
         Vector3 leftWing = _playerPlane.transform.position + new Vector3(-0.6f, 0.25f, 0f);
         Vector3 rightWing = _playerPlane.transform.position + new Vector3(0.6f, 0.25f, 0f);
 
-        SpawnMissile(leftWing, Quaternion.Euler(0f, 0f, 15f));
-        SpawnMissile(rightWing, Quaternion.Euler(0f, 0f, -15f));
+        SpawnMissile(leftWing, Quaternion.Euler(0f, 0f, 15f), _playerPlane.gameObject);
+        SpawnMissile(rightWing, Quaternion.Euler(0f, 0f, -15f), _playerPlane.gameObject);
 
         // Ses ve Hafif İtiş Titremesi
         AudioManager.Instance?.PlayMissileLaunch();
@@ -97,17 +112,52 @@ public class MissileLauncherButton : MonoBehaviour
 
         // Ekran Uyarısı
         var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("MİKRO FÜZE SALVOSU ATEŞLENDİ!", new Color(0f, 0.9f, 1f), 1.2f);
+        gameUI?.ShowWaveAlert("<color=#00E5FF>[P1] MİKRO FÜZE SALVOSU ATEŞLENDİ!</color>", new Color(0f, 0.9f, 1f), 1.2f);
     }
 
-    private void SpawnMissile(Vector3 pos, Quaternion rot)
+    public void TryLaunchMissilesForP2()
+    {
+        if (!IsP2Ready) return;
+
+        PlaneController p2Plane = null;
+        var planes = FindObjectsOfType<PlaneController>();
+        foreach (var p in planes)
+        {
+            if (!p.isPlayer1)
+            {
+                p2Plane = p;
+                break;
+            }
+        }
+        if (p2Plane == null) return;
+
+        PlaneHealth health = p2Plane.GetComponent<PlaneHealth>();
+        if (health != null && health.IsDead) return;
+
+        _lastP2FiredTime = Time.time;
+
+        // P2 aşağı baktığı için füzeler aşağı doğru yayılır
+        Vector3 leftWing = p2Plane.transform.position + new Vector3(-0.6f, -0.25f, 0f);
+        Vector3 rightWing = p2Plane.transform.position + new Vector3(0.6f, -0.25f, 0f);
+
+        SpawnMissile(leftWing, Quaternion.Euler(0f, 0f, 195f), p2Plane.gameObject);
+        SpawnMissile(rightWing, Quaternion.Euler(0f, 0f, 165f), p2Plane.gameObject);
+
+        AudioManager.Instance?.PlayMissileLaunch();
+        CameraShake.Shake(0.18f, 0.15f);
+
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.ShowWaveAlert("<color=#FF5252>[P2] MİKRO FÜZE SALVOSU ATEŞLENDİ!</color>", new Color(1f, 0.35f, 0.35f), 1.2f);
+    }
+
+    private void SpawnMissile(Vector3 pos, Quaternion rot, GameObject ownerGo)
     {
         GameObject mObj = new GameObject("HomingMissile");
         mObj.transform.position = pos;
         mObj.transform.rotation = rot;
 
         HomingMissile missile = mObj.AddComponent<HomingMissile>();
-        missile.owner = _playerPlane.gameObject;
+        missile.owner = ownerGo;
     }
 
     private void SetupUI()

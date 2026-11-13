@@ -99,10 +99,18 @@ public class PlaneShooter : MonoBehaviour
         }
         else if (isTwoPlayer)
         {
-            // P2 Ateş Tuşları: Enter, Keypad 0, Aşağı Ok veya Sağ Ctrl
+            // P2 Ateş Tuşları: Space (diğeri gibi!), Enter, KeypadEnter, Keypad 0, Yukarı Ok, Aşağı Ok, Sağ Ctrl, Sağ Shift, K
             try
             {
-                if (Input.GetKey(KeyCode.Return) || Input.GetKey(KeyCode.Keypad0) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.RightControl) || Input.GetKey(KeyCode.K))
+                if (Input.GetKey(KeyCode.Space) ||
+                    Input.GetKey(KeyCode.Return) ||
+                    Input.GetKey(KeyCode.KeypadEnter) ||
+                    Input.GetKey(KeyCode.Keypad0) ||
+                    Input.GetKey(KeyCode.DownArrow) ||
+                    Input.GetKey(KeyCode.UpArrow) ||
+                    Input.GetKey(KeyCode.RightControl) ||
+                    Input.GetKey(KeyCode.RightShift) ||
+                    Input.GetKey(KeyCode.K))
                 {
                     _fireRequested = true;
                 }

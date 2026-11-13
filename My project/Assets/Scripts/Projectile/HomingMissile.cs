@@ -72,20 +72,24 @@ public class HomingMissile : MonoBehaviour
         var planes = FindObjectsOfType<PlaneController>();
         float closestDist = Mathf.Infinity;
         Transform closest = null;
+        bool ownerIsP1 = (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true);
 
         foreach (var p in planes)
         {
             if (p.gameObject == owner) continue;
 
-            // Player 1 ateşlediyse düşmanları hedef al
             PlaneHealth health = p.GetComponent<PlaneHealth>();
-            if (health != null && !health.IsDead && !p.isPlayer1)
+            if (health != null && !health.IsDead)
             {
-                float dist = Vector2.Distance(transform.position, p.transform.position);
-                if (dist < closestDist)
+                bool isValidTarget = ownerIsP1 ? !p.isPlayer1 : p.isPlayer1;
+                if (isValidTarget)
                 {
-                    closestDist = dist;
-                    closest = p.transform;
+                    float dist = Vector2.Distance(transform.position, p.transform.position);
+                    if (dist < closestDist)
+                    {
+                        closestDist = dist;
+                        closest = p.transform;
+                    }
                 }
             }
         }

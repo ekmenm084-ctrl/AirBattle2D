@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
 
     private bool gameEnded = false;
     public bool IsGameEnded => gameEnded;
+    public void SetGameEnded(bool ended) { gameEnded = ended; }
     private Vector3 _plane2OriginalScale = Vector3.one;
 
     private void Awake()
@@ -170,7 +171,7 @@ public class GameManager : MonoBehaviour
         {
             EnemyFormationManager.Instance?.StopDirector();
             ShowActiveModeIntroBanner();
-            ApplyEnemyWave(1);
+            TwoPlayerDuelManager.EnsureInstance()?.SetupDuelMatch();
         }
         else if (CurrentMode == GameMode.BulletHell)
         {
@@ -527,6 +528,12 @@ public class GameManager : MonoBehaviour
         {
             if (CurrentMode == GameMode.TwoPlayer)
             {
+                if (TwoPlayerDuelManager.Instance != null && TwoPlayerDuelManager.Instance.IsDuelActive)
+                {
+                    TwoPlayerDuelManager.Instance.OnPlaneDied(isPlayer1: true);
+                    return;
+                }
+
                 gameEnded = true;
                 if (gameOverUI != null)
                     gameOverUI.Show("OYUNCU 2 KAZANDI!");
@@ -673,6 +680,12 @@ public class GameManager : MonoBehaviour
         // 2. DÜŞMAN (UÇAK 2) ÖLDÜĞÜNDE:
         if (CurrentMode == GameMode.TwoPlayer)
         {
+            if (TwoPlayerDuelManager.Instance != null && TwoPlayerDuelManager.Instance.IsDuelActive)
+            {
+                TwoPlayerDuelManager.Instance.OnPlaneDied(isPlayer1: false);
+                return;
+            }
+
             gameEnded = true;
             if (gameOverUI != null)
                 gameOverUI.Show("OYUNCU 1 KAZANDI!");
@@ -1406,6 +1419,7 @@ public class GameManager : MonoBehaviour
     {
         MainMenuManager.OpenHangarOnSceneLoad = false;
         MainMenuManager.AutoPlayOnSceneLoad = true;
+        TwoPlayerDuelManager.Instance?.StopDuel();
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();
         AirspaceHazardDirector.Instance?.StopDirector();
@@ -1419,6 +1433,7 @@ public class GameManager : MonoBehaviour
     public void GoToMainMenu()
     {
         MainMenuManager.AutoPlayOnSceneLoad = false;
+        TwoPlayerDuelManager.Instance?.StopDuel();
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();
         AirspaceHazardDirector.Instance?.StopDirector();
