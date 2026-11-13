@@ -125,7 +125,7 @@ public class GameManager : MonoBehaviour
             var p1Controller = plane1Health.GetComponent<PlaneController>();
             if (p1Controller != null)
             {
-                HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p1Controller);
+                HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p1Controller, isActualCombatStart: true);
             }
             DroneManager.EnsureInstance()?.SpawnDronesForPlayer(plane1Health.transform);
         }
@@ -160,6 +160,11 @@ public class GameManager : MonoBehaviour
             p2Joystick.SetTwoPlayerMode(isOnline);
 
         MainMenuManager.SetTouchControlsVisibility(showP1Controls: true, showEnemyControls: isOnline);
+
+        if (CurrentMode == GameMode.TwoPlayer)
+            AirspaceHazardDirector.Instance?.StopDirector();
+        else
+            AirspaceHazardDirector.EnsureInstance()?.StartDirector();
 
         if (CurrentMode == GameMode.TwoPlayer)
         {
@@ -947,6 +952,7 @@ public class GameManager : MonoBehaviour
         }
 
         EnemyFormationManager.Instance?.StopDirector();
+        AirspaceHazardDirector.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
@@ -1402,6 +1408,7 @@ public class GameManager : MonoBehaviour
         MainMenuManager.AutoPlayOnSceneLoad = true;
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();
+        AirspaceHazardDirector.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
@@ -1414,6 +1421,7 @@ public class GameManager : MonoBehaviour
         MainMenuManager.AutoPlayOnSceneLoad = false;
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();
+        AirspaceHazardDirector.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;

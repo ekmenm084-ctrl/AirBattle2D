@@ -1827,8 +1827,8 @@ public class MainMenuManager : MonoBehaviour
         {
             if (p.isPlayer1)
             {
-                // Hangar ve Kalıcı Geliştirme Özelliklerini Oyuncuya Uygula
-                HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p);
+                // Hangar ve Kalıcı Geliştirme Özelliklerini Oyuncuya Uygula (Savaş başlangıcında tek kullanımlık sortiyi uygula)
+                HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(p, isActualCombatStart: true);
             }
             else
             {

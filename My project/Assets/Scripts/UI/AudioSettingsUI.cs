@@ -154,8 +154,8 @@ public class AudioSettingsUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-26f, -26f);
-        rt.sizeDelta = new Vector2(56f, 56f);
+        rt.anchoredPosition = new Vector2(-20f, -20f);
+        rt.sizeDelta = new Vector2(50f, 50f);
 
         Image btnBg = soundButtonObj.GetComponent<Image>();
         if (btnBg == null) btnBg = soundButtonObj.AddComponent<Image>();

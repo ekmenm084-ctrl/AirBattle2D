@@ -18,13 +18,16 @@ public class CratesUI : MonoBehaviour
     private GameObject _panelRoot;
     private TextMeshProUGUI _goldTMP;
     private TextMeshProUGUI _keysTMP;
-    private Button _bronzeBtn, _silverBtn, _goldBtn;
-    private TextMeshProUGUI _bronzeBtnTMP, _silverBtnTMP, _goldBtnTMP;
 
     // Anahtar Butonları ve Rozetleri (Boss Anahtarları ile Açılış)
     private Button _bronzeKeyBtn, _silverKeyBtn, _goldKeyBtn;
     private TextMeshProUGUI _bronzeKeyBtnTMP, _silverKeyBtnTMP, _goldKeyBtnTMP;
     private TextMeshProUGUI _bronzeKeyBadgeTMP, _silverKeyBadgeTMP, _goldKeyBadgeTMP;
+
+    // Anahtar Eksik İkaz Bildirimi (Toast)
+    private GameObject _keyAlertToastObj;
+    private TextMeshProUGUI _keyAlertTMP;
+    private Coroutine _keyAlertCoroutine;
 
     // Kartlardaki Sandık Görselleri
     private Image _bronzeCardImg, _silverCardImg, _goldCardImg;
@@ -163,10 +166,6 @@ public class CratesUI : MonoBehaviour
             _keysTMP.text = $"<b>ANAHTARLARINIZ:</b> <color=#CD7F32>Bronz: {hm.bronzeKeys}</color>  |  <color=#C0C0C0>Gümüş: {hm.silverKeys}</color>  |  <color=#FFD700>Altın As: {hm.goldKeys}</color>{superJetStr}";
         }
 
-        UpdateCrateButton(_bronzeBtn, _bronzeBtnTMP, HangarManager.CRATE_BRONZE_COST, hm.gold);
-        UpdateCrateButton(_silverBtn, _silverBtnTMP, HangarManager.CRATE_SILVER_COST, hm.gold);
-        UpdateCrateButton(_goldBtn, _goldBtnTMP, HangarManager.CRATE_GOLD_COST, hm.gold);
-
         UpdateKeyButton(_bronzeKeyBtn, _bronzeKeyBtnTMP, _bronzeKeyBadgeTMP, "BRONZ", hm.bronzeKeys, new Color(0.85f, 0.50f, 0.20f));
         UpdateKeyButton(_silverKeyBtn, _silverKeyBtnTMP, _silverKeyBadgeTMP, "GÜMÜŞ", hm.silverKeys, new Color(0.25f, 0.75f, 1f));
         UpdateKeyButton(_goldKeyBtn, _goldKeyBtnTMP, _goldKeyBadgeTMP, "ALTIN AS", hm.goldKeys, new Color(1f, 0.85f, 0.2f));
@@ -177,20 +176,21 @@ public class CratesUI : MonoBehaviour
         if (badgeTMP != null)
         {
             badgeTMP.font = MainMenuManager.GetTacticalFont();
-            badgeTMP.text = $"<b>{keyName} ANAHTAR: {keyCount} ADET</b>";
-            badgeTMP.color = (keyCount > 0) ? keyCol : new Color(0.6f, 0.65f, 0.7f);
+            badgeTMP.text = (keyCount > 0)
+                ? $"<b><color=#{ColorUtility.ToHtmlStringRGB(keyCol)}>{keyName} ANAHTAR: {keyCount} ADET MEVCUT</color></b>"
+                : $"<b><color=#94A3B8>{keyName} ANAHTARI: 0 ADET</color></b>";
         }
 
         if (btn == null || tmp == null) return;
         bool hasKey = (keyCount > 0) && !_isOpeningCrate;
-        btn.interactable = hasKey;
+        btn.interactable = !_isOpeningCrate; // Tıklamaya açık tutulur ki anahtar yokken dokunulduğunda görsel & sesli ikaz verilebilsin
 
         Image img = btn.GetComponent<Image>();
         if (img != null)
         {
-            string spriteName = hasKey ? "hud_btn_amber" : "hud_btn_slate";
-            Color borderCol = hasKey ? keyCol : new Color(0.35f, 0.35f, 0.40f);
-            Color glassCol = hasKey ? new Color(0.12f, 0.08f, 0.04f, 0.95f) : new Color(0.04f, 0.05f, 0.08f, 0.90f);
+            string spriteName = hasKey ? "hud_btn_emerald" : "hud_btn_slate";
+            Color borderCol = hasKey ? keyCol : new Color(0.40f, 0.25f, 0.25f);
+            Color glassCol = hasKey ? new Color(0.04f, 0.12f, 0.08f, 0.95f) : new Color(0.08f, 0.04f, 0.05f, 0.90f);
             img.sprite = MainMenuManager.GetHudSprite(spriteName, borderCol, glassCol, true);
             img.type = Image.Type.Sliced;
             img.color = Color.white;
@@ -199,34 +199,13 @@ public class CratesUI : MonoBehaviour
         tmp.font = MainMenuManager.GetTacticalFont();
         if (hasKey)
         {
-            tmp.text = $"<b>{keyName} ANAHTARLA AÇ (1x)</b>\n<size=72%><color=#FFD700>» ÇOK DEĞERLİ EŞYA GARANTİSİ «</color></size>";
+            tmp.text = $"<b>{keyName} ANAHTARLA AÇ (1x)</b>\n<size=72%><color=#FFD700>» {keyCount} ADET MEVCUT - DOKUN VE AÇ «</color></size>";
             tmp.color = Color.white;
         }
         else
         {
-            tmp.text = $"{keyName} ANAHTARI GEREKLİ (0/1)\n<size=68%><color=#94A3B8>20+ Seviye Bosslardan 1/10 şansla düşer</color></size>";
-            tmp.color = new Color(0.7f, 0.7f, 0.75f);
-        }
-    }
-
-    private void UpdateCrateButton(Button btn, TextMeshProUGUI tmp, int cost, int currentGold)
-    {
-        if (btn == null || tmp == null) return;
-        bool canAfford = (currentGold >= cost) && !_isOpeningCrate;
-        btn.interactable = canAfford;
-        tmp.font = MainMenuManager.GetTacticalFont();
-        tmp.text = canAfford ? $"ALTINLA AÇ ({cost:N0}G)" : $"YETERSİZ ALTIN ({cost:N0}G)";
-        tmp.color = canAfford ? Color.white : new Color(0.9f, 0.6f, 0.6f);
-
-        Image img = btn.GetComponent<Image>();
-        if (img != null)
-        {
-            string spriteName = canAfford ? "hud_btn_emerald" : "hud_btn_slate";
-            Color borderCol = canAfford ? new Color(0.18f, 0.85f, 0.45f) : new Color(0.40f, 0.30f, 0.32f);
-            Color glassCol = canAfford ? new Color(0.04f, 0.12f, 0.07f, 0.95f) : new Color(0.08f, 0.04f, 0.05f, 0.90f);
-            img.sprite = MainMenuManager.GetHudSprite(spriteName, borderCol, glassCol, true);
-            img.type = Image.Type.Sliced;
-            img.color = Color.white;
+            tmp.text = $"<b>{keyName} ANAHTARI GEREKLİ (0/1)</b>\n<size=68%><color=#EF4444>Anahtar Yok - Bosslardan veya Görevlerden Düşer</color></size>";
+            tmp.color = new Color(0.9f, 0.65f, 0.65f);
         }
     }
 
@@ -252,6 +231,9 @@ public class CratesUI : MonoBehaviour
 
         // 2. GERÇEK 3 SANDIK KARTI (GÖRSEL SANDIK + DETAYLAR)
         BuildCrateCards();
+
+        // 2.1 ANAHTAR EKSİK İKAZ BİLDİRİMİ (TOAST)
+        BuildAlertToast();
 
         // 3. ALT NAVİGASYON (GERİ DÖN & HANGAR ENVANTERİ BUTONLARI)
         BuildBottomBar();
@@ -359,38 +341,31 @@ public class CratesUI : MonoBehaviour
 
         CreateCrateCard("BronzeCard", -spacingX, cardY,
             "BRONZ İKMAL KUTUSU",
-            $"{HangarManager.CRATE_BRONZE_COST} ALTIN",
-            "• 100 - 250 Altın / Taktik As Çipleri\n• <b>BRONZ ANAHTAR İLE AÇILIRSA:</b>\n  MK-2 Avcı İHA / GE Turbofan / 1.800G Donatım!",
+            "• <b>BRONZ ANAHTAR İLE AÇILIR</b>\n• MK-2 Avcı İHA / GE Turbofan / 1.800G Donatım\n• +10 Can / +1.0 Kalıcı Hasar Çipleri",
             new Color(0.85f, 0.50f, 0.20f),
             HangarManager.CrateType.Bronze,
-            out _bronzeBtn, out _bronzeBtnTMP,
             out _bronzeKeyBtn, out _bronzeKeyBtnTMP, out _bronzeKeyBadgeTMP,
             out _bronzeCardImg);
 
         CreateCrateCard("SilverCard", 0f, cardY,
             "GÜMÜŞ CEPHANE KASASI",
-            $"{HangarManager.CRATE_SILVER_COST} ALTIN",
-            "• 400 - 900 Altın / Titanyum Çipler\n• <b>GÜMÜŞ ANAHTAR İLE AÇILIRSA:</b>\n  6. Nesil Süper Avcı Sortisi / MK-4 Valkyrie İHA / 11.500G Donatım!",
+            "• <b>GÜMÜŞ ANAHTAR İLE AÇILIR</b>\n• 6. Nesil Süper Avcı Sortisi / MK-4 Valkyrie İHA\n• 11.500G Parçalar & Titanyum Kompozit Zırh",
             new Color(0.25f, 0.75f, 1f),
             HangarManager.CrateType.Silver,
-            out _silverBtn, out _silverBtnTMP,
             out _silverKeyBtn, out _silverKeyBtnTMP, out _silverKeyBadgeTMP,
             out _silverCardImg);
 
         CreateCrateCard("GoldCard", spacingX, cardY,
             "ALTIN AS SANDIĞI",
-            $"{HangarManager.CRATE_GOLD_COST} ALTIN",
-            "• 1.200 - 2.500 Altın / As Protokolü\n• <b>ALTIN ANAHTAR İLE AÇILIRSA:</b>\n  5.+ Nesil KAAN APEX / 6. Nesil Darkstar / MK-5 Titan / 30.000G Donatım!",
+            "• <b>ALTIN AS ANAHTARI İLE AÇILIR</b>\n• 5.+ Nesil KAAN APEX / 6. Nesil Darkstar\n• MK-5 Titan Aegis İHA / 30.000G Apex Parçaları",
             new Color(1f, 0.85f, 0.2f),
             HangarManager.CrateType.GoldAce,
-            out _goldBtn, out _goldBtnTMP,
             out _goldKeyBtn, out _goldKeyBtnTMP, out _goldKeyBadgeTMP,
             out _goldCardImg);
     }
 
-    private void CreateCrateCard(string objName, float posX, float posY, string title, string costSub, string lootDetails,
+    private void CreateCrateCard(string objName, float posX, float posY, string title, string lootDetails,
         Color accentColor, HangarManager.CrateType type,
-        out Button openBtn, out TextMeshProUGUI btnTMP,
         out Button keyBtn, out TextMeshProUGUI keyBtnTMP, out TextMeshProUGUI keyBadgeTMP,
         out Image crateImgRef)
     {
@@ -474,8 +449,8 @@ public class CratesUI : MonoBehaviour
         GameObject dObj = new GameObject("LootDetails", typeof(RectTransform));
         dObj.transform.SetParent(cardObj.transform, false);
         RectTransform dRt = GetRect(dObj);
-        dRt.anchorMin = new Vector2(0.05f, 0.22f);
-        dRt.anchorMax = new Vector2(0.95f, 0.40f);
+        dRt.anchorMin = new Vector2(0.05f, 0.19f);
+        dRt.anchorMax = new Vector2(0.95f, 0.41f);
         dRt.offsetMin = Vector2.zero;
         dRt.offsetMax = Vector2.zero;
 
@@ -488,12 +463,12 @@ public class CratesUI : MonoBehaviour
         dTMP.alignment = TextAlignmentOptions.Center;
         dTMP.color = new Color(0.9f, 0.95f, 1f);
 
-        // 4. EFSANEVİ ANAHTARLA AÇ BUTONU
+        // 4. TEK VE BELİRGİN ASKERİ ANAHTARLA AÇ BUTONU
         GameObject kBtnObj = new GameObject("OpenWithKeyBtn", typeof(RectTransform));
         kBtnObj.transform.SetParent(cardObj.transform, false);
         RectTransform kbBtnRt = GetRect(kBtnObj);
-        kbBtnRt.anchorMin = new Vector2(0.06f, 0.115f);
-        kbBtnRt.anchorMax = new Vector2(0.94f, 0.21f);
+        kbBtnRt.anchorMin = new Vector2(0.06f, 0.04f);
+        kbBtnRt.anchorMax = new Vector2(0.94f, 0.17f);
         kbBtnRt.offsetMin = Vector2.zero;
         kbBtnRt.offsetMax = Vector2.zero;
 
@@ -520,39 +495,6 @@ public class CratesUI : MonoBehaviour
         keyBtnTMP.fontStyle = FontStyles.Bold;
         keyBtnTMP.alignment = TextAlignmentOptions.Center;
         keyBtnTMP.color = Color.white;
-
-        // 5. NORMAL ALTINLA AÇ BUTONU
-        GameObject bObj = new GameObject("OpenWithGoldBtn", typeof(RectTransform));
-        bObj.transform.SetParent(cardObj.transform, false);
-        RectTransform bRt = GetRect(bObj);
-        bRt.anchorMin = new Vector2(0.06f, 0.02f);
-        bRt.anchorMax = new Vector2(0.94f, 0.10f);
-        bRt.offsetMin = Vector2.zero;
-        bRt.offsetMax = Vector2.zero;
-
-        Image bImg = bObj.AddComponent<Image>();
-        bImg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.10f, 0.06f, 0.95f), true);
-        bImg.type = Image.Type.Sliced;
-        bImg.color = Color.white;
-
-        openBtn = bObj.AddComponent<Button>();
-        openBtn.onClick.AddListener(() =>
-        {
-            OpenCrate(capturedType);
-        });
-
-        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
-        txtObj.transform.SetParent(bObj.transform, false);
-        MakeFullScreenRect(GetRect(txtObj));
-
-        btnTMP = txtObj.AddComponent<TextMeshProUGUI>();
-        btnTMP.font = MainMenuManager.GetTacticalFont();
-        btnTMP.text = $"ALTINLA AÇ ({costSub})";
-        btnTMP.fontSize = 17f;
-        btnTMP.characterSpacing = 1.6f;
-        btnTMP.fontStyle = FontStyles.Bold;
-        btnTMP.alignment = TextAlignmentOptions.Center;
-        btnTMP.color = Color.white;
     }
 
     private void BuildBottomBar()
@@ -721,26 +663,103 @@ public class CratesUI : MonoBehaviour
         _cinematicOverlayObj.SetActive(false);
     }
 
+    private void BuildAlertToast()
+    {
+        _keyAlertToastObj = new GameObject("KeyAlertToast", typeof(RectTransform));
+        _keyAlertToastObj.transform.SetParent(_panelRoot.transform, false);
+        RectTransform tRt = GetRect(_keyAlertToastObj);
+        tRt.anchorMin = new Vector2(0.5f, 0.18f);
+        tRt.anchorMax = new Vector2(0.5f, 0.18f);
+        tRt.pivot = new Vector2(0.5f, 0.5f);
+        tRt.anchoredPosition = Vector2.zero;
+        tRt.sizeDelta = new Vector2(850f, 68f);
+
+        Image bg = _keyAlertToastObj.AddComponent<Image>();
+        bg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(1f, 0.25f, 0.25f, 0.95f), new Color(0.12f, 0.02f, 0.03f, 0.96f), true);
+        bg.type = Image.Type.Sliced;
+        bg.raycastTarget = false;
+
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        txtObj.transform.SetParent(_keyAlertToastObj.transform, false);
+        MakeFullScreenRect(GetRect(txtObj));
+
+        _keyAlertTMP = txtObj.AddComponent<TextMeshProUGUI>();
+        _keyAlertTMP.font = MainMenuManager.GetTacticalFont();
+        _keyAlertTMP.fontSize = 17f;
+        _keyAlertTMP.characterSpacing = 1.2f;
+        _keyAlertTMP.alignment = TextAlignmentOptions.Center;
+        _keyAlertTMP.color = Color.white;
+        _keyAlertTMP.raycastTarget = false;
+
+        _keyAlertToastObj.SetActive(false);
+    }
+
+    public void ShowKeyAlert(string message)
+    {
+        if (_keyAlertToastObj == null || _keyAlertTMP == null) return;
+        if (_keyAlertCoroutine != null) StopCoroutine(_keyAlertCoroutine);
+        _keyAlertCoroutine = StartCoroutine(KeyAlertRoutine(message));
+    }
+
+    private IEnumerator KeyAlertRoutine(string message)
+    {
+        _keyAlertTMP.text = message;
+        _keyAlertToastObj.SetActive(true);
+        _keyAlertToastObj.transform.SetAsLastSibling();
+
+        CanvasGroup cg = _keyAlertToastObj.GetComponent<CanvasGroup>();
+        if (cg == null) cg = _keyAlertToastObj.AddComponent<CanvasGroup>();
+        cg.alpha = 1f;
+
+        yield return new WaitForSecondsRealtime(2.8f);
+
+        float fade = 0.4f;
+        float elapsed = 0f;
+        while (elapsed < fade)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            cg.alpha = Mathf.Lerp(1f, 0f, elapsed / fade);
+            yield return null;
+        }
+        _keyAlertToastObj.SetActive(false);
+        _keyAlertCoroutine = null;
+    }
+
     private void OpenCrate(HangarManager.CrateType type)
     {
-        if (_isOpeningCrate) return;
-
-        var reward = HangarManager.Instance.OpenCrate(type);
-        if (reward != null)
-        {
-            StartCoroutine(PlayCrateOpeningSequence(type, reward));
-        }
-        else
-        {
-            RefreshVisuals();
-        }
+        OpenCrateWithKey(type);
     }
 
     private void OpenCrateWithKey(HangarManager.CrateType type)
     {
         if (_isOpeningCrate) return;
 
-        var reward = HangarManager.Instance.OpenCrateWithKey(type);
+        HangarManager hm = HangarManager.EnsureInstance();
+        HangarManager.KeyType keyNeeded = type switch
+        {
+            HangarManager.CrateType.Bronze  => HangarManager.KeyType.Bronze,
+            HangarManager.CrateType.Silver  => HangarManager.KeyType.Silver,
+            HangarManager.CrateType.GoldAce => HangarManager.KeyType.Gold,
+            _                               => HangarManager.KeyType.Bronze
+        };
+
+        int currentKeys = hm.GetKeyCount(keyNeeded);
+        if (currentKeys <= 0)
+        {
+            string keyName = keyNeeded switch
+            {
+                HangarManager.KeyType.Bronze => "BRONZ",
+                HangarManager.KeyType.Silver => "GÜMÜŞ",
+                HangarManager.KeyType.Gold   => "ALTIN AS",
+                _                            => "ÖZEL"
+            };
+            ShowKeyAlert($"<color=#EF4444>[KİLİTLİ]</color> <b>{keyName} ANAHTARI GEREKLİ!</b>\n<size=80%><color=#CBD5E1>Envanterde anahtar bulunmuyor. Seviye 20+ Bossları yok ederek veya Günlük Görevlerden anahtar kazanın!</color></size>");
+            AudioManager.Instance?.PlayWarningAlarm();
+            RefreshVisuals();
+            return;
+        }
+
+        var reward = hm.OpenCrateWithKey(type);
         if (reward != null)
         {
             StartCoroutine(PlayCrateOpeningSequence(type, reward));

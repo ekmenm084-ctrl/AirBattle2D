@@ -49,3 +49,8 @@ ExportedObj/
 
 .DS_Store
 Thumbs.db
+
+# Unity Crash Recovery
+**/_Recovery/
+**/_Recovery/**
+**/_Recovery.meta

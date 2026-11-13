@@ -25,6 +25,9 @@ public class PlaneController : MonoBehaviour
     private TwoPlayerInputRouter _p2Router;
     private Vector2 _inputDir;
 
+    [HideInInspector]
+    public float externalDriftX = 0f;
+
     public Vector2 InputDir => _inputDir;
 
     private void Awake()
@@ -68,7 +71,8 @@ public class PlaneController : MonoBehaviour
 
         if (isPlayer1)
         {
-            HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(this);
+            // Menü sahnesi başlangıcında temel hangar istatistiklerini uygula (tek kullanımlık sortiyi tüketme)
+            HangarManager.EnsureInstance()?.ApplyActiveAircraftStats(this, isActualCombatStart: false);
             if (GetComponent<PlayerCombatManeuvers>() == null)
                 gameObject.AddComponent<PlayerCombatManeuvers>();
         }
@@ -168,7 +172,7 @@ public class PlaneController : MonoBehaviour
         var maneuvers = GetComponent<PlayerCombatManeuvers>();
         if (maneuvers != null && maneuvers.isDodging) return;
 
-        float targetVx = _inputDir.x * moveSpeed;
+        float targetVx = (_inputDir.x * moveSpeed) + (isPlayer1 ? externalDriftX : 0f);
 
         // Ekran kenarlarında titreme olmadan yumuşak durdurma
         if (transform.position.x <= minX && targetVx < 0f) targetVx = 0f;
@@ -187,6 +191,7 @@ public class PlaneController : MonoBehaviour
 
     public void FreezeMovement()
     {
+        externalDriftX = 0f;
         _rb.linearVelocity = Vector2.zero;
         enabled = false;
     }

@@ -35,6 +35,7 @@ public class AudioManager : MonoBehaviour
     private AudioClip _synthFanfareClip;
     private AudioClip _grazeClip;
     private AudioClip _comboTierClip;
+    private AudioClip _thunderClip;
 
     private void Awake()
     {
@@ -234,6 +235,11 @@ public class AudioManager : MonoBehaviour
         PlaySynthEffect(ref _comboTierClip, pitch, pitch + 0.02f, 0.62f);
     }
 
+    public void PlayThunder()
+    {
+        PlaySynthEffect(ref _thunderClip, 0.92f, 1.08f, 0.72f);
+    }
+
     private void PlaySynthEffect(ref AudioClip clipField, float minPitch, float maxPitch, float volumeScale)
     {
         if (isMuted || _sfxSource == null) return;
@@ -312,6 +318,13 @@ public class AudioManager : MonoBehaviour
             float freq = n < 0.48f ? 740f : 1108.73f;
             float env = Mathf.Clamp01(1f - n * 0.7f);
             return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.25f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.45f;
+        });
+
+        _thunderClip = BuildSynthClip("SynthThunder", sr, 0.42f, (t, n) =>
+        {
+            float crack = Mathf.Exp(-n * 18f) * (((Mathf.Sin(t * 21345.1f) * 32145.7f) % 1f) * 2f - 1f);
+            float rumble = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(95f, 42f, n) * t) * (1f - n);
+            return (crack * 0.75f + rumble * 0.60f) * 0.8f;
         });
     }
 

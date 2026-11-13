@@ -248,6 +248,7 @@ public class HangarManager : MonoBehaviour
 
     public int GetKeyCount(KeyType type)
     {
+        LoadHangarData();
         return type switch
         {
             KeyType.Bronze => bronzeKeys,
@@ -1060,159 +1061,13 @@ public class HangarManager : MonoBehaviour
     }
 
     // ==================== ASKERİ İKMAL SANDIKLARI (GACHA / LOOT) ====================
+    /// <summary>
+    /// Sandıklar artık kesinlikle ilgili anahtar (Bronz, Gümüş, Altın) gerektirir.
+    /// Altınla açma bypass'ı tamamen kaldırılmıştır; sadece anahtarla açılır.
+    /// </summary>
     public CrateReward OpenCrate(CrateType type)
     {
-        int cost = type switch
-        {
-            CrateType.Bronze  => CRATE_BRONZE_COST,
-            CrateType.Silver  => CRATE_SILVER_COST,
-            CrateType.GoldAce => CRATE_GOLD_COST,
-            _                 => 0
-        };
-
-        if (gold < cost) return null;
-
-        gold -= cost;
-        CrateReward reward = new CrateReward();
-        float roll = UnityEngine.Random.value;
-
-        if (type == CrateType.Bronze)
-        {
-            if (roll < 0.40f)
-            {
-                int goldWon = UnityEngine.Random.Range(100, 250);
-                gold += goldWon;
-                reward.title = "BRONZ KASA İKRAMİYESİ!";
-                reward.description = $"+{goldWon} Altın kasaya aktarıldı!";
-                reward.goldGain = goldWon;
-                reward.rarityColorHex = "#2ECC71"; // Yeşil
-            }
-            else if (roll < 0.75f)
-            {
-                chipBonusDamage += 1.0f;
-                reward.title = "TAKTİK MERMİ ÇİPİ!";
-                reward.description = "Tüm uçaklara kalıcı +1.0 Mermi Hasarı eklendi!";
-                reward.rarityColorHex = "#3498DB"; // Mavi
-            }
-            else
-            {
-                chipBonusHealth += 10f;
-                reward.title = "ÇELİK GÖVDE ÇİPİ!";
-                reward.description = "Tüm uçaklara kalıcı +10 Can eklendi!";
-                reward.rarityColorHex = "#3498DB";
-            }
-        }
-        else if (type == CrateType.Silver)
-        {
-            if (roll < 0.40f)
-            {
-                int goldWon = UnityEngine.Random.Range(400, 900);
-                gold += goldWon;
-                reward.title = "GÜMÜŞ KASA BÜYÜK ÖDÜL!";
-                reward.description = $"+{goldWon} Altın kasaya aktarıldı!";
-                reward.goldGain = goldWon;
-                reward.rarityColorHex = "#3498DB";
-            }
-            else if (roll < 0.70f)
-            {
-                DroneCompanion.DroneType droneToRepair = (leftDroneType != DroneCompanion.DroneType.None && GetDroneHealth(leftDroneType) < GetDroneMaxHealth(leftDroneType))
-                    ? leftDroneType
-                    : (rightDroneType != DroneCompanion.DroneType.None && GetDroneHealth(rightDroneType) < GetDroneMaxHealth(rightDroneType))
-                        ? rightDroneType
-                        : (IsDroneUnlocked(DroneCompanion.DroneType.MK1_Scout) && GetDroneHealth(DroneCompanion.DroneType.MK1_Scout) < GetDroneMaxHealth(DroneCompanion.DroneType.MK1_Scout))
-                            ? DroneCompanion.DroneType.MK1_Scout
-                            : DroneCompanion.DroneType.None;
-
-                if (droneToRepair != DroneCompanion.DroneType.None)
-                {
-                    TryRepairDrone(droneToRepair);
-                    reward.title = "İHA ONARIM KİTİ!";
-                    reward.description = $"{GetDroneDisplayName(droneToRepair)} tamir edildi ve dayanıklılığı yenilendi!";
-                }
-                else
-                {
-                    chipBonusDamage += 2.5f;
-                    reward.title = "GELİŞMİŞ AS ÇİPİ!";
-                    reward.description = "Tüm uçaklara kalıcı +2.5 Mermi Hasarı eklendi!";
-                }
-                reward.rarityColorHex = "#9B59B6"; // Mor
-            }
-            else
-            {
-                chipBonusHealth += 25f;
-                reward.title = "KOMPOZİT TİTANYUM ZIRH!";
-                reward.description = "Tüm uçaklara kalıcı +25 Can eklendi!";
-                reward.rarityColorHex = "#9B59B6";
-            }
-        }
-        else // GoldAce Crate
-        {
-            if (roll < 0.35f)
-            {
-                int goldWon = UnityEngine.Random.Range(1200, 2500);
-                gold += goldWon;
-                reward.title = "EFSANEVİ BÜYÜK İKRAMİYE!";
-                reward.description = $"+{goldWon} Altın doğrudan kasaya aktarıldı!";
-                reward.goldGain = goldWon;
-                reward.rarityColorHex = "#F1C40F"; // Altın Sarı
-            }
-            else if (roll < 0.70f)
-            {
-                if (!IsAircraftUnlocked(AircraftType.A10TankBuster))
-                {
-                    PlayerPrefs.SetInt(PREF_UNLOCKED_A10, 1);
-                    reward.title = "A-10 TANK BUSTER AÇILDI!";
-                    reward.description = "Efsanevi A-10 Tank Buster uçağının kilidi ücretsiz açıldı!";
-                }
-                else if (!IsAircraftUnlocked(AircraftType.F22Raptor))
-                {
-                    PlayerPrefs.SetInt(PREF_UNLOCKED_F22, 1);
-                    reward.title = "F-22 RAPTOR AÇILDI!";
-                    reward.description = "Süpersonik Hayalet F-22 uçağının kilidi ücretsiz açıldı!";
-                }
-                else if (!IsAircraftUnlocked(AircraftType.Su57Felon))
-                {
-                    PlayerPrefs.SetInt(PREF_UNLOCKED_SU57, 1);
-                    reward.title = "SU-57 FELON AÇILDI!";
-                    reward.description = "5. Nesil Süper-Manevra Su-57 Felon jetinin kilidi açıldı!";
-                }
-                else if (!IsAircraftUnlocked(AircraftType.F35Lightning))
-                {
-                    PlayerPrefs.SetInt(PREF_UNLOCKED_F35, 1);
-                    reward.title = "F-35 LIGHTNING II AÇILDI!";
-                    reward.description = "5. Nesil Çok Amaçlı F-35 Lightning II jetinin kilidi açıldı!";
-                }
-                else
-                {
-                    chipBonusDamage += 5.0f;
-                    chipBonusHealth += 35f;
-                    reward.title = "EFSANEVİ AS PROTOKOLÜ!";
-                    reward.description = "Tüm uçaklara kalıcı +5.0 Hasar & +35 Can eklendi!";
-                }
-                reward.rarityColorHex = "#E74C3C"; // Efsanevi Kırmızı
-            }
-            else
-            {
-                chipBonusDamage += 4.0f;
-                chipBonusHealth += 30f;
-                reward.title = "KARA ŞAFAK AS ÇİPİ!";
-                reward.description = "Tüm filoya kalıcı +4.0 Hasar ve +30 Can eklendi!";
-                reward.rarityColorHex = "#F1C40F";
-            }
-        }
-
-        totalCratesOpened++;
-        if (reward.goldGain <= 0)
-        {
-            reward.description += "\n<color=#00E5FF>» Hangar Envanterine Eklendi!</color>";
-        }
-
-        SaveHangarData();
-
-        var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.UpdateGoldHUD(gold, reward.goldGain);
-
-        return reward;
+        return OpenCrateWithKey(type);
     }
 
     /// <summary>
@@ -1222,6 +1077,7 @@ public class HangarManager : MonoBehaviour
     /// </summary>
     public CrateReward OpenCrateWithKey(CrateType type)
     {
+        LoadHangarData();
         KeyType keyNeeded = type switch
         {
             CrateType.Bronze  => KeyType.Bronze,
@@ -1230,6 +1086,7 @@ public class HangarManager : MonoBehaviour
             _                 => KeyType.Bronze
         };
 
+        if (GetKeyCount(keyNeeded) <= 0) return null;
         if (!ConsumeKey(keyNeeded)) return null;
 
         CrateReward reward = new CrateReward();
@@ -1423,7 +1280,7 @@ public class HangarManager : MonoBehaviour
     /// <summary>
     /// Seçili uçağın temel özelliklerini ve kalıcı atölye geliştirmelerini oyuncunun uçağına uygular.
     /// </summary>
-    public void ApplyActiveAircraftStats(PlaneController pc)
+    public void ApplyActiveAircraftStats(PlaneController pc, bool isActualCombatStart = false)
     {
         if (pc == null || !pc.isPlayer1) return;
 
@@ -1507,8 +1364,8 @@ public class HangarManager : MonoBehaviour
         float finalDmg = baseDmg + chipBonusDamage + loadout.bonusDamage;
         float finalCrit = baseCrit + loadout.bonusCrit;
 
-        // TEK KULLANIMLIK 6. NESİL SÜPER AVCI SORTİSİ KONTROLÜ
-        if (singleUseSuperPlanes > 0 && isSingleUseSuperPlaneActive)
+        // TEK KULLANIMLIK 6. NESİL SÜPER AVCI SORTİSİ KONTROLÜ (Sadece gerçek savaş başladığında uygulanır)
+        if (isActualCombatStart && singleUseSuperPlanes > 0 && isSingleUseSuperPlaneActive)
         {
             ConsumeSingleUseSuperPlane();
             finalHp += 160f;

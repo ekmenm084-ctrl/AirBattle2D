@@ -137,6 +137,22 @@ public class Bullet : MonoBehaviour
     {
         if (target == owner) return;
 
+        // Çevresel Hava Mayınına çarptı mı? (Oyuncu ve destek dronu mermileri mayını vurabilir)
+        SkyMineHazard mine = target.GetComponent<SkyMineHazard>();
+        if (mine != null)
+        {
+            bool friendlyShot = (owner != null &&
+                (owner.GetComponent<PlaneController>()?.isPlayer1 == true || owner.GetComponent<DroneCompanion>() != null));
+            if (friendlyShot)
+            {
+                PlayerCombatManeuvers.Instance?.AddUltiEnergy(1.5f);
+                CombatComboManager.Instance?.RefreshComboTimer(2.6f);
+                mine.TakeDamage(damage, isCritical, transform.position);
+                Destroy(gameObject);
+            }
+            return;
+        }
+
         // Drona çarptı mı? (Düşman mermisi dronu vurup hasar verebilir)
         DroneCompanion drone = target.GetComponent<DroneCompanion>();
         if (drone != null && drone.GetPlayer() != null && drone.GetPlayer().gameObject != owner)

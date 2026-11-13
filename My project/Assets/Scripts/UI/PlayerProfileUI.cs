@@ -356,6 +356,15 @@ public class PlayerProfileUI : MonoBehaviour
         if (_hudBadgeRoot != null)
         {
             _hudBadgeRoot.SetActive(true);
+            RectTransform exRt = _hudBadgeRoot.GetComponent<RectTransform>();
+            if (exRt != null)
+            {
+                exRt.anchorMin = new Vector2(1f, 1f);
+                exRt.anchorMax = new Vector2(1f, 1f);
+                exRt.pivot = new Vector2(1f, 1f);
+                exRt.anchoredPosition = new Vector2(-76f, -66f);
+                exRt.sizeDelta = new Vector2(200f, 32f);
+            }
             RefreshBadgeVisuals();
             return;
         }
@@ -367,12 +376,12 @@ public class PlayerProfileUI : MonoBehaviour
         RectTransform rt = _hudBadgeRoot.GetComponent<RectTransform>();
         if (rt != null)
         {
-            // Sağ üst köşe, Altın kutusunun hemen altı (Kompakt ve zarif)
+            // Sağ üst köşe, Altın kutusunun hemen altı (Kompakt ve hizalı)
             rt.anchorMin = new Vector2(1f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-96f, -78f);
-            rt.sizeDelta = new Vector2(220f, 34f);
+            rt.anchoredPosition = new Vector2(-76f, -66f);
+            rt.sizeDelta = new Vector2(200f, 32f);
         }
 
         Image bg = _hudBadgeRoot.GetComponent<Image>() ?? _hudBadgeRoot.AddComponent<Image>();
@@ -528,7 +537,22 @@ public class PlayerProfileUI : MonoBehaviour
 
     public void SetHUDBadgeActive(bool active)
     {
-        if (_hudBadgeRoot != null) _hudBadgeRoot.SetActive(active);
+        if (_hudBadgeRoot != null)
+        {
+            _hudBadgeRoot.SetActive(active);
+            if (active)
+            {
+                RectTransform rt = _hudBadgeRoot.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.anchorMin = new Vector2(1f, 1f);
+                    rt.anchorMax = new Vector2(1f, 1f);
+                    rt.pivot = new Vector2(1f, 1f);
+                    rt.anchoredPosition = new Vector2(-76f, -66f);
+                    rt.sizeDelta = new Vector2(200f, 32f);
+                }
+            }
+        }
         if (active) RefreshBadgeVisuals();
     }
 

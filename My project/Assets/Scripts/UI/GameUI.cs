@@ -51,6 +51,7 @@ public class GameUI : MonoBehaviour
         SetupMissileButton();
         SetupGoldHUD();
         SetupComboHUD();
+        SetupAirspaceBanner();
         SetupUltiBar();
         SetupCombatManeuverButtons();
 
@@ -72,11 +73,13 @@ public class GameUI : MonoBehaviour
         if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
         if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
         if (_comboHUDObj != null) _comboHUDObj.SetActive(visible);
+        if (!visible && _airspaceBannerObj != null) _airspaceBannerObj.SetActive(false);
         if (_ultiBarObj != null) _ultiBarObj.SetActive(visible);
         if (_dodgeBtnObj != null) _dodgeBtnObj.SetActive(visible);
         if (_ultiBtnObj != null) _ultiBtnObj.SetActive(visible);
         if (!visible && _redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
         if (!visible && _modeIntroObj != null) _modeIntroObj.SetActive(false);
+        if (!visible && _waveAlertObj != null) _waveAlertObj.SetActive(false);
     }
 
     private void FindPlanesIfNull()
@@ -424,8 +427,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-96f, -28f);
-        rt.sizeDelta = new Vector2(210f, 44f);
+        rt.anchoredPosition = new Vector2(-76f, -20f);
+        rt.sizeDelta = new Vector2(200f, 40f);
 
         Image bg = EnsureComponent<Image>(_goldHUDObj);
         bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
@@ -457,6 +460,19 @@ public class GameUI : MonoBehaviour
         if (_goldHUDObj == null || _goldHUDTMP == null)
             SetupGoldHUD();
 
+        if (_goldHUDObj != null)
+        {
+            RectTransform rt = _goldHUDObj.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = new Vector2(1f, 1f);
+                rt.anchorMax = new Vector2(1f, 1f);
+                rt.pivot = new Vector2(1f, 1f);
+                rt.anchoredPosition = new Vector2(-76f, -20f);
+                rt.sizeDelta = new Vector2(200f, 40f);
+            }
+        }
+
         if (_goldHUDTMP != null)
         {
             _goldHUDTMP.text = $"ALTIN: {totalGold:N0} G";
@@ -472,15 +488,18 @@ public class GameUI : MonoBehaviour
 
     private IEnumerator GoldPulseRoutine()
     {
-        if (_goldHUDTMP == null || _goldHUDObj == null) yield break;
+        if (_goldHUDTMP == null) yield break;
 
         _goldHUDTMP.color = Color.white;
-        _goldHUDObj.transform.localScale = Vector3.one * 1.15f;
+        _goldHUDTMP.transform.localScale = Vector3.one * 1.15f;
 
         yield return new WaitForSecondsRealtime(0.18f);
 
-        _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
-        _goldHUDObj.transform.localScale = Vector3.one;
+        if (_goldHUDTMP != null)
+        {
+            _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
+            _goldHUDTMP.transform.localScale = Vector3.one;
+        }
         _goldPulseCoroutine = null;
     }
 
@@ -503,8 +522,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-26f, -82f);
-        rt.sizeDelta = new Vector2(262f, 58f);
+        rt.anchoredPosition = new Vector2(-20f, -106f);
+        rt.sizeDelta = new Vector2(256f, 52f);
 
         Image bg = EnsureComponent<Image>(_comboHUDObj);
         bg.color = new Color(0.05f, 0.08f, 0.14f, 0.88f);
@@ -638,6 +657,74 @@ public class GameUI : MonoBehaviour
         if (_comboOutline != null)
         {
             _comboOutline.effectColor = new Color(tierCol.r, tierCol.g, tierCol.b, combo.currentCombo > 0 ? 0.90f : 0.45f);
+        }
+    }
+
+    private GameObject _airspaceBannerObj;
+    private TextMeshProUGUI _airspaceBannerTMP;
+    private Outline _airspaceBannerOutline;
+
+    private void SetupAirspaceBanner()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        _airspaceBannerObj = EnsureUIGameObject(canvas.transform, "HUD_AirspaceBanner");
+
+        RectTransform rt = EnsureComponent<RectTransform>(_airspaceBannerObj);
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -80f);
+        rt.sizeDelta = new Vector2(430f, 34f);
+
+        Image bg = EnsureComponent<Image>(_airspaceBannerObj);
+        bg.color = new Color(0.05f, 0.08f, 0.14f, 0.88f);
+        bg.raycastTarget = false;
+
+        _airspaceBannerOutline = EnsureComponent<Outline>(_airspaceBannerObj);
+        _airspaceBannerOutline.effectColor = new Color(0.3f, 0.9f, 1f, 0.8f);
+        _airspaceBannerOutline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        GameObject txtObj = EnsureUIGameObject(_airspaceBannerObj.transform, "Text");
+        RectTransform txtRt = EnsureComponent<RectTransform>(txtObj);
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.offsetMin = new Vector2(8f, 0f);
+        txtRt.offsetMax = new Vector2(-8f, 0f);
+
+        _airspaceBannerTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
+        _airspaceBannerTMP.fontSize = 15f;
+        _airspaceBannerTMP.fontStyle = FontStyles.Bold;
+        _airspaceBannerTMP.alignment = TextAlignmentOptions.Center;
+        _airspaceBannerTMP.raycastTarget = false;
+
+        _airspaceBannerObj.SetActive(false);
+    }
+
+    private void UpdateAirspaceBanner()
+    {
+        if (_airspaceBannerObj == null) return;
+
+        AirspaceHazardDirector dir = AirspaceHazardDirector.Instance;
+        bool shouldShow = (dir != null && dir.HasActiveBanner &&
+            (GameManager.Instance == null || (!GameManager.Instance.IsGameEnded && GameManager.Instance.CurrentMode != GameManager.GameMode.TwoPlayer)));
+
+        if (_airspaceBannerObj.activeSelf != shouldShow)
+            _airspaceBannerObj.SetActive(shouldShow);
+
+        if (!shouldShow) return;
+
+        if (_airspaceBannerTMP != null)
+        {
+            _airspaceBannerTMP.text = dir.ActiveBannerText;
+            _airspaceBannerTMP.color = dir.ActiveBannerColor;
+        }
+        if (_airspaceBannerOutline != null)
+        {
+            Color c = dir.ActiveBannerColor;
+            _airspaceBannerOutline.effectColor = new Color(c.r, c.g, c.b, 0.85f);
         }
     }
 
@@ -943,6 +1030,13 @@ public class GameUI : MonoBehaviour
 
     public void ShowWaveAlert(string message, Color color, float duration = 2.0f)
     {
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+        if (menu != null && menu.mainPanel != null && menu.mainPanel.activeInHierarchy)
+        {
+            if (_waveAlertObj != null) _waveAlertObj.SetActive(false);
+            return;
+        }
+
         if (_waveAlertObj == null || _waveAlertTMP == null)
             SetupWaveAlertObject();
 
@@ -961,7 +1055,13 @@ public class GameUI : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            MainMenuManager menu = FindObjectOfType<MainMenuManager>();
+            if (menu != null && menu.mainPanel != null && menu.mainPanel.activeInHierarchy)
+            {
+                break;
+            }
+
+            elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
 
@@ -1163,10 +1263,26 @@ public class GameUI : MonoBehaviour
             _comboHUDObj.SetActive(showComboHud);
         }
 
+        if (_goldHUDObj != null && _goldHUDObj.activeSelf == isMenuOpen)
+        {
+            _goldHUDObj.SetActive(!isMenuOpen);
+        }
+
+        if (isMenuOpen && _airspaceBannerObj != null && _airspaceBannerObj.activeSelf)
+        {
+            _airspaceBannerObj.SetActive(false);
+        }
+
+        if (isMenuOpen && _waveAlertObj != null && _waveAlertObj.activeSelf)
+        {
+            _waveAlertObj.SetActive(false);
+        }
+
         if (isMenuOpen) return;
 
         UpdateUltiAndManeuverVisuals();
         UpdateComboHUD();
+        UpdateAirspaceBanner();
         if (plane1HealthBar != null)
         {
             plane1HealthBar.value = Mathf.MoveTowards(plane1HealthBar.value, _targetP1Health, Time.deltaTime * 2.5f);
