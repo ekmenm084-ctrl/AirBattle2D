@@ -133,7 +133,7 @@ public class PlaneShooter : MonoBehaviour
 
         _nextFireTime = Time.time + fireRate;
 
-        Vector3 basePos = firePoint != null ? firePoint.position : transform.position + transform.up * 0.9f;
+        Vector3 basePos = firePoint != null ? firePoint.position : transform.position + transform.up * 0.65f;
         Quaternion spawnRot = firePoint != null ? firePoint.rotation : transform.rotation;
 
         if (bulletsPerShot <= 1)
@@ -190,7 +190,7 @@ public class PlaneShooter : MonoBehaviour
         _muzzleFlashObj = new GameObject("MuzzleFlashFX");
         _muzzleFlashObj.transform.SetParent(transform, false);
 
-        Vector3 localOffset = firePoint != null ? transform.InverseTransformPoint(firePoint.position) : new Vector3(0f, 0.9f, 0f);
+        Vector3 localOffset = firePoint != null ? transform.InverseTransformPoint(firePoint.position) : new Vector3(0f, 0.65f, 0f);
         _muzzleFlashObj.transform.localPosition = localOffset;
         _muzzleFlashObj.transform.localRotation = Quaternion.identity;
 

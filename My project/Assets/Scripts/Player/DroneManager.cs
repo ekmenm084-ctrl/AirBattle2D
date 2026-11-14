@@ -39,11 +39,11 @@ public class DroneManager : MonoBehaviour
         HangarManager hm = HangarManager.EnsureInstance();
         hm.LoadHangarData();
 
-        // 1. Sol Kanat Dronu
+        // 1. Sol Kanat Dronu (Uçak 0.72 ölçeğiyle kusursuz kanat mesafesi)
         if (hm.leftDroneType != DroneCompanion.DroneType.None && hm.IsDroneUnlocked(hm.leftDroneType))
         {
             GameObject lObj = new GameObject("Drone_LeftWing");
-            lObj.transform.position = playerTransform.position + new Vector3(-1.60f, -0.22f, 0f);
+            lObj.transform.position = playerTransform.position + new Vector3(-1.18f, -0.16f, 0f);
             _leftDrone = lObj.AddComponent<DroneCompanion>();
             _leftDrone.Initialize(playerTransform, hm.leftDroneType, left: true);
         }
@@ -52,7 +52,7 @@ public class DroneManager : MonoBehaviour
         if (hm.rightDroneType != DroneCompanion.DroneType.None && hm.IsDroneUnlocked(hm.rightDroneType))
         {
             GameObject rObj = new GameObject("Drone_RightWing");
-            rObj.transform.position = playerTransform.position + new Vector3(1.60f, -0.22f, 0f);
+            rObj.transform.position = playerTransform.position + new Vector3(1.18f, -0.16f, 0f);
             _rightDrone = rObj.AddComponent<DroneCompanion>();
             _rightDrone.Initialize(playerTransform, hm.rightDroneType, left: false);
         }

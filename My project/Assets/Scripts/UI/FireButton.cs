@@ -118,20 +118,20 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             if (isPlayer1)
             {
-                // P1: Sağ Alt Köşe (-160, 160)
+                // P1: Sağ Alt Köşe (-130, 130) - Tam nizami ferah yerleşim
                 rt.anchorMin = new Vector2(1f, 0f);
                 rt.anchorMax = new Vector2(1f, 0f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = new Vector2(-160f, 160f);
+                rt.anchoredPosition = new Vector2(-130f, 130f);
                 rt.localEulerAngles = Vector3.zero;
             }
             else
             {
-                // P2: Sol Üst Köşe (180, -180), Karşı oyuncu için 180° ters açılı
+                // P2: Sol Üst Köşe (130, -130), Karşı oyuncu için 180° ters açılı
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = new Vector2(180f, -180f);
+                rt.anchoredPosition = new Vector2(130f, -130f);
                 rt.localEulerAngles = new Vector3(0f, 0f, 180f);
             }
             rt.sizeDelta = new Vector2(150f, 150f);

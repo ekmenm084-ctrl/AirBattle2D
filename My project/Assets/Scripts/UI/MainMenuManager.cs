@@ -193,10 +193,39 @@ public class MainMenuManager : MonoBehaviour
         Instance = this;
         Time.timeScale = 0f;
 
+        OptimizeCanvasForTablet();
+
         // Başlangıçta panellerin durumunu kesin olarak eşitle
         if (modesPanel != null) modesPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (mainPanel != null) mainPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// Tablet ve yüksek çözünürlüklü ekranlarda tüm menülerin, yazıların ve butonların
+    /// ideal büyüklükte, ferah ve okunabilir görünmesini sağlayan dinamik ölçekleyici.
+    /// </summary>
+    public static void OptimizeCanvasForTablet()
+    {
+        Canvas canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) return;
+
+        CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+        if (scaler == null) scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        float aspect = (float)Screen.width / Mathf.Max(1f, Screen.height);
+        if (aspect < 1f) // Dikey (Portrait)
+        {
+            scaler.referenceResolution = new Vector2(1080f, 1920f);
+        }
+        else // Yatay (Landscape)
+        {
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+        }
     }
 
     private void Update()
@@ -208,6 +237,7 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start()
     {
+        OptimizeCanvasForTablet();
         try { GameSettings.LoadSettings(); } catch (System.Exception e) { Debug.LogError(e); }
         try { AudioManager.EnsureInstance(); } catch (System.Exception e) { Debug.LogError(e); }
         try { StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen(); } catch (System.Exception e) { Debug.LogError(e); }
@@ -355,8 +385,8 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(880f, 130f);
-            rt.anchoredPosition = new Vector2(0f, 275f);
+            rt.sizeDelta = new Vector2(860f, 130f);
+            rt.anchoredPosition = new Vector2(0f, 260f);
         }
 
         Image bgImg = titleObj.GetComponent<Image>() ?? titleObj.AddComponent<Image>();
@@ -381,7 +411,7 @@ public class MainMenuManager : MonoBehaviour
         TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
         tmp.font = GetTacticalFont();
         tmp.text = "<size=36%><color=#80D8FF>« TACTICAL FLIGHT SIMULATION • DEFCON-1 »</color></size>\n<b><color=#00E5FF>AIR</color> BATTLE <color=#FFD700>2D</color></b>\n<size=38%><color=#90CAF9>« ASKERİ HAVA HARP HAREKÂTI // İT DALAŞI »</color></size>";
-        tmp.fontSize = 52f;
+        tmp.fontSize = 50f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 3.2f;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -402,8 +432,8 @@ public class MainMenuManager : MonoBehaviour
             if (pBtn != null) playButton = pBtn.GetComponent<Button>();
         }
 
-        // 1. Ana Harekât Butonu (Büyük, Taktik Cyan)
-        FormatBtn(playButton, 160f, "SYS // OPS-01  » HAREKÂTI BAŞLAT", new Color(0f, 0.95f, 0.65f), 560f, 66f, 0f, "hud_btn_cyan");
+        // 1. Ana Harekât Butonu (Büyük, Taktik Cyan) - Nizami Orantılı
+        FormatBtn(playButton, 150f, "SYS // OPS-01  » HAREKÂTI BAŞLAT", new Color(0f, 0.95f, 0.65f), 580f, 62f, 0f, "hud_btn_cyan");
 
         if (playButton != null)
         {
@@ -417,7 +447,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 2. Askeri Hangar & Donatım
-        _hangarButton = CreateOrFindMainButton("HangarButton", 100f, "FLEET // AIR-02  [+] ASKERİ HANGAR VE FİLO", new Color(0.28f, 0.62f, 1.0f), 560f, 50f, "hud_btn_blue");
+        _hangarButton = CreateOrFindMainButton("HangarButton", 94f, "FLEET // AIR-02  [+] ASKERİ HANGAR VE FİLO", new Color(0.28f, 0.62f, 1.0f), 580f, 52f, "hud_btn_blue");
         if (_hangarButton != null)
         {
             _hangarButton.onClick.RemoveAllListeners();
@@ -425,7 +455,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 3. Askeri Mağaza & Donatım
-        _militaryStoreButton = CreateOrFindMainButton("MilitaryStoreButton", 42f, "ARMORY // LOG-03  [+] ASKERİ MAĞAZA VE DONATIM", new Color(0.12f, 0.85f, 0.92f), 560f, 50f, "hud_btn_teal");
+        _militaryStoreButton = CreateOrFindMainButton("MilitaryStoreButton", 38f, "ARMORY // LOG-03  [+] ASKERİ MAĞAZA VE DONATIM", new Color(0.12f, 0.85f, 0.92f), 580f, 52f, "hud_btn_teal");
         if (_militaryStoreButton != null)
         {
             _militaryStoreButton.onClick.RemoveAllListeners();
@@ -433,7 +463,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 4. İkmal ve Ganimet Sandıkları
-        _cratesButton = CreateOrFindMainButton("CratesButton", -16f, "SUPPLY // CRATE-04  [+] ASKERİ İKMAL SANDIKLARI", new Color(1.0f, 0.80f, 0.22f), 560f, 50f, "hud_btn_amber");
+        _cratesButton = CreateOrFindMainButton("CratesButton", -18f, "SUPPLY // CRATE-04  [+] ASKERİ İKMAL SANDIKLARI", new Color(1.0f, 0.80f, 0.22f), 580f, 52f, "hud_btn_amber");
         if (_cratesButton != null)
         {
             _cratesButton.onClick.RemoveAllListeners();
@@ -441,7 +471,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 5. Küresel As Pilot Tablosu
-        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -74f, "INTEL // RANK-05  [#] KÜRESEL AS PİLOT TABLOSU", new Color(0.96f, 0.65f, 0.20f), 560f, 50f, "hud_btn_orange");
+        _leaderboardButton = CreateOrFindMainButton("LeaderboardButton", -74f, "INTEL // RANK-05  [#] KÜRESEL AS PİLOT TABLOSU", new Color(0.96f, 0.65f, 0.20f), 580f, 52f, "hud_btn_orange");
         if (_leaderboardButton != null)
         {
             _leaderboardButton.onClick.RemoveAllListeners();
@@ -449,7 +479,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 6. Hızlı Zorluk Seçimi
-        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -132f, "PROTOCOL // DIFF-06  ZORLUK: [ NORMAL ]", new Color(0.40f, 0.55f, 0.72f), 560f, 50f, "hud_btn_amber");
+        _quickDiffButton = CreateOrFindMainButton("QuickDiffButton", -130f, "PROTOCOL // DIFF-06  ZORLUK: [ NORMAL ]", new Color(0.40f, 0.55f, 0.72f), 580f, 52f, "hud_btn_amber");
         if (_quickDiffButton != null)
         {
             _quickDiffButton.onClick.RemoveAllListeners();
@@ -457,15 +487,15 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 7. Oyun Modları ve Seferler
-        FormatBtn(modesButton, -190f, "SECTOR // OPS-07  [»] OYUN MODLARI VE SEFERLER", new Color(0.30f, 0.58f, 0.88f), 560f, 50f, 0f, "hud_btn_blue");
+        FormatBtn(modesButton, -186f, "SECTOR // OPS-07  [»] OYUN MODLARI VE SEFERLER", new Color(0.30f, 0.58f, 0.88f), 580f, 52f, 0f, "hud_btn_blue");
 
         // 8. Sistem ve Kokpit Ayarları
-        FormatBtn(settingsButton, -248f, "AVIONICS // CFG-08  [*] KOKPİT VE SİSTEM AYARLARI", new Color(0.50f, 0.60f, 0.72f), 560f, 50f, 0f, "hud_btn_slate");
+        FormatBtn(settingsButton, -242f, "AVIONICS // CFG-08  [*] KOKPİT VE SİSTEM AYARLARI", new Color(0.50f, 0.60f, 0.72f), 580f, 52f, 0f, "hud_btn_slate");
 
         // Ayarlar Paneli Zorluk Butonları (Kolay, Normal, Zor)
-        FormatBtn(easyButton, 135f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.85f, 0.45f), 500f, 50f, 0f, "hud_btn_emerald");
-        FormatBtn(normalButton, 75f, "YÜZBAŞI (Normal)", new Color(1.0f, 0.75f, 0.20f), 500f, 50f, 0f, "hud_btn_amber");
-        FormatBtn(hardButton, 15f, "AS PİLOT (Zor)", new Color(0.92f, 0.25f, 0.25f), 500f, 50f, 0f, "hud_btn_red");
+        FormatBtn(easyButton, 120f, "ACEMİ PİLOT (Kolay)", new Color(0.18f, 0.85f, 0.45f), 520f, 52f, 0f, "hud_btn_emerald");
+        FormatBtn(normalButton, 55f, "YÜZBAŞI (Normal)", new Color(1.0f, 0.75f, 0.20f), 520f, 52f, 0f, "hud_btn_amber");
+        FormatBtn(hardButton, -10f, "AS PİLOT (Zor)", new Color(0.92f, 0.25f, 0.25f), 520f, 52f, 0f, "hud_btn_red");
 
         if (backFromSettingsButton == null && settingsPanel != null)
         {
@@ -684,8 +714,8 @@ public class MainMenuManager : MonoBehaviour
         tmp.text = text;
         tmp.fontSize = (height >= 58f) ? 22f : 18f;
         tmp.enableAutoSizing = true;
-        tmp.fontSizeMin = 13f;
-        tmp.fontSizeMax = (height >= 58f) ? 22f : 18f;
+        tmp.fontSizeMin = 14f;
+        tmp.fontSizeMax = (height >= 58f) ? 23f : 19f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 2.0f; // Askeri HUD havacılık yazı aralığı
         tmp.color = new Color(0.95f, 0.98f, 1f);
@@ -770,7 +800,7 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(1f, 0f);
             rt.anchoredPosition = new Vector2(-40f, 25f);
-            rt.sizeDelta = new Vector2(390f, 54f);
+            rt.sizeDelta = new Vector2(360f, 52f);
         }
         btnObj.transform.SetAsLastSibling();
 
@@ -1059,47 +1089,47 @@ public class MainMenuManager : MonoBehaviour
                 Transform existingSolo = modesPanel.transform.Find("SoloButon") ?? modesPanel.transform.Find("SoloButton");
                 if (existingSolo != null) _campaign1Button = existingSolo.GetComponent<Button>();
                 if (_campaign1Button == null)
-                    _campaign1Button = CreateOrFindModesButton("SoloButton", 180f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 560f, 48f, 0f, "hud_btn_emerald");
+                    _campaign1Button = CreateOrFindModesButton("SoloButton", 160f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 580f, 52f, 0f, "hud_btn_emerald");
                 soloButton = _campaign1Button;
             }
         }
         _campaign1Button.gameObject.SetActive(true);
-        FormatBtn(_campaign1Button, 180f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 560f, 48f, 0f, "hud_btn_emerald");
+        FormatBtn(_campaign1Button, 160f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 580f, 52f, 0f, "hud_btn_emerald");
         _campaign1Button.onClick.RemoveAllListeners();
         _campaign1Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.OperationBlackDawn));
 
         // 2. Kampanya 2: Proje Kimeras
-        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 128f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.28f, 0.62f, 1.0f), 560f, 48f, 0f, "hud_btn_blue");
+        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 104f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.28f, 0.62f, 1.0f), 580f, 52f, 0f, "hud_btn_blue");
         _campaign2Button.onClick.RemoveAllListeners();
         _campaign2Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.ProjectChimera));
 
         // 3. Kampanya 3: Gökyüzü Paralı Askeri
-        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 76f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(1.0f, 0.80f, 0.22f), 560f, 48f, 0f, "hud_btn_amber");
+        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 48f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(1.0f, 0.80f, 0.22f), 580f, 52f, 0f, "hud_btn_amber");
         _campaign3Button.onClick.RemoveAllListeners();
         _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
 
         // 4. Sonsuz İt Dalaşı (Endless Survival Mode)
-        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", 26f, "[SONSUZ] İT DALAŞI", new Color(0f, 0.90f, 1f), 274f, 44f, posX: -142f, spriteName: "hud_btn_cyan");
+        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", -8f, "[SONSUZ] İT DALAŞI", new Color(0f, 0.90f, 1f), 285f, 48f, posX: -145f, spriteName: "hud_btn_cyan");
         _endlessButton.onClick.RemoveAllListeners();
         _endlessButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Endless));
 
         // 5. Boss Rush (4 Boss Avı)
-        _bossRushButton = CreateOrFindModesButton("BossRushBtn", 26f, "[BOSS RUSH] 4 AS", new Color(0.95f, 0.25f, 0.25f), 274f, 44f, posX: 142f, spriteName: "hud_btn_red");
+        _bossRushButton = CreateOrFindModesButton("BossRushBtn", -8f, "[BOSS RUSH] 4 AS", new Color(0.95f, 0.25f, 0.25f), 285f, 48f, posX: 145f, spriteName: "hud_btn_red");
         _bossRushButton.onClick.RemoveAllListeners();
         _bossRushButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BossRush));
 
         // 6. Mermi Cehennemi (Bullet Hell)
-        _bulletHellButton = CreateOrFindModesButton("BulletHellBtn", -24f, "[CEHENNEM] MERMİ FIRTINASI", new Color(0.95f, 0.20f, 0.50f), 274f, 44f, posX: -142f, spriteName: "hud_btn_red");
+        _bulletHellButton = CreateOrFindModesButton("BulletHellBtn", -60f, "[CEHENNEM] MERMİ FIRTINASI", new Color(0.95f, 0.20f, 0.50f), 285f, 48f, posX: -145f, spriteName: "hud_btn_red");
         _bulletHellButton.onClick.RemoveAllListeners();
         _bulletHellButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BulletHell));
 
         // 7. Zaman Taarruzu (Time Attack)
-        _timeAttackButton = CreateOrFindModesButton("TimeAttackBtn", -24f, "[HIZ] ZAMAN TAARRUZU", new Color(1.0f, 0.75f, 0.20f), 274f, 44f, posX: 142f, spriteName: "hud_btn_amber");
+        _timeAttackButton = CreateOrFindModesButton("TimeAttackBtn", -60f, "[HIZ] ZAMAN TAARRUZU", new Color(1.0f, 0.75f, 0.20f), 285f, 48f, posX: 145f, spriteName: "hud_btn_amber");
         _timeAttackButton.onClick.RemoveAllListeners();
         _timeAttackButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.TimeAttack));
 
         // 8. Hardcore Modu (Tek Can, 200 HP, Her Uçak Giderek Güçlenen Boss)
-        _hardcoreButton = CreateOrFindModesButton("HardcoreModeBtn", -74f, "[!] [HARDCORE] 1 CAN BOSS", new Color(1.0f, 0.15f, 0.15f), 274f, 44f, posX: -142f, spriteName: "hud_btn_red");
+        _hardcoreButton = CreateOrFindModesButton("HardcoreModeBtn", -112f, "[!] [HARDCORE] 1 CAN BOSS", new Color(1.0f, 0.15f, 0.15f), 285f, 48f, posX: -145f, spriteName: "hud_btn_red");
         _hardcoreButton.onClick.RemoveAllListeners();
         _hardcoreButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Hardcore));
 
@@ -1109,12 +1139,12 @@ public class MainMenuManager : MonoBehaviour
             Transform existingOnline = modesPanel.transform.Find("OnlineButon") ?? modesPanel.transform.Find("OnlineButton");
             if (existingOnline != null) onlineButton = existingOnline.GetComponent<Button>();
             if (onlineButton == null)
-                onlineButton = CreateOrFindModesButton("OnlineButton", -74f, "ONLINE: 2P DUELLO", new Color(0.40f, 0.35f, 0.75f), 274f, 44f, posX: 142f, spriteName: "hud_btn_blue");
+                onlineButton = CreateOrFindModesButton("OnlineButton", -112f, "ONLINE: 2P DUELLO", new Color(0.40f, 0.35f, 0.75f), 285f, 48f, posX: 145f, spriteName: "hud_btn_blue");
         }
         if (onlineButton != null)
         {
             onlineButton.gameObject.SetActive(true);
-            FormatBtn(onlineButton, -74f, "ONLINE: 2P DUELLO", new Color(0.40f, 0.35f, 0.75f), 274f, 44f, posX: 142f, hudSpriteName: "hud_btn_blue");
+            FormatBtn(onlineButton, -112f, "ONLINE: 2P DUELLO", new Color(0.40f, 0.35f, 0.75f), 285f, 48f, posX: 145f, hudSpriteName: "hud_btn_blue");
             onlineButton.onClick.RemoveAllListeners();
             onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
         }
@@ -1144,7 +1174,7 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // 13. Modlar Paneli Rekor Tablosu Butonu (Sağ Alt Köşe)
-        _modesLeaderboardButton = CreateOrFindModesButton("ModesLeaderboardBtn", 25f, "[#] REKOR TABLOSU", new Color(1.0f, 0.80f, 0.22f), 260f, 50f, posX: 0f, spriteName: "hud_btn_amber");
+        _modesLeaderboardButton = CreateOrFindModesButton("ModesLeaderboardBtn", 25f, "[#] REKOR TABLOSU", new Color(1.0f, 0.80f, 0.22f), 340f, 52f, posX: 0f, spriteName: "hud_btn_amber");
         if (_modesLeaderboardButton != null)
         {
             RectTransform lbRt = _modesLeaderboardButton.GetComponent<RectTransform>();
@@ -1154,7 +1184,7 @@ public class MainMenuManager : MonoBehaviour
                 lbRt.anchorMax = new Vector2(1f, 0f);
                 lbRt.pivot = new Vector2(1f, 0f);
                 lbRt.anchoredPosition = new Vector2(-40f, 25f);
-                lbRt.sizeDelta = new Vector2(260f, 50f);
+                lbRt.sizeDelta = new Vector2(340f, 52f);
             }
             _modesLeaderboardButton.onClick.RemoveAllListeners();
             _modesLeaderboardButton.onClick.AddListener(() =>
@@ -1174,15 +1204,15 @@ public class MainMenuManager : MonoBehaviour
 
     private void SetupModesDifficultyRow()
     {
-        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -122f, "KOLAY", new Color(0.18f, 0.85f, 0.45f), 180f, 40f, posX: -186f, spriteName: "hud_btn_emerald");
+        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -164f, "KOLAY", new Color(0.18f, 0.85f, 0.45f), 180f, 42f, posX: -190f, spriteName: "hud_btn_emerald");
         _modesDiffEasyBtn.onClick.RemoveAllListeners();
         _modesDiffEasyBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Kolay));
 
-        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -122f, "NORMAL", new Color(1.0f, 0.80f, 0.22f), 180f, 40f, posX: 0f, spriteName: "hud_btn_amber");
+        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -164f, "NORMAL", new Color(1.0f, 0.80f, 0.22f), 180f, 42f, posX: 0f, spriteName: "hud_btn_amber");
         _modesDiffNormalBtn.onClick.RemoveAllListeners();
         _modesDiffNormalBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Normal));
 
-        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -122f, "ZOR", new Color(0.95f, 0.25f, 0.25f), 180f, 40f, posX: 186f, spriteName: "hud_btn_red");
+        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -164f, "ZOR", new Color(0.95f, 0.25f, 0.25f), 180f, 42f, posX: 190f, spriteName: "hud_btn_red");
         _modesDiffHardBtn.onClick.RemoveAllListeners();
         _modesDiffHardBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Zor));
     }
@@ -1236,8 +1266,8 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMin = new Vector2(0.5f, 0.5f);
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0f, -180f);
-            rt.sizeDelta = new Vector2(560f, 76f);
+            rt.anchoredPosition = new Vector2(0f, -230f);
+            rt.sizeDelta = new Vector2(580f, 75f);
         }
 
         Image bg = boxObj.GetComponent<Image>() ?? boxObj.AddComponent<Image>();
@@ -1265,9 +1295,9 @@ public class MainMenuManager : MonoBehaviour
         _briefingTMP = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
         _briefingTMP.font = GetTacticalFont();
         _briefingTMP.enableAutoSizing = true;
-        _briefingTMP.fontSizeMin = 13f;
-        _briefingTMP.fontSizeMax = 20f;
-        _briefingTMP.fontSize = 19f;
+        _briefingTMP.fontSizeMin = 16f;
+        _briefingTMP.fontSizeMax = 24f;
+        _briefingTMP.fontSize = 23f;
         _briefingTMP.fontStyle = FontStyles.Bold;
         _briefingTMP.characterSpacing = 1.8f;
         _briefingTMP.alignment = TextAlignmentOptions.Center;

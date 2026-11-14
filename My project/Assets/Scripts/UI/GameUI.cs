@@ -37,8 +37,14 @@ public class GameUI : MonoBehaviour
     private TextMeshProUGUI _waveAlertTMP;
     private Coroutine _alertCoroutine;
 
+    private void Awake()
+    {
+        MainMenuManager.OptimizeCanvasForTablet();
+    }
+
     private void Start()
     {
+        MainMenuManager.OptimizeCanvasForTablet();
         FindPlanesIfNull();
 
         SetupHealthBar(plane1HealthBar, isPlayer: true);
@@ -65,8 +71,11 @@ public class GameUI : MonoBehaviour
         }
     }
 
+    private bool _isHUDHiddenByCinematic = false;
+
     public void SetHUDVisibility(bool visible)
     {
+        _isHUDHiddenByCinematic = !visible;
         if (_waveBadgeObj != null) _waveBadgeObj.SetActive(visible);
         if (plane1HealthBar != null) plane1HealthBar.gameObject.SetActive(visible);
         if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(visible);
@@ -108,19 +117,19 @@ public class GameUI : MonoBehaviour
         {
             if (isPlayer)
             {
-                rt.anchorMin = new Vector2(0f, 0f);
-                rt.anchorMax = new Vector2(0f, 0f);
-                rt.pivot = new Vector2(0f, 0f);
-                rt.anchoredPosition = new Vector2(60f, 310f);
-                rt.sizeDelta = new Vector2(300f, 26f);
-            }
-            else
-            {
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0f, 1f);
-                rt.anchoredPosition = new Vector2(60f, -40f);
-                rt.sizeDelta = new Vector2(320f, 26f);
+                rt.anchoredPosition = new Vector2(35f, -25f);
+                rt.sizeDelta = new Vector2(320f, 28f);
+            }
+            else
+            {
+                rt.anchorMin = new Vector2(0.5f, 1f);
+                rt.anchorMax = new Vector2(0.5f, 1f);
+                rt.pivot = new Vector2(0.5f, 1f);
+                rt.anchoredPosition = new Vector2(0f, -25f);
+                rt.sizeDelta = new Vector2(520f, 30f);
             }
         }
 
@@ -181,12 +190,12 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(0.5f, 0f);
-        rt.anchoredPosition = new Vector2(0f, 4f);
-        rt.sizeDelta = new Vector2(0f, 26f);
+        rt.anchoredPosition = new Vector2(0f, 2f);
+        rt.sizeDelta = new Vector2(0f, 24f);
 
         TextMeshProUGUI tmp = EnsureComponent<TextMeshProUGUI>(labelObj);
 
-        tmp.fontSize = 18f;
+        tmp.fontSize = isPlayer ? 16f : 17f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Left;
 
@@ -217,8 +226,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 1f); // Üst Orta
         rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -25f);
-        rt.sizeDelta = new Vector2(440f, 48f);
+        rt.anchoredPosition = new Vector2(0f, -62f);
+        rt.sizeDelta = new Vector2(380f, 32f);
 
         Image bg = EnsureComponent<Image>(badgeObj);
         bg.color = new Color(0.06f, 0.09f, 0.14f, 0.85f);
@@ -236,7 +245,7 @@ public class GameUI : MonoBehaviour
 
         _waveBadgeTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
-        _waveBadgeTMP.fontSize = 22f;
+        _waveBadgeTMP.fontSize = 18f;
         _waveBadgeTMP.fontStyle = FontStyles.Bold;
         _waveBadgeTMP.alignment = TextAlignmentOptions.Center;
         _waveBadgeTMP.color = new Color(0.95f, 0.95f, 1f);
@@ -263,10 +272,10 @@ public class GameUI : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = new Vector2(0f, 80f);
-        rt.sizeDelta = new Vector2(850f, 120f);
+        rt.sizeDelta = new Vector2(800f, 100f);
 
         _waveAlertTMP = EnsureComponent<TextMeshProUGUI>(_waveAlertObj);
-        _waveAlertTMP.fontSize = 36f;
+        _waveAlertTMP.fontSize = 32f;
         _waveAlertTMP.fontStyle = FontStyles.Bold;
         _waveAlertTMP.alignment = TextAlignmentOptions.Center;
         _waveAlertTMP.raycastTarget = false;
@@ -427,8 +436,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-76f, -20f);
-        rt.sizeDelta = new Vector2(200f, 40f);
+        rt.anchoredPosition = new Vector2(-35f, -25f);
+        rt.sizeDelta = new Vector2(200f, 36f);
 
         Image bg = EnsureComponent<Image>(_goldHUDObj);
         bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
@@ -446,7 +455,7 @@ public class GameUI : MonoBehaviour
 
         _goldHUDTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
-        _goldHUDTMP.fontSize = 20f;
+        _goldHUDTMP.fontSize = 18f;
         _goldHUDTMP.fontStyle = FontStyles.Bold;
         _goldHUDTMP.alignment = TextAlignmentOptions.Center;
         _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
@@ -468,8 +477,8 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(1f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(1f, 1f);
-                rt.anchoredPosition = new Vector2(-76f, -20f);
-                rt.sizeDelta = new Vector2(200f, 40f);
+                rt.anchoredPosition = new Vector2(-35f, -25f);
+                rt.sizeDelta = new Vector2(200f, 36f);
             }
         }
 
@@ -522,8 +531,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-20f, -106f);
-        rt.sizeDelta = new Vector2(256f, 52f);
+        rt.anchoredPosition = new Vector2(-35f, -68f);
+        rt.sizeDelta = new Vector2(200f, 44f);
 
         Image bg = EnsureComponent<Image>(_comboHUDObj);
         bg.color = new Color(0.05f, 0.08f, 0.14f, 0.88f);
@@ -555,7 +564,7 @@ public class GameUI : MonoBehaviour
         subRt.offsetMax = new Vector2(-6f, 0f);
 
         _comboSubTMP = EnsureComponent<TextMeshProUGUI>(subObj);
-        _comboSubTMP.fontSize = 12f;
+        _comboSubTMP.fontSize = 11f;
         _comboSubTMP.fontStyle = FontStyles.Bold;
         _comboSubTMP.alignment = TextAlignmentOptions.Center;
         _comboSubTMP.color = new Color(0.85f, 0.92f, 0.98f);
@@ -568,7 +577,7 @@ public class GameUI : MonoBehaviour
         barBgRt.anchorMax = new Vector2(1f, 0f);
         barBgRt.pivot = new Vector2(0.5f, 0f);
         barBgRt.anchoredPosition = new Vector2(0f, 2f);
-        barBgRt.sizeDelta = new Vector2(-10f, 5f);
+        barBgRt.sizeDelta = new Vector2(-10f, 4f);
 
         Image barBgImg = EnsureComponent<Image>(barBgObj);
         barBgImg.color = new Color(0.12f, 0.16f, 0.24f, 0.9f);
@@ -676,8 +685,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 1f);
         rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -80f);
-        rt.sizeDelta = new Vector2(430f, 34f);
+        rt.anchoredPosition = new Vector2(0f, -100f);
+        rt.sizeDelta = new Vector2(480f, 34f);
 
         Image bg = EnsureComponent<Image>(_airspaceBannerObj);
         bg.color = new Color(0.05f, 0.08f, 0.14f, 0.88f);
@@ -695,7 +704,7 @@ public class GameUI : MonoBehaviour
         txtRt.offsetMax = new Vector2(-8f, 0f);
 
         _airspaceBannerTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
-        _airspaceBannerTMP.fontSize = 15f;
+        _airspaceBannerTMP.fontSize = 16f;
         _airspaceBannerTMP.fontStyle = FontStyles.Bold;
         _airspaceBannerTMP.alignment = TextAlignmentOptions.Center;
         _airspaceBannerTMP.raycastTarget = false;
@@ -775,11 +784,11 @@ public class GameUI : MonoBehaviour
         _ultiBarObj = EnsureUIGameObject(canvas.transform, "HUD_UltiBar");
 
         RectTransform rt = EnsureComponent<RectTransform>(_ultiBarObj);
-        rt.anchorMin = new Vector2(0f, 0f);
-        rt.anchorMax = new Vector2(0f, 0f);
-        rt.pivot = new Vector2(0f, 0f);
-        rt.anchoredPosition = new Vector2(60f, 345f);
-        rt.sizeDelta = new Vector2(300f, 22f);
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.anchoredPosition = new Vector2(35f, -60f);
+        rt.sizeDelta = new Vector2(320f, 20f);
 
         Image bg = EnsureComponent<Image>(_ultiBarObj);
         bg.color = new Color(0.06f, 0.10f, 0.16f, 0.90f);
@@ -810,7 +819,7 @@ public class GameUI : MonoBehaviour
         txtRt.offsetMax = Vector2.zero;
 
         _ultiBarTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
-        _ultiBarTMP.fontSize = 13f;
+        _ultiBarTMP.fontSize = 14f;
         _ultiBarTMP.fontStyle = FontStyles.Bold;
         _ultiBarTMP.alignment = TextAlignmentOptions.Center;
         _ultiBarTMP.color = Color.white;
@@ -831,15 +840,15 @@ public class GameUI : MonoBehaviour
         dRt.anchorMin = new Vector2(1f, 0f);
         dRt.anchorMax = new Vector2(1f, 0f);
         dRt.pivot = new Vector2(0.5f, 0.5f);
-        dRt.anchoredPosition = new Vector2(-65f, 260f);
-        dRt.sizeDelta = new Vector2(86f, 86f);
+        dRt.anchoredPosition = new Vector2(-285f, 105f);
+        dRt.sizeDelta = new Vector2(90f, 90f);
 
         Image dImg = EnsureComponent<Image>(_dodgeBtnObj);
         dImg.color = new Color(0.08f, 0.16f, 0.25f, 0.94f);
 
         _dodgeBtnOutline = EnsureComponent<Outline>(_dodgeBtnObj);
         _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
-        _dodgeBtnOutline.effectDistance = new Vector2(2.5f, -2.5f);
+        _dodgeBtnOutline.effectDistance = new Vector2(2f, -2f);
 
         Button dBtn = EnsureComponent<Button>(_dodgeBtnObj);
         dBtn.targetGraphic = dImg;
@@ -887,8 +896,8 @@ public class GameUI : MonoBehaviour
         uRt.anchorMin = new Vector2(1f, 0f);
         uRt.anchorMax = new Vector2(1f, 0f);
         uRt.pivot = new Vector2(0.5f, 0.5f);
-        uRt.anchoredPosition = new Vector2(-65f, 365f);
-        uRt.sizeDelta = new Vector2(92f, 92f);
+        uRt.anchoredPosition = new Vector2(-130f, 280f);
+        uRt.sizeDelta = new Vector2(95f, 95f);
         _ultiBtnBaseScale = Vector3.one;
 
         Image uImg = EnsureComponent<Image>(_ultiBtnObj);
@@ -896,7 +905,7 @@ public class GameUI : MonoBehaviour
 
         _ultiBtnOutline = EnsureComponent<Outline>(_ultiBtnObj);
         _ultiBtnOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
-        _ultiBtnOutline.effectDistance = new Vector2(2.5f, -2.5f);
+        _ultiBtnOutline.effectDistance = new Vector2(2f, -2f);
 
         Button uBtn = EnsureComponent<Button>(_ultiBtnObj);
         uBtn.targetGraphic = uImg;
@@ -931,7 +940,7 @@ public class GameUI : MonoBehaviour
 
         _ultiBtnTMP = EnsureComponent<TextMeshProUGUI>(uTxtObj);
         _ultiBtnTMP.text = "ULTİ\n<size=65%>[E]</size>";
-        _ultiBtnTMP.fontSize = 17f;
+        _ultiBtnTMP.fontSize = 18f;
         _ultiBtnTMP.fontStyle = FontStyles.Bold;
         _ultiBtnTMP.alignment = TextAlignmentOptions.Center;
         _ultiBtnTMP.color = Color.white;
@@ -1222,68 +1231,74 @@ public class GameUI : MonoBehaviour
         _modeIntroCoroutine = null;
     }
 
+
+
     private void Update()
     {
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+        bool shouldHideAll = isMenuOpen || _isHUDHiddenByCinematic;
+
+        if (shouldHideAll)
+        {
+            if (plane1HealthBar != null && plane1HealthBar.gameObject.activeSelf) plane1HealthBar.gameObject.SetActive(false);
+            if (plane2HealthBar != null && plane2HealthBar.gameObject.activeSelf) plane2HealthBar.gameObject.SetActive(false);
+            if (_ultiBarObj != null && _ultiBarObj.activeSelf) _ultiBarObj.SetActive(false);
+            if (_dodgeBtnObj != null && _dodgeBtnObj.activeSelf) _dodgeBtnObj.SetActive(false);
+            if (_ultiBtnObj != null && _ultiBtnObj.activeSelf) _ultiBtnObj.SetActive(false);
+            if (_comboHUDObj != null && _comboHUDObj.activeSelf) _comboHUDObj.SetActive(false);
+            if (_goldHUDObj != null && _goldHUDObj.activeSelf) _goldHUDObj.SetActive(false);
+            if (_waveBadgeObj != null && _waveBadgeObj.activeSelf) _waveBadgeObj.SetActive(false);
+            if (_airspaceBannerObj != null && _airspaceBannerObj.activeSelf) _airspaceBannerObj.SetActive(false);
+            if (_waveAlertObj != null && _waveAlertObj.activeSelf) _waveAlertObj.SetActive(false);
+            return;
+        }
 
         if (_waveBadgeObj != null)
         {
             bool isTwoPlayer = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
-            bool shouldShow = !isMenuOpen && !isTwoPlayer;
+            bool shouldShow = !isTwoPlayer;
             if (_waveBadgeObj.activeSelf != shouldShow)
             {
                 _waveBadgeObj.SetActive(shouldShow);
             }
         }
 
-        if (plane1HealthBar != null && plane1HealthBar.gameObject.activeSelf == isMenuOpen)
+        if (plane1HealthBar != null && !plane1HealthBar.gameObject.activeSelf)
         {
-            plane1HealthBar.gameObject.SetActive(!isMenuOpen);
+            plane1HealthBar.gameObject.SetActive(true);
         }
 
-        if (plane2HealthBar != null && plane2HealthBar.gameObject.activeSelf == isMenuOpen)
+        if (plane2HealthBar != null && !plane2HealthBar.gameObject.activeSelf)
         {
-            plane2HealthBar.gameObject.SetActive(!isMenuOpen);
+            plane2HealthBar.gameObject.SetActive(true);
         }
 
-        if (_ultiBarObj != null && _ultiBarObj.activeSelf == isMenuOpen)
+        if (_ultiBarObj != null && !_ultiBarObj.activeSelf)
         {
-            _ultiBarObj.SetActive(!isMenuOpen);
+            _ultiBarObj.SetActive(true);
         }
 
-        if (_dodgeBtnObj != null && _dodgeBtnObj.activeSelf == isMenuOpen)
+        if (_dodgeBtnObj != null && !_dodgeBtnObj.activeSelf)
         {
-            _dodgeBtnObj.SetActive(!isMenuOpen);
+            _dodgeBtnObj.SetActive(true);
         }
 
-        if (_ultiBtnObj != null && _ultiBtnObj.activeSelf == isMenuOpen)
+        if (_ultiBtnObj != null && !_ultiBtnObj.activeSelf)
         {
-            _ultiBtnObj.SetActive(!isMenuOpen);
+            _ultiBtnObj.SetActive(true);
         }
 
-        bool showComboHud = !isMenuOpen && (GameManager.Instance == null || GameManager.Instance.CurrentMode != GameManager.GameMode.TwoPlayer);
+        bool showComboHud = (GameManager.Instance == null || GameManager.Instance.CurrentMode != GameManager.GameMode.TwoPlayer);
         if (_comboHUDObj != null && _comboHUDObj.activeSelf != showComboHud)
         {
             _comboHUDObj.SetActive(showComboHud);
         }
 
-        if (_goldHUDObj != null && _goldHUDObj.activeSelf == isMenuOpen)
+        if (_goldHUDObj != null && !_goldHUDObj.activeSelf)
         {
-            _goldHUDObj.SetActive(!isMenuOpen);
+            _goldHUDObj.SetActive(true);
         }
-
-        if (isMenuOpen && _airspaceBannerObj != null && _airspaceBannerObj.activeSelf)
-        {
-            _airspaceBannerObj.SetActive(false);
-        }
-
-        if (isMenuOpen && _waveAlertObj != null && _waveAlertObj.activeSelf)
-        {
-            _waveAlertObj.SetActive(false);
-        }
-
-        if (isMenuOpen) return;
 
         UpdateUltiAndManeuverVisuals();
         UpdateComboHUD();

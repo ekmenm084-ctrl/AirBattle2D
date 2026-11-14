@@ -100,8 +100,8 @@ public class MissileLauncherButton : MonoBehaviour
         _lastFiredTime = Time.time;
 
         // Çift Kanattan İki Güdümlü Füze Fırlat
-        Vector3 leftWing = _playerPlane.transform.position + new Vector3(-0.6f, 0.25f, 0f);
-        Vector3 rightWing = _playerPlane.transform.position + new Vector3(0.6f, 0.25f, 0f);
+        Vector3 leftWing = _playerPlane.transform.position + new Vector3(-0.45f, 0.18f, 0f);
+        Vector3 rightWing = _playerPlane.transform.position + new Vector3(0.45f, 0.18f, 0f);
 
         SpawnMissile(leftWing, Quaternion.Euler(0f, 0f, 15f), _playerPlane.gameObject);
         SpawnMissile(rightWing, Quaternion.Euler(0f, 0f, -15f), _playerPlane.gameObject);
@@ -137,8 +137,8 @@ public class MissileLauncherButton : MonoBehaviour
         _lastP2FiredTime = Time.time;
 
         // P2 aşağı baktığı için füzeler aşağı doğru yayılır
-        Vector3 leftWing = p2Plane.transform.position + new Vector3(-0.6f, -0.25f, 0f);
-        Vector3 rightWing = p2Plane.transform.position + new Vector3(0.6f, -0.25f, 0f);
+        Vector3 leftWing = p2Plane.transform.position + new Vector3(-0.45f, -0.18f, 0f);
+        Vector3 rightWing = p2Plane.transform.position + new Vector3(0.45f, -0.18f, 0f);
 
         SpawnMissile(leftWing, Quaternion.Euler(0f, 0f, 195f), p2Plane.gameObject);
         SpawnMissile(rightWing, Quaternion.Euler(0f, 0f, 165f), p2Plane.gameObject);
@@ -165,12 +165,12 @@ public class MissileLauncherButton : MonoBehaviour
         RectTransform rt = GetComponent<RectTransform>();
         if (rt == null) return;
 
-        // Ateş Butonunun (-180, 180) hemen üzerinde (-180, 310) konumlanma
+        // Ateş Butonunun (-130, 130) sol-üst çaprazında (-285, 235) nizami yerleşim
         rt.anchorMin = new Vector2(1f, 0f);
         rt.anchorMax = new Vector2(1f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(-180f, 310f);
-        rt.sizeDelta = new Vector2(100f, 100f);
+        rt.anchoredPosition = new Vector2(-285f, 235f);
+        rt.sizeDelta = new Vector2(95f, 95f);
 
         _bgImage = GetComponent<Image>();
         if (_bgImage == null) _bgImage = gameObject.AddComponent<Image>();
@@ -215,7 +215,7 @@ public class MissileLauncherButton : MonoBehaviour
 
         _btnTMP = txtObj.AddComponent<TextMeshProUGUI>();
         _btnTMP.text = "FÜZE\n<size=68%>[Q]</size>";
-        _btnTMP.fontSize = 20f;
+        _btnTMP.fontSize = 24f;
         _btnTMP.fontStyle = FontStyles.Bold;
         _btnTMP.alignment = TextAlignmentOptions.Center;
         _btnTMP.color = Color.white;

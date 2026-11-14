@@ -31,7 +31,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
     public Vector2 InputDirection { get; private set; }
 
-    private float _radius = 90f;
+    private float _radius = 110f;
     private Image _bgImage;
     private Image _handleImage;
     private Vector3 _targetHandleScale = Vector3.one;
@@ -41,7 +41,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
         if (background == null)
             background = GetComponent<RectTransform>();
 
-        _radius = 90f;
+        _radius = 110f;
     }
 
     private void Start()
@@ -71,26 +71,26 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             {
                 if (isPlayer1)
                 {
-                    // P1: Sol Alt Köşe (180, 180)
+                    // P1: Sol Alt Köşe (170, 170) - Tam nizami ferah yerleşim
                     background.anchorMin = new Vector2(0f, 0f);
                     background.anchorMax = new Vector2(0f, 0f);
                     background.pivot = new Vector2(0.5f, 0.5f);
-                    background.anchoredPosition = new Vector2(180f, 180f);
+                    background.anchoredPosition = new Vector2(170f, 170f);
                     background.localEulerAngles = Vector3.zero;
                 }
                 else
                 {
-                    // P2: Sağ Üst Köşe (-180, -180), Karşı oyuncu için 180° ters açılı
+                    // P2: Sağ Üst Köşe (-170, -170), Karşı oyuncu için 180° ters açılı
                     background.anchorMin = new Vector2(1f, 1f);
                     background.anchorMax = new Vector2(1f, 1f);
                     background.pivot = new Vector2(0.5f, 0.5f);
-                    background.anchoredPosition = new Vector2(-180f, -180f);
+                    background.anchoredPosition = new Vector2(-170f, -170f);
                     background.localEulerAngles = new Vector3(0f, 0f, 180f);
                 }
             }
 
-            background.sizeDelta = new Vector2(200f, 200f);
-            _radius = 90f;
+            background.sizeDelta = new Vector2(240f, 240f);
+            _radius = 110f;
 
             _bgImage = background.GetComponent<Image>();
             if (_bgImage != null)
@@ -118,7 +118,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
         if (handle != null)
         {
-            handle.sizeDelta = new Vector2(85f, 85f);
+            handle.sizeDelta = new Vector2(100f, 100f);
             handle.anchoredPosition = Vector2.zero;
 
             _handleImage = handle.GetComponent<Image>();

@@ -141,6 +141,7 @@ public class GameManager : MonoBehaviour
 
         if (plane2Health != null)
         {
+            plane2Health.transform.localScale = new Vector3(0.72f, 0.72f, 1f);
             _plane2OriginalScale = plane2Health.transform.localScale;
             var ai = plane2Health.GetComponent<AIController>();
             if (ai != null)

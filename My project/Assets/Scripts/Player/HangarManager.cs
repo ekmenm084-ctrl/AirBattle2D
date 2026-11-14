@@ -1412,8 +1412,8 @@ public class HangarManager : MonoBehaviour
             }
         }
 
-        // Uçak ölçeğini düşman uçağı ve ekranla kusursuz uyumlu kıl
-        pc.transform.localScale = Vector3.one;
+        // Uçak ölçeğini tablet ekranı ve it dalaşı için ideal çevik boyuta ayarla
+        pc.transform.localScale = new Vector3(0.72f, 0.72f, 1f);
 
         if (sr != null)
         {

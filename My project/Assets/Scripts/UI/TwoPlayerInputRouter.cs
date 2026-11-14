@@ -125,8 +125,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             joyRt.anchorMin = new Vector2(1f, 1f); // Ekran Sağ Üst (P2'nin Sol Eli)
             joyRt.anchorMax = new Vector2(1f, 1f);
             joyRt.pivot = new Vector2(0.5f, 0.5f);
-            joyRt.anchoredPosition = new Vector2(-180f, -180f);
-            joyRt.sizeDelta = new Vector2(200f, 200f);
+            joyRt.anchoredPosition = new Vector2(-170f, -170f);
+            joyRt.sizeDelta = new Vector2(240f, 240f);
             joyRt.localEulerAngles = new Vector3(0f, 0f, 180f); // P2 için 180° ters
 
             Image joyBgImg = joyObj.AddComponent<Image>();
@@ -137,7 +137,7 @@ public class TwoPlayerInputRouter : MonoBehaviour
             handleObj.transform.SetParent(joyObj.transform, false);
 
             RectTransform handleRt = handleObj.GetComponent<RectTransform>();
-            handleRt.sizeDelta = new Vector2(85f, 85f);
+            handleRt.sizeDelta = new Vector2(100f, 100f);
             handleRt.anchoredPosition = Vector2.zero;
 
             Image handleImg = handleObj.AddComponent<Image>();
@@ -175,8 +175,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             fireRt.anchorMin = new Vector2(0f, 1f); // Ekran Sol Üst (P2'nin Sağ Eli)
             fireRt.anchorMax = new Vector2(0f, 1f);
             fireRt.pivot = new Vector2(0.5f, 0.5f);
-            fireRt.anchoredPosition = new Vector2(180f, -180f);
-            fireRt.sizeDelta = new Vector2(140f, 140f);
+            fireRt.anchoredPosition = new Vector2(130f, -130f);
+            fireRt.sizeDelta = new Vector2(150f, 150f);
             fireRt.localEulerAngles = new Vector3(0f, 0f, 180f); // P2 için 180° ters
 
             Image fireImg = fireObj.AddComponent<Image>();
@@ -194,8 +194,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             textRt.offsetMax = Vector2.zero;
 
             TextMeshProUGUI tmp = textObj.AddComponent<TextMeshProUGUI>();
-            tmp.text = "ATEŞ";
-            tmp.fontSize = 22f;
+            tmp.text = "<b>ATEŞ</b>";
+            tmp.fontSize = 28f;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;
@@ -230,8 +230,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             dodgeRt.anchorMin = new Vector2(0f, 1f);
             dodgeRt.anchorMax = new Vector2(0f, 1f);
             dodgeRt.pivot = new Vector2(0.5f, 0.5f);
-            dodgeRt.anchoredPosition = new Vector2(305f, -180f);
-            dodgeRt.sizeDelta = new Vector2(96f, 96f);
+            dodgeRt.anchoredPosition = new Vector2(285f, -105f);
+            dodgeRt.sizeDelta = new Vector2(90f, 90f);
             dodgeRt.localEulerAngles = new Vector3(0f, 0f, 180f);
 
             Image dodgeImg = dodgeObj.AddComponent<Image>();
@@ -259,8 +259,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             dtRt.offsetMax = Vector2.zero;
 
             TextMeshProUGUI dTmp = dTextObj.AddComponent<TextMeshProUGUI>();
-            dTmp.text = "MANEVRA";
-            dTmp.fontSize = 14f;
+            dTmp.text = "MANEVRA\n<size=65%>[SHIFT]</size>";
+            dTmp.fontSize = 17f;
             dTmp.fontStyle = FontStyles.Bold;
             dTmp.alignment = TextAlignmentOptions.Center;
             dTmp.color = new Color(1f, 0.75f, 0.4f);
@@ -293,8 +293,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             missileRt.anchorMin = new Vector2(0f, 1f);
             missileRt.anchorMax = new Vector2(0f, 1f);
             missileRt.pivot = new Vector2(0.5f, 0.5f);
-            missileRt.anchoredPosition = new Vector2(180f, -305f);
-            missileRt.sizeDelta = new Vector2(96f, 96f);
+            missileRt.anchoredPosition = new Vector2(285f, -235f);
+            missileRt.sizeDelta = new Vector2(95f, 95f);
             missileRt.localEulerAngles = new Vector3(0f, 0f, 180f);
 
             Image missileImg = missileObj.AddComponent<Image>();
@@ -322,7 +322,7 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
             TextMeshProUGUI mTmp = mTextObj.AddComponent<TextMeshProUGUI>();
             mTmp.text = "FÜZE\n<size=65%>[P]</size>";
-            mTmp.fontSize = 14f;
+            mTmp.fontSize = 18f;
             mTmp.fontStyle = FontStyles.Bold;
             mTmp.alignment = TextAlignmentOptions.Center;
             mTmp.color = Color.white;

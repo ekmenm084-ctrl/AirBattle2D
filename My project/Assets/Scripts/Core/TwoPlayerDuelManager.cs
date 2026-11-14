@@ -134,7 +134,8 @@ public class TwoPlayerDuelManager : MonoBehaviour
         if (maneuvers == null)
             maneuvers = ph.gameObject.AddComponent<PlayerCombatManeuvers>();
 
-        // 4. Başlangıç pozisyonları ve renk tonları
+        // 4. Başlangıç pozisyonları, ideal çevik ölçek ve renk tonları
+        ph.transform.localScale = new Vector3(0.72f, 0.72f, 1f);
         if (isPlayer1)
         {
             ph.transform.position = new Vector3(0f, -3.8f, 0f);
@@ -395,7 +396,7 @@ public class TwoPlayerDuelManager : MonoBehaviour
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
             rt.anchoredPosition = new Vector2(0f, -25f);
-            rt.sizeDelta = new Vector2(460f, 48f);
+            rt.sizeDelta = new Vector2(540f, 44f);
 
             Image bg = _duelScoreboardObj.AddComponent<Image>();
             bg.color = new Color(0.04f, 0.08f, 0.14f, 0.90f);
@@ -414,7 +415,7 @@ public class TwoPlayerDuelManager : MonoBehaviour
             textRt.offsetMax = Vector2.zero;
 
             _scoreboardTMP = textObj.AddComponent<TextMeshProUGUI>();
-            _scoreboardTMP.fontSize = 18f;
+            _scoreboardTMP.fontSize = 20f;
             _scoreboardTMP.fontStyle = FontStyles.Bold;
             _scoreboardTMP.alignment = TextAlignmentOptions.Center;
             _scoreboardTMP.color = Color.white;

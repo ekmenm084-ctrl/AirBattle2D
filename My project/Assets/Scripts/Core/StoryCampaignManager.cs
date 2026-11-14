@@ -48,6 +48,9 @@ public class StoryCampaignManager : MonoBehaviour
         CurrentCampaign = next;
     }
 
+    [Header("Sinematik Aktiflik")]
+    public static bool enableCinematics = false; // Kullanıcı isteği: Sinematik altyazılar ve telsiz diyalogları tamamen kapatıldı
+
     public bool IsBossWave => (GameManager.Instance != null && (GameManager.Instance.currentPlaneIndex % 5 == 0));
 
     [Header("Telsiz UI")]
@@ -92,6 +95,21 @@ public class StoryCampaignManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (_cinematicRoot != null) _cinematicRoot.SetActive(false);
+        if (_radioBannerObj != null) _radioBannerObj.SetActive(false);
+    }
+
+    private void Start()
+    {
+        var canvas = FindObjectOfType<Canvas>();
+        if (canvas != null)
+        {
+            var cin = canvas.transform.Find("StoryCinematicUI");
+            if (cin != null) cin.gameObject.SetActive(false);
+            var rad = canvas.transform.Find("RadioTransmissionHUD");
+            if (rad != null) rad.gameObject.SetActive(false);
+        }
     }
 
     public static StoryCampaignManager EnsureInstance()
@@ -233,6 +251,7 @@ public class StoryCampaignManager : MonoBehaviour
     /// </summary>
     public void CheckAndTriggerWaveDialogue(int wave)
     {
+        if (!enableCinematics) return;
         CampaignType camp = CurrentCampaign;
 
         if (wave == 1)
@@ -327,10 +346,17 @@ public class StoryCampaignManager : MonoBehaviour
     /// </summary>
     public void PlayCampaignIntro(Action onComplete)
     {
+        if (!enableCinematics)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         if (menu != null && menu.gameObject.activeInHierarchy)
         {
             // Ana menü açıkken kesinlikle alt yazı açma
+            onComplete?.Invoke();
             return;
         }
 
@@ -343,6 +369,12 @@ public class StoryCampaignManager : MonoBehaviour
     /// </summary>
     public void PlayBossIntro(int wave, Action onComplete)
     {
+        if (!enableCinematics)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
         var bossIntro = GetBossIntro(CurrentCampaign, wave);
         StartCinematicSequence(bossIntro.speaker, bossIntro.color, bossIntro.sentences, onComplete, isEnding: false);
     }
@@ -352,13 +384,30 @@ public class StoryCampaignManager : MonoBehaviour
     /// </summary>
     public void PlayCampaignEnding(Action onComplete)
     {
+        if (!enableCinematics)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
         var ending = GetCampaignEndingDialogue(CurrentCampaign);
         StartCinematicSequence(ending.speaker, ending.color, ending.sentences, onComplete, isEnding: true);
     }
 
     private void StartCinematicSequence(string speaker, Color speakerColor, string[] sentences, Action onComplete, bool isEnding)
     {
+        if (!enableCinematics)
+        {
+            Time.timeScale = 1f;
+            MainMenuManager.SetTouchControlsVisibility(true, false);
+            FindObjectOfType<GameUI>()?.SetHUDVisibility(true);
+            onComplete?.Invoke();
+            return;
+        }
+
         Time.timeScale = 0f; // Sinematik boyunca savaşı güvenle duraklat
+        MainMenuManager.SetTouchControlsVisibility(false, false);
+        FindObjectOfType<GameUI>()?.SetHUDVisibility(false);
 
         if (_cinematicCoroutine != null)
             StopCoroutine(_cinematicCoroutine);
@@ -464,6 +513,8 @@ public class StoryCampaignManager : MonoBehaviour
             if (_cinematicRoot != null) _cinematicRoot.SetActive(false);
             _isCinematicActive = false;
             Time.timeScale = 1f;
+            MainMenuManager.SetTouchControlsVisibility(true, false);
+            FindObjectOfType<GameUI>()?.SetHUDVisibility(true);
             onComplete?.Invoke();
         }
     }
@@ -551,7 +602,7 @@ public class StoryCampaignManager : MonoBehaviour
         _topBar.anchorMin = new Vector2(0f, 1f);
         _topBar.anchorMax = new Vector2(1f, 1f);
         _topBar.pivot = new Vector2(0.5f, 1f);
-        _topBar.sizeDelta = new Vector2(0f, 75f);
+        _topBar.sizeDelta = new Vector2(0f, 65f);
         _topBar.anchoredPosition = Vector2.zero;
         Image topImg = topBarObj.AddComponent<Image>();
         topImg.color = Color.black;
@@ -563,7 +614,7 @@ public class StoryCampaignManager : MonoBehaviour
         _bottomBar.anchorMin = new Vector2(0f, 0f);
         _bottomBar.anchorMax = new Vector2(1f, 0f);
         _bottomBar.pivot = new Vector2(0.5f, 0f);
-        _bottomBar.sizeDelta = new Vector2(0f, 75f);
+        _bottomBar.sizeDelta = new Vector2(0f, 65f);
         _bottomBar.anchoredPosition = Vector2.zero;
         Image btmImg = btmBarObj.AddComponent<Image>();
         btmImg.color = Color.black;
@@ -575,8 +626,8 @@ public class StoryCampaignManager : MonoBehaviour
         _subtitlePanel.anchorMin = new Vector2(0.5f, 0f);
         _subtitlePanel.anchorMax = new Vector2(0.5f, 0f);
         _subtitlePanel.pivot = new Vector2(0.5f, 0f);
-        _subtitlePanel.anchoredPosition = new Vector2(0f, 92f);
-        _subtitlePanel.sizeDelta = new Vector2(1180f, 225f); // Daha büyük, orantılı ve ferah
+        _subtitlePanel.anchoredPosition = new Vector2(0f, 75f);
+        _subtitlePanel.sizeDelta = new Vector2(1000f, 180f);
 
         Image panelBg = panelObj.AddComponent<Image>();
         panelBg.color = new Color(0.02f, 0.05f, 0.10f, 0.98f);
@@ -594,7 +645,7 @@ public class StoryCampaignManager : MonoBehaviour
         spkRt.offsetMin = Vector2.zero;
         spkRt.offsetMax = Vector2.zero;
         _cinematicSpeakerTMP = spkObj.AddComponent<TextMeshProUGUI>();
-        _cinematicSpeakerTMP.fontSize = 32f; // Büyütüldü
+        _cinematicSpeakerTMP.fontSize = 24f;
         _cinematicSpeakerTMP.fontStyle = FontStyles.Bold;
         _cinematicSpeakerTMP.alignment = TextAlignmentOptions.Left;
         _cinematicSpeakerTMP.color = new Color(0.2f, 0.92f, 1f);
@@ -611,7 +662,7 @@ public class StoryCampaignManager : MonoBehaviour
         pageRt.offsetMin = Vector2.zero;
         pageRt.offsetMax = Vector2.zero;
         _pageIndicatorTMP = pageObj.AddComponent<TextMeshProUGUI>();
-        _pageIndicatorTMP.fontSize = 24f; // Büyütüldü
+        _pageIndicatorTMP.fontSize = 18f;
         _pageIndicatorTMP.fontStyle = FontStyles.Bold;
         _pageIndicatorTMP.alignment = TextAlignmentOptions.Right;
         _pageIndicatorTMP.color = new Color(1f, 0.85f, 0.3f);
@@ -641,7 +692,7 @@ public class StoryCampaignManager : MonoBehaviour
         skipTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI skipTMP = skipTxtObj.AddComponent<TextMeshProUGUI>();
         skipTMP.text = "GEÇ >>";
-        skipTMP.fontSize = 20f; // Büyütüldü
+        skipTMP.fontSize = 17f;
         skipTMP.fontStyle = FontStyles.Bold;
         skipTMP.alignment = TextAlignmentOptions.Center;
         skipTMP.color = Color.white;
@@ -656,11 +707,11 @@ public class StoryCampaignManager : MonoBehaviour
         subRt.offsetMin = Vector2.zero;
         subRt.offsetMax = Vector2.zero;
         _subtitleTextTMP = subTextObj.AddComponent<TextMeshProUGUI>();
-        _subtitleTextTMP.fontSize = 34f; // 28f -> 34f (Büyük, net ve keskin)
+        _subtitleTextTMP.fontSize = 24f;
         _subtitleTextTMP.fontStyle = FontStyles.Bold;
         _subtitleTextTMP.alignment = TextAlignmentOptions.Center;
         _subtitleTextTMP.color = Color.white;
-        _subtitleTextTMP.lineSpacing = 5.5f;
+        _subtitleTextTMP.lineSpacing = 4f;
         _subtitleTextTMP.textWrappingMode = TextWrappingModes.Normal;
         _subtitleTextTMP.extraPadding = true;
         _subtitleTextTMP.outlineWidth = 0.22f;
@@ -676,7 +727,7 @@ public class StoryCampaignManager : MonoBehaviour
         hintRt.offsetMax = Vector2.zero;
         TextMeshProUGUI hintTMP = hintObj.AddComponent<TextMeshProUGUI>();
         hintTMP.text = "<size=85%><color=#8AB4F8>Ekrana dokunarak veya 'İlerle'ye basarak sonraki cümleye geçebilirsiniz.</color></size>";
-        hintTMP.fontSize = 19f; // 18f -> 19f
+        hintTMP.fontSize = 15f;
         hintTMP.alignment = TextAlignmentOptions.Left;
         hintTMP.extraPadding = true;
 
@@ -702,7 +753,7 @@ public class StoryCampaignManager : MonoBehaviour
         nextTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.text = "İLERLE >>";
-        nextTMP.fontSize = 21f; // 19f -> 21f
+        nextTMP.fontSize = 17f;
         nextTMP.fontStyle = FontStyles.Bold;
         nextTMP.alignment = TextAlignmentOptions.Center;
         nextTMP.color = Color.white;
@@ -828,7 +879,10 @@ public class StoryCampaignManager : MonoBehaviour
         {
             AdvanceToNextCampaign();
             _cinematicRoot.SetActive(false);
+            _isCinematicActive = false;
             Time.timeScale = 1f;
+            MainMenuManager.SetTouchControlsVisibility(true, false);
+            FindObjectOfType<GameUI>()?.SetHUDVisibility(true);
             GameManager.Instance?.RestartGame();
         });
 
@@ -1120,6 +1174,7 @@ public class StoryCampaignManager : MonoBehaviour
     /// </summary>
     public void ShowRadioTransmission(string speaker, string message, Color themeColor)
     {
+        if (!enableCinematics) return;
         EnsureRadioHUD();
 
         if (_radioBannerObj == null) return;
@@ -1202,15 +1257,15 @@ public class StoryCampaignManager : MonoBehaviour
             rt.anchorMin = new Vector2(0.5f, 1f);
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -65f); // Skor rozetinin hemen altında
-            rt.sizeDelta = new Vector2(980f, 130f);
+            rt.anchoredPosition = new Vector2(0f, -102f);
+            rt.sizeDelta = new Vector2(740f, 70f);
 
             Image bg = _radioBannerObj.AddComponent<Image>();
             bg.color = new Color(0.02f, 0.05f, 0.10f, 0.98f);
 
             Outline outline = _radioBannerObj.AddComponent<Outline>();
             outline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
-            outline.effectDistance = new Vector2(2.5f, -2.5f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
 
             _canvasGroup = _radioBannerObj.AddComponent<CanvasGroup>();
 
@@ -1218,10 +1273,10 @@ public class StoryCampaignManager : MonoBehaviour
             GameObject headerObj = new GameObject("HeaderRow", typeof(RectTransform));
             headerObj.transform.SetParent(_radioBannerObj.transform, false);
             RectTransform hRt = headerObj.GetComponent<RectTransform>();
-            hRt.anchorMin = new Vector2(0f, 0.65f);
+            hRt.anchorMin = new Vector2(0f, 0.55f);
             hRt.anchorMax = new Vector2(1f, 1f);
-            hRt.offsetMin = new Vector2(20f, 0f);
-            hRt.offsetMax = new Vector2(-20f, -4f);
+            hRt.offsetMin = new Vector2(14f, 0f);
+            hRt.offsetMax = new Vector2(-14f, -2f);
 
             GameObject spkObj = new GameObject("SpeakerText", typeof(RectTransform));
             spkObj.transform.SetParent(headerObj.transform, false);
@@ -1232,7 +1287,7 @@ public class StoryCampaignManager : MonoBehaviour
             spkRt.offsetMax = Vector2.zero;
 
             _speakerTMP = spkObj.AddComponent<TextMeshProUGUI>();
-            _speakerTMP.fontSize = 28f; // Büyütüldü
+            _speakerTMP.fontSize = 18f;
             _speakerTMP.fontStyle = FontStyles.Bold;
             _speakerTMP.alignment = TextAlignmentOptions.Left;
             _speakerTMP.extraPadding = true;
@@ -1248,7 +1303,7 @@ public class StoryCampaignManager : MonoBehaviour
             frqRt.offsetMax = Vector2.zero;
 
             _freqTMP = frqObj.AddComponent<TextMeshProUGUI>();
-            _freqTMP.fontSize = 22f; // Büyütüldü
+            _freqTMP.fontSize = 14f;
             _freqTMP.fontStyle = FontStyles.Bold;
             _freqTMP.alignment = TextAlignmentOptions.Right;
             _freqTMP.color = new Color(0.5f, 0.85f, 1f, 0.9f);
@@ -1259,16 +1314,16 @@ public class StoryCampaignManager : MonoBehaviour
             msgObj.transform.SetParent(_radioBannerObj.transform, false);
             RectTransform msgRt = msgObj.GetComponent<RectTransform>();
             msgRt.anchorMin = new Vector2(0f, 0f);
-            msgRt.anchorMax = new Vector2(1f, 0.65f);
-            msgRt.offsetMin = new Vector2(20f, 8f);
-            msgRt.offsetMax = new Vector2(-20f, 0f);
+            msgRt.anchorMax = new Vector2(1f, 0.55f);
+            msgRt.offsetMin = new Vector2(14f, 4f);
+            msgRt.offsetMax = new Vector2(-14f, 0f);
 
             _messageTMP = msgObj.AddComponent<TextMeshProUGUI>();
-            _messageTMP.fontSize = 28f; // Büyütüldü
+            _messageTMP.fontSize = 17f;
             _messageTMP.fontStyle = FontStyles.Bold;
             _messageTMP.alignment = TextAlignmentOptions.Left;
             _messageTMP.color = Color.white;
-            _messageTMP.lineSpacing = 5f;
+            _messageTMP.lineSpacing = 3f;
             _messageTMP.extraPadding = true;
             _messageTMP.outlineWidth = 0.22f;
             _messageTMP.outlineColor = Color.black;

@@ -36,6 +36,7 @@ public class PlaneController : MonoBehaviour
         _rb.gravityScale = 0f;
         _rb.linearDamping = 2f;
         _rb.constraints = RigidbodyConstraints2D.FreezePositionY | RigidbodyConstraints2D.FreezeRotation;
+        transform.localScale = new Vector3(0.72f, 0.72f, 1f);
     }
 
     private void Start()
