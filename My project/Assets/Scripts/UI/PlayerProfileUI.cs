@@ -362,8 +362,8 @@ public class PlayerProfileUI : MonoBehaviour
                 exRt.anchorMin = new Vector2(1f, 1f);
                 exRt.anchorMax = new Vector2(1f, 1f);
                 exRt.pivot = new Vector2(1f, 1f);
-                exRt.anchoredPosition = new Vector2(-76f, -66f);
-                exRt.sizeDelta = new Vector2(200f, 32f);
+                exRt.anchoredPosition = new Vector2(-95f, -68f);
+                exRt.sizeDelta = new Vector2(210f, 34f);
             }
             RefreshBadgeVisuals();
             return;
@@ -376,12 +376,12 @@ public class PlayerProfileUI : MonoBehaviour
         RectTransform rt = _hudBadgeRoot.GetComponent<RectTransform>();
         if (rt != null)
         {
-            // Sağ üst köşe, Altın kutusunun hemen altı (Kompakt ve hizalı)
+            // Sağ üst köşe, Altın kutusunun hemen altı (Kompakt, hizalı ve Pause tuşundan bağımsız)
             rt.anchorMin = new Vector2(1f, 1f);
             rt.anchorMax = new Vector2(1f, 1f);
             rt.pivot = new Vector2(1f, 1f);
-            rt.anchoredPosition = new Vector2(-76f, -66f);
-            rt.sizeDelta = new Vector2(200f, 32f);
+            rt.anchoredPosition = new Vector2(-95f, -68f);
+            rt.sizeDelta = new Vector2(210f, 34f);
         }
 
         Image bg = _hudBadgeRoot.GetComponent<Image>() ?? _hudBadgeRoot.AddComponent<Image>();
@@ -548,8 +548,8 @@ public class PlayerProfileUI : MonoBehaviour
                     rt.anchorMin = new Vector2(1f, 1f);
                     rt.anchorMax = new Vector2(1f, 1f);
                     rt.pivot = new Vector2(1f, 1f);
-                    rt.anchoredPosition = new Vector2(-76f, -66f);
-                    rt.sizeDelta = new Vector2(200f, 32f);
+                    rt.anchoredPosition = new Vector2(-95f, -68f);
+                    rt.sizeDelta = new Vector2(210f, 34f);
                 }
             }
         }

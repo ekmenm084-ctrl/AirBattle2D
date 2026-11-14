@@ -436,8 +436,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-35f, -25f);
-        rt.sizeDelta = new Vector2(200f, 36f);
+        rt.anchoredPosition = new Vector2(-95f, -25f);
+        rt.sizeDelta = new Vector2(210f, 36f);
 
         Image bg = EnsureComponent<Image>(_goldHUDObj);
         bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
@@ -477,8 +477,8 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(1f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(1f, 1f);
-                rt.anchoredPosition = new Vector2(-35f, -25f);
-                rt.sizeDelta = new Vector2(200f, 36f);
+                rt.anchoredPosition = new Vector2(-95f, -25f);
+                rt.sizeDelta = new Vector2(210f, 36f);
             }
         }
 
