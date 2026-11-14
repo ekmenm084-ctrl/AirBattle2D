@@ -134,8 +134,8 @@ public class GameManager : MonoBehaviour
         Canvas mainCanvas = FindObjectOfType<Canvas>();
         if (mainCanvas != null)
         {
-            PlayerProfileUI.EnsureUI()?.SetupHUDProfileBadge(mainCanvas.transform);
-            PlayerProfileUI.Instance?.SetHUDBadgeActive(true);
+            // Savaş esnasında level barı görünmez, yalnızca altın barı ve pause tuşu gösterilir
+            PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
             PlayerProfileUI.Instance?.SetBadgeActive(false);
         }
 

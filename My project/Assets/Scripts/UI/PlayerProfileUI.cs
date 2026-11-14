@@ -349,23 +349,30 @@ public class PlayerProfileUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Savaş sahnesinde sağ üst köşede (Altın sayacının hemen altında) mini seviye ve EXP barı oluşturur.
+    /// Savaş sahnesinde seviye barı gösterilmez (yalnızca Altın barı ve Pause tuşu gösterilir).
     /// </summary>
     public void SetupHUDProfileBadge(Transform canvasTransform)
     {
+        if (canvasTransform != null)
+        {
+            Transform existing = canvasTransform.Find("HUD_PilotProfileBadge");
+            if (existing != null)
+            {
+                Destroy(existing.gameObject);
+            }
+        }
         if (_hudBadgeRoot != null)
         {
-            _hudBadgeRoot.SetActive(true);
-            RectTransform exRt = _hudBadgeRoot.GetComponent<RectTransform>();
-            if (exRt != null)
-            {
-                exRt.anchorMin = new Vector2(1f, 1f);
-                exRt.anchorMax = new Vector2(1f, 1f);
-                exRt.pivot = new Vector2(1f, 1f);
-                exRt.anchoredPosition = new Vector2(-95f, -68f);
-                exRt.sizeDelta = new Vector2(210f, 34f);
-            }
-            RefreshBadgeVisuals();
+            Destroy(_hudBadgeRoot);
+            _hudBadgeRoot = null;
+        }
+    }
+
+    private void BuildHUDProfileBadgeInternal(Transform canvasTransform)
+    {
+        if (_hudBadgeRoot != null)
+        {
+            _hudBadgeRoot.SetActive(false);
             return;
         }
 
@@ -537,23 +544,11 @@ public class PlayerProfileUI : MonoBehaviour
 
     public void SetHUDBadgeActive(bool active)
     {
+        // Savaş anında level/EXP barı kapalı tutulur (yalnızca Altın barı ve Pause butonu kalır)
         if (_hudBadgeRoot != null)
         {
-            _hudBadgeRoot.SetActive(active);
-            if (active)
-            {
-                RectTransform rt = _hudBadgeRoot.GetComponent<RectTransform>();
-                if (rt != null)
-                {
-                    rt.anchorMin = new Vector2(1f, 1f);
-                    rt.anchorMax = new Vector2(1f, 1f);
-                    rt.pivot = new Vector2(1f, 1f);
-                    rt.anchoredPosition = new Vector2(-95f, -68f);
-                    rt.sizeDelta = new Vector2(210f, 34f);
-                }
-            }
+            _hudBadgeRoot.SetActive(false);
         }
-        if (active) RefreshBadgeVisuals();
     }
 
     /// <summary>
