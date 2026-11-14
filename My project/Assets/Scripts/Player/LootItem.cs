@@ -3,8 +3,8 @@ using UnityEngine;
 using TMPro;
 
 /// <summary>
-/// Düşman uçaklarından düşen ve sahada süzülen yüksek çözünürlüklü taktik ganimet / güçlendirme küresi:
-/// - Health (Gövde Tamiri): +35 Can Onarımı, Askeri Yeşil Tamir Kiti simgesi ve [ +TAMİR ] etiketi.
+/// Düşman uçaklarından düşen ve sahada süzülen yüksek çözünürlüklü askeri / taktik ganimet:
+/// - Health (Sahra Tamir Sandığı): Gerçekçi paraşütlü askeri bakım sandığı, ELT acil flaşörü ve taktik gövde onarımı.
 /// - Shield (Plazma Kalkan): +60 Plazma Enerji Kalkanı, Fütüristik Kalkan simgesi ve [ KALKAN ] etiketi.
 /// - Overdrive (Süper Ateş): 7 Saniye 3'lü Hiper Seri Ateş, Alevli Mühimmat Sandığı ve [ SÜPER ATEŞ ] etiketi.
 /// - Gold (Pilot As Altını): +50 Hangar Altını, 3D Kanatlı Askeri Madalyon ve [ +50 ALTIN ] etiketi.
@@ -23,16 +23,18 @@ public class LootItem : MonoBehaviour
     }
 
     public LootType type = LootType.Health;
-    public float floatSpeed = 0.95f;
+    public float floatSpeed = 0.85f;
     public float magnetRadius = 2.8f;
-    public float lifetime = 14f;
+    public float lifetime = 15f;
 
     private Transform _playerTransform;
     private Rigidbody2D _rb;
     private SpriteRenderer _sr;
     private SpriteRenderer _haloSr;
+    private SpriteRenderer _beaconSr;
     private TextMeshPro _labelTMP;
     private Color _themeColor = Color.green;
+    private float _swaySeed;
 
     private void Awake()
     {
@@ -42,8 +44,10 @@ public class LootItem : MonoBehaviour
 
         CircleCollider2D col = GetComponent<CircleCollider2D>();
         if (col == null) col = gameObject.AddComponent<CircleCollider2D>();
-        col.radius = 0.46f;
+        col.radius = 0.48f;
         col.isTrigger = true;
+
+        _swaySeed = Random.Range(0f, 100f);
     }
 
     private void Start()
@@ -75,28 +79,46 @@ public class LootItem : MonoBehaviour
 
         _rb.linearVelocity = velocity;
 
-        // Nefes alma / nabız animasyonu
-        float pulse = 1f + Mathf.Sin(Time.time * 5f) * 0.08f;
-        if (_sr != null)
+        // Can Eşyası (Sahra Sandığı) için Gerçekçi Paraşüt Salınımı (Aerodynamic Sway)
+        if (type == LootType.Health)
         {
-            _sr.transform.localScale = new Vector3(pulse, pulse, 1f);
-        }
+            float swayAngle = Mathf.Sin((Time.time * 2.6f) + _swaySeed) * 4.5f;
+            transform.rotation = Quaternion.Euler(0f, 0f, swayAngle);
 
-        // Parıltı halesi nabız efekti
-        if (_haloSr != null)
+            // ELT Aviyonik Flaşör Nabzı (0.8 saniyede bir keskin taktik LED flaşı)
+            if (_beaconSr != null)
+            {
+                float cycle = (Time.time + _swaySeed) % 0.85f;
+                float beaconAlpha = (cycle < 0.12f) ? 1f : 0.08f;
+                Color bCol = new Color(0.2f, 1f, 0.4f, beaconAlpha);
+                _beaconSr.color = bCol;
+            }
+        }
+        else
         {
-            float haloPulse = 1.25f + Mathf.Sin(Time.time * 6f) * 0.18f;
-            _haloSr.transform.localScale = new Vector3(haloPulse, haloPulse, 1f);
-            float alpha = 0.35f + Mathf.Sin(Time.time * 6f) * 0.20f;
-            Color c = _themeColor;
-            c.a = Mathf.Clamp01(alpha);
-            _haloSr.color = c;
+            // Diğer eşyalar için hafif nefes alma nabzı
+            float pulse = 1f + Mathf.Sin(Time.time * 5f) * 0.06f;
+            if (_sr != null)
+            {
+                _sr.transform.localScale = new Vector3(pulse, pulse, 1f);
+            }
+
+            // Parıltı halesi nabız efekti
+            if (_haloSr != null)
+            {
+                float haloPulse = 1.25f + Mathf.Sin(Time.time * 6f) * 0.16f;
+                _haloSr.transform.localScale = new Vector3(haloPulse, haloPulse, 1f);
+                float alpha = 0.35f + Mathf.Sin(Time.time * 6f) * 0.20f;
+                Color c = _themeColor;
+                c.a = Mathf.Clamp01(alpha);
+                _haloSr.color = c;
+            }
         }
 
         // Etiket yukarı-aşağı hafif süzülüşü (bobbing)
         if (_labelTMP != null)
         {
-            float bob = 0.46f + Mathf.Sin(Time.time * 4f) * 0.04f;
+            float bob = (type == LootType.Health ? 0.54f : 0.46f) + Mathf.Sin(Time.time * 3.5f) * 0.03f;
             _labelTMP.transform.localPosition = new Vector3(0f, bob, 0f);
         }
     }
@@ -127,7 +149,7 @@ public class LootItem : MonoBehaviour
         {
             case LootType.Health:
                 health?.Heal(35f);
-                gameUI?.ShowWaveAlert("[+] <b>[ +35 GÖVDE TAMİRİ EDİLDİ ]</b>", new Color(0.1f, 1f, 0.4f), 1.4f);
+                gameUI?.ShowWaveAlert("[+] <b>[ SAHRA BAKIM KİTİ ALINDI // GÖVDE ONARILDI (+35 HP) ]</b>", new Color(0.2f, 1f, 0.5f), 1.6f);
                 break;
 
             case LootType.Shield:
@@ -183,7 +205,7 @@ public class LootItem : MonoBehaviour
         switch (type)
         {
             case LootType.Health:
-                _themeColor = new Color(0.1f, 1f, 0.4f);
+                _themeColor = new Color(0.2f, 0.95f, 0.5f);
                 resName = "loot_health";
                 break;
             case LootType.Shield:
@@ -217,8 +239,9 @@ public class LootItem : MonoBehaviour
         if (loadedSpr != null)
         {
             _sr.sprite = loadedSpr;
-            // 128x128 sprite'ı sahneye mükemmel oranda oturt (0.68f)
-            transform.localScale = new Vector3(0.68f, 0.68f, 1f);
+            // Can sandığı için askeri sahra sandığı ve paraşütü tam sığdır (0.74f)
+            float scale = (type == LootType.Health) ? 0.74f : 0.68f;
+            transform.localScale = new Vector3(scale, scale, 1f);
         }
         else
         {
@@ -228,32 +251,48 @@ public class LootItem : MonoBehaviour
 
         _sr.sortingOrder = 16;
 
-        // 2. Arka Plan Parlayan Enerji Halesi (Halo)
-        GameObject haloObj = new GameObject("HaloAura");
-        haloObj.transform.SetParent(transform, false);
-        haloObj.transform.localPosition = Vector3.zero;
+        // Can sandığı için çizgi film halesi yerine ELT Flaşör LED'i; diğerleri için Halo Aura
+        if (type == LootType.Health)
+        {
+            GameObject beaconObj = new GameObject("ELTStrobeBeacon");
+            beaconObj.transform.SetParent(transform, false);
+            beaconObj.transform.localPosition = new Vector3(0.22f, 0.18f, 0f); // Sandığın sağ üst köşesi
 
-        _haloSr = haloObj.AddComponent<SpriteRenderer>();
-        _haloSr.sprite = CreateGlowCircleSprite();
-        _haloSr.sortingOrder = 14; // Ana sprite'ın arkasında
-        Color haloC = _themeColor;
-        haloC.a = 0.45f;
-        _haloSr.color = haloC;
-        _haloSr.transform.localScale = new Vector3(1.25f, 1.25f, 1f);
+            _beaconSr = beaconObj.AddComponent<SpriteRenderer>();
+            _beaconSr.sprite = CreateGlowCircleSprite();
+            _beaconSr.sortingOrder = 17;
+            _beaconSr.color = new Color(0.2f, 1f, 0.4f, 1f);
+            _beaconSr.transform.localScale = new Vector3(0.35f, 0.35f, 1f);
+        }
+        else
+        {
+            // 2. Arka Plan Parlayan Enerji Halesi (Halo)
+            GameObject haloObj = new GameObject("HaloAura");
+            haloObj.transform.SetParent(transform, false);
+            haloObj.transform.localPosition = Vector3.zero;
+
+            _haloSr = haloObj.AddComponent<SpriteRenderer>();
+            _haloSr.sprite = CreateGlowCircleSprite();
+            _haloSr.sortingOrder = 14;
+            Color haloC = _themeColor;
+            haloC.a = 0.42f;
+            _haloSr.color = haloC;
+            _haloSr.transform.localScale = new Vector3(1.22f, 1.22f, 1f);
+        }
     }
 
     /// <summary>
-    /// Eşyanın hemen üstünde beliren ve havada ne olduğunu 100% net gösteren dünya uzayı metin etiketi.
+    /// Eşyanın hemen üstünde beliren ve havada ne olduğunu 100% net gösteren taktik HUD metin etiketi.
     /// </summary>
     private void SetupFloatingTag()
     {
         GameObject tagObj = new GameObject("LootTag");
         tagObj.transform.SetParent(transform, false);
-        tagObj.transform.localPosition = new Vector3(0f, 0.46f, 0f);
+        tagObj.transform.localPosition = new Vector3(0f, (type == LootType.Health ? 0.54f : 0.46f), 0f);
 
         _labelTMP = tagObj.AddComponent<TextMeshPro>();
         _labelTMP.alignment = TextAlignmentOptions.Center;
-        _labelTMP.fontSize = 2.4f;
+        _labelTMP.fontSize = (type == LootType.Health ? 2.1f : 2.4f);
         _labelTMP.fontStyle = FontStyles.Bold;
         _labelTMP.sortingOrder = 22;
         _labelTMP.extraPadding = true;
@@ -263,7 +302,7 @@ public class LootItem : MonoBehaviour
         switch (type)
         {
             case LootType.Health:
-                _labelTMP.text = "<color=#00FF66><b>[ +TAMİR ]</b></color>";
+                _labelTMP.text = "<size=85%><color=#80FFA0><b>[ SAHRA TAMİR KİTİ ]</b></color></size>\n<size=64%><color=#D0EED8>+35 HP GÖVDE ONARIMI</color></size>";
                 break;
             case LootType.Shield:
                 _labelTMP.text = "<color=#00E5FF><b>[ KALKAN ]</b></color>";
@@ -289,7 +328,7 @@ public class LootItem : MonoBehaviour
         RectTransform rt = tagObj.GetComponent<RectTransform>();
         if (rt != null)
         {
-            rt.sizeDelta = new Vector2(3.5f, 1f);
+            rt.sizeDelta = new Vector2(4.2f, 1.2f);
         }
     }
 
