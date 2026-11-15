@@ -163,6 +163,7 @@ public class MainMenuManager : MonoBehaviour
     private Button _modesLeaderboardButton;
     private Button _quickDiffButton;
     private Button _dailyOpsButton;
+    private Button _menuControlSchemeButton;
 
     public static void MakeFullScreenRect(RectTransform rt)
     {
@@ -1044,9 +1045,74 @@ public class MainMenuManager : MonoBehaviour
 
     private GameObject _soundControlsContainer;
 
+    private void SetupSettingsControlSchemeButton()
+    {
+        if (settingsPanel == null) return;
+        if (_menuControlSchemeButton != null) return;
+
+        Transform existing = settingsPanel.transform.Find("MenuControlSchemeButton");
+        GameObject btnObj = existing != null ? existing.gameObject : null;
+
+        if (btnObj == null)
+        {
+            btnObj = new GameObject("MenuControlSchemeButton", typeof(RectTransform));
+            btnObj.transform.SetParent(settingsPanel.transform, false);
+
+            RectTransform rt = btnObj.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, -72f);
+            rt.sizeDelta = new Vector2(520f, 52f);
+
+            Image img = btnObj.AddComponent<Image>();
+            img.sprite = GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 0.95f), true);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+
+            _menuControlSchemeButton = btnObj.AddComponent<Button>();
+            _menuControlSchemeButton.targetGraphic = img;
+
+            GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+            txtObj.transform.SetParent(btnObj.transform, false);
+            RectTransform tRt = txtObj.GetComponent<RectTransform>();
+            tRt.anchorMin = Vector2.zero;
+            tRt.anchorMax = Vector2.one;
+            tRt.offsetMin = Vector2.zero;
+            tRt.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+            tmp.font = GetTacticalFont();
+            tmp.fontSize = 17f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.characterSpacing = 1.6f;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.extraPadding = true;
+            tmp.raycastTarget = false;
+        }
+        else
+        {
+            _menuControlSchemeButton = btnObj.GetComponent<Button>();
+        }
+
+        if (_menuControlSchemeButton != null)
+        {
+            _menuControlSchemeButton.onClick.RemoveAllListeners();
+            _menuControlSchemeButton.onClick.AddListener(() =>
+            {
+                GameSettings.ToggleControlType();
+                UpdateUIFeedback();
+                TouchArrowControls.Instance?.UpdateVisibility();
+                AudioManager.Instance?.PlayButtonClick();
+            });
+        }
+    }
+
     private void SetupMenuSoundControls()
     {
         if (settingsPanel == null) return;
+        SetupSettingsControlSchemeButton();
         if (_soundControlsContainer != null) return;
 
         Transform existing = settingsPanel.transform.Find("MenuSoundControls");
@@ -1066,7 +1132,7 @@ public class MainMenuManager : MonoBehaviour
             rootRt.anchorMax = new Vector2(0.5f, 0.5f);
             rootRt.pivot = new Vector2(0.5f, 0.5f);
             rootRt.sizeDelta = new Vector2(540f, 175f);
-            rootRt.anchoredPosition = new Vector2(0f, -75f);
+            rootRt.anchoredPosition = new Vector2(0f, -175f);
         }
 
         CreateMenuVolumeRow(_soundControlsContainer.transform, "SAVAŞ MÜZİĞİ", 34f, isMusic: true);
@@ -1640,6 +1706,30 @@ public class MainMenuManager : MonoBehaviour
                     : $"<color=#FFE082>[{StoryCampaignManager.GetCampaignName(activeCamp)}]</color>";
 
                 playTMP.text = $"<b><color=#00FFA3>SYS // OPS-01  » HAREKÂTI BAŞLAT</color></b>\n<size=54%>{modeBadge} • <color={diffHex}><b>[{diffName.ToUpper()}]</b></color></size>";
+            }
+        }
+
+        // 7. Ayarlar Panelindeki Kontrol Şeması Butonu
+        if (_menuControlSchemeButton != null)
+        {
+            TextMeshProUGUI cTmp = _menuControlSchemeButton.GetComponentInChildren<TextMeshProUGUI>();
+            Image cImg = _menuControlSchemeButton.GetComponent<Image>();
+            bool isArrows = (GameSettings.SelectedControl == GameSettings.ControlType.Arrows);
+
+            if (cTmp != null)
+            {
+                cTmp.font = GetTacticalFont();
+                cTmp.text = isArrows
+                    ? "UÇUŞ KONTROLÜ: <color=#00E5FF><b>[ ◀ SOL / SAĞ OK TUŞLARI ▶ ]</b></color> <size=68%><color=#90A4AE>(Dokun Değiştir)</color></size>"
+                    : "UÇUŞ KONTROLÜ: <color=#FFE082><b>[ 🕹️ SANAL JOYSTICK ]</b></color> <size=68%><color=#90A4AE>(Dokun Değiştir)</color></size>";
+                cTmp.characterSpacing = 1.8f;
+            }
+            if (cImg != null)
+            {
+                string cSprite = isArrows ? "hud_btn_cyan" : "hud_btn_amber";
+                Color cBorder = isArrows ? new Color(0f, 0.85f, 1f, 1f) : new Color(1f, 0.85f, 0.2f, 1f);
+                Color cFill = isArrows ? new Color(0.04f, 0.12f, 0.20f, 0.95f) : new Color(0.18f, 0.12f, 0.04f, 0.95f);
+                cImg.sprite = GetHudSprite(cSprite, cBorder, cFill, true);
             }
         }
     }

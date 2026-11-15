@@ -68,6 +68,7 @@ public class PlaneController : MonoBehaviour
                     break;
                 }
             }
+            TouchArrowControls.EnsureInstance();
         }
 
         if (isPlayer1)
@@ -114,11 +115,18 @@ public class PlaneController : MonoBehaviour
             }
             catch { }
 
+            // Dokunmatik Ok Tuşları girdisi (TouchArrowControls)
+            float touchArrowH = TouchArrowControls.HorizontalInput;
+            if (GameSettings.SelectedControl == GameSettings.ControlType.Arrows && Mathf.Abs(touchArrowH) > 0.01f)
+            {
+                horizontal += touchArrowH;
+            }
+
             if (Mathf.Abs(horizontal) > 0.01f)
             {
-                _inputDir = new Vector2(horizontal, 0f);
+                _inputDir = new Vector2(Mathf.Clamp(horizontal, -1f, 1f), 0f);
             }
-            else if (joystick != null && Mathf.Abs(joystick.InputDirection.x) > 0.05f)
+            else if (GameSettings.SelectedControl == GameSettings.ControlType.Joystick && joystick != null && Mathf.Abs(joystick.InputDirection.x) > 0.05f)
             {
                 _inputDir = new Vector2(joystick.InputDirection.x, 0f);
             }

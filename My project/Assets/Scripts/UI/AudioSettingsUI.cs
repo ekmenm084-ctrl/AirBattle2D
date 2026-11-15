@@ -24,6 +24,8 @@ public class AudioSettingsUI : MonoBehaviour
     private TextMeshProUGUI _musicValTMP;
     private TextMeshProUGUI _sfxValTMP;
     private TextMeshProUGUI _muteBtnTMP;
+    private TextMeshProUGUI _controlBtnTMP;
+    private Image _controlBtnBg;
 
     private bool _isPaused = false;
 
@@ -222,7 +224,7 @@ public class AudioSettingsUI : MonoBehaviour
         panelRt.anchorMax = new Vector2(0.5f, 0.5f);
         panelRt.pivot = new Vector2(0.5f, 0.5f);
         panelRt.anchoredPosition = Vector2.zero;
-        panelRt.sizeDelta = new Vector2(700f, 680f);
+        panelRt.sizeDelta = new Vector2(700f, 720f);
 
         Image bg = settingsPanelObj.AddComponent<Image>();
         bg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.06f, 0.12f, 0.96f), false);
@@ -263,18 +265,59 @@ public class AudioSettingsUI : MonoBehaviour
         titleTMP.extraPadding = true;
 
         // 1. Savaş Müziği Satırı: [-]  Slider  [+]
-        _musicSlider = CreateVolumeRow("SAVAS MUZIGI", 0.68f, isMusic: true, out _musicValTMP);
+        _musicSlider = CreateVolumeRow("SAVAS MUZIGI", 0.74f, isMusic: true, out _musicValTMP);
 
         // 2. Mermi / Efekt Sesi Satırı: [-]  Slider  [+]
-        _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 0.50f, isMusic: false, out _sfxValTMP);
+        _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 0.60f, isMusic: false, out _sfxValTMP);
 
-        // 3. Mute Butonu
+        // 3. Uçuş Kontrol Tipi Butonu: [ KONTROL SİSTEMİ: SANAL JOYSTICK / SOL-SAĞ OK TUŞLARI ]
+        GameObject ctrlBtnObj = new GameObject("ControlSchemeButton", typeof(RectTransform));
+        ctrlBtnObj.transform.SetParent(settingsPanelObj.transform, false);
+        RectTransform ctrlRt = ctrlBtnObj.GetComponent<RectTransform>();
+        ctrlRt.anchorMin = new Vector2(0.5f, 0.46f);
+        ctrlRt.anchorMax = new Vector2(0.5f, 0.46f);
+        ctrlRt.sizeDelta = new Vector2(540f, 56f);
+
+        _controlBtnBg = ctrlBtnObj.AddComponent<Image>();
+        _controlBtnBg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.95f), new Color(0.04f, 0.12f, 0.20f, 0.95f), true);
+        _controlBtnBg.type = Image.Type.Sliced;
+        _controlBtnBg.color = Color.white;
+
+        Button ctrlBtn = ctrlBtnObj.AddComponent<Button>();
+        ctrlBtn.targetGraphic = _controlBtnBg;
+        ctrlBtn.onClick.AddListener(() =>
+        {
+            GameSettings.ToggleControlType();
+            UpdateControlVisuals();
+            TouchArrowControls.Instance?.UpdateVisibility();
+            AudioManager.Instance?.PlayButtonClick();
+        });
+
+        GameObject ctrlTxtObj = new GameObject("ControlText", typeof(RectTransform));
+        ctrlTxtObj.transform.SetParent(ctrlBtnObj.transform, false);
+        RectTransform ctrlTxtRt = ctrlTxtObj.GetComponent<RectTransform>();
+        ctrlTxtRt.anchorMin = Vector2.zero;
+        ctrlTxtRt.anchorMax = Vector2.one;
+        ctrlTxtRt.offsetMin = Vector2.zero;
+        ctrlTxtRt.offsetMax = Vector2.zero;
+
+        _controlBtnTMP = ctrlTxtObj.AddComponent<TextMeshProUGUI>();
+        _controlBtnTMP.font = MainMenuManager.GetTacticalFont();
+        _controlBtnTMP.fontSize = 17f;
+        _controlBtnTMP.fontStyle = FontStyles.Bold;
+        _controlBtnTMP.characterSpacing = 1.6f;
+        _controlBtnTMP.alignment = TextAlignmentOptions.Center;
+        _controlBtnTMP.color = Color.white;
+        _controlBtnTMP.extraPadding = true;
+        _controlBtnTMP.raycastTarget = false;
+
+        // 4. Mute Butonu
         GameObject muteBtnObj = new GameObject("MuteButton", typeof(RectTransform));
         muteBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform muteRt = muteBtnObj.GetComponent<RectTransform>();
-        muteRt.anchorMin = new Vector2(0.5f, 0.35f);
-        muteRt.anchorMax = new Vector2(0.5f, 0.35f);
-        muteRt.sizeDelta = new Vector2(460f, 54f);
+        muteRt.anchorMin = new Vector2(0.5f, 0.33f);
+        muteRt.anchorMax = new Vector2(0.5f, 0.33f);
+        muteRt.sizeDelta = new Vector2(460f, 52f);
 
         Image muteBg = muteBtnObj.AddComponent<Image>();
         muteBg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.11f, 0.18f, 0.95f), true);
@@ -307,13 +350,13 @@ public class AudioSettingsUI : MonoBehaviour
         _muteBtnTMP.extraPadding = true;
         _muteBtnTMP.raycastTarget = false;
 
-        // 4. DEVAM ET BUTONU (Büyük Zümrüt Yeşili HUD Buton)
+        // 5. DEVAM ET BUTONU (Büyük Zümrüt Yeşili HUD Buton)
         GameObject resumeBtnObj = new GameObject("ResumeButton", typeof(RectTransform));
         resumeBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform resumeRt = resumeBtnObj.GetComponent<RectTransform>();
-        resumeRt.anchorMin = new Vector2(0.5f, 0.20f);
-        resumeRt.anchorMax = new Vector2(0.5f, 0.20f);
-        resumeRt.sizeDelta = new Vector2(520f, 62f);
+        resumeRt.anchorMin = new Vector2(0.5f, 0.19f);
+        resumeRt.anchorMax = new Vector2(0.5f, 0.19f);
+        resumeRt.sizeDelta = new Vector2(520f, 60f);
 
         Image resumeBg = resumeBtnObj.AddComponent<Image>();
         resumeBg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.18f, 0.08f, 1f), true);
@@ -343,13 +386,13 @@ public class AudioSettingsUI : MonoBehaviour
         resumeTMP.extraPadding = true;
         resumeTMP.raycastTarget = false;
 
-        // 5. ANA SAYFAYA DÖN BUTONU (Kırmızı HUD Buton)
+        // 6. ANA SAYFAYA DÖN BUTONU (Kırmızı HUD Buton)
         GameObject homeBtnObj = new GameObject("HomeButton", typeof(RectTransform));
         homeBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform homeRt = homeBtnObj.GetComponent<RectTransform>();
-        homeRt.anchorMin = new Vector2(0.5f, 0.08f);
-        homeRt.anchorMax = new Vector2(0.5f, 0.08f);
-        homeRt.sizeDelta = new Vector2(520f, 56f);
+        homeRt.anchorMin = new Vector2(0.5f, 0.07f);
+        homeRt.anchorMax = new Vector2(0.5f, 0.07f);
+        homeRt.sizeDelta = new Vector2(520f, 54f);
 
         Image homeBg = homeBtnObj.AddComponent<Image>();
         homeBg.sprite = MainMenuManager.GetHudSprite("hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), true);
@@ -630,6 +673,25 @@ public class AudioSettingsUI : MonoBehaviour
                 _sfxValTMP.text = $"%{(int)(AudioManager.Instance.sfxVolume * 100)}";
         }
         UpdateMuteVisuals();
+        UpdateControlVisuals();
+    }
+
+    private void UpdateControlVisuals()
+    {
+        if (_controlBtnTMP == null) return;
+        bool isArrows = (GameSettings.SelectedControl == GameSettings.ControlType.Arrows);
+        if (isArrows)
+        {
+            _controlBtnTMP.text = "UÇUŞ KONTROLÜ: <color=#00E5FF><b>[ ◀ SOL / SAĞ OK TUŞLARI ▶ ]</b></color>";
+            if (_controlBtnBg != null)
+                _controlBtnBg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.14f, 0.22f, 1f), true);
+        }
+        else
+        {
+            _controlBtnTMP.text = "UÇUŞ KONTROLÜ: <color=#FFE082><b>[ 🕹️ SANAL JOYSTICK ]</b></color>";
+            if (_controlBtnBg != null)
+                _controlBtnBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.85f, 0.2f, 1f), new Color(0.18f, 0.12f, 0.04f, 1f), true);
+        }
     }
 
     private void UpdateMuteVisuals()

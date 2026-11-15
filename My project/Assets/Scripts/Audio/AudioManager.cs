@@ -240,6 +240,11 @@ public class AudioManager : MonoBehaviour
         PlaySynthEffect(ref _thunderClip, 0.92f, 1.08f, 0.72f);
     }
 
+    public void PlayButtonClick()
+    {
+        PlaySynthEffect(ref _grazeClip, 1.35f, 1.45f, 0.40f);
+    }
+
     private void PlaySynthEffect(ref AudioClip clipField, float minPitch, float maxPitch, float volumeScale)
     {
         if (isMuted || _sfxSource == null) return;
