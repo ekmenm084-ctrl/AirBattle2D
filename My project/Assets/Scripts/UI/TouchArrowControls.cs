@@ -200,34 +200,38 @@ public class TouchArrowControls : MonoBehaviour
             rRt.sizeDelta = new Vector2(380f, 220f);
         }
 
-        // 1. SOL OK BUTONU (◀ SOL) - Boyut: 140x130
+        // 1. SOL OK BUTONU (◀) - Boyut: 140x130
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
         if (leftT != null)
         {
             leftButtonObj = leftT.gameObject;
+            Transform lbl = leftT.Find("Label");
+            if (lbl != null) Destroy(lbl.gameObject);
         }
         else
         {
             leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
-                new Vector2(90f, 105f), "btn_arrow_left", "SOL", isLeft: true);
+                new Vector2(90f, 105f), "btn_arrow_left", isLeft: true);
         }
 
-        // 2. SAĞ OK BUTONU (SAĞ ▶) - Boyut: 140x130
+        // 2. SAĞ OK BUTONU (▶) - Boyut: 140x130
         Transform rightT = _rootContainer.transform.Find("Btn_ArrowRight");
         if (rightT != null)
         {
             rightButtonObj = rightT.gameObject;
+            Transform lbl = rightT.Find("Label");
+            if (lbl != null) Destroy(lbl.gameObject);
         }
         else
         {
             rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
-                new Vector2(245f, 105f), "btn_arrow_right", "SAĞ", isLeft: false);
+                new Vector2(245f, 105f), "btn_arrow_right", isLeft: false);
         }
 
         _rootContainer.transform.SetAsLastSibling();
     }
 
-    private GameObject CreateArrowButton(Transform parent, string name, Vector2 pos, string spriteResName, string label, bool isLeft)
+    private GameObject CreateArrowButton(Transform parent, string name, Vector2 pos, string spriteResName, bool isLeft)
     {
         GameObject btnObj = new GameObject(name, typeof(RectTransform));
         btnObj.transform.SetParent(parent, false);
@@ -291,27 +295,6 @@ public class TouchArrowControls : MonoBehaviour
             btnObj.transform.localScale = Vector3.one;
         });
         trigger.triggers.Add(exitEntry);
-
-        // Alt Taktik Yazı: [ ◀ SOL ] veya [ SAĞ ▶ ]
-        GameObject txtObj = new GameObject("Label", typeof(RectTransform));
-        txtObj.transform.SetParent(btnObj.transform, false);
-        RectTransform tRt = txtObj.GetComponent<RectTransform>();
-        tRt.anchorMin = new Vector2(0f, 0f);
-        tRt.anchorMax = new Vector2(1f, 0.35f);
-        tRt.pivot = new Vector2(0.5f, 0f);
-        tRt.offsetMin = Vector2.zero;
-        tRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
-        tmp.font = MainMenuManager.GetTacticalFont();
-        tmp.text = isLeft ? "<color=#00E5FF><b>[ ◀ SOL ]</b></color>" : "<color=#00E5FF><b>[ SAĞ ▶ ]</b></color>";
-        tmp.fontSize = 20f;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.characterSpacing = 2.0f;
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = Color.white;
-        tmp.raycastTarget = false;
-        tmp.extraPadding = true;
 
         return btnObj;
     }
