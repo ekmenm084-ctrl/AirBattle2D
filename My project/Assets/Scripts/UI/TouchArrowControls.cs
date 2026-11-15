@@ -90,7 +90,6 @@ public class TouchArrowControls : MonoBehaviour
 
     public void UpdateVisibility()
     {
-        // Eğer UI henüz inşa edilmediyse inşa et
         if (_rootContainer == null)
         {
             EnsureArrowUI();
@@ -155,11 +154,11 @@ public class TouchArrowControls : MonoBehaviour
         rRt.anchoredPosition = Vector2.zero;
         rRt.sizeDelta = new Vector2(400f, 260f);
 
-        // 1. SOL OK BUTONU (◀ SOL) - Boyut: 130x120
+        // 1. SOL OK BUTONU (◀ SOL) - Boyut: 140x125
         leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
             new Vector2(105f, 150f), "btn_arrow_left", "SOL", isLeft: true);
 
-        // 2. SAĞ OK BUTONU (SAĞ ▶) - Boyut: 130x120
+        // 2. SAĞ OK BUTONU (SAĞ ▶) - Boyut: 140x125
         rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
             new Vector2(255f, 150f), "btn_arrow_right", "SAĞ", isLeft: false);
 
@@ -176,7 +175,7 @@ public class TouchArrowControls : MonoBehaviour
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(130f, 120f); // Geniş, dokunması çok konforlu alan
+        rt.sizeDelta = new Vector2(140f, 125f); // Geniş, dokunması çok konforlu alan
 
         Image bg = btnObj.AddComponent<Image>();
         Sprite arrowSpr = Resources.Load<Sprite>(spriteResName);
@@ -203,8 +202,8 @@ public class TouchArrowControls : MonoBehaviour
         {
             if (isLeft) _isLeftPressed = true;
             else _isRightPressed = true;
-            bg.color = new Color(0.8f, 1f, 1f, 1f);
-            rt.localScale = Vector3.one * 1.12f;
+            bg.color = new Color(0.85f, 1f, 1f, 1f);
+            rt.localScale = Vector3.one * 1.10f;
         });
         trigger.triggers.Add(downEntry);
 
@@ -243,7 +242,7 @@ public class TouchArrowControls : MonoBehaviour
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = $"<color=#00E5FF><b>[ {label} ]</b></color>";
-        tmp.fontSize = 18f;
+        tmp.fontSize = 20f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 2.0f;
         tmp.alignment = TextAlignmentOptions.Center;
