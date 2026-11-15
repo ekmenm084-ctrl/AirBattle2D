@@ -137,6 +137,7 @@ public class GameManager : MonoBehaviour
             // Savaş esnasında level barı görünmez, yalnızca altın barı ve pause tuşu gösterilir
             PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
             PlayerProfileUI.Instance?.SetBadgeActive(false);
+            TouchArrowControls.EnsureInstance()?.UpdateVisibility();
         }
 
         if (plane2Health != null)

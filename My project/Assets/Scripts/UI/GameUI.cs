@@ -60,6 +60,7 @@ public class GameUI : MonoBehaviour
         SetupAirspaceBanner();
         SetupUltiBar();
         SetupCombatManeuverButtons();
+        TouchArrowControls.EnsureInstance()?.UpdateVisibility();
 
         UpdateHealthBars();
 

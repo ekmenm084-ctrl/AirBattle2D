@@ -5,11 +5,11 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Dokunmatik Sol / Sağ Taktik Uçuş Ok Butonları (D-Pad Touch Controls):
-/// - Joystick yerine alternatif hassas yönlendirme sistemi.
-/// - Sol alt köşede ergonomik iki adet geniş dokunmatik taktik buton: [ ◀ SOL ] ve [ SAĞ ▶ ].
+/// Yüksek Çözünürlüklü Dokunmatik Sol / Sağ Taktik Uçuş Ok Butonları (D-Pad Touch Controls):
+/// - Oyuncu Ok Tuşlarını seçtiğinde sanal joystick otomatik olarak gizlenir.
+/// - Sol alt köşede iki adet geniş taktik buton: [ ◀ SOL ] ve [ SAĞ ▶ ].
+/// - Askeri pahlı neon cyan çerçeve ve 3D taktik ok simgeleri.
 /// - Basılı tutulduğunda sürekli girdi üretir, bırakıldığında uçağı dengeler.
-/// - GameSettings.SelectedControl seçimine göre Joystick ile dinamik olarak takas edilir.
 /// </summary>
 public class TouchArrowControls : MonoBehaviour
 {
@@ -90,6 +90,12 @@ public class TouchArrowControls : MonoBehaviour
 
     public void UpdateVisibility()
     {
+        // Eğer UI henüz inşa edilmediyse inşa et
+        if (_rootContainer == null)
+        {
+            EnsureArrowUI();
+        }
+
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy) ||
                           (HangarUI.Instance != null && HangarUI.Instance.gameObject.activeInHierarchy) ||
@@ -100,9 +106,16 @@ public class TouchArrowControls : MonoBehaviour
         bool isArrows = (GameSettings.SelectedControl == GameSettings.ControlType.Arrows);
         bool shouldShowArrows = isArrows && !isMenuOpen;
 
-        if (_rootContainer != null && _rootContainer.activeSelf != shouldShowArrows)
+        if (_rootContainer != null)
         {
-            _rootContainer.SetActive(shouldShowArrows);
+            if (_rootContainer.activeSelf != shouldShowArrows)
+            {
+                _rootContainer.SetActive(shouldShowArrows);
+            }
+            if (shouldShowArrows)
+            {
+                _rootContainer.transform.SetAsLastSibling();
+            }
         }
 
         if (_p1JoystickObj == null) FindP1Joystick();
@@ -142,16 +155,18 @@ public class TouchArrowControls : MonoBehaviour
         rRt.anchoredPosition = Vector2.zero;
         rRt.sizeDelta = new Vector2(400f, 260f);
 
-        // 1. SOL OK BUTONU (◀ SOL)
+        // 1. SOL OK BUTONU (◀ SOL) - Boyut: 130x120
         leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
-            new Vector2(95f, 130f), "◀", "SOL", isLeft: true);
+            new Vector2(105f, 150f), "btn_arrow_left", "SOL", isLeft: true);
 
-        // 2. SAĞ OK BUTONU (SAĞ ▶)
+        // 2. SAĞ OK BUTONU (SAĞ ▶) - Boyut: 130x120
         rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
-            new Vector2(235f, 130f), "▶", "SAĞ", isLeft: false);
+            new Vector2(255f, 150f), "btn_arrow_right", "SAĞ", isLeft: false);
+
+        _rootContainer.SetActive(GameSettings.SelectedControl == GameSettings.ControlType.Arrows);
     }
 
-    private GameObject CreateArrowButton(Transform parent, string name, Vector2 pos, string arrowIcon, string label, bool isLeft)
+    private GameObject CreateArrowButton(Transform parent, string name, Vector2 pos, string spriteResName, string label, bool isLeft)
     {
         GameObject btnObj = new GameObject(name, typeof(RectTransform));
         btnObj.transform.SetParent(parent, false);
@@ -161,16 +176,23 @@ public class TouchArrowControls : MonoBehaviour
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(125f, 105f); // Geniş, dokunması çok konforlu alan
+        rt.sizeDelta = new Vector2(130f, 120f); // Geniş, dokunması çok konforlu alan
 
         Image bg = btnObj.AddComponent<Image>();
-        bg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.95f), new Color(0.04f, 0.10f, 0.18f, 0.92f), true);
-        bg.type = Image.Type.Sliced;
-        bg.color = Color.white;
-
-        Outline outline = btnObj.AddComponent<Outline>();
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
-        outline.effectDistance = new Vector2(2f, -2f);
+        Sprite arrowSpr = Resources.Load<Sprite>(spriteResName);
+        if (arrowSpr != null)
+        {
+            bg.sprite = arrowSpr;
+            bg.type = Image.Type.Simple;
+            bg.preserveAspect = true;
+            bg.color = Color.white;
+        }
+        else
+        {
+            bg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 0.95f), new Color(0.04f, 0.10f, 0.18f, 0.92f), true);
+            bg.type = Image.Type.Sliced;
+            bg.color = Color.white;
+        }
 
         // Dokunmatik Girdi Dinleyicisi
         EventTrigger trigger = btnObj.AddComponent<EventTrigger>();
@@ -181,8 +203,8 @@ public class TouchArrowControls : MonoBehaviour
         {
             if (isLeft) _isLeftPressed = true;
             else _isRightPressed = true;
-            bg.color = new Color(1f, 1f, 1f, 1f);
-            rt.localScale = Vector3.one * 1.08f;
+            bg.color = new Color(0.8f, 1f, 1f, 1f);
+            rt.localScale = Vector3.one * 1.12f;
         });
         trigger.triggers.Add(downEntry);
 
@@ -197,7 +219,7 @@ public class TouchArrowControls : MonoBehaviour
         });
         trigger.triggers.Add(upEntry);
 
-        // PointerExit (Parmağı buton dışına kaydırdığında basılı kalmasın)
+        // PointerExit
         var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
         exitEntry.callback.AddListener((data) =>
         {
@@ -208,21 +230,22 @@ public class TouchArrowControls : MonoBehaviour
         });
         trigger.triggers.Add(exitEntry);
 
-        // İçerik Yazısı: [ ◀ ] ve [ SOL ]
-        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        // Alt Taktik Yazı: [ SOL ] veya [ SAĞ ]
+        GameObject txtObj = new GameObject("Label", typeof(RectTransform));
         txtObj.transform.SetParent(btnObj.transform, false);
         RectTransform tRt = txtObj.GetComponent<RectTransform>();
-        tRt.anchorMin = Vector2.zero;
-        tRt.anchorMax = Vector2.one;
+        tRt.anchorMin = new Vector2(0f, 0f);
+        tRt.anchorMax = new Vector2(1f, 0.35f);
+        tRt.pivot = new Vector2(0.5f, 0f);
         tRt.offsetMin = Vector2.zero;
         tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
-        tmp.text = $"<size=150%><b>{arrowIcon}</b></size>\n<size=75%><color=#A0E0FF>{label}</color></size>";
-        tmp.fontSize = 26f;
+        tmp.text = $"<color=#00E5FF><b>[ {label} ]</b></color>";
+        tmp.fontSize = 18f;
         tmp.fontStyle = FontStyles.Bold;
-        tmp.characterSpacing = 1.6f;
+        tmp.characterSpacing = 2.0f;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
         tmp.raycastTarget = false;

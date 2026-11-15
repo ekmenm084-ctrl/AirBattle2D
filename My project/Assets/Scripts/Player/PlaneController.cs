@@ -57,15 +57,18 @@ public class PlaneController : MonoBehaviour
             maxX = horzExtent - 0.8f;
         }
 
-        if (isPlayer1 && joystick == null)
+        if (isPlayer1)
         {
-            var joysticks = FindObjectsOfType<VirtualJoystick>();
-            foreach (var j in joysticks)
+            if (joystick == null)
             {
-                if (j.isPlayer1)
+                var joysticks = FindObjectsOfType<VirtualJoystick>();
+                foreach (var j in joysticks)
                 {
-                    joystick = j;
-                    break;
+                    if (j.isPlayer1)
+                    {
+                        joystick = j;
+                        break;
+                    }
                 }
             }
             TouchArrowControls.EnsureInstance();
@@ -115,24 +118,31 @@ public class PlaneController : MonoBehaviour
             }
             catch { }
 
-            // Dokunmatik Ok Tuşları girdisi (TouchArrowControls)
-            float touchArrowH = TouchArrowControls.HorizontalInput;
-            if (GameSettings.SelectedControl == GameSettings.ControlType.Arrows && Mathf.Abs(touchArrowH) > 0.01f)
+            // 1. DOKUNMATİK OK TUŞLARI MODU
+            if (GameSettings.SelectedControl == GameSettings.ControlType.Arrows)
             {
-                horizontal += touchArrowH;
-            }
-
-            if (Mathf.Abs(horizontal) > 0.01f)
-            {
+                float touchH = TouchArrowControls.HorizontalInput;
+                if (Mathf.Abs(touchH) > 0.01f)
+                {
+                    horizontal = touchH;
+                }
                 _inputDir = new Vector2(Mathf.Clamp(horizontal, -1f, 1f), 0f);
             }
-            else if (GameSettings.SelectedControl == GameSettings.ControlType.Joystick && joystick != null && Mathf.Abs(joystick.InputDirection.x) > 0.05f)
-            {
-                _inputDir = new Vector2(joystick.InputDirection.x, 0f);
-            }
+            // 2. SANAL JOYSTICK MODU
             else
             {
-                _inputDir = Vector2.zero;
+                if (Mathf.Abs(horizontal) > 0.01f)
+                {
+                    _inputDir = new Vector2(Mathf.Clamp(horizontal, -1f, 1f), 0f);
+                }
+                else if (joystick != null && Mathf.Abs(joystick.InputDirection.x) > 0.05f)
+                {
+                    _inputDir = new Vector2(joystick.InputDirection.x, 0f);
+                }
+                else
+                {
+                    _inputDir = Vector2.zero;
+                }
             }
         }
         else
