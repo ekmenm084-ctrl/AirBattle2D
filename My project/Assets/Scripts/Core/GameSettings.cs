@@ -33,7 +33,7 @@ public static class GameSettings
 
     public static GameMode SelectedMode = GameMode.Solo;
     public static Difficulty SelectedDifficulty = Difficulty.Normal;
-    public static ControlType SelectedControl = ControlType.Joystick;
+    public static ControlType SelectedControl = ControlType.Arrows;
 
     public static event Action<ControlType> OnControlSchemeChanged;
 
@@ -71,7 +71,7 @@ public static class GameSettings
     {
         SelectedMode = (GameMode)PlayerPrefs.GetInt("GameSettings_Mode", (int)GameMode.Solo);
         SelectedDifficulty = (Difficulty)PlayerPrefs.GetInt("GameSettings_Difficulty", (int)Difficulty.Normal);
-        SelectedControl = (ControlType)PlayerPrefs.GetInt("GameSettings_ControlType", (int)ControlType.Joystick);
+        SelectedControl = (ControlType)PlayerPrefs.GetInt("GameSettings_ControlType", (int)ControlType.Arrows);
     }
 
     public static string GetDifficultyName(Difficulty diff)

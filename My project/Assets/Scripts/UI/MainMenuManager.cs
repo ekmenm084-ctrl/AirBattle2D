@@ -1938,6 +1938,7 @@ public class MainMenuManager : MonoBehaviour
         if (DailyOpsUI.Instance != null) DailyOpsUI.Instance.CloseDirectly();
 
         if (inGameUI != null) inGameUI.SetActive(true);
+        TouchArrowControls.EnsureInstance()?.UpdateVisibility();
 
         // MODU KESİN OLARAK UYGULA:
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
