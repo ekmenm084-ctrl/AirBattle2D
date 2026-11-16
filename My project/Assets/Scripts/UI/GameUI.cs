@@ -1407,8 +1407,18 @@ public class GameUI : MonoBehaviour
                 string enemyShieldTxt = plane2Health.HasEnemyShield
                     ? $" <color=#00E5FF>[KALKAN: {Mathf.CeilToInt(plane2Health.currentEnemyShield)}]</color>"
                     : "";
+                BossPatternController bpc = plane2Health != null ? plane2Health.GetComponent<BossPatternController>() : null;
+                string phasePrefix = "";
+                if (bpc != null && isBoss)
+                {
+                    if (bpc.IsPhase3)
+                        phasePrefix = "<color=#FF0055><b>[FAZ 3: APEX] </b></color>";
+                    else if (bpc.IsPhase2)
+                        phasePrefix = "<color=#FF7700><b>[FAZ 2: AŞIRI YÜK] </b></color>";
+                }
+
                 string archTag = isBoss
-                    ? BossPatternController.GetArchetypeLabel(BossPatternController.GetBossArchetype(wave))
+                    ? (bpc != null ? BossPatternController.GetArchetypeLabel(bpc.CurrentArchetype) : BossPatternController.GetArchetypeLabel(BossPatternController.GetBossArchetype(wave)))
                     : AIController.GetArchetypeTag(AIController.GetStandardArchetype(wave));
 
                 if (_p2TmpLabel != null)
@@ -1420,13 +1430,13 @@ public class GameUI : MonoBehaviour
                     }
                     else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
                     {
-                        _p2TmpLabel.text = $"HARDCORE BOSS #{wave} [{archTag}]: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
-                        _p2TmpLabel.color = new Color(1f, 0.25f, 0.25f);
+                        _p2TmpLabel.text = $"{phasePrefix}HARDCORE BOSS #{wave} [{archTag}]: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
+                        _p2TmpLabel.color = bpc != null && bpc.IsPhase3 ? new Color(1f, 0.1f, 0.5f) : new Color(1f, 0.25f, 0.25f);
                     }
                     else if (isBoss)
                     {
-                        _p2TmpLabel.text = $"{title} [{archTag}]: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
-                        _p2TmpLabel.color = new Color(1f, 0.85f, 0.2f); // Altın / Akkor Boss rengi
+                        _p2TmpLabel.text = $"{phasePrefix}{title} [{archTag}]: %{hpInt} ({rawHp} HP){enemyShieldTxt}";
+                        _p2TmpLabel.color = bpc != null && bpc.IsPhase3 ? new Color(1f, 0.15f, 0.55f) : (bpc != null && bpc.IsPhase2 ? new Color(1f, 0.45f, 0.15f) : new Color(1f, 0.85f, 0.2f));
                     }
                     else
                     {
@@ -1440,9 +1450,19 @@ public class GameUI : MonoBehaviour
 
                 if (_p2FillImage != null)
                 {
-                    _p2FillImage.color = isBoss
-                        ? new Color(1f, 0.55f, 0.1f) // Boss için Lav Turuncusu/Altın
-                        : new Color(1f, 0.2f, 0.25f);
+                    if (isBoss)
+                    {
+                        if (bpc != null && bpc.IsPhase3)
+                            _p2FillImage.color = new Color(1f, 0.05f, 0.45f); // Apex Kor
+                        else if (bpc != null && bpc.IsPhase2)
+                            _p2FillImage.color = new Color(1f, 0.35f, 0.08f); // Aşırı Yük Turuncu
+                        else
+                            _p2FillImage.color = new Color(1f, 0.70f, 0.12f); // Altın Boss
+                    }
+                    else
+                    {
+                        _p2FillImage.color = new Color(1f, 0.2f, 0.25f);
+                    }
                 }
 
                 string diffTag = "";

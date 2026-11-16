@@ -240,27 +240,29 @@ public class AIController : MonoBehaviour
         if (isBoss)
         {
             // Bosslar: Zor modda ve ilerleyen dalgalarda gerçek bir mermi cehennemi
-            reactionSpeed = Mathf.Lerp(0.18f, 0.06f, progress) * reactionMod;
-            fireInterval = Mathf.Lerp(0.75f, 0.35f, progress) * fireRateMod;
-            aimToleranceX = Mathf.Lerp(1.20f, 2.20f, progress);
-            dodgeChance = Mathf.Lerp(0.30f, 0.60f, progress) * dodgeMod;
+            reactionSpeed = Mathf.Lerp(0.16f, 0.04f, progress) * reactionMod;
+            fireInterval = Mathf.Lerp(0.70f, 0.30f, progress) * fireRateMod;
+            aimToleranceX = Mathf.Lerp(1.30f, 2.40f, progress);
+            dodgeChance = Mathf.Lerp(0.35f, 0.70f, progress) * dodgeMod;
 
             if (_controller != null)
-                _controller.moveSpeed = Mathf.Lerp(5.5f, 8.5f, progress) * speedMod;
+                _controller.moveSpeed = Mathf.Lerp(5.8f, 9.2f, progress) * speedMod;
 
             if (_shooter != null)
             {
                 _shooter.fireRate = fireInterval;
-                // Zor modda Boss 1 dahil en az 3'lü atar! İleri dalgalarda veya Zor modda 4'lü salvo!
-                if (wave >= 15 || (isZor && wave >= 10))
+                // Çok üst levellerde (Wave 20+ veya Zor Mod Wave 15+) 5'li ölümcül salvo!
+                if (wave >= 20 || (isZor && wave >= 15))
+                    _shooter.bulletsPerShot = 5;
+                else if (wave >= 15 || (isZor && wave >= 10))
                     _shooter.bulletsPerShot = 4;
                 else if (isZor || wave >= 10)
                     _shooter.bulletsPerShot = 3;
                 else
                     _shooter.bulletsPerShot = 2;
 
-                _shooter.bulletSpread = 0.42f;
-                float bossBaseDmg = 18f + Mathf.Min(wave * 1.0f, 22f);
+                _shooter.bulletSpread = (wave >= 20 || (isZor && wave >= 15)) ? 0.48f : 0.42f;
+                float bossBaseDmg = 18f + Mathf.Min(wave * 1.35f, 32f);
                 _shooter.bulletDamage = bossBaseDmg * damageMod;
             }
 

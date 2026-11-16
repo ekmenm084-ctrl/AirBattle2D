@@ -292,8 +292,8 @@ public class GameManager : MonoBehaviour
         switch (GameSettings.SelectedDifficulty)
         {
             case GameSettings.Difficulty.Kolay: return 0.85f; // Kolay mod
-            case GameSettings.Difficulty.Zor:   return 1.80f; // Zor modda %80 daha fazla can (gerçek bir meydan okuma!)
-            default:                            return 1.20f; // Normal modda %20 daha dayanıklı
+            case GameSettings.Difficulty.Zor:   return 2.10f; // Zor modda tam %110 daha fazla can (gerçek bir Boss savaşı!)
+            default:                            return 1.25f; // Normal modda dengeli dayanıklılık
         }
     }
 
@@ -314,15 +314,27 @@ public class GameManager : MonoBehaviour
         float baseHp = 0f;
         switch (eff)
         {
-            case 5:  baseHp = 250f; break; // Boss 1 (önceki: 160)
-            case 10: baseHp = 380f; break; // Boss 2 (önceki: 240)
-            case 15: baseHp = 520f; break; // Boss 3 (önceki: 320)
-            case 20: baseHp = 700f; break; // Final Boss (önceki: 420)
+            case 5:  baseHp = 270f; break; // Boss 1 (Demir Muhafız)
+            case 10: baseHp = 420f; break; // Boss 2 (Seçkin Komutan)
+            case 15: baseHp = 600f; break; // Boss 3 (Gölge Avcı / Üst Düzey Tehdit)
+            case 20: baseHp = 850f; break; // Final Boss (Kıyamet Katı Titan)
             default:
                 if (eff > 20)
-                    baseHp = 350f + ((eff - 20) * 25f); // Sonsuz mod artışı
+                {
+                    if (eff % 5 == 0)
+                    {
+                        int titanTier = (eff / 5) - 4; // 25: 1, 30: 2...
+                        baseHp = 850f + (titanTier * 220f); // Sonsuz modda her 5 dalgada devasa Titan Boss
+                    }
+                    else
+                    {
+                        baseHp = 320f + ((eff - 20) * 28f); // Sonsuz mod standart uçak artışı
+                    }
+                }
                 else
-                    baseHp = 95f + (eff * 11f); // Standart uçaklar (önceki: 70 + eff*6)
+                {
+                    baseHp = 95f + (eff * 11f); // Standart uçaklar
+                }
                 break;
         }
 
