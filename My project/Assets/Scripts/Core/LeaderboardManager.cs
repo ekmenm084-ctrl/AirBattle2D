@@ -1,14 +1,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
 /// <summary>
 /// Canlı Çevrimiçi Bulut ve Küresel As Pilotlar Liderlik Tablosu Yöneticisi:
-/// - Çevrimiçi Bulut API (Dreamlo / REST) ile gerçek oyuncuların skorlarını çeker ve buluta yükler.
-/// - İnternet yoksa veya sunucuya ulaşılamazsa kesintisiz olarak küresel elit as pilotlar listesini devreye sokar.
-/// - Oyuncunun kendi pilot çağrı kodunu (Callsign), kişisel rekorunu ve dünya sıralamasını (#1, #2, #3...) takip eder.
+/// - Supabase / PostgreSQL REST API (PostgREST) ile dünya genelindeki gerçek oyuncu skorlarını canlı senkronize eder.
+/// - UPSERT desteği sayesinde aynı oyuncunun en iyi skoru otomatik güncellenir.
+/// - İnternet yoksa veya yapılandırma henüz yapılmamışsa simüle elit as pilotlar listesini devreye sokar.
+/// - Oyuncunun pilot çağrı kodunu (Callsign), kişisel rekorunu ve dünya sıralamasını takip eder.
 /// </summary>
 public class LeaderboardManager : MonoBehaviour
 {
@@ -23,7 +25,7 @@ public class LeaderboardManager : MonoBehaviour
         Hardcore = 4     // Hardcore Modu (Tek Can, 200 HP, İlerlenen Boss Sayısı)
     }
 
-    [System.Serializable]
+    [Serializable]
     public class LeaderboardEntry
     {
         public int rank;
@@ -36,24 +38,36 @@ public class LeaderboardManager : MonoBehaviour
         public string extraInfo;
     }
 
+    [Serializable]
+    public class SupabaseScoreRecord
+    {
+        public int id;
+        public string player_name;
+        public string mode;
+        public int score;
+        public float time_seconds;
+        public string formatted_score;
+        public string rank_title;
+        public string extra_info;
+    }
+
+    [Serializable]
+    public class SupabaseConfig
+    {
+        public string url = "";
+        public string anonKey = "";
+    }
+
     private const string PREF_CALLSIGN = "AirBattle_PlayerCallsign";
     private const string PREF_CALLSIGN_SET = "AirBattle_CallsignSet";
+    private const string PREF_SUPABASE_URL = "AirBattle_SupabaseUrl";
+    private const string PREF_SUPABASE_KEY = "AirBattle_SupabaseKey";
+
+    [Header("Supabase Yapılandırması")]
+    public string supabaseUrl = "";
+    public string supabaseAnonKey = "";
 
     public static bool HasSetCustomCallsign => (PlayerPrefs.GetInt(PREF_CALLSIGN_SET, 0) == 1) && !string.IsNullOrEmpty(PlayerPrefs.GetString(PREF_CALLSIGN, ""));
-
-    // Dreamlo Bulut Skor Panoları (Ücretsiz, Kayıt Gerektirmeyen REST API)
-    // Her mod için benzersiz genel anahtarlar (Public Keys - Skor okuma):
-    private const string DREAMLO_PUBLIC_ENDLESS = "672cde088f40bb11c8d0a0b1";
-    private const string DREAMLO_PRIVATE_ENDLESS = "Yp_e_8eT9U6tVz4Bq_1Nbg";
-
-    private const string DREAMLO_PUBLIC_TIMEATTACK = "672cde4b8f40bb11c8d0a0b2";
-    private const string DREAMLO_PRIVATE_TIMEATTACK = "aK_1_8eT9U6tVz4Bq_2Mch";
-
-    private const string DREAMLO_PUBLIC_BULLETHELL = "672cde6f8f40bb11c8d0a0b3";
-    private const string DREAMLO_PRIVATE_BULLETHELL = "zR_3_8eT9U6tVz4Bq_3Ldi";
-
-    private const string DREAMLO_PUBLIC_BOSSRUSH = "672cde958f40bb11c8d0a0b4";
-    private const string DREAMLO_PRIVATE_BOSSRUSH = "wQ_4_8eT9U6tVz4Bq_4Kef";
 
     public static string PlayerCallsign
     {
@@ -72,7 +86,6 @@ public class LeaderboardManager : MonoBehaviour
         {
             if (!string.IsNullOrEmpty(value))
             {
-                // URL güvenli karakter filtreleme
                 string clean = value.Trim().Replace(" ", "_").Replace("|", "").Replace("/", "");
                 if (clean.Length > 16) clean = clean.Substring(0, 16);
                 PlayerPrefs.SetString(PREF_CALLSIGN, clean);
@@ -88,6 +101,7 @@ public class LeaderboardManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            LoadSupabaseConfig();
         }
         else if (Instance != this)
         {
@@ -104,23 +118,82 @@ public class LeaderboardManager : MonoBehaviour
         Instance = go.GetComponent<LeaderboardManager>();
         if (Instance == null) Instance = go.AddComponent<LeaderboardManager>();
         DontDestroyOnLoad(go);
+        Instance.LoadSupabaseConfig();
         return Instance;
     }
 
     /// <summary>
-    /// Mod bitiminde skoru hem yerel PlayerPrefs'e kaydeder hem de arka planda bulut sunucusuna gönderir.
+    /// Supabase bağlantı bilgilerini Resources/supabase_config.json veya PlayerPrefs'ten yükler.
+    /// </summary>
+    public void LoadSupabaseConfig()
+    {
+        // 1. Resources üzerinden kontrol
+        TextAsset configAsset = Resources.Load<TextAsset>("supabase_config");
+        if (configAsset != null && !string.IsNullOrEmpty(configAsset.text))
+        {
+            try
+            {
+                SupabaseConfig cfg = JsonUtility.FromJson<SupabaseConfig>(configAsset.text);
+                if (cfg != null && !string.IsNullOrEmpty(cfg.url))
+                {
+                    supabaseUrl = cfg.url.Trim().TrimEnd('/');
+                    supabaseAnonKey = cfg.anonKey.Trim();
+                    return;
+                }
+            }
+            catch { }
+        }
+
+        // 2. PlayerPrefs üzerinden kontrol
+        string prefUrl = PlayerPrefs.GetString(PREF_SUPABASE_URL, "");
+        string prefKey = PlayerPrefs.GetString(PREF_SUPABASE_KEY, "");
+        if (!string.IsNullOrEmpty(prefUrl))
+        {
+            supabaseUrl = prefUrl.Trim().TrimEnd('/');
+            supabaseAnonKey = prefKey.Trim();
+        }
+    }
+
+    public void SaveSupabaseCredentials(string url, string anonKey)
+    {
+        supabaseUrl = url.Trim().TrimEnd('/');
+        supabaseAnonKey = anonKey.Trim();
+        PlayerPrefs.SetString(PREF_SUPABASE_URL, supabaseUrl);
+        PlayerPrefs.SetString(PREF_SUPABASE_KEY, supabaseAnonKey);
+        PlayerPrefs.Save();
+    }
+
+    public bool IsSupabaseConfigured => !string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseAnonKey) && !supabaseUrl.Contains("YOUR_PROJECT_ID");
+
+    public static string GetModeKey(BoardMode mode)
+    {
+        return mode switch
+        {
+            BoardMode.Endless => "endless",
+            BoardMode.TimeAttack => "time_attack",
+            BoardMode.BulletHell => "bullet_hell",
+            BoardMode.BossRush => "boss_rush",
+            BoardMode.Hardcore => "hardcore",
+            _ => "endless"
+        };
+    }
+
+    /// <summary>
+    /// Mod bitiminde skoru yerel PlayerPrefs'e kaydeder ve yeni bir rekor ise Supabase'e gönderir.
     /// </summary>
     public void SubmitScore(BoardMode mode, int score, float timeSeconds = 0f, string extra = "")
     {
-        // 1. Yerel En Yüksek Rekor Kontrolü ve Güncellemesi
-        UpdateLocalRecord(mode, score, timeSeconds);
+        bool isNewRecord = UpdateLocalRecord(mode, score, timeSeconds);
 
-        // 2. Çevrimiçi Bulut Sunucusuna Gönderim (Arka Planda)
-        StartCoroutine(UploadScoreRoutine(mode, score, (int)timeSeconds, extra));
+        if (isNewRecord || IsSupabaseConfigured)
+        {
+            StartCoroutine(UploadScoreToSupabaseRoutine(mode, score, timeSeconds, extra));
+        }
     }
 
-    private void UpdateLocalRecord(BoardMode mode, int score, float timeSeconds)
+    private bool UpdateLocalRecord(BoardMode mode, int score, float timeSeconds)
     {
+        bool isNew = false;
         switch (mode)
         {
             case BoardMode.Endless:
@@ -129,6 +202,7 @@ public class LeaderboardManager : MonoBehaviour
                 {
                     PlayerPrefs.SetInt("AirBattle_EndlessHighScore", score);
                     PlayerPrefs.Save();
+                    isNew = true;
                 }
                 break;
 
@@ -138,6 +212,7 @@ public class LeaderboardManager : MonoBehaviour
                 {
                     PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", score);
                     PlayerPrefs.Save();
+                    isNew = true;
                 }
                 break;
 
@@ -147,6 +222,7 @@ public class LeaderboardManager : MonoBehaviour
                 {
                     PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", timeSeconds);
                     PlayerPrefs.Save();
+                    isNew = true;
                 }
                 break;
 
@@ -156,9 +232,21 @@ public class LeaderboardManager : MonoBehaviour
                 {
                     PlayerPrefs.SetInt("AirBattle_BossRushHighScore", score);
                     PlayerPrefs.Save();
+                    isNew = true;
+                }
+                break;
+
+            case BoardMode.Hardcore:
+                int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                if (score > bestHc)
+                {
+                    PlayerPrefs.SetInt("AirBattle_HardcoreHighScore", score);
+                    PlayerPrefs.Save();
+                    isNew = true;
                 }
                 break;
         }
+        return isNew;
     }
 
     public int GetLocalRecordScore(BoardMode mode)
@@ -174,37 +262,56 @@ public class LeaderboardManager : MonoBehaviour
         };
     }
 
-    private IEnumerator UploadScoreRoutine(BoardMode mode, int score, int seconds, string extra)
+    private IEnumerator UploadScoreToSupabaseRoutine(BoardMode mode, int score, float timeSeconds, string extra)
     {
-        string privKey = GetPrivateKey(mode);
-        if (string.IsNullOrEmpty(privKey)) yield break;
+        if (!IsSupabaseConfigured) yield break;
 
-        string playerName = UnityWebRequest.EscapeURL(PlayerCallsign);
-        string url = $"http://dreamlo.com/lb/{privKey}/add/{playerName}/{score}/{seconds}/{UnityWebRequest.EscapeURL(extra)}";
+        string endpoint = $"{supabaseUrl}/rest/v1/leaderboard";
+        string modeKey = GetModeKey(mode);
+        string rankTitle = GetPilotRankByScore(mode, score);
+        string formatted = FormatScoreText(mode, score, timeSeconds);
 
-        using (UnityWebRequest req = UnityWebRequest.Get(url))
+        SupabaseScoreRecord record = new SupabaseScoreRecord
         {
+            player_name = PlayerCallsign,
+            mode = modeKey,
+            score = score,
+            time_seconds = timeSeconds,
+            formatted_score = formatted,
+            rank_title = rankTitle,
+            extra_info = extra
+        };
+
+        string jsonBody = JsonUtility.ToJson(record);
+
+        using (UnityWebRequest req = new UnityWebRequest(endpoint, "POST"))
+        {
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+            req.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            req.downloadHandler = new DownloadHandlerBuffer();
             req.timeout = 5;
-            UnityWebRequestAsyncOperation op = null;
-            try
+
+            req.SetRequestHeader("apikey", supabaseAnonKey);
+            req.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
+            req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("Prefer", "resolution=merge-duplicates"); // UPSERT: player_name ve mode çakışırsa güncelle!
+
+            yield return req.SendWebRequest();
+
+            if (req.result == UnityWebRequest.Result.Success)
             {
-                op = req.SendWebRequest();
+                Debug.Log($"[LeaderboardManager] Supabase skoru başarıyla yüklendi: {PlayerCallsign} - {formatted}");
             }
-            catch (Exception)
+            else
             {
-                op = null;
+                Debug.LogWarning($"[LeaderboardManager] Supabase yükleme hatası: {req.error} | Detay: {req.downloadHandler?.text}");
             }
-            if (op != null)
-            {
-                yield return op;
-            }
-            // Arka planda sessizce yüklenir
         }
     }
 
     /// <summary>
-    /// Belirtilen oyun modunun canlı liderlik tablosunu buluttan çeker.
-    /// İnternet bağlantısı yoksa veya sunucu gecikirse anında yedek küresel as listesi döner.
+    /// Belirtilen oyun modunun canlı liderlik tablosunu Supabase bulutundan çeker.
+    /// Bağlantı yoksa simüle elit as pilotlar listesini devreye sokar.
     /// </summary>
     public void FetchLeaderboard(BoardMode mode, Action<List<LeaderboardEntry>, bool> onComplete)
     {
@@ -213,291 +320,265 @@ public class LeaderboardManager : MonoBehaviour
 
     private IEnumerator FetchLeaderboardRoutine(BoardMode mode, Action<List<LeaderboardEntry>, bool> onComplete)
     {
-        string pubKey = GetPublicKey(mode);
-        string url = $"http://dreamlo.com/lb/{pubKey}/pipe/15"; // En iyi 15 skoru boru (pipe) formatında çek
-
         List<LeaderboardEntry> entries = null;
         bool isLiveOnline = false;
 
-        using (UnityWebRequest req = UnityWebRequest.Get(url))
+        if (IsSupabaseConfigured)
         {
-            req.timeout = 3; // 3 saniyede yanıt gelmezse hemen çevrimdışı aslar devreye girer
-            UnityWebRequestAsyncOperation op = null;
-            try
-            {
-                op = req.SendWebRequest();
-            }
-            catch (Exception)
-            {
-                op = null;
-            }
+            string modeKey = GetModeKey(mode);
+            // Supabase REST sorgusu: mode eşleşen, score azalan sırada ilk 15 skor
+            string endpoint = $"{supabaseUrl}/rest/v1/leaderboard?mode=eq.{modeKey}&order=score.desc,time_seconds.asc&limit=15";
 
-            if (op != null)
+            using (UnityWebRequest req = UnityWebRequest.Get(endpoint))
             {
-                yield return op;
+                req.timeout = 4;
+                req.SetRequestHeader("apikey", supabaseAnonKey);
+                req.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
+                req.SetRequestHeader("Accept", "application/json");
+
+                yield return req.SendWebRequest();
 
                 if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler.text))
                 {
-                    entries = ParseDreamloPipeData(req.downloadHandler.text, mode);
+                    entries = ParseSupabaseJsonData(req.downloadHandler.text, mode);
                     if (entries != null && entries.Count > 0)
                     {
                         isLiveOnline = true;
                     }
                 }
+                else
+                {
+                    Debug.LogWarning($"[LeaderboardManager] Supabase okuma başarısız: {req.error} (Yedek liste devreye giriyor)");
+                }
             }
         }
 
-        // Buluttan veri alınamadıysa küresel simüle as pilotlar listesini oluştur
+        // Buluttan veri alınamadıysa küresel simüle elit as pilotlar listesini oluştur
         if (entries == null || entries.Count == 0)
         {
             entries = GenerateSimulatedAceLeaderboard(mode);
             isLiveOnline = false;
         }
 
-        // Oyuncunun kendi yerel rekorunu listeye entegre et (varsa sıralamayı güncelle)
+        // Oyuncunun kendi yerel rekorunu listeye entegre et
         IntegratePlayerScore(entries, mode);
 
         onComplete?.Invoke(entries, isLiveOnline);
     }
 
-    private List<LeaderboardEntry> ParseDreamloPipeData(string text, BoardMode mode)
+    private List<LeaderboardEntry> ParseSupabaseJsonData(string jsonText, BoardMode mode)
     {
-        var list = new List<LeaderboardEntry>();
-        string[] lines = text.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-
-        int rank = 1;
-        string myName = PlayerCallsign.ToLower();
-
-        foreach (string line in lines)
+        try
         {
-            string[] parts = line.Split('|');
-            if (parts.Length >= 2)
+            SupabaseScoreRecord[] records = JsonHelper.FromJson<SupabaseScoreRecord>(jsonText);
+            if (records == null || records.Length == 0) return null;
+
+            var list = new List<LeaderboardEntry>();
+            string myName = PlayerCallsign.ToLower();
+
+            for (int i = 0; i < records.Length; i++)
             {
-                string pName = UnityWebRequest.UnEscapeURL(parts[0]);
-                int pScore = 0;
-                int.TryParse(parts[1], out pScore);
-
-                float pSeconds = 0f;
-                if (parts.Length >= 3) float.TryParse(parts[2], out pSeconds);
-
-                string extra = (parts.Length >= 4) ? UnityWebRequest.UnEscapeURL(parts[3]) : "";
-
-                bool isMe = pName.ToLower() == myName;
+                var r = records[i];
+                bool isMe = r.player_name.ToLower() == myName;
 
                 list.Add(new LeaderboardEntry
                 {
-                    rank = rank,
-                    playerName = pName,
-                    score = pScore,
-                    timeInSeconds = pSeconds,
-                    formattedScore = FormatScoreText(mode, pScore, pSeconds),
-                    rankTitle = GetPilotRankByScore(mode, pScore),
+                    rank = i + 1,
+                    playerName = r.player_name,
+                    score = r.score,
+                    timeInSeconds = r.time_seconds,
+                    formattedScore = !string.IsNullOrEmpty(r.formatted_score) ? r.formatted_score : FormatScoreText(mode, r.score, r.time_seconds),
+                    rankTitle = !string.IsNullOrEmpty(r.rank_title) ? r.rank_title : GetPilotRankByScore(mode, r.score),
                     isPlayer = isMe,
-                    extraInfo = extra
+                    extraInfo = r.extra_info
                 });
-
-                rank++;
             }
-        }
 
-        return list;
+            return list;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[LeaderboardManager] Supabase JSON çözümleme hatası: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
-    /// İnternet bağlantısı olmadığında veya başlangıçta gösterilecek dünya çapındaki elit as pilotlar listesi.
+    /// Oyuncunun yerel rekoru buluttan gelen skorlardan iyiyse veya listede yoksa doğru sıraya entegre eder.
+    /// </summary>
+    private void IntegratePlayerScore(List<LeaderboardEntry> entries, BoardMode mode)
+    {
+        int myLocalScore = GetLocalRecordScore(mode);
+        if (myLocalScore <= 0) return;
+
+        string myName = PlayerCallsign;
+        LeaderboardEntry existing = null;
+
+        foreach (var e in entries)
+        {
+            if (e.playerName.Equals(myName, StringComparison.OrdinalIgnoreCase))
+            {
+                existing = e;
+                e.isPlayer = true;
+                if (myLocalScore > e.score)
+                {
+                    e.score = myLocalScore;
+                    e.formattedScore = FormatScoreText(mode, myLocalScore, 0f);
+                    e.rankTitle = GetPilotRankByScore(mode, myLocalScore);
+                }
+                break;
+            }
+        }
+
+        if (existing == null)
+        {
+            entries.Add(new LeaderboardEntry
+            {
+                rank = entries.Count + 1,
+                playerName = myName,
+                score = myLocalScore,
+                timeInSeconds = 0f,
+                formattedScore = FormatScoreText(mode, myLocalScore, 0f),
+                rankTitle = GetPilotRankByScore(mode, myLocalScore),
+                isPlayer = true,
+                extraInfo = "Yerel"
+            });
+        }
+
+        // Skorlara göre yeniden sırala
+        entries.Sort((a, b) => b.score.CompareTo(a.score));
+
+        for (int i = 0; i < entries.Count; i++)
+        {
+            entries[i].rank = i + 1;
+        }
+    }
+
+    /// <summary>
+    /// İnternet bağlantısı olmadığında veya henüz veri yüklenmediğinde devreye giren yüksek gerçekçilikli elit as pilotlar listesi.
     /// </summary>
     private List<LeaderboardEntry> GenerateSimulatedAceLeaderboard(BoardMode mode)
     {
         var list = new List<LeaderboardEntry>();
 
-        (string name, int score, float sec, string rank)[] aceRoster = mode switch
+        string[] names = new string[]
         {
-            BoardMode.Endless => new[]
-            {
-                ("Albay GhostRider", 45, 0f, "Taktik Hava Albayı"),
-                ("Yarbay Phoenix", 38, 0f, "Hava Kurmay Yarbay"),
-                ("Binbaşı Viper-99", 32, 0f, "Filo As Binbaşısı"),
-                ("Yüzbaşı Maverick", 26, 0f, "Hava Yüzbaşısı"),
-                ("Üsteğmen Cobra", 21, 0f, "Kıdemli Üsteğmen"),
-                ("Teğmen Hawk", 17, 0f, "Hava Kıdemli Teğmen"),
-                ("Astsubay Falcon", 13, 0f, "Kıdemli Başçavuş"),
-                ("Çavuş Eagle", 9, 0f, "Uçuş Çavuşu"),
-                ("Uzman Raven", 6, 0f, "Hava Uzmanı")
-            },
-            BoardMode.TimeAttack => new[]
-            {
-                ("Albay KaanLeader", 28, 60f, "Taktik Hava Albayı"),
-                ("Yarbay IronWing", 24, 60f, "Hava Kurmay Yarbay"),
-                ("Binbaşı Reaper", 21, 60f, "Filo As Binbaşısı"),
-                ("Yüzbaşı Shadow", 18, 60f, "Hava Yüzbaşısı"),
-                ("Üsteğmen Lightning", 15, 60f, "Kıdemli Üsteğmen"),
-                ("Teğmen Hunter", 13, 60f, "Hava Kıdemli Teğmen"),
-                ("Astsubay Sabre", 11, 60f, "Kıdemli Başçavuş"),
-                ("Çavuş Phantom", 8, 60f, "Uçuş Çavuşu"),
-                ("Uzman Raptor", 5, 60f, "Hava Uzmanı")
-            },
-            BoardMode.BulletHell => new[]
-            {
-                ("Mareşal Neo_Pilot", 165, 165f, "Efsanevi Mareşal"),
-                ("Albay Aegis", 135, 135f, "Taktik Hava Albayı"),
-                ("Yarbay BulletDodger", 110, 110f, "Hava Kurmay Yarbay"),
-                ("Binbaşı Vortex", 88, 88f, "Filo As Binbaşısı"),
-                ("Yüzbaşı Mirage", 72, 72f, "Hava Yüzbaşısı"),
-                ("Üsteğmen Reflex", 55, 55f, "Kıdemli Üsteğmen"),
-                ("Teğmen Spark", 42, 42f, "Hava Kıdemli Teğmen"),
-                ("Astsubay Glider", 30, 30f, "Kıdemli Başçavuş"),
-                ("Çavuş Breeze", 20, 20f, "Uçuş Çavuşu")
-            },
-            BoardMode.Hardcore => new[]
-            {
-                ("Mareşal GökKürşad", 24, 0f, "Efsanevi Mareşal"),
-                ("Albay DemirYumruk", 18, 0f, "Taktik Hava Albayı"),
-                ("Yarbay Titan", 14, 0f, "Hava Kurmay Yarbay"),
-                ("Binbaşı Kasırga", 11, 0f, "Filo As Binbaşısı"),
-                ("Yüzbaşı Ecel", 8, 0f, "Hava Yüzbaşısı"),
-                ("Üsteğmen Bıçak", 6, 0f, "Kıdemli Üsteğmen"),
-                ("Teğmen ÇelikKanat", 4, 0f, "Hava Kıdemli Teğmen"),
-                ("Astsubay Bozkurt", 2, 0f, "Kıdemli Başçavuş"),
-                ("Çavuş Barut", 1, 0f, "Uçuş Çavuşu")
-            },
-            _ => new[] // Boss Rush
-            {
-                ("Albay TitanSlayer", 400, 75f, "Taktik Hava Albayı"),
-                ("Yarbay Thunder", 400, 92f, "Hava Kurmay Yarbay"),
-                ("Binbaşı Warmachine", 400, 115f, "Filo As Binbaşısı"),
-                ("Yüzbaşı Vulcan", 300, 130f, "Hava Yüzbaşısı"),
-                ("Üsteğmen HeavyGun", 300, 145f, "Kıdemli Üsteğmen"),
-                ("Teğmen Blaster", 200, 95f, "Hava Kıdemli Teğmen"),
-                ("Astsubay Buster", 200, 120f, "Kıdemli Başçavuş"),
-                ("Çavuş Striker", 100, 60f, "Uçuş Çavuşu"),
-                ("Uzman Cannon", 100, 85f, "Hava Uzmanı")
-            }
+            "Mustafa_Ace", "KaanLeader", "GhostRider", "Viper_99", "SkyReaper",
+            "Phoenix_TR", "ShadowJet", "EagleEye", "Thunder_01", "IronWing",
+            "Korkusuz", "GokAsi", "CelikYigit", "BordoBere", "KurtSurusu"
         };
 
-        for (int i = 0; i < aceRoster.Length; i++)
+        for (int i = 0; i < names.Length; i++)
         {
-            var a = aceRoster[i];
+            int baseScore = GetSimulatedBaseScore(mode, i);
+            float timeSec = (mode == BoardMode.BulletHell) ? baseScore : 0f;
+
             list.Add(new LeaderboardEntry
             {
                 rank = i + 1,
-                playerName = a.name,
-                score = a.score,
-                timeInSeconds = a.sec,
-                formattedScore = FormatScoreText(mode, a.score, a.sec),
-                rankTitle = a.rank,
+                playerName = names[i],
+                score = baseScore,
+                timeInSeconds = timeSec,
+                formattedScore = FormatScoreText(mode, baseScore, timeSec),
+                rankTitle = GetPilotRankByScore(mode, baseScore),
                 isPlayer = false,
-                extraInfo = ""
+                extraInfo = "Elit As Filosu"
             });
         }
 
         return list;
     }
 
-    /// <summary>
-    /// Oyuncunun kişisel rekorunu listenin uygun sırasına yerleştirir.
-    /// </summary>
-    private void IntegratePlayerScore(List<LeaderboardEntry> list, BoardMode mode)
+    private int GetSimulatedBaseScore(BoardMode mode, int rankIndex)
     {
-        int myScore = GetLocalRecordScore(mode);
-        if (myScore <= 0 && mode != BoardMode.Endless) return;
-
-        string myName = PlayerCallsign;
-
-        // Listede zaten oyuncu var mı kontrol et
-        bool found = false;
-        foreach (var e in list)
+        return mode switch
         {
-            if (e.playerName.ToLower() == myName.ToLower())
-            {
-                e.isPlayer = true;
-                if (myScore > e.score)
-                {
-                    e.score = myScore;
-                    e.formattedScore = FormatScoreText(mode, myScore, myScore);
-                }
-                found = true;
-                break;
-            }
-        }
-
-        if (!found)
-        {
-            list.Add(new LeaderboardEntry
-            {
-                rank = 999,
-                playerName = myName,
-                score = myScore,
-                timeInSeconds = myScore,
-                formattedScore = FormatScoreText(mode, myScore, myScore),
-                rankTitle = PlayerProfileManager.Instance != null ? PlayerProfileManager.Instance.RankTitle : "As Pilot",
-                isPlayer = true,
-                extraInfo = "SEN"
-            });
-        }
-
-        // Skora göre büyükten küçüğe sırala
-        list.Sort((a, b) => b.score.CompareTo(a.score));
-
-        // Sıralama numaralarını yeniden ver
-        for (int i = 0; i < list.Count; i++)
-        {
-            list[i].rank = i + 1;
-        }
+            BoardMode.Endless => Mathf.Max(1, 48 - (rankIndex * 3)),
+            BoardMode.TimeAttack => Mathf.Max(5, 52 - (rankIndex * 3)),
+            BoardMode.BulletHell => Mathf.Max(15, 175 - (rankIndex * 11)),
+            BoardMode.BossRush => Mathf.Max(100, 1420 - (rankIndex * 90)),
+            BoardMode.Hardcore => Mathf.Max(1, 12 - rankIndex),
+            _ => 10
+        };
     }
 
     public static string FormatScoreText(BoardMode mode, int score, float timeSeconds)
     {
-        return mode switch
+        switch (mode)
         {
-            BoardMode.Endless => $"DALGA {score}",
-            BoardMode.TimeAttack => $"{score} İMHA",
-            BoardMode.BulletHell => FormatTime(timeSeconds > 0 ? timeSeconds : score),
-            BoardMode.BossRush => (score >= 400) ? $"4/4 BOSS ({FormatTime(timeSeconds)})" : $"{score / 100}/4 BOSS",
-            BoardMode.Hardcore => $"{score} BOSS İMHA",
-            _ => score.ToString()
-        };
+            case BoardMode.Endless:
+                return $"DALGA {score}";
+            case BoardMode.TimeAttack:
+                return $"{score} İMHA";
+            case BoardMode.BulletHell:
+                int m = (int)(timeSeconds / 60f);
+                int s = (int)(timeSeconds % 60f);
+                return $"{m:00}:{s:00} SN";
+            case BoardMode.BossRush:
+                return $"{score:N0} PUAN";
+            case BoardMode.Hardcore:
+                return $"BOSS #{score}";
+            default:
+                return score.ToString();
+        }
     }
 
-    private static string FormatTime(float seconds)
+    public static string GetPilotRankByScore(BoardMode mode, int score)
     {
-        int m = (int)(seconds / 60);
-        int s = (int)(seconds % 60);
-        int ms = (int)((seconds * 10) % 10);
-        return $"{m:00}:{s:00}.{ms}";
-    }
-
-    private static string GetPilotRankByScore(BoardMode mode, int score)
-    {
-        if (score >= 40) return "Taktik Hava Albayı";
-        if (score >= 25) return "Hava Kurmay Yarbay";
-        if (score >= 18) return "Filo As Binbaşısı";
-        if (score >= 12) return "Hava Yüzbaşısı";
-        if (score >= 7) return "Kıdemli Üsteğmen";
-        return "Hava Kıdemli Teğmen";
-    }
-
-    private string GetPublicKey(BoardMode mode)
-    {
-        return mode switch
+        switch (mode)
         {
-            BoardMode.Endless => DREAMLO_PUBLIC_ENDLESS,
-            BoardMode.TimeAttack => DREAMLO_PUBLIC_TIMEATTACK,
-            BoardMode.BulletHell => DREAMLO_PUBLIC_BULLETHELL,
-            BoardMode.BossRush => DREAMLO_PUBLIC_BOSSRUSH,
-            _ => DREAMLO_PUBLIC_ENDLESS
-        };
+            case BoardMode.Endless:
+                if (score >= 40) return "BAŞKOMUTAN AS";
+                if (score >= 25) return "HAVA ALBAYI";
+                if (score >= 15) return "FİLO BİNBAŞISI";
+                if (score >= 8)  return "KIDEMLİ YÜZBAŞI";
+                return "TEĞMEN PİLOT";
+
+            case BoardMode.TimeAttack:
+                if (score >= 45) return "ÖLÜMCÜL AVCI";
+                if (score >= 30) return "TAARRUZ UZMANI";
+                if (score >= 20) return "SERİ ATIŞÇI";
+                return "HÜCUM PİLOTU";
+
+            case BoardMode.BulletHell:
+                if (score >= 140) return "DOKUNULMAZ AS";
+                if (score >= 90)  return "MANEVRA USTASI";
+                if (score >= 50)  return "ÇEVİK PİLOT";
+                return "HAYATTA KALAN";
+
+            case BoardMode.BossRush:
+                if (score >= 1200) return "TİTAN KATİLİ";
+                if (score >= 800)  return "BOSS CELLADI";
+                if (score >= 400)  return "ELİT İMHA ASİ";
+                return "AVCILIK FİLOSU";
+
+            case BoardMode.Hardcore:
+                if (score >= 10) return "ÇELİK İRADELİ AS";
+                if (score >= 6)  return "KORKUSUZ PİLOT";
+                if (score >= 3)  return "SAVAŞ GAZİSİ";
+                return "CESUR PİLOT";
+
+            default:
+                return "AS PİLOT";
+        }
     }
 
-    private string GetPrivateKey(BoardMode mode)
+    /// <summary>
+    /// Unity JsonUtility ile JSON dizilerini ayrıştırmak için hafif yardımcı sınıf.
+    /// </summary>
+    public static class JsonHelper
     {
-        return mode switch
+        public static T[] FromJson<T>(string json)
         {
-            BoardMode.Endless => DREAMLO_PRIVATE_ENDLESS,
-            BoardMode.TimeAttack => DREAMLO_PRIVATE_TIMEATTACK,
-            BoardMode.BulletHell => DREAMLO_PRIVATE_BULLETHELL,
-            BoardMode.BossRush => DREAMLO_PRIVATE_BOSSRUSH,
-            _ => ""
-        };
+            string wrapper = "{\"Items\":" + json + "}";
+            Wrapper<T> w = JsonUtility.FromJson<Wrapper<T>>(wrapper);
+            return w != null ? w.Items : new T[0];
+        }
+
+        [Serializable]
+        private class Wrapper<T>
+        {
+            public T[] Items;
+        }
     }
 }
-

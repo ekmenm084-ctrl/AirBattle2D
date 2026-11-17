@@ -557,10 +557,22 @@ public class LeaderboardUI : MonoBehaviour
 
         if (_connectionStatusTMP != null)
         {
-            _connectionStatusTMP.text = isOnline
-                ? "[ONLINE] <b>CANLI BULUT BAĞLANTISI AKTİF</b> (Gerçek Oyuncu Veritabanı)"
-                : "[ARŞİV] <b>KÜRESEL ASLAR ARŞİVİ</b> (Çevrimdışı / Yerel Yedek)";
-            _connectionStatusTMP.color = isOnline ? new Color(0.2f, 0.95f, 0.4f) : new Color(0.4f, 0.85f, 1f);
+            var lm = LeaderboardManager.Instance;
+            if (isOnline)
+            {
+                _connectionStatusTMP.text = "[ONLINE] <b>SUPABASE POSTGRESQL VERİTABANI AKTİF</b> (Canlı Bulut Senkronizasyonu)";
+                _connectionStatusTMP.color = new Color(0.2f, 0.95f, 0.4f);
+            }
+            else if (lm != null && !lm.IsSupabaseConfigured)
+            {
+                _connectionStatusTMP.text = "[BEKLİYOR] <b>Supabase Yapılandırması Bekleniyor</b> (Simüle Elit Aslar Devrede)";
+                _connectionStatusTMP.color = new Color(1f, 0.75f, 0.2f);
+            }
+            else
+            {
+                _connectionStatusTMP.text = "[ARŞİV] <b>KÜRESEL ASLAR ARŞİVİ</b> (Çevrimdışı / Yerel Yedek)";
+                _connectionStatusTMP.color = new Color(0.4f, 0.85f, 1f);
+            }
         }
 
         if (entries == null || entries.Count == 0) return;
