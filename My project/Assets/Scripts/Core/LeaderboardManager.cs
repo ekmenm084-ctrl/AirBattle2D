@@ -147,7 +147,7 @@ public class LeaderboardManager : MonoBehaviour
                 SupabaseConfig cfg = JsonUtility.FromJson<SupabaseConfig>(configAsset.text);
                 if (cfg != null && !string.IsNullOrEmpty(cfg.url))
                 {
-                    supabaseUrl = cfg.url.Trim().TrimEnd('/');
+                    supabaseUrl = SanitizeSupabaseUrl(cfg.url);
                     supabaseAnonKey = cfg.anonKey.Trim();
                     return;
                 }
@@ -160,14 +160,25 @@ public class LeaderboardManager : MonoBehaviour
         string prefKey = PlayerPrefs.GetString(PREF_SUPABASE_KEY, "");
         if (!string.IsNullOrEmpty(prefUrl))
         {
-            supabaseUrl = prefUrl.Trim().TrimEnd('/');
+            supabaseUrl = SanitizeSupabaseUrl(prefUrl);
             supabaseAnonKey = prefKey.Trim();
         }
     }
 
+    public static string SanitizeSupabaseUrl(string rawUrl)
+    {
+        if (string.IsNullOrEmpty(rawUrl)) return "";
+        string clean = rawUrl.Trim().TrimEnd('/');
+        if (clean.EndsWith("/rest/v1", StringComparison.OrdinalIgnoreCase))
+        {
+            clean = clean.Substring(0, clean.Length - "/rest/v1".Length);
+        }
+        return clean.TrimEnd('/');
+    }
+
     public void SaveSupabaseCredentials(string url, string anonKey)
     {
-        supabaseUrl = url.Trim().TrimEnd('/');
+        supabaseUrl = SanitizeSupabaseUrl(url);
         supabaseAnonKey = anonKey.Trim();
         PlayerPrefs.SetString(PREF_SUPABASE_URL, supabaseUrl);
         PlayerPrefs.SetString(PREF_SUPABASE_KEY, supabaseAnonKey);
