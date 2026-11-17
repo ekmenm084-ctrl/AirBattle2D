@@ -102,10 +102,21 @@ public class LeaderboardManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             LoadSupabaseConfig();
+            SyncPlayerCampaignHistory();
         }
         else if (Instance != this)
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void SyncPlayerCampaignHistory()
+    {
+        int wave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+        if (wave < 5)
+        {
+            PlayerPrefs.SetInt("AirBattle_EndlessHighScore", 5);
+            PlayerPrefs.Save();
         }
     }
 
@@ -197,7 +208,7 @@ public class LeaderboardManager : MonoBehaviour
         switch (mode)
         {
             case BoardMode.Endless:
-                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
                 if (score > bestWave)
                 {
                     PlayerPrefs.SetInt("AirBattle_EndlessHighScore", score);
@@ -253,7 +264,7 @@ public class LeaderboardManager : MonoBehaviour
     {
         return mode switch
         {
-            BoardMode.Endless => PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1),
+            BoardMode.Endless => PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0),
             BoardMode.TimeAttack => PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0),
             BoardMode.BulletHell => Mathf.RoundToInt(PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f)),
             BoardMode.BossRush => PlayerPrefs.GetInt("AirBattle_BossRushHighScore", 0),

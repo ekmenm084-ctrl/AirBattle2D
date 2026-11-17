@@ -38,6 +38,12 @@ public class LeaderboardUI : MonoBehaviour
     private GameObject _nameChangeModal;
     private TMP_InputField _nameInputField;
 
+    // Bulut (Supabase) Yapılandırma Modalı
+    private GameObject _cloudConfigModal;
+    private TMP_InputField _supabaseUrlInput;
+    private TMP_InputField _supabaseKeyInput;
+    private TextMeshProUGUI _cloudStatusDetailTMP;
+
     private const float BOX_WIDTH = 1280f;
     private const float BOX_HEIGHT = 820f;
     private const float CONTENT_WIDTH = 1220f; // 1280 - 30 sol - 30 sağ = 1220px tam ortalanmış içerik genişliği
@@ -268,7 +274,7 @@ public class LeaderboardUI : MonoBehaviour
         float tabW = 236f;
         float startX = -488f;
 
-        _tabEndlessBtn = CreateTabBtn(tabsObj.transform, "TabEndless", "SONSUZ", startX + (tabW + 8f) * 0, () => SetTab(LeaderboardManager.BoardMode.Endless), out _tabEndlessTMP);
+        _tabEndlessBtn = CreateTabBtn(tabsObj.transform, "TabEndless", "HAREKÂT & DALGA", startX + (tabW + 8f) * 0, () => SetTab(LeaderboardManager.BoardMode.Endless), out _tabEndlessTMP);
         _tabHardcoreBtn = CreateTabBtn(tabsObj.transform, "TabHardcore", "[!] HARDCORE", startX + (tabW + 8f) * 1, () => SetTab(LeaderboardManager.BoardMode.Hardcore), out _tabHardcoreTMP);
         _tabBossRushBtn = CreateTabBtn(tabsObj.transform, "TabBossRush", "BOSS RUSH", startX + (tabW + 8f) * 2, () => SetTab(LeaderboardManager.BoardMode.BossRush), out _tabBossRushTMP);
         _tabTimeAttackBtn = CreateTabBtn(tabsObj.transform, "TabTimeAttack", "ZAMAN TAARRUZU", startX + (tabW + 8f) * 3, () => SetTab(LeaderboardManager.BoardMode.TimeAttack), out _tabTimeAttackTMP);
@@ -352,10 +358,10 @@ public class LeaderboardUI : MonoBehaviour
         statusObj.transform.SetParent(boxObj.transform, false);
         RectTransform stRt = statusObj.GetComponent<RectTransform>();
         stRt.anchorMin = new Vector2(0f, 0f);
-        stRt.anchorMax = new Vector2(0.55f, 0f);
+        stRt.anchorMax = new Vector2(0.50f, 0f);
         stRt.pivot = new Vector2(0f, 0f);
         stRt.anchoredPosition = new Vector2(30f, 22f);
-        stRt.sizeDelta = new Vector2(620f, 48f);
+        stRt.sizeDelta = new Vector2(590f, 48f);
 
         _connectionStatusTMP = statusObj.AddComponent<TextMeshProUGUI>();
         _connectionStatusTMP.font = MainMenuManager.GetTacticalFont();
@@ -365,14 +371,18 @@ public class LeaderboardUI : MonoBehaviour
         _connectionStatusTMP.alignment = TextAlignmentOptions.Left;
         _connectionStatusTMP.color = new Color(0.2f, 0.95f, 0.5f);
 
+        // Bulut Ayarları Butonu
+        CreateActionButton(boxObj.transform, "CloudConfigBtn", "[☁] BULUT AYARI", new Vector2(655f, 22f), new Vector2(195f, 48f), "hud_btn_cyan", new Color(0f, 0.9f, 0.85f, 1f), new Color(0.04f, 0.16f, 0.22f, 1f), OpenCloudConfigModal);
+
         // Yenile Butonu
-        CreateActionButton(boxObj.transform, "RefreshBtn", "YENİLE", new Vector2(870f, 22f), new Vector2(175f, 48f), "hud_btn_blue", new Color(0f, 0.75f, 1f, 1f), new Color(0.06f, 0.16f, 0.28f, 1f), () => RefreshScores());
+        CreateActionButton(boxObj.transform, "RefreshBtn", "YENİLE", new Vector2(865f, 22f), new Vector2(175f, 48f), "hud_btn_blue", new Color(0f, 0.75f, 1f, 1f), new Color(0.06f, 0.16f, 0.28f, 1f), () => RefreshScores());
 
         // Kapat Butonu
-        CreateActionButton(boxObj.transform, "CloseBtn", "« GERİ DÖN", new Vector2(1065f, 22f), new Vector2(185f, 48f), "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.26f, 0.05f, 0.05f, 1f), CloseLeaderboard);
+        CreateActionButton(boxObj.transform, "CloseBtn", "« GERİ DÖN", new Vector2(1055f, 22f), new Vector2(185f, 48f), "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.26f, 0.05f, 0.05f, 1f), CloseLeaderboard);
 
-        // İsim Değiştirme Modalını Hazırla
+        // İsim Değiştirme ve Bulut Modalını Hazırla
         SetupNameChangeModal();
+        SetupCloudConfigModal();
     }
 
     private void CreateHeaderCell(Transform parent, string title, float minX, float maxX, TextAlignmentOptions align, float leftPadding = 0f)
@@ -874,6 +884,189 @@ public class LeaderboardUI : MonoBehaviour
 
         if (_nameChangeModal != null)
             _nameChangeModal.SetActive(false);
+
+        RefreshScores();
+    }
+
+    // ==========================================
+    // SUPABASE BULUT VERİTABANI YAPILANDIRMA MODALI
+    // ==========================================
+    private void SetupCloudConfigModal()
+    {
+        if (_cloudConfigModal != null) return;
+
+        _cloudConfigModal = new GameObject("CloudConfigModal", typeof(RectTransform));
+        _cloudConfigModal.transform.SetParent(_panelRoot.transform, false);
+
+        RectTransform mRt = _cloudConfigModal.GetComponent<RectTransform>();
+        mRt.anchorMin = Vector2.zero;
+        mRt.anchorMax = Vector2.one;
+        mRt.offsetMin = Vector2.zero;
+        mRt.offsetMax = Vector2.zero;
+
+        Image mBg = _cloudConfigModal.AddComponent<Image>();
+        mBg.color = new Color(0f, 0.02f, 0.05f, 0.90f);
+
+        GameObject boxObj = new GameObject("DialogBox", typeof(RectTransform));
+        boxObj.transform.SetParent(_cloudConfigModal.transform, false);
+        RectTransform bRt = boxObj.GetComponent<RectTransform>();
+        bRt.anchorMin = new Vector2(0.5f, 0.5f);
+        bRt.anchorMax = new Vector2(0.5f, 0.5f);
+        bRt.pivot = new Vector2(0.5f, 0.5f);
+        bRt.sizeDelta = new Vector2(800f, 540f);
+
+        Image bBg = boxObj.AddComponent<Image>();
+        bBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.95f), new Color(0.03f, 0.07f, 0.14f, 0.98f), false);
+        bBg.type = Image.Type.Sliced;
+        bBg.color = Color.white;
+
+        // Başlık
+        GameObject tObj = new GameObject("Title", typeof(RectTransform));
+        tObj.transform.SetParent(boxObj.transform, false);
+        RectTransform tRt = tObj.GetComponent<RectTransform>();
+        tRt.anchorMin = new Vector2(0f, 1f);
+        tRt.anchorMax = new Vector2(1f, 1f);
+        tRt.pivot = new Vector2(0.5f, 1f);
+        tRt.anchoredPosition = new Vector2(0f, -20f);
+        tRt.sizeDelta = new Vector2(740f, 40f);
+
+        TextMeshProUGUI titleTMP = tObj.AddComponent<TextMeshProUGUI>();
+        titleTMP.font = MainMenuManager.GetTacticalFont();
+        titleTMP.text = "TACTICAL // SUPABASE CANLI BULUT VERİTABANI BAĞLANTISI";
+        titleTMP.fontSize = 20f;
+        titleTMP.fontStyle = FontStyles.Bold;
+        titleTMP.characterSpacing = 1.6f;
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        titleTMP.color = new Color(0f, 0.85f, 1f);
+
+        // Açıklama
+        GameObject subObj = new GameObject("Desc", typeof(RectTransform));
+        subObj.transform.SetParent(boxObj.transform, false);
+        RectTransform sRt = subObj.GetComponent<RectTransform>();
+        sRt.anchorMin = new Vector2(0f, 1f);
+        sRt.anchorMax = new Vector2(1f, 1f);
+        sRt.pivot = new Vector2(0.5f, 1f);
+        sRt.anchoredPosition = new Vector2(0f, -65f);
+        sRt.sizeDelta = new Vector2(740f, 130f);
+
+        _cloudStatusDetailTMP = subObj.AddComponent<TextMeshProUGUI>();
+        _cloudStatusDetailTMP.font = MainMenuManager.GetTacticalFont();
+        _cloudStatusDetailTMP.fontSize = 14f;
+        _cloudStatusDetailTMP.characterSpacing = 1.1f;
+        _cloudStatusDetailTMP.alignment = TextAlignmentOptions.TopLeft;
+        _cloudStatusDetailTMP.color = new Color(0.80f, 0.88f, 0.95f);
+
+        // URL Etiket & Input
+        CreateConfigField(boxObj.transform, "URL Field", "SUPABASE PROJECT URL (Örn: https://xyz.supabase.co)", -205f, out _supabaseUrlInput);
+
+        // Key Etiket & Input
+        CreateConfigField(boxObj.transform, "Key Field", "SUPABASE ANON PUBLIC KEY (API Anahtarı)", -295f, out _supabaseKeyInput);
+
+        // Butonlar
+        CreateActionButton(boxObj.transform, "SaveCloudBtn", "KAYDET VE BAĞLAN", new Vector2(230f, 30f), new Vector2(230f, 50f), "hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.16f, 0.08f, 1f), SaveCloudConfigAndClose);
+        CreateActionButton(boxObj.transform, "CloseCloudBtn", "KAPAT", new Vector2(570f, 30f), new Vector2(170f, 50f), "hud_btn_slate", new Color(0.5f, 0.6f, 0.7f, 0.9f), new Color(0.08f, 0.12f, 0.18f, 1f), () => _cloudConfigModal.SetActive(false));
+
+        _cloudConfigModal.SetActive(false);
+    }
+
+    private void CreateConfigField(Transform parent, string name, string labelText, float posY, out TMP_InputField inputField)
+    {
+        GameObject lblObj = new GameObject($"{name}_Label", typeof(RectTransform));
+        lblObj.transform.SetParent(parent, false);
+        RectTransform lRt = lblObj.GetComponent<RectTransform>();
+        lRt.anchorMin = new Vector2(0.5f, 1f);
+        lRt.anchorMax = new Vector2(0.5f, 1f);
+        lRt.pivot = new Vector2(0.5f, 1f);
+        lRt.anchoredPosition = new Vector2(0f, posY);
+        lRt.sizeDelta = new Vector2(740f, 24f);
+
+        TextMeshProUGUI lbl = lblObj.AddComponent<TextMeshProUGUI>();
+        lbl.font = MainMenuManager.GetTacticalFont();
+        lbl.text = labelText;
+        lbl.fontSize = 13f;
+        lbl.fontStyle = FontStyles.Bold;
+        lbl.color = new Color(0.3f, 0.85f, 1f);
+
+        GameObject inpObj = new GameObject($"{name}_Input", typeof(RectTransform));
+        inpObj.transform.SetParent(parent, false);
+        RectTransform inRt = inpObj.GetComponent<RectTransform>();
+        inRt.anchorMin = new Vector2(0.5f, 1f);
+        inRt.anchorMax = new Vector2(0.5f, 1f);
+        inRt.pivot = new Vector2(0.5f, 1f);
+        inRt.anchoredPosition = new Vector2(0f, posY - 26f);
+        inRt.sizeDelta = new Vector2(740f, 44f);
+
+        Image inBg = inpObj.AddComponent<Image>();
+        inBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.8f), new Color(0.02f, 0.05f, 0.09f, 1f), false);
+        inBg.type = Image.Type.Sliced;
+        inBg.color = Color.white;
+
+        GameObject textObj = new GameObject("Text", typeof(RectTransform));
+        textObj.transform.SetParent(inpObj.transform, false);
+        RectTransform textRt = textObj.GetComponent<RectTransform>();
+        textRt.anchorMin = Vector2.zero;
+        textRt.anchorMax = Vector2.one;
+        textRt.offsetMin = new Vector2(12f, 2f);
+        textRt.offsetMax = new Vector2(-12f, -2f);
+
+        TextMeshProUGUI inputText = textObj.AddComponent<TextMeshProUGUI>();
+        inputText.font = MainMenuManager.GetTacticalFont();
+        inputText.fontSize = 14f;
+        inputText.characterSpacing = 1.1f;
+        inputText.alignment = TextAlignmentOptions.Left;
+        inputText.color = Color.white;
+
+        inputField = inpObj.AddComponent<TMP_InputField>();
+        inputField.textComponent = inputText;
+    }
+
+    private void OpenCloudConfigModal()
+    {
+        if (_cloudConfigModal == null) SetupCloudConfigModal();
+        if (_cloudConfigModal == null) return;
+
+        var lm = LeaderboardManager.EnsureInstance();
+        string currentUrl = lm != null ? lm.supabaseUrl : "";
+        string currentKey = lm != null ? lm.supabaseAnonKey : "";
+
+        if (_supabaseUrlInput != null) _supabaseUrlInput.text = currentUrl;
+        if (_supabaseKeyInput != null) _supabaseKeyInput.text = currentKey;
+
+        if (_cloudStatusDetailTMP != null)
+        {
+            if (lm != null && lm.IsSupabaseConfigured)
+            {
+                _cloudStatusDetailTMP.text = "<color=#2ECC71><b>[✓ AKTİF] SUPABASE VERİTABANI BAĞLI</b></color>\n" +
+                    $"• <b>Bağlı URL:</b> {currentUrl}\n" +
+                    "Tüm yeni rekorlar canlı bulut veritabanına anında yazılır ve diğer pilotlarla senkronize olur.";
+            }
+            else
+            {
+                _cloudStatusDetailTMP.text = "<color=#00E5FF><b>[YEREL MOD] Cihazdaki Gerçek Skorlar Listeleniyor</b></color>\n" +
+                    "Küresel aslar liderlik tablosunu tüm dünyaya açmak için:\n" +
+                    "1. <b>supabase.com</b> üzerinde ücretsiz bir proje oluşturun ve <b>supabase_schema.sql</b> kodunu çalıştırın.\n" +
+                    "2. Project Settings -> API kısmından <b>Project URL</b> ve <b>anon public key</b> değerlerini aşağıya yapıştırın.\n" +
+                    "<i>(İpucu: Bilgileri Assets/Resources/supabase_config.json dosyasına da yazabilirsiniz.)</i>";
+            }
+        }
+
+        _cloudConfigModal.SetActive(true);
+        _cloudConfigModal.transform.SetAsLastSibling();
+    }
+
+    private void SaveCloudConfigAndClose()
+    {
+        string url = _supabaseUrlInput != null ? _supabaseUrlInput.text.Trim() : "";
+        string key = _supabaseKeyInput != null ? _supabaseKeyInput.text.Trim() : "";
+
+        var lm = LeaderboardManager.EnsureInstance();
+        if (lm != null && !string.IsNullOrEmpty(url) && !string.IsNullOrEmpty(key))
+        {
+            lm.SaveSupabaseCredentials(url, key);
+        }
+
+        if (_cloudConfigModal != null)
+            _cloudConfigModal.SetActive(false);
 
         RefreshScores();
     }

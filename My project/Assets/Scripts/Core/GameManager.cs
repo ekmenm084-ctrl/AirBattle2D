@@ -635,46 +635,35 @@ public class GameManager : MonoBehaviour
             {
                 // Can Hakkı tükendi: Oyun biter
                 gameEnded = true;
+                SaveAndSubmitActiveScore(isFinal: true);
                 string defeatMsg = "";
 
-                if (CurrentMode == GameMode.Endless)
+                if (CurrentMode == GameMode.Endless || CurrentMode == GameMode.SoloVsAI)
                 {
-                    int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
-                    if (currentPlaneIndex > bestWave)
+                    int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+                    string modeTag = (CurrentMode == GameMode.Endless) ? "SONSUZ MOD" : "HAREKÂT";
+                    if (currentPlaneIndex >= bestWave)
                     {
-                        PlayerPrefs.SetInt("AirBattle_EndlessHighScore", currentPlaneIndex);
-                        PlayerPrefs.Save();
-                        defeatMsg = $"YENİ REKOR KIRILDI!\nSONSUZ MOD: DALGA {currentPlaneIndex}\nÖNCEKİ REKOR: {bestWave}";
+                        defeatMsg = $"YENİ REKOR KIRILDI!\n{modeTag}: DALGA {currentPlaneIndex}\nÖNCEKİ REKOR: {bestWave}";
                     }
                     else
                     {
-                        defeatMsg = $"GÖREV BAŞARISIZ!\nSONSUZ MOD: DALGA {currentPlaneIndex}\nEN YÜKSEK REKOR: {bestWave}";
+                        defeatMsg = $"GÖREV BAŞARISIZ!\n{modeTag}: DALGA {currentPlaneIndex}\nEN YÜKSEK REKOR: {bestWave}";
                     }
-                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.Endless, currentPlaneIndex);
                 }
                 else if (CurrentMode == GameMode.BossRush)
                 {
-                    int bossScore = Mathf.Max(0, currentPlaneIndex - 1) * 100;
-                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossScore);
                     defeatMsg = $"BOSS RUSH BAŞARISIZ!\nELENEN BOSS: {currentPlaneIndex - 1} / 4";
                 }
                 else if (CurrentMode == GameMode.Hardcore)
                 {
                     int defeatedBosses = Mathf.Max(0, currentPlaneIndex - 1);
                     int bestHardcore = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
-                    bool newRecord = defeatedBosses > bestHardcore;
-                    if (newRecord)
-                    {
-                        PlayerPrefs.SetInt("AirBattle_HardcoreHighScore", defeatedBosses);
-                        PlayerPrefs.Save();
-                    }
-                    LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.Hardcore, defeatedBosses);
-
                     int rewardGold = defeatedBosses * 60;
                     HangarManager.EnsureInstance()?.AddGold(rewardGold);
                     sessionGoldEarned += rewardGold;
 
-                    defeatMsg = newRecord
+                    defeatMsg = (defeatedBosses >= bestHardcore)
                         ? $"[!] <b><color=#FF2222>YENİ HARDCORE REKORU!</color></b> [!]\n<color=#FFD54F>İMHA EDİLEN BOSS: {defeatedBosses}</color>\nÖNCEKİ REKOR: {bestHardcore}\n<color=#2ECC71>+{rewardGold} ALTIN KAZANILDI!</color>"
                         : $"[!] <b>HARDCORE GÖREVİ SONA ERDİ</b> [!]\nİMHA EDİLEN BOSS: {defeatedBosses}\nEN İYİ REKOR: {bestHardcore}\n<color=#FFE082>+{rewardGold} ALTIN KAZANILDI!</color>";
                 }
@@ -790,6 +779,7 @@ public class GameManager : MonoBehaviour
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
+                SaveAndSubmitActiveScore(isFinal: true);
                 CombatComboManager combo = CombatComboManager.EnsureInstance();
                 combo.AddCombo(5, deadPlane != null ? deadPlane.transform.position : default);
                 var flawless = combo.EvaluateFlawlessWaveBonus(MaxPlanes, isBoss: true);
@@ -881,6 +871,7 @@ public class GameManager : MonoBehaviour
 
                     var gameUI = FindObjectOfType<GameUI>();
                     currentPlaneIndex++;
+                    SaveAndSubmitActiveScore();
                     bool nextIsBoss = IsBossPlane(currentPlaneIndex);
 
                     string multTag = comboBonus > 0 ? $" [x{combo.GetMultiplier():0.0}]" : "";
@@ -914,6 +905,7 @@ public class GameManager : MonoBehaviour
         {
             // Oyuncu hangar seçimini yaptıktan sonra:
             currentPlaneIndex++;
+            SaveAndSubmitActiveScore();
             bool nextIsBoss = IsBossPlane(currentPlaneIndex);
 
             var gameUI = FindObjectOfType<GameUI>();
@@ -966,6 +958,7 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator ReturnToMainMenuRoutine(float delay)
     {
+        SaveAndSubmitActiveScore(isFinal: true);
         float elapsed = 0f;
         while (elapsed < delay)
         {
@@ -1429,8 +1422,76 @@ public class GameManager : MonoBehaviour
         gameUI.ShowModeIntroBanner(title, subtitle, desc, color, 3.2f);
     }
 
+    /// <summary>
+    /// Oyuncunun mevcut moddaki en son rekorunu (dalga, boss, skor veya hayatta kalma süresi) 
+    /// PlayerPrefs'e ve Liderlik Tablosuna (LeaderboardManager) anında canlı olarak kaydeder.
+    /// </summary>
+    public void SaveAndSubmitActiveScore(bool isFinal = false)
+    {
+        var lm = LeaderboardManager.EnsureInstance();
+        if (lm == null) return;
+
+        switch (CurrentMode)
+        {
+            case GameMode.SoloVsAI:
+            case GameMode.Endless:
+                int currentWave = Mathf.Max(1, currentPlaneIndex);
+                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+                if (currentWave > bestWave)
+                {
+                    PlayerPrefs.SetInt("AirBattle_EndlessHighScore", currentWave);
+                    PlayerPrefs.Save();
+                }
+                lm.SubmitScore(LeaderboardManager.BoardMode.Endless, currentWave);
+                break;
+
+            case GameMode.Hardcore:
+                int defeatedBosses = Mathf.Max(0, currentPlaneIndex - 1);
+                int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                if (defeatedBosses > bestHc)
+                {
+                    PlayerPrefs.SetInt("AirBattle_HardcoreHighScore", defeatedBosses);
+                    PlayerPrefs.Save();
+                }
+                lm.SubmitScore(LeaderboardManager.BoardMode.Hardcore, defeatedBosses);
+                break;
+
+            case GameMode.BossRush:
+                int bossScore = Mathf.Max(0, currentPlaneIndex - 1) * 100;
+                int bestBoss = PlayerPrefs.GetInt("AirBattle_BossRushHighScore", 0);
+                if (bossScore > bestBoss)
+                {
+                    PlayerPrefs.SetInt("AirBattle_BossRushHighScore", bossScore);
+                    PlayerPrefs.Save();
+                }
+                lm.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossScore);
+                break;
+
+            case GameMode.TimeAttack:
+                int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+                if (timeAttackKills > bestKills)
+                {
+                    PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
+                    PlayerPrefs.Save();
+                }
+                lm.SubmitScore(LeaderboardManager.BoardMode.TimeAttack, timeAttackKills);
+                break;
+
+            case GameMode.BulletHell:
+                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                if (bulletHellTime > bestTime)
+                {
+                    PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
+                    PlayerPrefs.Save();
+                }
+                lm.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);
+                break;
+        }
+    }
+
     public void RestartGame()
     {
+        SaveAndSubmitActiveScore(isFinal: true);
         MainMenuManager.OpenHangarOnSceneLoad = false;
         MainMenuManager.AutoPlayOnSceneLoad = true;
         TwoPlayerDuelManager.Instance?.StopDuel();
@@ -1446,6 +1507,7 @@ public class GameManager : MonoBehaviour
 
     public void GoToMainMenu()
     {
+        SaveAndSubmitActiveScore(isFinal: true);
         MainMenuManager.AutoPlayOnSceneLoad = false;
         TwoPlayerDuelManager.Instance?.StopDuel();
         CleanUpBulletHellPlane();
@@ -1460,6 +1522,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
+        SaveAndSubmitActiveScore(isFinal: true);
         CleanUpBulletHellPlane();
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
