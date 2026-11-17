@@ -42,15 +42,3 @@ DROP POLICY IF EXISTS "Public Leaderboard Update Access" ON public.leaderboard;
 CREATE POLICY "Public Leaderboard Update Access"
 ON public.leaderboard FOR UPDATE
 USING (true);
-
--- ====================================================================
--- İsteğe Bağlı: İlk Açılış İçin Örnek As Pilotlar (Test Verisi)
--- ====================================================================
-INSERT INTO public.leaderboard (player_name, mode, score, time_seconds, formatted_score, rank_title, extra_info)
-VALUES 
-    ('Mustafa_Ace', 'endless', 48, 0, 'DALGA 48', 'BAŞKOMUTAN AS', 'Elit As'),
-    ('KaanLeader', 'endless', 45, 0, 'DALGA 45', 'BAŞKOMUTAN AS', 'Elit As'),
-    ('GhostRider', 'endless', 41, 0, 'DALGA 41', 'HAVA ALBAYI', 'Elit As'),
-    ('Viper_99', 'endless', 38, 0, 'DALGA 38', 'HAVA ALBAYI', 'Elit As'),
-    ('SkyReaper', 'endless', 34, 0, 'DALGA 34', 'HAVA ALBAYI', 'Elit As')
-ON CONFLICT (player_name, mode) DO NOTHING;

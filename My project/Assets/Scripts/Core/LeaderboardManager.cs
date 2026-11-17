@@ -353,14 +353,13 @@ public class LeaderboardManager : MonoBehaviour
             }
         }
 
-        // Buluttan veri alınamadıysa küresel simüle elit as pilotlar listesini oluştur
-        if (entries == null || entries.Count == 0)
+        // Sadece gerçek kayıtlar: Supabase bulutundan çekilenler veya yerel gerçek rekor
+        if (entries == null)
         {
-            entries = GenerateSimulatedAceLeaderboard(mode);
-            isLiveOnline = false;
+            entries = new List<LeaderboardEntry>();
         }
 
-        // Oyuncunun kendi yerel rekorunu listeye entegre et
+        // Oyuncunun kendi yerel gerçek rekorunu listeye entegre et (varsa)
         IntegratePlayerScore(entries, mode);
 
         onComplete?.Invoke(entries, isLiveOnline);
@@ -452,54 +451,6 @@ public class LeaderboardManager : MonoBehaviour
         {
             entries[i].rank = i + 1;
         }
-    }
-
-    /// <summary>
-    /// İnternet bağlantısı olmadığında veya henüz veri yüklenmediğinde devreye giren yüksek gerçekçilikli elit as pilotlar listesi.
-    /// </summary>
-    private List<LeaderboardEntry> GenerateSimulatedAceLeaderboard(BoardMode mode)
-    {
-        var list = new List<LeaderboardEntry>();
-
-        string[] names = new string[]
-        {
-            "Mustafa_Ace", "KaanLeader", "GhostRider", "Viper_99", "SkyReaper",
-            "Phoenix_TR", "ShadowJet", "EagleEye", "Thunder_01", "IronWing",
-            "Korkusuz", "GokAsi", "CelikYigit", "BordoBere", "KurtSurusu"
-        };
-
-        for (int i = 0; i < names.Length; i++)
-        {
-            int baseScore = GetSimulatedBaseScore(mode, i);
-            float timeSec = (mode == BoardMode.BulletHell) ? baseScore : 0f;
-
-            list.Add(new LeaderboardEntry
-            {
-                rank = i + 1,
-                playerName = names[i],
-                score = baseScore,
-                timeInSeconds = timeSec,
-                formattedScore = FormatScoreText(mode, baseScore, timeSec),
-                rankTitle = GetPilotRankByScore(mode, baseScore),
-                isPlayer = false,
-                extraInfo = "Elit As Filosu"
-            });
-        }
-
-        return list;
-    }
-
-    private int GetSimulatedBaseScore(BoardMode mode, int rankIndex)
-    {
-        return mode switch
-        {
-            BoardMode.Endless => Mathf.Max(1, 48 - (rankIndex * 3)),
-            BoardMode.TimeAttack => Mathf.Max(5, 52 - (rankIndex * 3)),
-            BoardMode.BulletHell => Mathf.Max(15, 175 - (rankIndex * 11)),
-            BoardMode.BossRush => Mathf.Max(100, 1420 - (rankIndex * 90)),
-            BoardMode.Hardcore => Mathf.Max(1, 12 - rankIndex),
-            _ => 10
-        };
     }
 
     public static string FormatScoreText(BoardMode mode, int score, float timeSeconds)

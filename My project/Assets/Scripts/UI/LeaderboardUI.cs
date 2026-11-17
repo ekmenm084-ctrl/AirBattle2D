@@ -560,22 +560,30 @@ public class LeaderboardUI : MonoBehaviour
             var lm = LeaderboardManager.Instance;
             if (isOnline)
             {
-                _connectionStatusTMP.text = "[ONLINE] <b>SUPABASE POSTGRESQL VERİTABANI AKTİF</b> (Canlı Bulut Senkronizasyonu)";
+                _connectionStatusTMP.text = "[ONLINE] <b>SUPABASE POSTGRESQL VERİTABANI AKTİF</b> (Canlı Gerçek Skorlar)";
                 _connectionStatusTMP.color = new Color(0.2f, 0.95f, 0.4f);
             }
-            else if (lm != null && !lm.IsSupabaseConfigured)
+            else if (lm != null && lm.IsSupabaseConfigured)
             {
-                _connectionStatusTMP.text = "[BEKLİYOR] <b>Supabase Yapılandırması Bekleniyor</b> (Simüle Elit Aslar Devrede)";
-                _connectionStatusTMP.color = new Color(1f, 0.75f, 0.2f);
+                _connectionStatusTMP.text = "[ÇEVRİMDİŞİ] <b>Sunucuya Ulaşılamadı</b> (Cihazdaki Gerçek Rekorlar)";
+                _connectionStatusTMP.color = new Color(1f, 0.45f, 0.45f);
             }
             else
             {
-                _connectionStatusTMP.text = "[ARŞİV] <b>KÜRESEL ASLAR ARŞİVİ</b> (Çevrimdışı / Yerel Yedek)";
-                _connectionStatusTMP.color = new Color(0.4f, 0.85f, 1f);
+                _connectionStatusTMP.text = "[YEREL MOD] <b>Cihazdaki Gerçek Skorlar</b> (Supabase Yapılandırması Bekleniyor)";
+                _connectionStatusTMP.color = new Color(0.3f, 0.85f, 1f);
             }
         }
 
-        if (entries == null || entries.Count == 0) return;
+        if (entries == null || entries.Count == 0)
+        {
+            if (_playerBestRankTMP != null)
+            {
+                _playerBestRankTMP.text = "KİŞİSEL EN İYİ REKOR: <color=#90A4AE>Henüz Bu Modda Skor Kaydedilmedi</color>";
+            }
+            CreateEmptyNotice();
+            return;
+        }
 
         // Oyuncunun listedeki kendi derecesini tespit et
         LeaderboardManager.LeaderboardEntry playerEntry = null;
@@ -698,6 +706,43 @@ public class LeaderboardUI : MonoBehaviour
         tmp.characterSpacing = 1.3f;
         tmp.alignment = align;
         tmp.color = col;
+        tmp.raycastTarget = false;
+    }
+
+    private void CreateEmptyNotice()
+    {
+        GameObject emptyObj = new GameObject("EmptyLeaderboardNotice", typeof(RectTransform));
+        emptyObj.transform.SetParent(_rowsContainer, false);
+        _spawnedRows.Add(emptyObj);
+
+        RectTransform eRt = emptyObj.GetComponent<RectTransform>();
+        eRt.anchorMin = new Vector2(0.5f, 1f);
+        eRt.anchorMax = new Vector2(0.5f, 1f);
+        eRt.pivot = new Vector2(0.5f, 1f);
+        eRt.anchoredPosition = new Vector2(0f, -60f);
+        eRt.sizeDelta = new Vector2(CONTENT_WIDTH, 140f);
+
+        Image eBg = emptyObj.AddComponent<Image>();
+        eBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.35f), new Color(0.03f, 0.08f, 0.14f, 0.90f), false);
+        eBg.type = Image.Type.Sliced;
+        eBg.color = Color.white;
+
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        txtObj.transform.SetParent(emptyObj.transform, false);
+        RectTransform tRt = txtObj.GetComponent<RectTransform>();
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = new Vector2(20f, 10f);
+        tRt.offsetMax = new Vector2(-20f, -10f);
+
+        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
+        tmp.text = "<color=#00E5FF><b>HENÜZ BU MODDA KAYITLI REKOR BULUNMUYOR</b></color>\n<size=75%><color=#B0BEC5>Savaşa katıl, gerçek skorunu kaydet ve liderlik tablosunun 1. sırasına yerleş!</color></size>";
+        tmp.fontSize = 20f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.characterSpacing = 1.4f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
         tmp.raycastTarget = false;
     }
 
