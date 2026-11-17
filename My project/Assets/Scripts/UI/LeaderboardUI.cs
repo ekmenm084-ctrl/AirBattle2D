@@ -8,9 +8,10 @@ using TMPro;
 /// Küresel As Pilotlar ve Canlı Çevrimiçi Liderlik Tablosu Arayüzü:
 /// - 4 Farklı Oyun Modu Sekmesi: Sonsuz İt Dalaşı, Zaman Taarruzu, Mermi Cehennemi, Boss Rush, Hardcore.
 /// - Canlı bulut sunucusu (Dreamlo) üzerinden diğer gerçek oyuncuların ve elit asların skorlarını listeler.
-/// - 1920x1080 ekran çözünürlüğüne tam uyumlu, geniş ve yüksek okunaklı HUD arayüzü.
-/// - Satırlar ve yazılar tablonun sınırları içinde jilet gibi hizalı, asla dışarı taşmaz.
-/// - 🥇 Altın, 🥈 Gümüş, 🥉 Bronz kupa madalyaları ve parlayan neon askeri kokpit tasarımı.
+/// - 1920x1080 çözünürlüğe tam oturan, 1280x820 boyutunda ferah ve jilet gibi hizalanmış HUD kutusu.
+/// - Ana başlık, pilot çağrı kodu, kişisel rekor kartı ve tüm satırlar kutu sınırlarına milimetrik oturur, asla taşmaz.
+/// - Büyük, parlak ve ultra okunaklı taktik font boyutları.
+/// - 🥇 Altın, 🥈 Gümüş, 🥉 Bronz kupa madalyaları ve parlayan neon askeri kokpit arayüzü.
 /// </summary>
 public class LeaderboardUI : MonoBehaviour
 {
@@ -36,6 +37,10 @@ public class LeaderboardUI : MonoBehaviour
     // İsim Değiştirme Modal'ı
     private GameObject _nameChangeModal;
     private TMP_InputField _nameInputField;
+
+    private const float BOX_WIDTH = 1280f;
+    private const float BOX_HEIGHT = 820f;
+    private const float CONTENT_WIDTH = 1220f; // 1280 - 30 sol - 30 sağ = 1220px tam ortalanmış içerik genişliği
 
     private void Awake()
     {
@@ -123,11 +128,11 @@ public class LeaderboardUI : MonoBehaviour
         rootRt.offsetMin = Vector2.zero;
         rootRt.offsetMax = Vector2.zero;
 
-        // Arka Plan (Aero-glass yarı saydam kokpit)
+        // Arka Plan (Aero-glass yarı saydam kokpit karartması)
         Image bg = _panelRoot.AddComponent<Image>();
-        bg.color = new Color(0.02f, 0.04f, 0.08f, 0.88f);
+        bg.color = new Color(0.02f, 0.04f, 0.08f, 0.90f);
 
-        // Ana Pencere (Modal Box) - 1280 x 820 Askeri HUD Dikdörtgen Çerçeve
+        // Ana Pencere (Modal Box) - 1280 x 820 Dikdörtgen Askeri HUD Çerçevesi
         GameObject boxObj = new GameObject("LeaderboardBox", typeof(RectTransform));
         boxObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform boxRt = boxObj.GetComponent<RectTransform>();
@@ -135,22 +140,24 @@ public class LeaderboardUI : MonoBehaviour
         boxRt.anchorMax = new Vector2(0.5f, 0.5f);
         boxRt.pivot = new Vector2(0.5f, 0.5f);
         boxRt.anchoredPosition = Vector2.zero;
-        boxRt.sizeDelta = new Vector2(1280f, 820f);
+        boxRt.sizeDelta = new Vector2(BOX_WIDTH, BOX_HEIGHT);
 
         Image boxBg = boxObj.AddComponent<Image>();
-        boxBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.90f), new Color(0.03f, 0.06f, 0.12f, 0.96f), false);
+        boxBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.92f), new Color(0.03f, 0.06f, 0.12f, 0.97f), false);
         boxBg.type = Image.Type.Sliced;
         boxBg.color = Color.white;
 
-        // 1. ÜST BAŞLIK - HUD Visor Plate
+        // ==========================================
+        // 1. ÜST BAŞLIK - HUD Visor Plate (Tam Hizalı & Büyük Yazı)
+        // ==========================================
         GameObject visorObj = new GameObject("HeaderVisor", typeof(RectTransform));
         visorObj.transform.SetParent(boxObj.transform, false);
         RectTransform vRt = visorObj.GetComponent<RectTransform>();
-        vRt.anchorMin = new Vector2(0f, 1f);
-        vRt.anchorMax = new Vector2(1f, 1f);
+        vRt.anchorMin = new Vector2(0.5f, 1f);
+        vRt.anchorMax = new Vector2(0.5f, 1f);
         vRt.pivot = new Vector2(0.5f, 1f);
-        vRt.anchoredPosition = new Vector2(0f, -16f);
-        vRt.sizeDelta = new Vector2(1220f, 66f);
+        vRt.anchoredPosition = new Vector2(0f, -14f);
+        vRt.sizeDelta = new Vector2(CONTENT_WIDTH, 72f);
 
         Image vImg = visorObj.AddComponent<Image>();
         vImg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.85f, 1f, 0.95f), new Color(0.04f, 0.09f, 0.16f, 0.95f), true);
@@ -167,45 +174,60 @@ public class LeaderboardUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "TACTICAL // KÜRESEL LİDERLİK & REKOR VERİTABANI\n<size=62%><color=#8AB4F8>GLOBAL DEFCON AS PİLOTLARI SIRALAMASI • GERÇEK ZAMANLI VERİ HATTI</color></size>";
-        titleTMP.fontSize = 24f;
+        titleTMP.text = "TACTICAL // KÜRESEL LİDERLİK & REKOR VERİTABANI\n<size=65%><color=#8AB4F8>GLOBAL DEFCON AS PİLOTLARI SIRALAMASI • GERÇEK ZAMANLI VERİ HATTI</color></size>";
+        titleTMP.fontSize = 26f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.characterSpacing = 2.0f;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = Color.white;
         titleTMP.raycastTarget = false;
 
-        // 2. PİLOT ÇAĞRI KODU (CALLSIGN) & İSİM DEĞİŞTİRME SATIRI
+        // ==========================================
+        // 2. PİLOT ÇAĞRI KODU (CALLSIGN) & İSİM DEĞİŞTİRME SATIRI (Büyük & Şık)
+        // ==========================================
         GameObject csObj = new GameObject("CallsignBar", typeof(RectTransform));
         csObj.transform.SetParent(boxObj.transform, false);
         RectTransform csRt = csObj.GetComponent<RectTransform>();
-        csRt.anchorMin = new Vector2(0f, 1f);
-        csRt.anchorMax = new Vector2(1f, 1f);
+        csRt.anchorMin = new Vector2(0.5f, 1f);
+        csRt.anchorMax = new Vector2(0.5f, 1f);
         csRt.pivot = new Vector2(0.5f, 1f);
-        csRt.anchoredPosition = new Vector2(0f, -88f);
-        csRt.sizeDelta = new Vector2(1220f, 44f);
+        csRt.anchoredPosition = new Vector2(0f, -94f);
+        csRt.sizeDelta = new Vector2(CONTENT_WIDTH, 50f);
 
-        _callsignTMP = csObj.AddComponent<TextMeshProUGUI>();
+        Image csBg = csObj.AddComponent<Image>();
+        csBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.45f), new Color(0.03f, 0.08f, 0.15f, 0.90f), false);
+        csBg.type = Image.Type.Sliced;
+        csBg.color = Color.white;
+
+        GameObject csTextObj = new GameObject("Text", typeof(RectTransform));
+        csTextObj.transform.SetParent(csObj.transform, false);
+        RectTransform csTextRt = csTextObj.GetComponent<RectTransform>();
+        csTextRt.anchorMin = Vector2.zero;
+        csTextRt.anchorMax = Vector2.one;
+        csTextRt.offsetMin = new Vector2(20f, 0f);
+        csTextRt.offsetMax = new Vector2(-260f, 0f);
+
+        _callsignTMP = csTextObj.AddComponent<TextMeshProUGUI>();
         _callsignTMP.font = MainMenuManager.GetTacticalFont();
-        _callsignTMP.fontSize = 19f;
+        _callsignTMP.fontSize = 22f;
         _callsignTMP.fontStyle = FontStyles.Bold;
         _callsignTMP.characterSpacing = 1.4f;
         _callsignTMP.alignment = TextAlignmentOptions.Left;
         _callsignTMP.color = Color.white;
         _callsignTMP.raycastTarget = false;
 
-        // İsim Değiştir Butonu - Tactical HUD Button
+        // İsim Değiştir Butonu
         GameObject editBtnObj = new GameObject("EditCallsignBtn", typeof(RectTransform));
         editBtnObj.transform.SetParent(csObj.transform, false);
         RectTransform eRt = editBtnObj.GetComponent<RectTransform>();
         eRt.anchorMin = new Vector2(1f, 0.5f);
         eRt.anchorMax = new Vector2(1f, 0.5f);
         eRt.pivot = new Vector2(1f, 0.5f);
-        eRt.anchoredPosition = new Vector2(0f, 0f);
-        eRt.sizeDelta = new Vector2(210f, 40f);
+        eRt.anchoredPosition = new Vector2(-10f, 0f);
+        eRt.sizeDelta = new Vector2(240f, 40f);
 
         Image eImg = editBtnObj.AddComponent<Image>();
-        eImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), true);
+        eImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.14f, 0.22f, 1f), true);
         eImg.type = Image.Type.Sliced;
         eImg.color = Color.white;
 
@@ -224,44 +246,48 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI eTmp = eTxt.AddComponent<TextMeshProUGUI>();
         eTmp.font = MainMenuManager.GetTacticalFont();
         eTmp.text = "ÇAĞRI KODU DEĞİŞ";
-        eTmp.fontSize = 15f;
+        eTmp.fontSize = 16f;
         eTmp.fontStyle = FontStyles.Bold;
         eTmp.characterSpacing = 1.4f;
         eTmp.alignment = TextAlignmentOptions.Center;
         eTmp.color = Color.white;
         eTmp.raycastTarget = false;
 
-        // 3. OYUN MODU SEKME BUTONLARI (5 Adet)
+        // ==========================================
+        // 3. OYUN MODU SEKME BUTONLARI (5 Adet - 1220px İçinde Eşit Dağılım)
+        // ==========================================
         GameObject tabsObj = new GameObject("TabsContainer", typeof(RectTransform));
         tabsObj.transform.SetParent(boxObj.transform, false);
         RectTransform tabRt = tabsObj.GetComponent<RectTransform>();
-        tabRt.anchorMin = new Vector2(0f, 1f);
-        tabRt.anchorMax = new Vector2(1f, 1f);
+        tabRt.anchorMin = new Vector2(0.5f, 1f);
+        tabRt.anchorMax = new Vector2(0.5f, 1f);
         tabRt.pivot = new Vector2(0.5f, 1f);
-        tabRt.anchoredPosition = new Vector2(0f, -140f);
-        tabRt.sizeDelta = new Vector2(1220f, 46f);
+        tabRt.anchoredPosition = new Vector2(0f, -152f);
+        tabRt.sizeDelta = new Vector2(CONTENT_WIDTH, 48f);
 
         float tabW = 236f;
-        float startX = -484f; // 5 butonu simetrik dağıt
+        float startX = -488f;
 
-        _tabEndlessBtn = CreateTabBtn(tabsObj.transform, "TabEndless", "SONSUZ", startX + (tabW + 6f) * 0, () => SetTab(LeaderboardManager.BoardMode.Endless), out _tabEndlessTMP);
-        _tabHardcoreBtn = CreateTabBtn(tabsObj.transform, "TabHardcore", "[!] HARDCORE", startX + (tabW + 6f) * 1, () => SetTab(LeaderboardManager.BoardMode.Hardcore), out _tabHardcoreTMP);
-        _tabBossRushBtn = CreateTabBtn(tabsObj.transform, "TabBossRush", "BOSS RUSH", startX + (tabW + 6f) * 2, () => SetTab(LeaderboardManager.BoardMode.BossRush), out _tabBossRushTMP);
-        _tabTimeAttackBtn = CreateTabBtn(tabsObj.transform, "TabTimeAttack", "ZAMAN TAARRUZU", startX + (tabW + 6f) * 3, () => SetTab(LeaderboardManager.BoardMode.TimeAttack), out _tabTimeAttackTMP);
-        _tabBulletHellBtn = CreateTabBtn(tabsObj.transform, "TabBulletHell", "MERMİ CEHENNEMİ", startX + (tabW + 6f) * 4, () => SetTab(LeaderboardManager.BoardMode.BulletHell), out _tabBulletHellTMP);
+        _tabEndlessBtn = CreateTabBtn(tabsObj.transform, "TabEndless", "SONSUZ", startX + (tabW + 8f) * 0, () => SetTab(LeaderboardManager.BoardMode.Endless), out _tabEndlessTMP);
+        _tabHardcoreBtn = CreateTabBtn(tabsObj.transform, "TabHardcore", "[!] HARDCORE", startX + (tabW + 8f) * 1, () => SetTab(LeaderboardManager.BoardMode.Hardcore), out _tabHardcoreTMP);
+        _tabBossRushBtn = CreateTabBtn(tabsObj.transform, "TabBossRush", "BOSS RUSH", startX + (tabW + 8f) * 2, () => SetTab(LeaderboardManager.BoardMode.BossRush), out _tabBossRushTMP);
+        _tabTimeAttackBtn = CreateTabBtn(tabsObj.transform, "TabTimeAttack", "ZAMAN TAARRUZU", startX + (tabW + 8f) * 3, () => SetTab(LeaderboardManager.BoardMode.TimeAttack), out _tabTimeAttackTMP);
+        _tabBulletHellBtn = CreateTabBtn(tabsObj.transform, "TabBulletHell", "MERMİ CEHENNEMİ", startX + (tabW + 8f) * 4, () => SetTab(LeaderboardManager.BoardMode.BulletHell), out _tabBulletHellTMP);
 
-        // 4. SENİN DERECEN / KİŞİSEL EN İYİ REKOR KARTI
+        // ==========================================
+        // 4. SENİN DERECEN / KİŞİSEL REKOR KARTI (Büyük & Parlak)
+        // ==========================================
         GameObject myCard = new GameObject("PlayerBestCard", typeof(RectTransform));
         myCard.transform.SetParent(boxObj.transform, false);
         RectTransform mcRt = myCard.GetComponent<RectTransform>();
-        mcRt.anchorMin = new Vector2(0f, 1f);
-        mcRt.anchorMax = new Vector2(1f, 1f);
+        mcRt.anchorMin = new Vector2(0.5f, 1f);
+        mcRt.anchorMax = new Vector2(0.5f, 1f);
         mcRt.pivot = new Vector2(0.5f, 1f);
-        mcRt.anchoredPosition = new Vector2(0f, -196f);
-        mcRt.sizeDelta = new Vector2(1220f, 48f);
+        mcRt.anchoredPosition = new Vector2(0f, -208f);
+        mcRt.sizeDelta = new Vector2(CONTENT_WIDTH, 52f);
 
         Image mcBg = myCard.AddComponent<Image>();
-        mcBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0.2f, 0.95f, 0.4f, 0.85f), new Color(0.04f, 0.14f, 0.08f, 0.92f), false);
+        mcBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0.2f, 0.95f, 0.45f, 0.90f), new Color(0.03f, 0.15f, 0.08f, 0.95f), false);
         mcBg.type = Image.Type.Sliced;
         mcBg.color = Color.white;
 
@@ -270,50 +296,57 @@ public class LeaderboardUI : MonoBehaviour
         RectTransform mcTxtRt = mcTxtObj.GetComponent<RectTransform>();
         mcTxtRt.anchorMin = Vector2.zero;
         mcTxtRt.anchorMax = Vector2.one;
-        mcTxtRt.offsetMin = new Vector2(15f, 0f);
-        mcTxtRt.offsetMax = new Vector2(-15f, 0f);
+        mcTxtRt.offsetMin = new Vector2(20f, 0f);
+        mcTxtRt.offsetMax = new Vector2(-20f, 0f);
 
         _playerBestRankTMP = mcTxtObj.AddComponent<TextMeshProUGUI>();
         _playerBestRankTMP.font = MainMenuManager.GetTacticalFont();
-        _playerBestRankTMP.fontSize = 19f;
+        _playerBestRankTMP.fontSize = 22f;
         _playerBestRankTMP.fontStyle = FontStyles.Bold;
         _playerBestRankTMP.characterSpacing = 1.4f;
         _playerBestRankTMP.alignment = TextAlignmentOptions.Center;
         _playerBestRankTMP.color = Color.white;
 
-        // 5. TABLO SÜTUN BAŞLIKLARI SATIRI (4 Net Sütun)
+        // ==========================================
+        // 5. TABLO SÜTUN BAŞLIKLARI SATIRI (SKOR, DERECE, ÇAĞRI KODU - Büyük & Net)
+        // ==========================================
         GameObject headerObj = new GameObject("TableHeader", typeof(RectTransform));
         headerObj.transform.SetParent(boxObj.transform, false);
         RectTransform hRt = headerObj.GetComponent<RectTransform>();
-        hRt.anchorMin = new Vector2(0f, 1f);
-        hRt.anchorMax = new Vector2(1f, 1f);
+        hRt.anchorMin = new Vector2(0.5f, 1f);
+        hRt.anchorMax = new Vector2(0.5f, 1f);
         hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -252f);
-        hRt.sizeDelta = new Vector2(1220f, 38f);
+        hRt.anchoredPosition = new Vector2(0f, -268f);
+        hRt.sizeDelta = new Vector2(CONTENT_WIDTH, 42f);
 
         Image hBg = headerObj.AddComponent<Image>();
-        hBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.6f), new Color(0.04f, 0.09f, 0.16f, 0.95f), false);
+        hBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.65f), new Color(0.04f, 0.10f, 0.18f, 0.96f), false);
         hBg.type = Image.Type.Sliced;
         hBg.color = Color.white;
 
-        // Sütun Başlıkları
+        // 4 Sütun Başlığı
         CreateHeaderCell(headerObj.transform, "SIRA", 0f, 0.12f, TextAlignmentOptions.Center);
-        CreateHeaderCell(headerObj.transform, "PİLOT ÇAĞRI KODU", 0.12f, 0.50f, TextAlignmentOptions.Left, leftPadding: 20f);
+        CreateHeaderCell(headerObj.transform, "PİLOT ÇAĞRI KODU", 0.12f, 0.50f, TextAlignmentOptions.Left, leftPadding: 25f);
         CreateHeaderCell(headerObj.transform, "SKOR / DERECE", 0.50f, 0.75f, TextAlignmentOptions.Center);
         CreateHeaderCell(headerObj.transform, "ASKERİ UNVAN", 0.75f, 1f, TextAlignmentOptions.Center);
 
-        // 6. SKOR SATIRLARI KONTEYNERİ (Tam dikdörtgen sınırlarına oturan liste alanı)
+        // ==========================================
+        // 6. SKOR SATIRLARI KONTEYNERİ (Tam Dikdörtgen İçinde)
+        // ==========================================
         GameObject listObj = new GameObject("RowsContainer", typeof(RectTransform));
         listObj.transform.SetParent(boxObj.transform, false);
         RectTransform lRt = listObj.GetComponent<RectTransform>();
-        lRt.anchorMin = new Vector2(0f, 0f);
-        lRt.anchorMax = new Vector2(1f, 1f);
-        lRt.offsetMin = new Vector2(30f, 85f);
-        lRt.offsetMax = new Vector2(-30f, -298f);
+        lRt.anchorMin = new Vector2(0.5f, 1f);
+        lRt.anchorMax = new Vector2(0.5f, 1f);
+        lRt.pivot = new Vector2(0.5f, 1f);
+        lRt.anchoredPosition = new Vector2(0f, -318f);
+        lRt.sizeDelta = new Vector2(CONTENT_WIDTH, 420f);
 
         _rowsContainer = listObj.transform;
 
+        // ==========================================
         // 7. ALT BİLGİ VE BUTONLAR
+        // ==========================================
         // Bağlantı durumu
         GameObject statusObj = new GameObject("ConnectionStatus", typeof(RectTransform));
         statusObj.transform.SetParent(boxObj.transform, false);
@@ -321,22 +354,22 @@ public class LeaderboardUI : MonoBehaviour
         stRt.anchorMin = new Vector2(0f, 0f);
         stRt.anchorMax = new Vector2(0.55f, 0f);
         stRt.pivot = new Vector2(0f, 0f);
-        stRt.anchoredPosition = new Vector2(30f, 26f);
-        stRt.sizeDelta = new Vector2(600f, 42f);
+        stRt.anchoredPosition = new Vector2(30f, 22f);
+        stRt.sizeDelta = new Vector2(620f, 48f);
 
         _connectionStatusTMP = statusObj.AddComponent<TextMeshProUGUI>();
         _connectionStatusTMP.font = MainMenuManager.GetTacticalFont();
-        _connectionStatusTMP.fontSize = 16f;
+        _connectionStatusTMP.fontSize = 17f;
         _connectionStatusTMP.fontStyle = FontStyles.Bold;
         _connectionStatusTMP.characterSpacing = 1.3f;
         _connectionStatusTMP.alignment = TextAlignmentOptions.Left;
-        _connectionStatusTMP.color = new Color(0.2f, 0.9f, 0.5f);
+        _connectionStatusTMP.color = new Color(0.2f, 0.95f, 0.5f);
 
         // Yenile Butonu
-        CreateActionButton(boxObj.transform, "RefreshBtn", "YENİLE", new Vector2(880f, 22f), new Vector2(170f, 48f), "hud_btn_blue", new Color(0f, 0.75f, 1f, 1f), new Color(0.06f, 0.16f, 0.28f, 1f), () => RefreshScores());
+        CreateActionButton(boxObj.transform, "RefreshBtn", "YENİLE", new Vector2(870f, 22f), new Vector2(175f, 48f), "hud_btn_blue", new Color(0f, 0.75f, 1f, 1f), new Color(0.06f, 0.16f, 0.28f, 1f), () => RefreshScores());
 
         // Kapat Butonu
-        CreateActionButton(boxObj.transform, "CloseBtn", "« GERİ DÖN", new Vector2(1070f, 22f), new Vector2(180f, 48f), "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.26f, 0.05f, 0.05f, 1f), CloseLeaderboard);
+        CreateActionButton(boxObj.transform, "CloseBtn", "« GERİ DÖN", new Vector2(1065f, 22f), new Vector2(185f, 48f), "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.26f, 0.05f, 0.05f, 1f), CloseLeaderboard);
 
         // İsim Değiştirme Modalını Hazırla
         SetupNameChangeModal();
@@ -356,11 +389,11 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI tmp = cell.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = title;
-        tmp.fontSize = 16f;
+        tmp.fontSize = 18f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 1.4f;
         tmp.alignment = align;
-        tmp.color = new Color(0.4f, 0.90f, 1f);
+        tmp.color = new Color(0.35f, 0.90f, 1f);
         tmp.raycastTarget = false;
     }
 
@@ -373,7 +406,7 @@ public class LeaderboardUI : MonoBehaviour
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = new Vector2(posX, 0f);
-        rt.sizeDelta = new Vector2(236f, 44f);
+        rt.sizeDelta = new Vector2(236f, 46f);
 
         Image img = btnObj.AddComponent<Image>();
         img.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.35f, 0.45f, 0.55f, 0.8f), new Color(0.05f, 0.08f, 0.12f, 0.85f), true);
@@ -395,7 +428,7 @@ public class LeaderboardUI : MonoBehaviour
         labelTmp = tObj.AddComponent<TextMeshProUGUI>();
         labelTmp.font = MainMenuManager.GetTacticalFont();
         labelTmp.text = text;
-        labelTmp.fontSize = 16f;
+        labelTmp.fontSize = 17f;
         labelTmp.fontStyle = FontStyles.Bold;
         labelTmp.characterSpacing = 1.4f;
         labelTmp.alignment = TextAlignmentOptions.Center;
@@ -436,7 +469,7 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI tmp = tObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = text;
-        tmp.fontSize = 16f;
+        tmp.fontSize = 17f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 1.4f;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -563,7 +596,7 @@ public class LeaderboardUI : MonoBehaviour
         }
 
         // Satırları üret (En iyi 10 As)
-        float rowH = 42f; // Geniş ve ferah satır yüksekliği
+        float rowH = 42f;
         float rowSpacing = 6f;
         int maxRows = Mathf.Min(10, entries.Count);
 
@@ -581,12 +614,11 @@ public class LeaderboardUI : MonoBehaviour
         row.transform.SetParent(_rowsContainer, false);
 
         RectTransform rt = row.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0f, 1f);
-        rt.anchorMax = new Vector2(1f, 1f);
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = new Vector2(0f, -index * (rowHeight + rowSpacing));
-        // KESİN DÜZELTME: sizeDelta.x = 0f olmalı! Streç anchor'da ebeveynin tam sınırlarına oturur ve ASLA taşmaz!
-        rt.sizeDelta = new Vector2(0f, rowHeight);
+        rt.sizeDelta = new Vector2(CONTENT_WIDTH, rowHeight); // Tam 1220px genişlik! Asla dışarı taşmaz!
 
         Image bg = row.AddComponent<Image>();
 
@@ -619,18 +651,18 @@ public class LeaderboardUI : MonoBehaviour
         string playerTag = entry.isPlayer ? " <color=#00E5FF><b>[SEN]</b></color>" : "";
         string displayName = $"{entry.playerName}{playerTag}";
 
-        // 4 NET HİZALANMIŞ SÜTUN HÜCRESİ (Cetvel gibi dümdüz!)
+        // 4 NET HİZALANMIŞ SÜTUN HÜCRESİ (Büyük ve ferah)
         // 1. Sütun: SIRA / MADALYA (%12 genişlik)
-        CreateRowCell(row.transform, "RankCell", rankIcon, 0f, 0.12f, TextAlignmentOptions.Center, 18f, Color.white);
+        CreateRowCell(row.transform, "RankCell", rankIcon, 0f, 0.12f, TextAlignmentOptions.Center, 19f, Color.white);
 
-        // 2. Sütun: PİLOT ÇAĞRI KODU (%38 genişlik, sola hizalı + 20px padding)
-        CreateRowCell(row.transform, "NameCell", displayName, 0.12f, 0.50f, TextAlignmentOptions.Left, 18f, entry.isPlayer ? new Color(0.3f, 1f, 0.7f) : Color.white, leftPadding: 20f);
+        // 2. Sütun: PİLOT ÇAĞRI KODU (%38 genişlik, sola hizalı + 25px padding)
+        CreateRowCell(row.transform, "NameCell", displayName, 0.12f, 0.50f, TextAlignmentOptions.Left, 19f, entry.isPlayer ? new Color(0.3f, 1f, 0.7f) : Color.white, leftPadding: 25f);
 
-        // 3. Sütun: SKOR / DERECE (%25 genişlik, ortalanmış, parlak altın)
-        CreateRowCell(row.transform, "ScoreCell", $"<color=#FFD54F><b>{entry.formattedScore}</b></color>", 0.50f, 0.75f, TextAlignmentOptions.Center, 19f, Color.white);
+        // 3. Sütun: SKOR / DERECE (%25 genişlik, ortalanmış, parlak altın sarısı)
+        CreateRowCell(row.transform, "ScoreCell", $"<color=#FFD54F><b>{entry.formattedScore}</b></color>", 0.50f, 0.75f, TextAlignmentOptions.Center, 20f, Color.white);
 
         // 4. Sütun: ASKERİ UNVAN (%25 genişlik, ortalanmış, açık mavi)
-        CreateRowCell(row.transform, "TitleCell", $"<color=#8AB4F8>{entry.rankTitle}</color>", 0.75f, 1f, TextAlignmentOptions.Center, 16f, Color.white);
+        CreateRowCell(row.transform, "TitleCell", $"<color=#8AB4F8>{entry.rankTitle}</color>", 0.75f, 1f, TextAlignmentOptions.Center, 17f, Color.white);
 
         return row;
     }
