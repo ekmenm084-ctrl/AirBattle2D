@@ -443,12 +443,12 @@ public class DailyOpsManager : MonoBehaviour
     private void OnApplicationPause(bool pauseStatus)
     {
         if (pauseStatus)
-            PlayerPrefs.Save();
+            ProfileManager.Save();
     }
 
     private void OnApplicationQuit()
     {
-        PlayerPrefs.Save();
+        ProfileManager.Save();
     }
 
     public string GetActiveDateKey() => _activeDateKey;
@@ -477,7 +477,7 @@ public class DailyOpsManager : MonoBehaviour
         for (int i = 0; i < MedalDefs.Length; i++)
         {
             PilotMedalDef def = MedalDefs[i];
-            int claimedTier = Mathf.Clamp(PlayerPrefs.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
+            int claimedTier = Mathf.Clamp(ProfileManager.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
             result.Add(new PilotMedalState
             {
                 def = def,
@@ -506,7 +506,7 @@ public class DailyOpsManager : MonoBehaviour
         for (int i = 0; i < MedalDefs.Length; i++)
         {
             PilotMedalDef def = MedalDefs[i];
-            int claimedTier = Mathf.Clamp(PlayerPrefs.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
+            int claimedTier = Mathf.Clamp(ProfileManager.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
             if (claimedTier >= def.tiers.Length) continue;
             if (GetStatValue(def.statKey) >= def.tiers[claimedTier].target)
                 count++;
@@ -561,8 +561,8 @@ public class DailyOpsManager : MonoBehaviour
         string prefKey = GetCounterPrefKey(eventType);
         if (!string.IsNullOrEmpty(prefKey))
         {
-            int curVal = PlayerPrefs.GetInt(prefKey, 0) + amount;
-            PlayerPrefs.SetInt(prefKey, curVal);
+            int curVal = ProfileManager.GetInt(prefKey, 0) + amount;
+            ProfileManager.SetInt(prefKey, curVal);
             changed = true;
         }
 
@@ -575,7 +575,7 @@ public class DailyOpsManager : MonoBehaviour
 
             bool wasComplete = slot.IsCompleted;
             slot.progress = Mathf.Min(slot.template.targetCount, slot.progress + amount);
-            PlayerPrefs.SetInt(PREF_SLOT_PROG + i, slot.progress);
+            ProfileManager.SetInt(PREF_SLOT_PROG + i, slot.progress);
             changed = true;
 
             if (!wasComplete && slot.IsCompleted)
@@ -591,7 +591,7 @@ public class DailyOpsManager : MonoBehaviour
         if (changed)
         {
             if (eventType == OpsEventType.BossKill || eventType == OpsEventType.WaveCleared)
-                PlayerPrefs.Save();
+                ProfileManager.Save();
 
             OnDailyOpsChanged?.Invoke();
         }
@@ -606,7 +606,7 @@ public class DailyOpsManager : MonoBehaviour
         if (slot == null || !slot.CanClaim) return false;
 
         slot.claimed = true;
-        PlayerPrefs.SetInt(PREF_SLOT_CLAIMED + slotIndex, 1);
+        ProfileManager.SetInt(PREF_SLOT_CLAIMED + slotIndex, 1);
 
         GrantRewards(
             slot.template.goldReward,
@@ -618,7 +618,7 @@ public class DailyOpsManager : MonoBehaviour
         );
 
         AudioManager.Instance?.PlayRewardFanfare();
-        PlayerPrefs.Save();
+        ProfileManager.Save();
         OnDailyOpsChanged?.Invoke();
         return true;
     }
@@ -640,7 +640,7 @@ public class DailyOpsManager : MonoBehaviour
             if (slot == null || !slot.CanClaim) continue;
 
             slot.claimed = true;
-            PlayerPrefs.SetInt(PREF_SLOT_CLAIMED + i, 1);
+            ProfileManager.SetInt(PREF_SLOT_CLAIMED + i, 1);
 
             totalGold += slot.template.goldReward;
             totalExp += slot.template.expReward;
@@ -656,7 +656,7 @@ public class DailyOpsManager : MonoBehaviour
         for (int i = 0; i < MedalDefs.Length; i++)
         {
             PilotMedalDef def = MedalDefs[i];
-            int claimedTier = Mathf.Clamp(PlayerPrefs.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
+            int claimedTier = Mathf.Clamp(ProfileManager.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
             int stat = GetStatValue(def.statKey);
 
             while (claimedTier < def.tiers.Length && stat >= def.tiers[claimedTier].target)
@@ -674,7 +674,7 @@ public class DailyOpsManager : MonoBehaviour
                 claimedCount++;
             }
 
-            PlayerPrefs.SetInt(PREF_MEDAL_TIER + def.id, claimedTier);
+            ProfileManager.SetInt(PREF_MEDAL_TIER + def.id, claimedTier);
         }
 
         if (claimedCount <= 0) return 0;
@@ -693,7 +693,7 @@ public class DailyOpsManager : MonoBehaviour
 
         PlayerProfileUI.Instance?.RefreshBadgeVisuals();
         AudioManager.Instance?.PlayRewardFanfare();
-        PlayerPrefs.Save();
+        ProfileManager.Save();
         OnDailyOpsChanged?.Invoke();
         return claimedCount;
     }
@@ -703,7 +703,7 @@ public class DailyOpsManager : MonoBehaviour
         PilotMedalDef def = FindMedalDef(medalId);
         if (def == null) return false;
 
-        int claimedTier = Mathf.Clamp(PlayerPrefs.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
+        int claimedTier = Mathf.Clamp(ProfileManager.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
         if (claimedTier >= def.tiers.Length) return false;
 
         int currentStat = GetStatValue(def.statKey);
@@ -711,7 +711,7 @@ public class DailyOpsManager : MonoBehaviour
         if (currentStat < reward.target) return false;
 
         int nextTier = claimedTier + 1;
-        PlayerPrefs.SetInt(PREF_MEDAL_TIER + def.id, nextTier);
+        ProfileManager.SetInt(PREF_MEDAL_TIER + def.id, nextTier);
 
         GrantRewards(
             reward.goldReward,
@@ -723,7 +723,7 @@ public class DailyOpsManager : MonoBehaviour
         );
 
         AudioManager.Instance?.PlayRewardFanfare();
-        PlayerPrefs.Save();
+        ProfileManager.Save();
         OnDailyOpsChanged?.Invoke();
         return true;
     }
@@ -748,7 +748,7 @@ public class DailyOpsManager : MonoBehaviour
         for (int i = 0; i < MedalDefs.Length; i++)
         {
             PilotMedalDef def = MedalDefs[i];
-            int claimedTier = Mathf.Clamp(PlayerPrefs.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
+            int claimedTier = Mathf.Clamp(ProfileManager.GetInt(PREF_MEDAL_TIER + def.id, 0), 0, def.tiers.Length);
             if (claimedTier >= def.tiers.Length) continue;
 
             int stat = GetStatValue(def.statKey);
@@ -764,10 +764,10 @@ public class DailyOpsManager : MonoBehaviour
             if (highestReachedTier > claimedTier)
             {
                 string notifiedKey = PREF_MEDAL_NOTIFIED + def.id;
-                int lastNotified = PlayerPrefs.GetInt(notifiedKey, 0);
+                int lastNotified = ProfileManager.GetInt(notifiedKey, 0);
                 if (highestReachedTier > lastNotified)
                 {
-                    PlayerPrefs.SetInt(notifiedKey, highestReachedTier);
+                    ProfileManager.SetInt(notifiedKey, highestReachedTier);
                     string tierRoman = GetTierRoman(highestReachedTier - 1);
                     TriggerInFlightAlert(
                         $"[MADALYA KAZANILDI] {def.title} ({tierRoman})!",
@@ -787,17 +787,17 @@ public class DailyOpsManager : MonoBehaviour
         AudioManager.Instance?.PlayRewardFanfare();
     }
 
-    private void LoadOrRefreshDailyRotation()
+    public void LoadOrRefreshDailyRotation()
     {
         string today = GetTodayKey();
-        string savedDate = PlayerPrefs.GetString(PREF_ACTIVE_DATE, "");
+        string savedDate = ProfileManager.GetString(PREF_ACTIVE_DATE, "");
 
         if (savedDate == today)
         {
             bool allValid = true;
             for (int i = 0; i < DAILY_SLOT_COUNT; i++)
             {
-                string tplId = PlayerPrefs.GetString(PREF_SLOT_ID + i, "");
+                string tplId = ProfileManager.GetString(PREF_SLOT_ID + i, "");
                 if (!TryFindTemplateById(tplId, out MissionTemplate tpl))
                 {
                     allValid = false;
@@ -808,8 +808,8 @@ public class DailyOpsManager : MonoBehaviour
                 {
                     slotIndex = i,
                     template = tpl,
-                    progress = Mathf.Clamp(PlayerPrefs.GetInt(PREF_SLOT_PROG + i, 0), 0, tpl.targetCount),
-                    claimed = PlayerPrefs.GetInt(PREF_SLOT_CLAIMED + i, 0) == 1
+                    progress = Mathf.Clamp(ProfileManager.GetInt(PREF_SLOT_PROG + i, 0), 0, tpl.targetCount),
+                    claimed = ProfileManager.GetInt(PREF_SLOT_CLAIMED + i, 0) == 1
                 };
             }
 
@@ -822,7 +822,7 @@ public class DailyOpsManager : MonoBehaviour
 
         // Yeni gün veya ilk kurulum: tarih tabanlı deterministik 4 benzersiz görev seç
         _activeDateKey = today;
-        PlayerPrefs.SetString(PREF_ACTIVE_DATE, today);
+        ProfileManager.SetString(PREF_ACTIVE_DATE, today);
 
         List<MissionTemplate> picked = PickDailyTemplates(today);
         for (int i = 0; i < DAILY_SLOT_COUNT; i++)
@@ -836,12 +836,12 @@ public class DailyOpsManager : MonoBehaviour
                 claimed = false
             };
 
-            PlayerPrefs.SetString(PREF_SLOT_ID + i, tpl.id);
-            PlayerPrefs.SetInt(PREF_SLOT_PROG + i, 0);
-            PlayerPrefs.SetInt(PREF_SLOT_CLAIMED + i, 0);
+            ProfileManager.SetString(PREF_SLOT_ID + i, tpl.id);
+            ProfileManager.SetInt(PREF_SLOT_PROG + i, 0);
+            ProfileManager.SetInt(PREF_SLOT_CLAIMED + i, 0);
         }
 
-        PlayerPrefs.Save();
+        ProfileManager.Save();
     }
 
     private static List<MissionTemplate> PickDailyTemplates(string dateKey)
@@ -934,11 +934,11 @@ public class DailyOpsManager : MonoBehaviour
             case "totalBosses":       return pm != null ? pm.totalBosses : 0;
             case "totalWavesCleared": return pm != null ? pm.totalWavesCleared : 0;
             case "level":             return pm != null ? pm.level : 1;
-            case "swarmKills":        return PlayerPrefs.GetInt(PREF_STAT_SWARM, 0);
-            case "perfectDodges":     return PlayerPrefs.GetInt(PREF_STAT_DODGE, 0);
-            case "overdrivesUsed":    return PlayerPrefs.GetInt(PREF_STAT_OVERDRIVE, 0);
-            case "lootsCollected":    return PlayerPrefs.GetInt(PREF_STAT_LOOT, 0);
-            case "dailyCompletedTotal": return PlayerPrefs.GetInt(PREF_STAT_DAILY_DONE, 0);
+            case "swarmKills":        return ProfileManager.GetInt(PREF_STAT_SWARM, 0);
+            case "perfectDodges":     return ProfileManager.GetInt(PREF_STAT_DODGE, 0);
+            case "overdrivesUsed":    return ProfileManager.GetInt(PREF_STAT_OVERDRIVE, 0);
+            case "lootsCollected":    return ProfileManager.GetInt(PREF_STAT_LOOT, 0);
+            case "dailyCompletedTotal": return ProfileManager.GetInt(PREF_STAT_DAILY_DONE, 0);
             default: return 0;
         }
     }
@@ -957,7 +957,7 @@ public class DailyOpsManager : MonoBehaviour
 
     private static void IncrementLifetimeStat(string prefKey, int delta)
     {
-        int v = PlayerPrefs.GetInt(prefKey, 0) + delta;
-        PlayerPrefs.SetInt(prefKey, v);
+        int v = ProfileManager.GetInt(prefKey, 0) + delta;
+        ProfileManager.SetInt(prefKey, v);
     }
 }

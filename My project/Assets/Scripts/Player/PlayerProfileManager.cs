@@ -57,21 +57,21 @@ public class PlayerProfileManager : MonoBehaviour
 
     public void LoadProfile()
     {
-        level = Mathf.Max(1, PlayerPrefs.GetInt(PREF_PILOT_LEVEL, 1));
-        currentExp = Mathf.Max(0, PlayerPrefs.GetInt(PREF_PILOT_EXP, 0));
-        totalKills = PlayerPrefs.GetInt(PREF_TOTAL_KILLS, 0);
-        totalBosses = PlayerPrefs.GetInt(PREF_TOTAL_BOSSES, 0);
-        totalWavesCleared = PlayerPrefs.GetInt(PREF_TOTAL_WAVES, 0);
+        level = Mathf.Max(1, ProfileManager.GetInt(PREF_PILOT_LEVEL, 1));
+        currentExp = Mathf.Max(0, ProfileManager.GetInt(PREF_PILOT_EXP, 0));
+        totalKills = ProfileManager.GetInt(PREF_TOTAL_KILLS, 0);
+        totalBosses = ProfileManager.GetInt(PREF_TOTAL_BOSSES, 0);
+        totalWavesCleared = ProfileManager.GetInt(PREF_TOTAL_WAVES, 0);
     }
 
     public void SaveProfile()
     {
-        PlayerPrefs.SetInt(PREF_PILOT_LEVEL, level);
-        PlayerPrefs.SetInt(PREF_PILOT_EXP, currentExp);
-        PlayerPrefs.SetInt(PREF_TOTAL_KILLS, totalKills);
-        PlayerPrefs.SetInt(PREF_TOTAL_BOSSES, totalBosses);
-        PlayerPrefs.SetInt(PREF_TOTAL_WAVES, totalWavesCleared);
-        PlayerPrefs.Save();
+        ProfileManager.SetInt(PREF_PILOT_LEVEL, level);
+        ProfileManager.SetInt(PREF_PILOT_EXP, currentExp);
+        ProfileManager.SetInt(PREF_TOTAL_KILLS, totalKills);
+        ProfileManager.SetInt(PREF_TOTAL_BOSSES, totalBosses);
+        ProfileManager.SetInt(PREF_TOTAL_WAVES, totalWavesCleared);
+        ProfileManager.Save();
     }
 
     /// <summary>

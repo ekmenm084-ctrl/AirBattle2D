@@ -17,6 +17,7 @@ public class MilitaryStoreManager : MonoBehaviour
     private const string PREF_EQUIPPED_PREFIX = "AirBattle_Equipped_";
 
     public event Action OnStoreDataChanged;
+    public void NotifyStoreDataChanged() => OnStoreDataChanged?.Invoke();
 
     private readonly List<AircraftPart> _catalog = new List<AircraftPart>();
     private readonly Dictionary<string, AircraftPart> _catalogDict = new Dictionary<string, AircraftPart>();
@@ -395,7 +396,7 @@ public class MilitaryStoreManager : MonoBehaviour
     public bool IsPartUnlocked(string partId)
     {
         if (string.IsNullOrEmpty(partId)) return false;
-        return PlayerPrefs.GetInt(PREF_PART_UNLOCKED_PREFIX + partId, 0) == 1;
+        return ProfileManager.GetInt(PREF_PART_UNLOCKED_PREFIX + partId, 0) == 1;
     }
 
     /// <summary>
@@ -404,8 +405,8 @@ public class MilitaryStoreManager : MonoBehaviour
     public bool UnlockPartDirectly(string partId)
     {
         if (string.IsNullOrEmpty(partId)) return false;
-        PlayerPrefs.SetInt(PREF_PART_UNLOCKED_PREFIX + partId, 1);
-        PlayerPrefs.Save();
+        ProfileManager.SetInt(PREF_PART_UNLOCKED_PREFIX + partId, 1);
+        ProfileManager.Save();
         OnStoreDataChanged?.Invoke();
         return true;
     }
@@ -435,8 +436,8 @@ public class MilitaryStoreManager : MonoBehaviour
 
         if (hangar.SpendGold(part.price))
         {
-            PlayerPrefs.SetInt(PREF_PART_UNLOCKED_PREFIX + partId, 1);
-            PlayerPrefs.Save();
+            ProfileManager.SetInt(PREF_PART_UNLOCKED_PREFIX + partId, 1);
+            ProfileManager.Save();
             OnStoreDataChanged?.Invoke();
             message = $"{part.name} başarıyla satın alındı ve askeri envantere eklendi!";
             return true;
@@ -485,7 +486,7 @@ public class MilitaryStoreManager : MonoBehaviour
 
     public string GetEquippedPartId(HangarManager.AircraftType plane, AircraftPartCategory cat)
     {
-        return PlayerPrefs.GetString(GetEquipPrefKey(plane, cat), "");
+        return ProfileManager.GetString(GetEquipPrefKey(plane, cat), "");
     }
 
     public AircraftPart GetEquippedPart(HangarManager.AircraftType plane, AircraftPartCategory cat)
@@ -515,8 +516,8 @@ public class MilitaryStoreManager : MonoBehaviour
             return false;
         }
 
-        PlayerPrefs.SetString(GetEquipPrefKey(plane, part.category), part.id);
-        PlayerPrefs.Save();
+        ProfileManager.SetString(GetEquipPrefKey(plane, part.category), part.id);
+        ProfileManager.Save();
         OnStoreDataChanged?.Invoke();
 
         resultMessage = $"{part.name}, {GetAircraftDisplayName(plane)} uçağına başarıyla monte edildi!";
@@ -525,8 +526,8 @@ public class MilitaryStoreManager : MonoBehaviour
 
     public void UnequipPart(HangarManager.AircraftType plane, AircraftPartCategory cat)
     {
-        PlayerPrefs.DeleteKey(GetEquipPrefKey(plane, cat));
-        PlayerPrefs.Save();
+        ProfileManager.DeleteKey(GetEquipPrefKey(plane, cat));
+        ProfileManager.Save();
         OnStoreDataChanged?.Invoke();
     }
 

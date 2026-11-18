@@ -531,7 +531,7 @@ public class PlayerProfileUI : MonoBehaviour
         if (_goldBadgeTMP != null)
         {
             HangarManager hm = HangarManager.EnsureInstance();
-            int currentGold = (hm != null) ? hm.gold : PlayerPrefs.GetInt("AirBattle_Gold", 250);
+            int currentGold = (hm != null) ? hm.gold : ProfileManager.GetInt("AirBattle_Gold", 250);
             _goldBadgeTMP.text = $"ALTIN: <b>{currentGold:N0} G</b>";
         }
     }

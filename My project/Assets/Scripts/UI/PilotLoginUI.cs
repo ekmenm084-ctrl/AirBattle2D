@@ -6,12 +6,11 @@ using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Pilot Çağrı Kodu / Kullanıcı Adı Giriş Ekranı (Pilot Login & Callsign Modal):
-/// - Oyuna ilk girişte otomatik olarak açılır ve oyuncudan takma ad / çağrı kodu girmesini ister.
+/// Bağımsız Pilot Profili ve Çağrı Kodu Giriş / Geçiş Ekranı (Multi-Profile Pilot Login):
+/// - Her pilot kendi bağımsız Seviye (Level), Altın, Uçak Envanteri, İHA/Dronları ve Rekorlarına sahiptir.
+/// - Aynı telefonda kayıtlı pilotlar arasında tek tıkla anında profil geçişi yapılabilir.
+/// - Farklı bir çağrı kodu girildiğinde o pilota ait bağımsız profile geçiş yapılır veya yeni profil oluşturulur.
 /// - Belirlenen isim Küresel Liderlik Tablosunda (Leaderboard), Ana Menü profil rozetinde ve telsiz anonslarında görünür.
-/// - 🎲 Rastgele havacılık çağrı kodu üreteci (Mustafa_Ace, KaanLeader, GhostRider, SkyReaper vb.) içerir.
-/// - Minimum 3, maksimum 14 karakter doğrulaması ve URL-güvenli temizleme uygular.
-/// - İstenildiğinde Ana Menüden veya Skor Tablosundan tekrar açılarak isim güncellenebilir.
 /// </summary>
 public class PilotLoginUI : MonoBehaviour
 {
@@ -21,6 +20,10 @@ public class PilotLoginUI : MonoBehaviour
     private TMP_InputField _inputField;
     private TextMeshProUGUI _validationTMP;
     private TextMeshProUGUI _charCountTMP;
+    private TextMeshProUGUI _activePilotBannerTMP;
+    private Transform _knownProfilesContainer;
+    private List<GameObject> _spawnedProfileBtns = new List<GameObject>();
+
     private Button _saveButton;
     private Button _cancelButton;
     private Button _randomNameButton;
@@ -67,9 +70,6 @@ public class PilotLoginUI : MonoBehaviour
         return Instance;
     }
 
-    /// <summary>
-    /// TMP_InputField klavye ve fare tıklamalarını yakalayabilmesi için sahnede EventSystem bulunmasını garanti eder.
-    /// </summary>
     public static void EnsureEventSystem()
     {
         if (EventSystem.current == null)
@@ -80,9 +80,6 @@ public class PilotLoginUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Oyuncu daha önce kendi özel çağrı kodunu belirlemediyse ilk açılış ekranını gösterir.
-    /// </summary>
     public void CheckFirstTimeLogin()
     {
         if (!LeaderboardManager.HasSetCustomCallsign)
@@ -91,9 +88,6 @@ public class PilotLoginUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Giriş / Çağrı Kodu belirleme penceresini açar.
-    /// </summary>
     public void OpenLoginModal(Action onSaved = null, bool isMandatoryFirstTime = false)
     {
         EnsureEventSystem();
@@ -110,11 +104,10 @@ public class PilotLoginUI : MonoBehaviour
 
         if (_cancelButton != null)
         {
-            // Kullanıcı dilediğinde kapatıp ana menüye dönebilir veya varsayılan çağrı koduyla devam edebilir
             _cancelButton.gameObject.SetActive(true);
         }
 
-        string currentName = LeaderboardManager.PlayerCallsign;
+        string currentName = ProfileManager.ActiveProfile;
         if (_inputField != null)
         {
             _inputField.text = currentName;
@@ -125,11 +118,12 @@ public class PilotLoginUI : MonoBehaviour
         if (_validationTMP != null)
         {
             _validationTMP.text = _isFirstTimeLogin
-                ? "<color=#8AB4F8>Lütfen hava harekatında kullanılacak pilot çağrı kodunuzu belirleyin.</color>"
-                : "<color=#8AB4F8>Yeni çağrı kodunuz skor tablosunda anında güncellenecektir.</color>";
+                ? "<color=#8AB4F8>Lütfen bu cihazda kullanılacak pilot çağrı kodunuzu belirleyin.</color>"
+                : "<color=#8AB4F8>Farklı bir isim girdiğinizde o pilota ait bağımsız profile anında geçiş yapılır.</color>";
         }
 
         UpdateCharCount(currentName);
+        RefreshModalProfileView();
     }
 
     public void CloseModal()
@@ -146,7 +140,7 @@ public class PilotLoginUI : MonoBehaviour
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        // 1. Karartma Arka Planı (Full Screen Overlay)
+        // 1. Karartma Arka Planı
         _modalRoot = new GameObject("PilotLoginModalRoot", typeof(RectTransform));
         _modalRoot.transform.SetParent(canvas.transform, false);
 
@@ -154,9 +148,9 @@ public class PilotLoginUI : MonoBehaviour
         MainMenuManager.MakeFullScreenRect(rootRt);
 
         Image bg = _modalRoot.AddComponent<Image>();
-        bg.color = new Color(0.02f, 0.04f, 0.08f, 0.92f); // Derin aero-glass askeri kokpit gecesi
+        bg.color = new Color(0.02f, 0.04f, 0.08f, 0.94f);
 
-        // 2. Ana Askeri Kart / İletişim Kutusu (Modal Box)
+        // 2. Ana Askeri Kart (Modal Box)
         GameObject boxObj = new GameObject("PilotCardBox", typeof(RectTransform));
         boxObj.transform.SetParent(_modalRoot.transform, false);
         RectTransform bRt = boxObj.GetComponent<RectTransform>();
@@ -164,10 +158,10 @@ public class PilotLoginUI : MonoBehaviour
         bRt.anchorMax = new Vector2(0.5f, 0.5f);
         bRt.pivot = new Vector2(0.5f, 0.5f);
         bRt.anchoredPosition = Vector2.zero;
-        bRt.sizeDelta = new Vector2(640f, 450f);
+        bRt.sizeDelta = new Vector2(700f, 540f);
 
         Image bBg = boxObj.AddComponent<Image>();
-        bBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.07f, 0.14f, 0.96f), false);
+        bBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.07f, 0.14f, 0.98f), false);
         bBg.type = Image.Type.Sliced;
         bBg.color = Color.white;
 
@@ -179,7 +173,7 @@ public class PilotLoginUI : MonoBehaviour
         hsRt.anchorMax = new Vector2(1f, 1f);
         hsRt.pivot = new Vector2(0.5f, 1f);
         hsRt.anchoredPosition = new Vector2(0f, -10f);
-        hsRt.sizeDelta = new Vector2(600f, 54f);
+        hsRt.sizeDelta = new Vector2(660f, 50f);
 
         Image hsImg = headerStrip.AddComponent<Image>();
         hsImg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.11f, 0.20f, 1f), true);
@@ -197,40 +191,121 @@ public class PilotLoginUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "DEFCON // PİLOT UÇUŞ KARTI & GİRİŞ";
-        titleTMP.fontSize = 19f;
+        titleTMP.text = "DEFCON // PİLOT HESAP & PROFİL SEÇİMİ";
+        titleTMP.fontSize = 20f;
         titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.characterSpacing = 2.0f;
+        titleTMP.characterSpacing = 1.8f;
         titleTMP.alignment = TextAlignmentOptions.Center;
         titleTMP.color = new Color(0f, 0.95f, 1f);
 
-        // Alt Bilgi / Açıklama
+        // Açıklama
         GameObject subObj = new GameObject("SubTitleText", typeof(RectTransform));
         subObj.transform.SetParent(boxObj.transform, false);
         RectTransform sRt = subObj.GetComponent<RectTransform>();
         sRt.anchorMin = new Vector2(0f, 1f);
         sRt.anchorMax = new Vector2(1f, 1f);
         sRt.pivot = new Vector2(0.5f, 1f);
-        sRt.anchoredPosition = new Vector2(0f, -75f);
-        sRt.sizeDelta = new Vector2(580f, 40f);
+        sRt.anchoredPosition = new Vector2(0f, -66f);
+        sRt.sizeDelta = new Vector2(640f, 26f);
 
         TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
         subTMP.font = MainMenuManager.GetTacticalFont();
-        subTMP.text = "Liderlik tablosunda ve telsiz anonslarında görünecek <b>Çağrı Kodunuzu</b> belirleyin:";
+        subTMP.text = "Her pilot kendi bağımsız seviyesine, altınlarına, hangarına ve rekorlarına sahiptir.";
         subTMP.fontSize = 13f;
-        subTMP.characterSpacing = 1.2f;
+        subTMP.characterSpacing = 1.1f;
         subTMP.alignment = TextAlignmentOptions.Center;
-        subTMP.color = new Color(0.85f, 0.9f, 0.95f);
+        subTMP.color = new Color(0.80f, 0.88f, 0.95f);
 
-        // Input Field Arka Planı
+        // 1. Mevcut Aktif Pilot Kartı
+        GameObject activeCardObj = new GameObject("ActivePilotCard", typeof(RectTransform));
+        activeCardObj.transform.SetParent(boxObj.transform, false);
+        RectTransform acRt = activeCardObj.GetComponent<RectTransform>();
+        acRt.anchorMin = new Vector2(0.5f, 1f);
+        acRt.anchorMax = new Vector2(0.5f, 1f);
+        acRt.pivot = new Vector2(0.5f, 1f);
+        acRt.anchoredPosition = new Vector2(0f, -96f);
+        acRt.sizeDelta = new Vector2(640f, 42f);
+
+        Image acBg = activeCardObj.AddComponent<Image>();
+        acBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0.2f, 0.95f, 0.45f, 0.85f), new Color(0.02f, 0.12f, 0.08f, 0.95f), false);
+        acBg.type = Image.Type.Sliced;
+        acBg.color = Color.white;
+
+        GameObject acTxtObj = new GameObject("Text", typeof(RectTransform));
+        acTxtObj.transform.SetParent(activeCardObj.transform, false);
+        RectTransform actRt = acTxtObj.GetComponent<RectTransform>();
+        actRt.anchorMin = Vector2.zero;
+        actRt.anchorMax = Vector2.one;
+        actRt.offsetMin = new Vector2(15f, 0f);
+        actRt.offsetMax = new Vector2(-15f, 0f);
+
+        _activePilotBannerTMP = acTxtObj.AddComponent<TextMeshProUGUI>();
+        _activePilotBannerTMP.font = MainMenuManager.GetTacticalFont();
+        _activePilotBannerTMP.fontSize = 16f;
+        _activePilotBannerTMP.fontStyle = FontStyles.Bold;
+        _activePilotBannerTMP.characterSpacing = 1.2f;
+        _activePilotBannerTMP.alignment = TextAlignmentOptions.Center;
+        _activePilotBannerTMP.color = Color.white;
+
+        // 2. Kayıtlı Pilotlar Bölümü Etiketi
+        GameObject kpLblObj = new GameObject("KnownProfilesLabel", typeof(RectTransform));
+        kpLblObj.transform.SetParent(boxObj.transform, false);
+        RectTransform kplRt = kpLblObj.GetComponent<RectTransform>();
+        kplRt.anchorMin = new Vector2(0.5f, 1f);
+        kplRt.anchorMax = new Vector2(0.5f, 1f);
+        kplRt.pivot = new Vector2(0.5f, 1f);
+        kplRt.anchoredPosition = new Vector2(0f, -145f);
+        kplRt.sizeDelta = new Vector2(640f, 20f);
+
+        TextMeshProUGUI kplTMP = kpLblObj.AddComponent<TextMeshProUGUI>();
+        kplTMP.font = MainMenuManager.GetTacticalFont();
+        kplTMP.text = "CİHAZDAKİ KAYITLI PİLOTLAR (HIZLI GEÇİŞ):";
+        kplTMP.fontSize = 12f;
+        kplTMP.fontStyle = FontStyles.Bold;
+        kplTMP.characterSpacing = 1.2f;
+        kplTMP.alignment = TextAlignmentOptions.Left;
+        kplTMP.color = new Color(0.3f, 0.85f, 1f);
+
+        // Kayıtlı Pilotlar Buton Konteyneri
+        GameObject kpContObj = new GameObject("KnownProfilesContainer", typeof(RectTransform));
+        kpContObj.transform.SetParent(boxObj.transform, false);
+        RectTransform kpcRt = kpContObj.GetComponent<RectTransform>();
+        kpcRt.anchorMin = new Vector2(0.5f, 1f);
+        kpcRt.anchorMax = new Vector2(0.5f, 1f);
+        kpcRt.pivot = new Vector2(0.5f, 1f);
+        kpcRt.anchoredPosition = new Vector2(0f, -168f);
+        kpcRt.sizeDelta = new Vector2(640f, 50f);
+
+        _knownProfilesContainer = kpContObj.transform;
+
+        // 3. Yeni / Farklı Çağrı Kodu Giriş Alanı Etiketi
+        GameObject inpLblObj = new GameObject("InputLabel", typeof(RectTransform));
+        inpLblObj.transform.SetParent(boxObj.transform, false);
+        RectTransform inplRt = inpLblObj.GetComponent<RectTransform>();
+        inplRt.anchorMin = new Vector2(0.5f, 1f);
+        inplRt.anchorMax = new Vector2(0.5f, 1f);
+        inplRt.pivot = new Vector2(0.5f, 1f);
+        inplRt.anchoredPosition = new Vector2(0f, -226f);
+        inplRt.sizeDelta = new Vector2(640f, 20f);
+
+        TextMeshProUGUI inplTMP = inpLblObj.AddComponent<TextMeshProUGUI>();
+        inplTMP.font = MainMenuManager.GetTacticalFont();
+        inplTMP.text = "VEYA FARKLI / YENİ PİLOT ÇAĞRI KODU GİRİN:";
+        inplTMP.fontSize = 12f;
+        inplTMP.fontStyle = FontStyles.Bold;
+        inplTMP.characterSpacing = 1.2f;
+        inplTMP.alignment = TextAlignmentOptions.Left;
+        inplTMP.color = new Color(0.3f, 0.85f, 1f);
+
+        // Input Field
         GameObject inpObj = new GameObject("NameInputField", typeof(RectTransform));
         inpObj.transform.SetParent(boxObj.transform, false);
         RectTransform inRt = inpObj.GetComponent<RectTransform>();
-        inRt.anchorMin = new Vector2(0.5f, 0.5f);
-        inRt.anchorMax = new Vector2(0.5f, 0.5f);
-        inRt.pivot = new Vector2(0.5f, 0.5f);
-        inRt.anchoredPosition = new Vector2(0f, 48f);
-        inRt.sizeDelta = new Vector2(460f, 50f);
+        inRt.anchorMin = new Vector2(0.5f, 1f);
+        inRt.anchorMax = new Vector2(0.5f, 1f);
+        inRt.pivot = new Vector2(0.5f, 1f);
+        inRt.anchoredPosition = new Vector2(0f, -250f);
+        inRt.sizeDelta = new Vector2(500f, 48f);
 
         Image inBg = inpObj.AddComponent<Image>();
         inBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.7f), new Color(0.02f, 0.05f, 0.09f, 1f), false);
@@ -265,7 +340,7 @@ public class PilotLoginUI : MonoBehaviour
 
         TextMeshProUGUI phText = phObj.AddComponent<TextMeshProUGUI>();
         phText.font = MainMenuManager.GetTacticalFont();
-        phText.text = "Çağrı Kodu Girin (Örn: Mustafa)...";
+        phText.text = "Pilot Çağrı Kodu (Örn: Mustafa, Kaan)...";
         phText.fontSize = 15f;
         phText.fontStyle = FontStyles.Italic;
         phText.characterSpacing = 1.2f;
@@ -283,11 +358,11 @@ public class PilotLoginUI : MonoBehaviour
         GameObject countObj = new GameObject("CharCounter", typeof(RectTransform));
         countObj.transform.SetParent(boxObj.transform, false);
         RectTransform cntRt = countObj.GetComponent<RectTransform>();
-        cntRt.anchorMin = new Vector2(0.5f, 0.5f);
-        cntRt.anchorMax = new Vector2(0.5f, 0.5f);
-        cntRt.pivot = new Vector2(1f, 0.5f);
-        cntRt.anchoredPosition = new Vector2(230f, 12f);
-        cntRt.sizeDelta = new Vector2(150f, 20f);
+        cntRt.anchorMin = new Vector2(0.5f, 1f);
+        cntRt.anchorMax = new Vector2(0.5f, 1f);
+        cntRt.pivot = new Vector2(1f, 1f);
+        cntRt.anchoredPosition = new Vector2(320f, -226f);
+        cntRt.sizeDelta = new Vector2(120f, 20f);
 
         _charCountTMP = countObj.AddComponent<TextMeshProUGUI>();
         _charCountTMP.font = MainMenuManager.GetTacticalFont();
@@ -299,11 +374,11 @@ public class PilotLoginUI : MonoBehaviour
         GameObject valObj = new GameObject("ValidationMessage", typeof(RectTransform));
         valObj.transform.SetParent(boxObj.transform, false);
         RectTransform vRt = valObj.GetComponent<RectTransform>();
-        vRt.anchorMin = new Vector2(0.5f, 0.5f);
-        vRt.anchorMax = new Vector2(0.5f, 0.5f);
-        vRt.pivot = new Vector2(0.5f, 0.5f);
-        vRt.anchoredPosition = new Vector2(0f, -12f);
-        vRt.sizeDelta = new Vector2(500f, 26f);
+        vRt.anchorMin = new Vector2(0.5f, 1f);
+        vRt.anchorMax = new Vector2(0.5f, 1f);
+        vRt.pivot = new Vector2(0.5f, 1f);
+        vRt.anchoredPosition = new Vector2(0f, -305f);
+        vRt.sizeDelta = new Vector2(580f, 26f);
 
         _validationTMP = valObj.AddComponent<TextMeshProUGUI>();
         _validationTMP.font = MainMenuManager.GetTacticalFont();
@@ -313,25 +388,87 @@ public class PilotLoginUI : MonoBehaviour
         _validationTMP.color = new Color(0.9f, 0.9f, 0.9f);
 
         // Rastgele İsim Üret Butonu
-        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "RASTGELE ÇAĞRI KODU",
-            new Vector2(0f, -55f), new Vector2(270f, 38f),
+        GameObject rndBtnObj = CreateButton(boxObj.transform, "RandomNameBtn", "🎲 RASTGELE ÇAĞRI KODU SEÇ",
+            new Vector2(0f, -345f), new Vector2(300f, 38f),
             "hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), GenerateRandomCallsign);
         _randomNameButton = rndBtnObj.GetComponent<Button>();
 
-        // 3. Alt Aksiyon Butonları
+        // 4. Alt Aksiyon Butonları
         // Onayla ve Savaşa Katıl Butonu
-        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "ONAYLA VE GÖREVE BAŞLA",
-            new Vector2(0f, -125f), new Vector2(320f, 50f),
+        GameObject saveBtnObj = CreateButton(boxObj.transform, "SaveCallsignBtn", "ONAYLA & PROFİLE GEÇ",
+            new Vector2(0f, -408f), new Vector2(340f, 52f),
             "hud_btn_emerald", new Color(0.2f, 0.95f, 0.4f, 1f), new Color(0.04f, 0.16f, 0.08f, 1f), OnSaveClicked);
         _saveButton = saveBtnObj.GetComponent<Button>();
 
-        // İptal Butonu
+        // İptal / Kapat Butonu
         GameObject cancelBtnObj = CreateButton(boxObj.transform, "CancelBtn", "[<<] KAPAT",
-            new Vector2(0f, -182f), new Vector2(170f, 36f),
+            new Vector2(0f, -472f), new Vector2(170f, 38f),
             "hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), CloseModal);
         _cancelButton = cancelBtnObj.GetComponent<Button>();
 
         _modalRoot.SetActive(false);
+    }
+
+    private void RefreshModalProfileView()
+    {
+        string currentActive = ProfileManager.ActiveProfile;
+        int lvl = ProfileManager.GetInt("AirBattle_Pilot_Level", 1);
+        int gold = ProfileManager.GetInt("AirBattle_Gold", 250);
+
+        if (_activePilotBannerTMP != null)
+        {
+            _activePilotBannerTMP.text = $"AKTİF PİLOT: <color=#00E5FF><b>[{currentActive}]</b></color> • Seviye <b>{lvl}</b> • Altın: <b>{gold:N0} G</b>";
+        }
+
+        // Kayıtlı pilot butonlarını temizle ve yeniden oluştur
+        foreach (var b in _spawnedProfileBtns)
+        {
+            if (b != null) Destroy(b);
+        }
+        _spawnedProfileBtns.Clear();
+
+        if (_knownProfilesContainer == null) return;
+
+        var knownProfiles = ProfileManager.GetKnownProfiles();
+        int count = Mathf.Min(knownProfiles.Count, 4); // En fazla ilk 4 profili yan yana göster
+        float btnWidth = 145f;
+        float spacing = 12f;
+        float totalW = (count * btnWidth) + ((count - 1) * spacing);
+        float startX = -totalW / 2f + (btnWidth / 2f);
+
+        for (int i = 0; i < count; i++)
+        {
+            string pName = knownProfiles[i];
+            bool isActive = pName.Equals(currentActive, StringComparison.OrdinalIgnoreCase);
+            int pLvl = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(pName, "AirBattle_Pilot_Level"), 1);
+
+            float posX = startX + i * (btnWidth + spacing);
+            string label = isActive ? $"<b>[{pName}]</b>\n<size=75%>AKTİF</size>" : $"{pName}\n<size=75%>Sv.{pLvl}</size>";
+            string spriteKey = isActive ? "hud_btn_cyan" : "hud_btn_blue";
+            Color border = isActive ? new Color(0f, 1f, 0.85f, 1f) : new Color(0.25f, 0.6f, 0.9f, 0.9f);
+            Color fill = isActive ? new Color(0.04f, 0.16f, 0.22f, 1f) : new Color(0.05f, 0.10f, 0.18f, 0.95f);
+
+            GameObject pBtnObj = CreateButton(_knownProfilesContainer, $"ProfileBtn_{pName}", label,
+                new Vector2(posX, 0f), new Vector2(btnWidth, 42f),
+                spriteKey, border, fill, () =>
+                {
+                    ProfileManager.SwitchProfile(pName);
+                    if (_inputField != null) _inputField.text = pName;
+                    RefreshModalProfileView();
+                    if (_validationTMP != null)
+                    {
+                        _validationTMP.text = $"<color=#00FFAA>[✓] <b>{pName}</b> profiline başarıyla geçildi!</color>";
+                    }
+                });
+
+            // Anchor'ı üst ortaya sabitle
+            RectTransform pRt = pBtnObj.GetComponent<RectTransform>();
+            pRt.anchorMin = new Vector2(0.5f, 0.5f);
+            pRt.anchorMax = new Vector2(0.5f, 0.5f);
+            pRt.pivot = new Vector2(0.5f, 0.5f);
+
+            _spawnedProfileBtns.Add(pBtnObj);
+        }
     }
 
     private GameObject CreateButton(Transform parent, string name, string label, Vector2 pos, Vector2 size, string spriteKey, Color borderColor, Color fillColor, Action onClick)
@@ -340,9 +477,9 @@ public class PilotLoginUI : MonoBehaviour
         btnObj.transform.SetParent(parent, false);
 
         RectTransform rt = btnObj.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
         rt.anchoredPosition = pos;
         rt.sizeDelta = size;
 
@@ -366,9 +503,9 @@ public class PilotLoginUI : MonoBehaviour
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = label;
-        tmp.fontSize = 14f;
+        tmp.fontSize = 13f;
         tmp.fontStyle = FontStyles.Bold;
-        tmp.characterSpacing = 1.4f;
+        tmp.characterSpacing = 1.2f;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
         tmp.raycastTarget = false;
@@ -419,12 +556,8 @@ public class PilotLoginUI : MonoBehaviour
             return;
         }
 
-        // İsim kaydı
-        LeaderboardManager.PlayerCallsign = input;
-
-        // UI Güncellemeleri
-        PlayerProfileUI.Instance?.RefreshBadgeVisuals();
-        LeaderboardUI.Instance?.RefreshScores();
+        // Profil Değişimi & Bağımsız Hesap Yükleme
+        ProfileManager.SwitchProfile(input);
 
         CloseModal();
 
@@ -432,4 +565,3 @@ public class PilotLoginUI : MonoBehaviour
         _onSaveCallback = null;
     }
 }
-

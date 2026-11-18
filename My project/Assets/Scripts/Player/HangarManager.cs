@@ -159,43 +159,43 @@ public class HangarManager : MonoBehaviour
 
     public void LoadHangarData()
     {
-        gold = PlayerPrefs.GetInt(PREF_GOLD, 250);
-        activeAircraft = (AircraftType)PlayerPrefs.GetInt(PREF_ACTIVE_PLANE, (int)AircraftType.F16Viper);
+        gold = ProfileManager.GetInt(PREF_GOLD, 250);
+        activeAircraft = (AircraftType)ProfileManager.GetInt(PREF_ACTIVE_PLANE, (int)AircraftType.F16Viper);
 
         armorLevel = 0;
         damageLevel = 0;
         speedLevel = 0;
         criticalLevel = 0;
 
-        leftDroneType = (DroneCompanion.DroneType)PlayerPrefs.GetInt(PREF_DRONE_LEFT, (int)DroneCompanion.DroneType.None);
-        rightDroneType = (DroneCompanion.DroneType)PlayerPrefs.GetInt(PREF_DRONE_RIGHT, (int)DroneCompanion.DroneType.None);
+        leftDroneType = (DroneCompanion.DroneType)ProfileManager.GetInt(PREF_DRONE_LEFT, (int)DroneCompanion.DroneType.None);
+        rightDroneType = (DroneCompanion.DroneType)ProfileManager.GetInt(PREF_DRONE_RIGHT, (int)DroneCompanion.DroneType.None);
 
         // 1. Drone (MK-1 İzci) öncelikli olarak oyuncunun ilk başlangıç drone'u olarak kullanıma açılır
         const string PREF_FIRST_DRONE_INIT = "AirBattle_Drone_Priority_V3";
-        if (PlayerPrefs.GetInt(PREF_FIRST_DRONE_INIT, 0) == 0)
+        if (ProfileManager.GetInt(PREF_FIRST_DRONE_INIT, 0) == 0)
         {
-            PlayerPrefs.SetInt(PREF_FIRST_DRONE_INIT, 1);
-            PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)DroneCompanion.DroneType.MK1_Scout, 1);
-            PlayerPrefs.SetFloat(PREF_DRONE_HP_PREFIX + (int)DroneCompanion.DroneType.MK1_Scout, GetDroneMaxHealth(DroneCompanion.DroneType.MK1_Scout));
+            ProfileManager.SetInt(PREF_FIRST_DRONE_INIT, 1);
+            ProfileManager.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)DroneCompanion.DroneType.MK1_Scout, 1);
+            ProfileManager.SetFloat(PREF_DRONE_HP_PREFIX + (int)DroneCompanion.DroneType.MK1_Scout, GetDroneMaxHealth(DroneCompanion.DroneType.MK1_Scout));
 
             // Eğer oyuncu seviyesi 20'nin altındaysa, eski hatalı kayıttan kalan MK-2'yi kitle
             int curLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
             if (curLvl < GetDroneRequiredLevel(DroneCompanion.DroneType.MK2_Interceptor))
             {
-                PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)DroneCompanion.DroneType.MK2_Interceptor, 0);
-                PlayerPrefs.SetFloat(PREF_DRONE_HP_PREFIX + (int)DroneCompanion.DroneType.MK2_Interceptor, 0f);
+                ProfileManager.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)DroneCompanion.DroneType.MK2_Interceptor, 0);
+                ProfileManager.SetFloat(PREF_DRONE_HP_PREFIX + (int)DroneCompanion.DroneType.MK2_Interceptor, 0f);
             }
 
             // Sol kanada 1. drone olan MK-1'i otomatik tak
             if (leftDroneType == DroneCompanion.DroneType.None || leftDroneType == DroneCompanion.DroneType.MK2_Interceptor)
             {
                 leftDroneType = DroneCompanion.DroneType.MK1_Scout;
-                PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
+                ProfileManager.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
             }
             if (rightDroneType == DroneCompanion.DroneType.MK2_Interceptor)
             {
                 rightDroneType = DroneCompanion.DroneType.None;
-                PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
+                ProfileManager.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
             }
         }
 
@@ -203,47 +203,47 @@ public class HangarManager : MonoBehaviour
         if (leftDroneType != DroneCompanion.DroneType.None && !IsDroneUnlocked(leftDroneType))
         {
             leftDroneType = DroneCompanion.DroneType.None;
-            PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)DroneCompanion.DroneType.None);
+            ProfileManager.SetInt(PREF_DRONE_LEFT, (int)DroneCompanion.DroneType.None);
         }
         if (rightDroneType != DroneCompanion.DroneType.None && !IsDroneUnlocked(rightDroneType))
         {
             rightDroneType = DroneCompanion.DroneType.None;
-            PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)DroneCompanion.DroneType.None);
+            ProfileManager.SetInt(PREF_DRONE_RIGHT, (int)DroneCompanion.DroneType.None);
         }
 
-        chipBonusDamage = PlayerPrefs.GetFloat(PREF_CHIP_BONUS_DMG, 0f);
-        chipBonusHealth = PlayerPrefs.GetFloat(PREF_CHIP_BONUS_HP, 0f);
-        totalCratesOpened = PlayerPrefs.GetInt(PREF_TOTAL_CRATES, 0);
+        chipBonusDamage = ProfileManager.GetFloat(PREF_CHIP_BONUS_DMG, 0f);
+        chipBonusHealth = ProfileManager.GetFloat(PREF_CHIP_BONUS_HP, 0f);
+        totalCratesOpened = ProfileManager.GetInt(PREF_TOTAL_CRATES, 0);
 
-        bronzeKeys = PlayerPrefs.GetInt(PREF_KEY_BRONZE, 0);
-        silverKeys = PlayerPrefs.GetInt(PREF_KEY_SILVER, 0);
-        goldKeys = PlayerPrefs.GetInt(PREF_KEY_GOLD, 0);
-        singleUseSuperPlanes = PlayerPrefs.GetInt(PREF_SUPER_PLANES, 0);
+        bronzeKeys = ProfileManager.GetInt(PREF_KEY_BRONZE, 0);
+        silverKeys = ProfileManager.GetInt(PREF_KEY_SILVER, 0);
+        goldKeys = ProfileManager.GetInt(PREF_KEY_GOLD, 0);
+        singleUseSuperPlanes = ProfileManager.GetInt(PREF_SUPER_PLANES, 0);
     }
 
     public void SaveHangarData()
     {
-        PlayerPrefs.SetInt(PREF_GOLD, gold);
-        PlayerPrefs.SetInt(PREF_ACTIVE_PLANE, (int)activeAircraft);
-        PlayerPrefs.SetInt(PREF_TOTAL_CRATES, totalCratesOpened);
+        ProfileManager.SetInt(PREF_GOLD, gold);
+        ProfileManager.SetInt(PREF_ACTIVE_PLANE, (int)activeAircraft);
+        ProfileManager.SetInt(PREF_TOTAL_CRATES, totalCratesOpened);
 
-        PlayerPrefs.SetInt(PREF_LVL_ARMOR, armorLevel);
-        PlayerPrefs.SetInt(PREF_LVL_DAMAGE, damageLevel);
-        PlayerPrefs.SetInt(PREF_LVL_SPEED, speedLevel);
-        PlayerPrefs.SetInt(PREF_LVL_CRIT, criticalLevel);
+        ProfileManager.SetInt(PREF_LVL_ARMOR, armorLevel);
+        ProfileManager.SetInt(PREF_LVL_DAMAGE, damageLevel);
+        ProfileManager.SetInt(PREF_LVL_SPEED, speedLevel);
+        ProfileManager.SetInt(PREF_LVL_CRIT, criticalLevel);
 
-        PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
-        PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
+        ProfileManager.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
+        ProfileManager.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
 
-        PlayerPrefs.SetFloat(PREF_CHIP_BONUS_DMG, chipBonusDamage);
-        PlayerPrefs.SetFloat(PREF_CHIP_BONUS_HP, chipBonusHealth);
+        ProfileManager.SetFloat(PREF_CHIP_BONUS_DMG, chipBonusDamage);
+        ProfileManager.SetFloat(PREF_CHIP_BONUS_HP, chipBonusHealth);
 
-        PlayerPrefs.SetInt(PREF_KEY_BRONZE, bronzeKeys);
-        PlayerPrefs.SetInt(PREF_KEY_SILVER, silverKeys);
-        PlayerPrefs.SetInt(PREF_KEY_GOLD, goldKeys);
-        PlayerPrefs.SetInt(PREF_SUPER_PLANES, singleUseSuperPlanes);
+        ProfileManager.SetInt(PREF_KEY_BRONZE, bronzeKeys);
+        ProfileManager.SetInt(PREF_KEY_SILVER, silverKeys);
+        ProfileManager.SetInt(PREF_KEY_GOLD, goldKeys);
+        ProfileManager.SetInt(PREF_SUPER_PLANES, singleUseSuperPlanes);
 
-        PlayerPrefs.Save();
+        ProfileManager.Save();
     }
 
     public int GetKeyCount(KeyType type)
@@ -745,11 +745,11 @@ public class HangarManager : MonoBehaviour
 
         return type switch
         {
-            AircraftType.A10TankBuster => PlayerPrefs.GetInt(PREF_UNLOCKED_A10, 0) == 1,
-            AircraftType.F22Raptor     => PlayerPrefs.GetInt(PREF_UNLOCKED_F22, 0) == 1,
-            AircraftType.Su57Felon     => PlayerPrefs.GetInt(PREF_UNLOCKED_SU57, 0) == 1,
-            AircraftType.F35Lightning  => PlayerPrefs.GetInt(PREF_UNLOCKED_F35, 0) == 1,
-            AircraftType.KaanApex      => PlayerPrefs.GetInt(PREF_UNLOCKED_KAAN, 0) == 1,
+            AircraftType.A10TankBuster => ProfileManager.GetInt(PREF_UNLOCKED_A10, 0) == 1,
+            AircraftType.F22Raptor     => ProfileManager.GetInt(PREF_UNLOCKED_F22, 0) == 1,
+            AircraftType.Su57Felon     => ProfileManager.GetInt(PREF_UNLOCKED_SU57, 0) == 1,
+            AircraftType.F35Lightning  => ProfileManager.GetInt(PREF_UNLOCKED_F35, 0) == 1,
+            AircraftType.KaanApex      => ProfileManager.GetInt(PREF_UNLOCKED_KAAN, 0) == 1,
             _ => false
         };
     }
@@ -768,11 +768,11 @@ public class HangarManager : MonoBehaviour
             gold -= cost;
             switch (type)
             {
-                case AircraftType.A10TankBuster: PlayerPrefs.SetInt(PREF_UNLOCKED_A10, 1); break;
-                case AircraftType.F22Raptor:     PlayerPrefs.SetInt(PREF_UNLOCKED_F22, 1); break;
-                case AircraftType.Su57Felon:     PlayerPrefs.SetInt(PREF_UNLOCKED_SU57, 1); break;
-                case AircraftType.F35Lightning:  PlayerPrefs.SetInt(PREF_UNLOCKED_F35, 1); break;
-                case AircraftType.KaanApex:      PlayerPrefs.SetInt(PREF_UNLOCKED_KAAN, 1); break;
+                case AircraftType.A10TankBuster: ProfileManager.SetInt(PREF_UNLOCKED_A10, 1); break;
+                case AircraftType.F22Raptor:     ProfileManager.SetInt(PREF_UNLOCKED_F22, 1); break;
+                case AircraftType.Su57Felon:     ProfileManager.SetInt(PREF_UNLOCKED_SU57, 1); break;
+                case AircraftType.F35Lightning:  ProfileManager.SetInt(PREF_UNLOCKED_F35, 1); break;
+                case AircraftType.KaanApex:      ProfileManager.SetInt(PREF_UNLOCKED_KAAN, 1); break;
             }
 
             activeAircraft = type;
@@ -915,7 +915,7 @@ public class HangarManager : MonoBehaviour
         int playerLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
         if (playerLvl < GetDroneRequiredLevel(type)) return false;
 
-        return PlayerPrefs.GetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0) == 1;
+        return ProfileManager.GetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0) == 1;
     }
 
     public bool IsDroneUnlocked(DroneCompanion.DroneType type)
@@ -927,20 +927,20 @@ public class HangarManager : MonoBehaviour
     public int GetDroneDeaths(DroneCompanion.DroneType type)
     {
         if (type == DroneCompanion.DroneType.None) return 0;
-        return PlayerPrefs.GetInt(PREF_DRONE_DEATHS_PREFIX + (int)type, 0);
+        return ProfileManager.GetInt(PREF_DRONE_DEATHS_PREFIX + (int)type, 0);
     }
 
     public void SetDroneDeaths(DroneCompanion.DroneType type, int deaths)
     {
         if (type == DroneCompanion.DroneType.None) return;
-        PlayerPrefs.SetInt(PREF_DRONE_DEATHS_PREFIX + (int)type, Mathf.Clamp(deaths, 0, MAX_DRONE_DEATHS));
-        PlayerPrefs.Save();
+        ProfileManager.SetInt(PREF_DRONE_DEATHS_PREFIX + (int)type, Mathf.Clamp(deaths, 0, MAX_DRONE_DEATHS));
+        ProfileManager.Save();
     }
 
     public float GetDroneHealth(DroneCompanion.DroneType type)
     {
         if (type == DroneCompanion.DroneType.None) return 0f;
-        return PlayerPrefs.GetFloat(PREF_DRONE_HP_PREFIX + (int)type, 0f);
+        return ProfileManager.GetFloat(PREF_DRONE_HP_PREFIX + (int)type, 0f);
     }
 
     public void SetDroneHealth(DroneCompanion.DroneType type, float hp)
@@ -948,7 +948,7 @@ public class HangarManager : MonoBehaviour
         if (type == DroneCompanion.DroneType.None) return;
         float maxHp = GetDroneMaxHealth(type);
         float clamped = Mathf.Clamp(hp, 0f, maxHp);
-        PlayerPrefs.SetFloat(PREF_DRONE_HP_PREFIX + (int)type, clamped);
+        ProfileManager.SetFloat(PREF_DRONE_HP_PREFIX + (int)type, clamped);
 
         if (clamped <= 0f)
         {
@@ -959,7 +959,7 @@ public class HangarManager : MonoBehaviour
         }
         else
         {
-            PlayerPrefs.Save();
+            ProfileManager.Save();
         }
     }
 
@@ -973,7 +973,7 @@ public class HangarManager : MonoBehaviour
         if (gold >= cost)
         {
             gold -= cost;
-            PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 1);
+            ProfileManager.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 1);
             SetDroneDeaths(type, 0); // Yeni satın alımda can hakkı sıfırlanır (2 hak hazır)
             SetDroneHealth(type, GetDroneMaxHealth(type));
 
@@ -1021,7 +1021,7 @@ public class HangarManager : MonoBehaviour
         if (deaths >= MAX_DRONE_DEATHS)
         {
             // 2. İmha: Drone tamamen sıfırlanır, tekrar satın alınmalı (0/2 hak)
-            PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0);
+            ProfileManager.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 0);
             SetDroneDeaths(type, 0);
             Debug.Log($"[HangarManager] {type} 2. kez imha oldu! Tamamen sıfırlandı ve kilitlendi.");
         }
@@ -1040,7 +1040,7 @@ public class HangarManager : MonoBehaviour
     public void UnlockDrone(DroneCompanion.DroneType type)
     {
         if (type == DroneCompanion.DroneType.None) return;
-        PlayerPrefs.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 1);
+        ProfileManager.SetInt(PREF_DRONE_UNLOCKED_PREFIX + (int)type, 1);
         SetDroneDeaths(type, 0);
         SetDroneHealth(type, GetDroneMaxHealth(type));
         SaveHangarData();
@@ -1103,7 +1103,7 @@ public class HangarManager : MonoBehaviour
                 // ÖDÜL 1: Çok Üst Düzey Tek Kullanımlık Süper Uçak (veya kalıcı süper jet kilidi!)
                 if (!IsAircraftUnlocked(AircraftType.KaanApex) && UnityEngine.Random.value < 0.40f)
                 {
-                    PlayerPrefs.SetInt(PREF_UNLOCKED_KAAN, 1);
+                    ProfileManager.SetInt(PREF_UNLOCKED_KAAN, 1);
                     reward.title = "[EFSANE] 5.+ NESİL KAAN APEX AÇILDI!";
                     reward.description = "MİLLİ HAVA HÂKİMİYETİ ZİRVESİ! KAAN Apex savaş uçağı filonuza kalıcı olarak katıldı!";
                     reward.rarityColorHex = "#FFD700";
@@ -1127,8 +1127,8 @@ public class HangarManager : MonoBehaviour
                 else
                     leftDroneType = DroneCompanion.DroneType.MK5_TitanAegis;
 
-                PlayerPrefs.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
-                PlayerPrefs.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
+                ProfileManager.SetInt(PREF_DRONE_LEFT, (int)leftDroneType);
+                ProfileManager.SetInt(PREF_DRONE_RIGHT, (int)rightDroneType);
 
                 reward.title = "[NİHAİ İHA] MK-5 TİTAN AEGIS AÇILDI!";
                 reward.description = "Oyunun en üst düzey Apex Dronu! Düşman mermilerini yutan enerji kalkanı ve plazma salvosuyla donatıldı!";

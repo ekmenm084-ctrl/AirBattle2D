@@ -1698,7 +1698,7 @@ public class MainMenuManager : MonoBehaviour
                 playTMP.characterSpacing = 2.5f;
 
                 string modeBadge = isOnline ? "<color=#D1C4E9>[ONLINE: 2P DÜELLO]</color>"
-                    : isEndless ? $"<color=#4FC3F7>[SONSUZ İT DALAŞI (Rekor: {PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1)})]</color>"
+                    : isEndless ? $"<color=#4FC3F7>[SONSUZ İT DALAŞI (Rekor: {ProfileManager.GetInt("AirBattle_EndlessHighScore", 1)})]</color>"
                     : isBossRush ? "<color=#FF8A80>[BOSS RUSH: 4 AS]</color>"
                     : isBulletHell ? $"<color=#FF4081>[MERMİ FIRTINASI]</color>"
                     : isTimeAttack ? $"<color=#FFD54F>[ZAMAN TAARRUZU]</color>"
@@ -1797,7 +1797,7 @@ public class MainMenuManager : MonoBehaviour
         }
         else if (GameSettings.SelectedMode == GameSettings.GameMode.Endless)
         {
-            int best = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+            int best = ProfileManager.GetInt("AirBattle_EndlessHighScore", 1);
             _briefingTMP.text = $"<color=#4FC3F7><b>[SONSUZ İT DALAŞI]</b></color> • En Yüksek Rekor: <b>Dalga {best}</b>\n" +
                                 "Düşman filoları durmaksızın gelir! Her 5 dalgada bir Boss savaşı!\n" +
                                 $"{diffStats}";
@@ -1810,7 +1810,7 @@ public class MainMenuManager : MonoBehaviour
         }
         else if (GameSettings.SelectedMode == GameSettings.GameMode.BulletHell)
         {
-            float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+            float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
             int m = (int)(bestTime / 60);
             int s = (int)(bestTime % 60);
             _briefingTMP.text = $"<color=#FF4081><b>[MERMİ CEHENNEMİ - HAYATTA KALMA]</b></color> • En İyi: <b>{m:00}:{s:00}</b>\n" +
@@ -1819,14 +1819,14 @@ public class MainMenuManager : MonoBehaviour
         }
         else if (GameSettings.SelectedMode == GameSettings.GameMode.TimeAttack)
         {
-            int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+            int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
             _briefingTMP.text = $"<color=#FFD54F><b>[ZAMAN TAARRUZU - HIZ HAREKATI]</b></color> • Rekor: <b>{bestKills} Uçak</b>\n" +
                                 "60 saniyeyle başla! Her uçak <b>+4 sn</b>, Bosslar <b>+8 sn</b> ekler! Durmaksızın avlan!\n" +
                                 $"{diffStats}";
         }
         else if (GameSettings.SelectedMode == GameSettings.GameMode.Hardcore)
         {
-            int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+            int bestHc = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
             _briefingTMP.text = $"<color=#FF2A2A><b>[HARDCORE MODU: TEK CAN]</b></color> • En Yüksek: <b>{bestHc} Boss</b>\n" +
                                 "• Sadece <b>1 Can Hakkı</b> (Yedek can yok, permadeath!).\n" +
                                 "• Uçağın <b>200 HP</b> takviyeli gövdeye sahip.\n" +

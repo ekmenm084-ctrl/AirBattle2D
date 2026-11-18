@@ -67,32 +67,12 @@ public class LeaderboardManager : MonoBehaviour
     public string supabaseUrl = "";
     public string supabaseAnonKey = "";
 
-    public static bool HasSetCustomCallsign => (PlayerPrefs.GetInt(PREF_CALLSIGN_SET, 0) == 1) && !string.IsNullOrEmpty(PlayerPrefs.GetString(PREF_CALLSIGN, ""));
+    public static bool HasSetCustomCallsign => (PlayerPrefs.GetInt(PREF_CALLSIGN_SET, 0) == 1) && !string.IsNullOrEmpty(ProfileManager.ActiveProfile);
 
     public static string PlayerCallsign
     {
-        get
-        {
-            string name = PlayerPrefs.GetString(PREF_CALLSIGN, "");
-            if (string.IsNullOrEmpty(name))
-            {
-                name = "Pilot_" + UnityEngine.Random.Range(100, 999);
-                PlayerPrefs.SetString(PREF_CALLSIGN, name);
-                PlayerPrefs.Save();
-            }
-            return name;
-        }
-        set
-        {
-            if (!string.IsNullOrEmpty(value))
-            {
-                string clean = value.Trim().Replace(" ", "_").Replace("|", "").Replace("/", "");
-                if (clean.Length > 16) clean = clean.Substring(0, 16);
-                PlayerPrefs.SetString(PREF_CALLSIGN, clean);
-                PlayerPrefs.SetInt(PREF_CALLSIGN_SET, 1);
-                PlayerPrefs.Save();
-            }
-        }
+        get => ProfileManager.ActiveProfile;
+        set => ProfileManager.SetActiveProfile(value);
     }
 
     private void Awake()
@@ -110,13 +90,13 @@ public class LeaderboardManager : MonoBehaviour
         }
     }
 
-    private void SyncPlayerCampaignHistory()
+    public void SyncPlayerCampaignHistory()
     {
-        int wave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+        int wave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
         if (wave < 5)
         {
-            PlayerPrefs.SetInt("AirBattle_EndlessHighScore", 5);
-            PlayerPrefs.Save();
+            ProfileManager.SetInt("AirBattle_EndlessHighScore", 5);
+            ProfileManager.Save();
         }
     }
 
@@ -219,51 +199,51 @@ public class LeaderboardManager : MonoBehaviour
         switch (mode)
         {
             case BoardMode.Endless:
-                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+                int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
                 if (score > bestWave)
                 {
-                    PlayerPrefs.SetInt("AirBattle_EndlessHighScore", score);
-                    PlayerPrefs.Save();
+                    ProfileManager.SetInt("AirBattle_EndlessHighScore", score);
+                    ProfileManager.Save();
                     isNew = true;
                 }
                 break;
 
             case BoardMode.TimeAttack:
-                int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+                int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
                 if (score > bestKills)
                 {
-                    PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", score);
-                    PlayerPrefs.Save();
+                    ProfileManager.SetInt("AirBattle_TimeAttackHighScore", score);
+                    ProfileManager.Save();
                     isNew = true;
                 }
                 break;
 
             case BoardMode.BulletHell:
-                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
                 if (timeSeconds > bestTime)
                 {
-                    PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", timeSeconds);
-                    PlayerPrefs.Save();
+                    ProfileManager.SetFloat("AirBattle_BulletHellBestTime", timeSeconds);
+                    ProfileManager.Save();
                     isNew = true;
                 }
                 break;
 
             case BoardMode.BossRush:
-                int bestBossScore = PlayerPrefs.GetInt("AirBattle_BossRushHighScore", 0);
+                int bestBossScore = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
                 if (score > bestBossScore)
                 {
-                    PlayerPrefs.SetInt("AirBattle_BossRushHighScore", score);
-                    PlayerPrefs.Save();
+                    ProfileManager.SetInt("AirBattle_BossRushHighScore", score);
+                    ProfileManager.Save();
                     isNew = true;
                 }
                 break;
 
             case BoardMode.Hardcore:
-                int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                int bestHc = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
                 if (score > bestHc)
                 {
-                    PlayerPrefs.SetInt("AirBattle_HardcoreHighScore", score);
-                    PlayerPrefs.Save();
+                    ProfileManager.SetInt("AirBattle_HardcoreHighScore", score);
+                    ProfileManager.Save();
                     isNew = true;
                 }
                 break;
@@ -275,11 +255,11 @@ public class LeaderboardManager : MonoBehaviour
     {
         return mode switch
         {
-            BoardMode.Endless => PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0),
-            BoardMode.TimeAttack => PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0),
-            BoardMode.BulletHell => Mathf.RoundToInt(PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f)),
-            BoardMode.BossRush => PlayerPrefs.GetInt("AirBattle_BossRushHighScore", 0),
-            BoardMode.Hardcore => PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0),
+            BoardMode.Endless => ProfileManager.GetInt("AirBattle_EndlessHighScore", 0),
+            BoardMode.TimeAttack => ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0),
+            BoardMode.BulletHell => Mathf.RoundToInt(ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f)),
+            BoardMode.BossRush => ProfileManager.GetInt("AirBattle_BossRushHighScore", 0),
+            BoardMode.Hardcore => ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0),
             _ => 0
         };
     }

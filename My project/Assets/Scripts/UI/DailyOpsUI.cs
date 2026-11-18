@@ -373,7 +373,7 @@ public class DailyOpsUI : MonoBehaviour
             _scrollRect.normalizedPosition = new Vector2(0f, 1f);
     }
 
-    private void RefreshAll()
+    public void RefreshAll()
     {
         UpdateHeaderAndTabs();
         RebuildCardList();

@@ -1477,7 +1477,7 @@ public class GameUI : MonoBehaviour
                 {
                     if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Endless)
                     {
-                        int best = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+                        int best = ProfileManager.GetInt("AirBattle_EndlessHighScore", 1);
                         _waveBadgeTMP.text = isBoss
                             ? $"<color=#F1C40F>SONSUZ BOSS: DALGA {wave}</color> {diffTag}"
                             : $"SONSUZ İT DALAŞI: {wave} (REKOR: {best}) {diffTag}";
@@ -1496,7 +1496,7 @@ public class GameUI : MonoBehaviour
                     }
                     else if (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
                     {
-                        int best = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                        int best = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
                         _waveBadgeTMP.text = $"<color=#FF2222>[HC] HARDCORE BOSS #{wave}</color> (REKOR: {best}) {diffTag}";
                     }
                     else

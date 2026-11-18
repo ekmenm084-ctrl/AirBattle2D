@@ -573,11 +573,11 @@ public class GameManager : MonoBehaviour
                     if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
                     CleanUpBulletHellPlane();
 
-                    float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                    float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
                     bool newRecord = bulletHellTime > bestTime;
                     if (newRecord)
                     {
-                        PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
+                        ProfileManager.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
                         PlayerPrefs.Save();
                     }
                     LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);
@@ -640,7 +640,7 @@ public class GameManager : MonoBehaviour
 
                 if (CurrentMode == GameMode.Endless || CurrentMode == GameMode.SoloVsAI)
                 {
-                    int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+                    int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
                     string modeTag = (CurrentMode == GameMode.Endless) ? "SONSUZ MOD" : "HAREKÂT";
                     if (currentPlaneIndex >= bestWave)
                     {
@@ -658,7 +658,7 @@ public class GameManager : MonoBehaviour
                 else if (CurrentMode == GameMode.Hardcore)
                 {
                     int defeatedBosses = Mathf.Max(0, currentPlaneIndex - 1);
-                    int bestHardcore = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                    int bestHardcore = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
                     int rewardGold = defeatedBosses * 60;
                     HangarManager.EnsureInstance()?.AddGold(rewardGold);
                     sessionGoldEarned += rewardGold;
@@ -708,10 +708,10 @@ public class GameManager : MonoBehaviour
                 sessionGoldEarned += reward;
                 PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
 
-                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
                 if (bulletHellTime > bestTime)
                 {
-                    PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
+                    ProfileManager.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
                     PlayerPrefs.Save();
                 }
                 LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);
@@ -1289,11 +1289,11 @@ public class GameManager : MonoBehaviour
 
         if (_timeAttackCoroutine != null) StopCoroutine(_timeAttackCoroutine);
 
-        int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+        int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
         bool newRecord = timeAttackKills > bestKills;
         if (newRecord)
         {
-            PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
+            ProfileManager.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
             PlayerPrefs.Save();
         }
         LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.TimeAttack, timeAttackKills);
@@ -1364,7 +1364,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameMode.Endless:
-                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 1);
+                int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 1);
                 title = "SONSUZ İT DALAŞI";
                 subtitle = $"SINIRSIZ HAVA AKINI • EN İYİ REKOR: DALGA {bestWave}";
                 desc = "Düşmanlar aralıksız ve her dalgada güçlenerek geliyor! Her 20. Boss'ta +1 Can Hakkı kazanırsın!";
@@ -1379,7 +1379,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameMode.BulletHell:
-                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
                 int bm = (int)(bestTime / 60);
                 int bs = (int)(bestTime % 60);
                 title = "MERMİ CEHENNEMİ (BULLET HELL)";
@@ -1389,7 +1389,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameMode.TimeAttack:
-                int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+                int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
                 title = "ZAMAN TAARRUZU (TIME ATTACK)";
                 subtitle = $"60 SANİYELİK YILDIRIM OPERASYONU • EN İYİ REKOR: {bestKills} İMHA";
                 desc = "Süre daralıyor! 60 saniye içinde indirebildiğin kadar uçak avla, her imhada ek süre kazan!";
@@ -1397,7 +1397,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameMode.Hardcore:
-                int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                int bestHc = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
                 title = "[!] HARDCORE MODU [!]";
                 subtitle = $"TEK CAN • 200 HP GÖVDE • EN İYİ REKOR: {bestHc} BOSS";
                 desc = "Her gelen düşman bir öncekinden daha zırhlı ve güçlü bir Boss! İkinci bir şansın yok, tek canla savaş!";
@@ -1436,10 +1436,10 @@ public class GameManager : MonoBehaviour
             case GameMode.SoloVsAI:
             case GameMode.Endless:
                 int currentWave = Mathf.Max(1, currentPlaneIndex);
-                int bestWave = PlayerPrefs.GetInt("AirBattle_EndlessHighScore", 0);
+                int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
                 if (currentWave > bestWave)
                 {
-                    PlayerPrefs.SetInt("AirBattle_EndlessHighScore", currentWave);
+                    ProfileManager.SetInt("AirBattle_EndlessHighScore", currentWave);
                     PlayerPrefs.Save();
                 }
                 lm.SubmitScore(LeaderboardManager.BoardMode.Endless, currentWave);
@@ -1447,10 +1447,10 @@ public class GameManager : MonoBehaviour
 
             case GameMode.Hardcore:
                 int defeatedBosses = Mathf.Max(0, currentPlaneIndex - 1);
-                int bestHc = PlayerPrefs.GetInt("AirBattle_HardcoreHighScore", 0);
+                int bestHc = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
                 if (defeatedBosses > bestHc)
                 {
-                    PlayerPrefs.SetInt("AirBattle_HardcoreHighScore", defeatedBosses);
+                    ProfileManager.SetInt("AirBattle_HardcoreHighScore", defeatedBosses);
                     PlayerPrefs.Save();
                 }
                 lm.SubmitScore(LeaderboardManager.BoardMode.Hardcore, defeatedBosses);
@@ -1458,30 +1458,30 @@ public class GameManager : MonoBehaviour
 
             case GameMode.BossRush:
                 int bossScore = Mathf.Max(0, currentPlaneIndex - 1) * 100;
-                int bestBoss = PlayerPrefs.GetInt("AirBattle_BossRushHighScore", 0);
+                int bestBoss = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
                 if (bossScore > bestBoss)
                 {
-                    PlayerPrefs.SetInt("AirBattle_BossRushHighScore", bossScore);
+                    ProfileManager.SetInt("AirBattle_BossRushHighScore", bossScore);
                     PlayerPrefs.Save();
                 }
                 lm.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossScore);
                 break;
 
             case GameMode.TimeAttack:
-                int bestKills = PlayerPrefs.GetInt("AirBattle_TimeAttackHighScore", 0);
+                int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
                 if (timeAttackKills > bestKills)
                 {
-                    PlayerPrefs.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
+                    ProfileManager.SetInt("AirBattle_TimeAttackHighScore", timeAttackKills);
                     PlayerPrefs.Save();
                 }
                 lm.SubmitScore(LeaderboardManager.BoardMode.TimeAttack, timeAttackKills);
                 break;
 
             case GameMode.BulletHell:
-                float bestTime = PlayerPrefs.GetFloat("AirBattle_BulletHellBestTime", 0f);
+                float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
                 if (bulletHellTime > bestTime)
                 {
-                    PlayerPrefs.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
+                    ProfileManager.SetFloat("AirBattle_BulletHellBestTime", bulletHellTime);
                     PlayerPrefs.Save();
                 }
                 lm.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);

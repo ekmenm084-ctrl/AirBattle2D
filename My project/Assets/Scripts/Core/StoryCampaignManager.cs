@@ -26,11 +26,11 @@ public class StoryCampaignManager : MonoBehaviour
 
     public static CampaignType CurrentCampaign
     {
-        get => (CampaignType)PlayerPrefs.GetInt("AirBattle_ActiveCampaign", 0);
+        get => (CampaignType)ProfileManager.GetInt("AirBattle_ActiveCampaign", 0);
         set
         {
-            PlayerPrefs.SetInt("AirBattle_ActiveCampaign", (int)value);
-            PlayerPrefs.Save();
+            ProfileManager.SetInt("AirBattle_ActiveCampaign", (int)value);
+            ProfileManager.Save();
         }
     }
 
