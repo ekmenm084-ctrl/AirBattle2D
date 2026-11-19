@@ -342,6 +342,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
     {
         isOverdriveActive = true;
         overdriveRemaining = overdriveDuration;
+        RadioChatterManager.Instance?.PlayOverdrive();
 
         // ==============================================================
         // 1. FAZ: EMP ŞOK DALGASI (TÜM EKRANDAKİ DÜŞMAN MERMİLERİNİ TEMİZLE)

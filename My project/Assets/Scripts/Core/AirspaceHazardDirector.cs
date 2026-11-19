@@ -292,6 +292,7 @@ public class AirspaceHazardDirector : MonoBehaviour
         ActiveBannerColor = new Color(1f, 0.88f, 0.20f);
         ActiveBannerText = "[TEHLİKE] ŞİMŞEK KORİDORU TESPİT EDİLDİ!";
         AudioManager.Instance?.PlayWarningAlarm();
+        RadioChatterManager.Instance?.PlayHazardStorm();
 
         List<GameObject> telegraphs = new List<GameObject>();
         List<SpriteRenderer> telegraphSprites = new List<SpriteRenderer>();

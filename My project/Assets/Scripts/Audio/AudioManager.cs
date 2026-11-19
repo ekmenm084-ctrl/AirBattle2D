@@ -420,6 +420,42 @@ public class AudioManager : MonoBehaviour
         }
     }
 
+    private Coroutine _duckCoroutine;
+
+    /// <summary>
+    /// Askeri telsiz konuşması başladığında arka plan savaş müziğini yumuşakça kısar (Audio Ducking).
+    /// </summary>
+    public void DuckMusic(float targetFactor = 0.35f, float duration = 0.18f)
+    {
+        if (isMuted || _musicSource == null) return;
+        if (_duckCoroutine != null) StopCoroutine(_duckCoroutine);
+        _duckCoroutine = StartCoroutine(FadeMusicVolumeRoutine(musicVolume * targetFactor, duration));
+    }
+
+    /// <summary>
+    /// Telsiz konuşması bittiğinde savaş müziğini eski seviyesine geri getirir.
+    /// </summary>
+    public void RestoreMusic(float duration = 0.35f)
+    {
+        if (isMuted || _musicSource == null) return;
+        if (_duckCoroutine != null) StopCoroutine(_duckCoroutine);
+        _duckCoroutine = StartCoroutine(FadeMusicVolumeRoutine(musicVolume, duration));
+    }
+
+    private System.Collections.IEnumerator FadeMusicVolumeRoutine(float targetVol, float duration)
+    {
+        if (_musicSource == null) yield break;
+        float startVol = _musicSource.volume;
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            _musicSource.volume = Mathf.Lerp(startVol, targetVol, elapsed / duration);
+            yield return null;
+        }
+        _musicSource.volume = targetVol;
+    }
+
     /// <summary>
     /// Tüm sesleri tek tuşla açar/kapatır (Mute).
     /// </summary>

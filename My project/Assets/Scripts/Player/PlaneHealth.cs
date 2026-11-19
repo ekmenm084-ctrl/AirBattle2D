@@ -98,6 +98,10 @@ public class PlaneHealth : MonoBehaviour
         {
             CameraShake.ShakeHit();
             CombatComboManager.Instance?.NotifyPlayerHullDamaged();
+            if (currentHealth > 0f && (currentHealth / maxHealth) <= 0.30f)
+            {
+                RadioChatterManager.Instance?.PlayHullWarning();
+            }
         }
 
         // Taktik Uçuşan Hasar Sayısı

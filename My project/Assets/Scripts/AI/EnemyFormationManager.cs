@@ -550,6 +550,7 @@ public class EnemyFormationManager : MonoBehaviour
             GameManager.Instance.sessionGoldEarned += bonusGold;
 
         AudioManager.Instance?.PlayRewardFanfare();
+        RadioChatterManager.Instance?.PlaySquadronClear();
 
         string multTag = comboBonus > 0 ? $" [x{combo.GetMultiplier():0.0}]" : "";
         string titleTag = _isCurrentFormationJetSquadron ? ">> DÜŞMAN JET FİLOSU İMHA EDİLDİ! <<" : ">> İHA FİLOSU TEMİZLENDİ! <<";

@@ -114,6 +114,7 @@ public class AIController : MonoBehaviour
     private float _nextDecisionTime;
     private float _nextFireTime;
     private float _nextSpecialTime;
+    private float _nextBossMissileTime;
     private float _currentMoveX;
     private bool _isDodging = false;
     private float _dodgeEndTime;
@@ -242,6 +243,7 @@ public class AIController : MonoBehaviour
 
         StopArchetypeRoutine();
         _isBossWave = isBoss;
+        _nextBossMissileTime = Time.time + Random.Range(6.5f, 9.5f);
 
         currentArchetype = isBoss ? EnemyArchetype.EliteAce : GetStandardArchetype(wave);
         currentModel = GetModelForWave(wave, isBoss, currentArchetype);
@@ -478,6 +480,21 @@ public class AIController : MonoBehaviour
         {
             TriggerStandardArchetypeSpecial();
         }
+
+        // Boss dalgalarında oyuncuyu taktiksel güdümlü füze ile tehdit et
+        if (_isBossWave && target != null && Time.time >= _nextBossMissileTime)
+        {
+            _nextBossMissileTime = Time.time + Random.Range(10.0f, 14.5f);
+            FireBossMissile();
+        }
+    }
+
+    private void FireBossMissile()
+    {
+        if (_health != null && _health.IsDead) return;
+        Vector3 spawnPos = transform.position + Vector3.down * 0.65f;
+        Quaternion rot = Quaternion.Euler(0f, 0f, 180f);
+        MissileLauncherButton.SpawnMissile(spawnPos, rot, gameObject);
     }
 
     private void TriggerStandardArchetypeSpecial()

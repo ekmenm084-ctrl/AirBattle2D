@@ -192,6 +192,11 @@ public class LootItem : MonoBehaviour
         bool isKeyLoot = (type == LootType.GoldKey || type == LootType.SilverKey || type == LootType.BronzeKey);
         AudioManager.Instance?.PlayLootPickup(isKeyLoot);
 
+        if (isKeyLoot || type == LootType.Overdrive)
+        {
+            RadioChatterManager.Instance?.PlayCrateLoot();
+        }
+
         Destroy(gameObject);
     }
 

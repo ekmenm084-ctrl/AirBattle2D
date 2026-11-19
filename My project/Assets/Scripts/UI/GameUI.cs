@@ -90,6 +90,7 @@ public class GameUI : MonoBehaviour
         if (!visible && _redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
         if (!visible && _modeIntroObj != null) _modeIntroObj.SetActive(false);
         if (!visible && _waveAlertObj != null) _waveAlertObj.SetActive(false);
+        if (!visible && RadioChatterManager.Instance != null) RadioChatterManager.Instance.SetHUDVisible(false);
         TouchArrowControls.Instance?.UpdateVisibility();
     }
 

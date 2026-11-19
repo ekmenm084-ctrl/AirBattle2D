@@ -259,6 +259,7 @@ public class PlayerUpgradeManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.ShowWaveAlert("[!] KALKAN PARÇALANDI!", new Color(1f, 0.3f, 0.2f), 1.5f);
+        RadioChatterManager.Instance?.PlayShieldDown();
     }
 
     private IEnumerator FlashShieldRoutine(Color flashColor, float duration)

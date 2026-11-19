@@ -117,6 +117,7 @@ public class GameManager : MonoBehaviour
 
         // Arka plan savaş müziğini ve ses ayar butonunu başlat
         AudioManager.EnsureInstance();
+        RadioChatterManager.EnsureInstance();
         AudioSettingsUI.EnsureInstance();
 
         FindPlanesIfNull();
@@ -448,6 +449,8 @@ public class GameManager : MonoBehaviour
         // Boss dalgası ise bildirim veya tanıtım sinematiğini oynat
         if (isBoss)
         {
+            RadioChatterManager.Instance?.PlayBossWarning();
+
             if (CurrentMode == GameMode.Hardcore)
             {
                 gameUI?.ShowWaveAlert($"[!] HARDCORE BOSS #{waveIndex} GİRDİ! [!]\n<color=#FF2222>ZIRH: {hp} HP • TEK CANIN VAR!</color>", new Color(1f, 0.2f, 0.2f), 2.2f);
@@ -779,12 +782,14 @@ public class GameManager : MonoBehaviour
                 combo.EvaluateFlawlessWaveBonus(currentPlaneIndex, isBoss: true);
 
                 // BOSS RUSH TAMAMLANDI: Ağır çekim ve zincirleme devasa patlama sekansını başlat
+                RadioChatterManager.Instance?.PlayBossDown();
                 StartCoroutine(FinalBossDefeatSlowMoRoutine(deadPlane));
             }
             else if (CurrentMode == GameMode.SoloVsAI && currentPlaneIndex >= MaxPlanes)
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
                 gameEnded = true;
+                RadioChatterManager.Instance?.PlayBossDown();
                 SaveAndSubmitActiveScore(isFinal: true);
                 CombatComboManager combo = CombatComboManager.EnsureInstance();
                 combo.AddCombo(5, deadPlane != null ? deadPlane.transform.position : default);
@@ -815,6 +820,7 @@ public class GameManager : MonoBehaviour
 
                 if (wasBoss)
                 {
+                    RadioChatterManager.Instance?.PlayBossDown();
                     PlayerCombatManeuvers.Instance?.AddUltiEnergy(25f);
                     combo.AddCombo(5, deadPos);
 
@@ -860,6 +866,11 @@ public class GameManager : MonoBehaviour
                     bool isElite = (justDefeated % 5 == 4);
                     PlayerCombatManeuvers.Instance?.AddUltiEnergy(isElite ? 15f : 10f);
                     combo.AddCombo(isElite ? 4 : 3, deadPos);
+
+                    if (combo.currentCombo >= 3)
+                        RadioChatterManager.Instance?.PlayStreak(combo.currentCombo);
+                    else
+                        RadioChatterManager.Instance?.PlayAirKill();
 
                     int baseKillReward = 15 + (justDefeated * 2) + (isElite ? 15 : 0);
                     int killReward = combo.ApplyGoldMultiplier(baseKillReward, out int comboBonus);
@@ -1426,6 +1437,7 @@ public class GameManager : MonoBehaviour
         }
 
         gameUI.ShowModeIntroBanner(title, subtitle, desc, color, 3.2f);
+        RadioChatterManager.Instance?.PlayTakeoff();
     }
 
     /// <summary>

@@ -61,6 +61,12 @@ public class HomingMissile : MonoBehaviour
         FindNearestTarget();
         AudioManager.Instance?.PlayMissileLaunch();
 
+        bool ownerIsPlayer = (owner != null && owner.GetComponent<PlaneController>()?.isPlayer1 == true);
+        if (!ownerIsPlayer && owner != null)
+        {
+            RadioChatterManager.Instance?.PlayMissileWarning();
+        }
+
         // Başlangıç ayrılma hızı (uçaktan fırlama ivmesi)
         _rb.linearVelocity = transform.up * launchSpeed;
 

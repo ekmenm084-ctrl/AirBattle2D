@@ -150,7 +150,7 @@ public class MissileLauncherButton : MonoBehaviour
         gameUI?.ShowWaveAlert("<color=#FF5252>[P2] MİKRO FÜZE SALVOSU ATEŞLENDİ!</color>", new Color(1f, 0.35f, 0.35f), 1.2f);
     }
 
-    private void SpawnMissile(Vector3 pos, Quaternion rot, GameObject ownerGo)
+    public static HomingMissile SpawnMissile(Vector3 pos, Quaternion rot, GameObject ownerGo)
     {
         GameObject mObj = new GameObject("HomingMissile");
         mObj.transform.position = pos;
@@ -158,6 +158,7 @@ public class MissileLauncherButton : MonoBehaviour
 
         HomingMissile missile = mObj.AddComponent<HomingMissile>();
         missile.owner = ownerGo;
+        return missile;
     }
 
     private void SetupUI()
