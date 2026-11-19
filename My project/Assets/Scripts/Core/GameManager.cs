@@ -474,6 +474,12 @@ public class GameManager : MonoBehaviour
                 StoryCampaignManager.EnsureInstance()?.PlayBossIntro(effIndex, null);
             }
         }
+        else
+        {
+            string jetName = ai != null ? AIController.GetEnemyJetName(ai.currentModel) : "DÜŞMAN JETİ";
+            string archTag = ai != null ? AIController.GetArchetypeTag(ai.currentArchetype) : "AVCI";
+            gameUI?.ShowWaveAlert($"[!] {jetName} [{archTag}] SAHAYA GİRDİ! [!]", new Color(1f, 0.45f, 0.2f), 1.8f);
+        }
     }
 
     /// <summary>

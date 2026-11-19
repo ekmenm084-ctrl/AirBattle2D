@@ -17,6 +17,15 @@ public class AIController : MonoBehaviour
         EliteAce     // Boss öncesi çevik elit muhafız + enerji kalkanı
     }
 
+    public enum EnemyJetModel
+    {
+        MiG29_Fulcrum,   // Çevik Taktik Avcı
+        Su35_Flanker,    // Ağır Süper Manevra Avcısı
+        Tu22_Bomber,     // Ağır Stratejik Bombardıman Jeti
+        S37_Berkut,      // İleri Ok Kanatlı Hayalet Nişancı
+        J20_Dreadnought  // 5. Nesil Ağır Hayalet Amiral Boss
+    }
+
     [Header("Hedef")]
     public Transform target;
 
@@ -30,6 +39,68 @@ public class AIController : MonoBehaviour
     public float reactionSpeed = 0.15f;
 
     public EnemyArchetype currentArchetype { get; private set; } = EnemyArchetype.Interceptor;
+    public EnemyJetModel currentModel { get; private set; } = EnemyJetModel.MiG29_Fulcrum;
+
+    private static Sprite _sprMig29;
+    private static Sprite _sprSu35;
+    private static Sprite _sprTu22;
+    private static Sprite _sprS37;
+    private static Sprite _sprJ20;
+
+    public static Sprite GetEnemyJetSprite(EnemyJetModel model)
+    {
+        if (_sprMig29 == null)
+        {
+            _sprMig29 = Resources.Load<Sprite>("enemy_mig29");
+            _sprSu35 = Resources.Load<Sprite>("enemy_su35");
+            _sprTu22 = Resources.Load<Sprite>("enemy_bomber");
+            _sprS37 = Resources.Load<Sprite>("enemy_s37");
+            _sprJ20 = Resources.Load<Sprite>("enemy_j20");
+        }
+
+        return model switch
+        {
+            EnemyJetModel.MiG29_Fulcrum   => _sprMig29,
+            EnemyJetModel.Su35_Flanker    => _sprSu35,
+            EnemyJetModel.Tu22_Bomber     => _sprTu22,
+            EnemyJetModel.S37_Berkut      => _sprS37,
+            EnemyJetModel.J20_Dreadnought => _sprJ20,
+            _                             => _sprMig29
+        };
+    }
+
+    public static string GetEnemyJetName(EnemyJetModel model)
+    {
+        return model switch
+        {
+            EnemyJetModel.MiG29_Fulcrum   => "MiG-29 FULCRUM",
+            EnemyJetModel.Su35_Flanker    => "Su-35 FLANKER-E",
+            EnemyJetModel.Tu22_Bomber     => "Tu-22M BOMBARDIMAN",
+            EnemyJetModel.S37_Berkut      => "S-37 BERKUT NİŞANCI",
+            EnemyJetModel.J20_Dreadnought => "J-20 HAYALET AMİRAL",
+            _                             => "DÜŞMAN JETİ"
+        };
+    }
+
+    public static EnemyJetModel GetModelForWave(int wave, bool isBoss, EnemyArchetype archetype)
+    {
+        if (isBoss)
+        {
+            int eff = (GameManager.Instance != null) ? GameManager.Instance.GetEffectiveWaveIndex(wave) : wave;
+            if (eff >= 20) return EnemyJetModel.J20_Dreadnought;
+            if (eff >= 15) return EnemyJetModel.S37_Berkut;
+            if (eff >= 10) return EnemyJetModel.Su35_Flanker;
+            return EnemyJetModel.Tu22_Bomber;
+        }
+
+        return archetype switch
+        {
+            EnemyArchetype.Sniper    => EnemyJetModel.S37_Berkut,
+            EnemyArchetype.Bomber    => EnemyJetModel.Tu22_Bomber,
+            EnemyArchetype.EliteAce  => EnemyJetModel.Su35_Flanker,
+            _                        => (wave >= 11 ? EnemyJetModel.Su35_Flanker : EnemyJetModel.MiG29_Fulcrum)
+        };
+    }
 
     private PlaneController _controller;
     private PlaneShooter _shooter;
@@ -171,6 +242,28 @@ public class AIController : MonoBehaviour
 
         StopArchetypeRoutine();
         _isBossWave = isBoss;
+
+        currentArchetype = isBoss ? EnemyArchetype.EliteAce : GetStandardArchetype(wave);
+        currentModel = GetModelForWave(wave, isBoss, currentArchetype);
+
+        if (_sr == null) _sr = GetComponent<SpriteRenderer>();
+        if (_sr != null)
+        {
+            Sprite modelSprite = GetEnemyJetSprite(currentModel);
+            if (modelSprite != null) _sr.sprite = modelSprite;
+            _sr.color = Color.white;
+        }
+
+        float baseModelScale = currentModel switch
+        {
+            EnemyJetModel.MiG29_Fulcrum   => 0.72f,
+            EnemyJetModel.Su35_Flanker    => 0.80f,
+            EnemyJetModel.Tu22_Bomber     => 0.94f,
+            EnemyJetModel.S37_Berkut      => 0.76f,
+            EnemyJetModel.J20_Dreadnought => 1.15f,
+            _                             => 0.75f
+        };
+        transform.localScale = Vector3.one * (isBoss ? baseModelScale * 1.32f : baseModelScale);
 
         float progress = Mathf.Clamp01((wave - 1f) / 19f); // 0 (1. uçak) -> 1 (20. uçak)
 

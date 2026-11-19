@@ -73,7 +73,7 @@ public class SwarmEnemy : MonoBehaviour
         }
     }
 
-    public void Initialize(MovementPattern movePattern, float speed, float hp, Sprite droneSprite = null, Color? tint = null, DroneClass cls = DroneClass.Scout)
+    public void Initialize(MovementPattern movePattern, float speed, float hp, Sprite droneSprite = null, Color? tint = null, DroneClass cls = DroneClass.Scout, float customScale = 1.0f)
     {
         droneClass = cls;
         pattern = movePattern;
@@ -141,7 +141,7 @@ public class SwarmEnemy : MonoBehaviour
 
         // İHA'nın yönü varsayılan olarak aşağıya (Oyuncuya) bakar (180 derece)
         transform.rotation = Quaternion.Euler(0f, 0f, 180f);
-        transform.localScale = Vector3.one * scale;
+        transform.localScale = Vector3.one * (scale * customScale);
     }
 
     private void Update()
