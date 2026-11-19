@@ -688,8 +688,8 @@ public class HangarUI : MonoBehaviour
             "DENGELİ ÇEVİK AVCI",
             "KADEME 1 (SEV. 1+)",
             "<b>Gövde Zırhı:</b> <color=#2ECC71>100 HP</color>  |  <b>Hız:</b> <color=#00E5FF>8.0 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#FFE082>20mm Taktik Top (20 DMG)</color>\n" +
-            "<b>Mühimmat:</b> Tekli Hassas Mermi Salvosu\n" +
+            "<b>Ana Silah:</b> <color=#FFE082>20mm M61A1 Vulcan Top (20 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Altın-Kehribar İzli Hassas Salvo\n" +
             "<b>Taktik Üstünlük:</b> Çevik İt Dalaşı & Standart Manevra",
             new Color(0.25f, 0.55f, 0.85f),
             HangarManager.AircraftType.F16Viper);
@@ -701,8 +701,8 @@ public class HangarUI : MonoBehaviour
             "KADEME 2 (SEV. 15+)",
             "<b>Gövde Zırhı:</b> <color=#2ECC71>180 HP (Titanyum)</color>  |  <b>Hız:</b> <color=#00E5FF>6.2 Mach</color>\n" +
             "<b>Ana Silah:</b> <color=#FF5252>30mm GAU-8 Avenger (32 DMG)</color>\n" +
-            "<b>Mühimmat:</b> Ağır Kinetik Zırh Delici Mermi\n" +
-            "<b>Taktik Üstünlük:</b> Yüksek Zırh & Yıkıcı Ateş Gücü",
+            "<b>Mühimmat:</b> Ağır Uranyum Kor-Duman Salvosu\n" +
+            "<b>Taktik Üstünlük:</b> Yüksek Zırh & Yıkıcı Ezici Ateş Gücü",
             new Color(0.25f, 0.65f, 0.40f),
             HangarManager.AircraftType.A10TankBuster);
         curX += cardW + spacing;
@@ -712,8 +712,8 @@ public class HangarUI : MonoBehaviour
             "5. NESİL HAYALET JET",
             "KADEME 3 (SEV. 30+)",
             "<b>Gövde Zırhı:</b> <color=#E74C3C>120 HP (Karbon)</color>  |  <b>Hız:</b> <color=#00E5FF>10.5 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#BD10E0>Çift Vulcan (24 x 2 DMG)</color>\n" +
-            "<b>Mühimmat:</b> Çift Paralel Salvo ile Yüksek DPS\n" +
+            "<b>Ana Silah:</b> <color=#00E5FF>Çift M61A2 Vulcan (24 x 2 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Mach Şok Dalgalı Buz Mavisi Süpersonik İz\n" +
             "<b>Taktik Üstünlük:</b> Radar Görünmezliği & Süperseyir",
             new Color(0.60f, 0.35f, 0.75f),
             HangarManager.AircraftType.F22Raptor);
@@ -724,8 +724,8 @@ public class HangarUI : MonoBehaviour
             "5. NESİL SÜPER-MANEVRA",
             "KADEME 4 (SEV. 50+)",
             "<b>Gövde Zırhı:</b> <color=#2ECC71>160 HP (Plazma)</color>  |  <b>Hız:</b> <color=#00E5FF>9.8 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#00E5FF>Çift 30mm Plazma Top (28 x 2 DMG)</color>\n" +
-            "<b>Mühimmat:</b> Çift Salvo & <color=#F1C40F>%15 Kritik Şansı</color>\n" +
+            "<b>Ana Silah:</b> <color=#E040FB>Çift 30mm GSh-30-1 (28 x 2 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Yakut-Mor Rus Plazma Kor & <color=#F1C40F>%15 Kritik</color>\n" +
             "<b>Taktik Üstünlük:</b> 3D Vektör İtme & Kritik Darbe",
             new Color(0.15f, 0.75f, 0.85f),
             HangarManager.AircraftType.Su57Felon);
@@ -736,8 +736,8 @@ public class HangarUI : MonoBehaviour
             "5. NESİL ÇOK AMAÇLI HAYALET",
             "KADEME 5 (SEV. 70+)",
             "<b>Gövde Zırhı:</b> <color=#2ECC71>150 HP (Grafen)</color>  |  <b>Hız:</b> <color=#00E5FF>11.2 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#FFA000>Üçlü Akıllı Salvo (22 x 3 DMG)</color>\n" +
-            "<b>Mühimmat:</b> 3 Namlulu Yaylım & <color=#F1C40F>%10 Kritik</color>\n" +
+            "<b>Ana Silah:</b> <color=#69F0AE>25mm GAU-22/A (22 x 3 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Siber Zümrüt & Altın İyon İzi (<color=#F1C40F>%10 Kritik</color>)\n" +
             "<b>Taktik Üstünlük:</b> Elektro-Optik Hedefleme & Geniş Alan",
             new Color(1.0f, 0.65f, 0.15f),
             HangarManager.AircraftType.F35Lightning);
@@ -748,8 +748,8 @@ public class HangarUI : MonoBehaviour
             "5.+ NESİL HAVA HÂKİMİYETİ",
             "KADEME 6 (SEV. 90+)",
             "<b>Gövde Zırhı:</b> <color=#2ECC71>220 HP (Nano-Seramik)</color>  |  <b>Hız:</b> <color=#00E5FF>12.0 Mach</color>\n" +
-            "<b>Ana Silah:</b> <color=#FF1744>3'lü Termal Batarya (34 x 3 DMG)</color>\n" +
-            "<b>Mühimmat:</b> 3 Namlu Ağır Darbe & <color=#F1C40F>%25 Kritik</color>\n" +
+            "<b>Ana Silah:</b> <color=#00E5FF>Milli Kinetik Batarya (34 x 3 DMG)</color>\n" +
+            "<b>Mühimmat:</b> Şanlı Turkuaz & Altın Zirve Salvo (<color=#F1C40F>%25 Kritik</color>)\n" +
             "<b>Taktik Üstünlük:</b> Mutlak Hava Hâkimiyeti & Zirve DPS",
             new Color(0.95f, 0.20f, 0.25f),
             HangarManager.AircraftType.KaanApex);

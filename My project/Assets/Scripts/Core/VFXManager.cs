@@ -34,6 +34,12 @@ public class VFXManager : MonoBehaviour
         return Instance;
     }
 
+    public static Material GetParticleMaterial()
+    {
+        if (_particleMat == null) InitMaterial();
+        return _particleMat;
+    }
+
     private static void InitMaterial()
     {
         if (_particleMat == null)

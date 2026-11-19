@@ -151,6 +151,34 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Her uçağın kalibresine ve karakterine özel makineli top ateş sesi oynatır.
+    /// A-10: Tok ve gürleyen 30mm Avenger bası (BRRRTT)
+    /// F-22: Yüksek frekanslı süpersonik kamçı sesi
+    /// Su-57: Ağır Rus oto-top gümbürtüsü
+    /// F-35: Seri ve keskin modern gatling vuruşları
+    /// KAAN: Zirve rezonanslı hipersonik gürleme
+    /// F-16: Klasik dengeli 20mm Vulcan
+    /// </summary>
+    public void PlayGunfireForAircraft(HangarManager.AircraftType type, bool isSalvo = false)
+    {
+        if (isMuted || gunfireClip == null || _sfxSource == null) return;
+
+        float targetPitch = type switch
+        {
+            HangarManager.AircraftType.A10TankBuster => Random.Range(0.72f, 0.82f),
+            HangarManager.AircraftType.F22Raptor     => Random.Range(1.18f, 1.28f),
+            HangarManager.AircraftType.Su57Felon     => Random.Range(0.85f, 0.95f),
+            HangarManager.AircraftType.F35Lightning  => Random.Range(1.08f, 1.18f),
+            HangarManager.AircraftType.KaanApex      => Random.Range(1.02f, 1.12f),
+            _                                        => Random.Range(0.95f, 1.05f)
+        };
+
+        float vol = sfxVolume * (type == HangarManager.AircraftType.A10TankBuster ? 1.05f : (isSalvo ? 0.95f : 0.85f));
+        _sfxSource.pitch = targetPitch;
+        _sfxSource.PlayOneShot(gunfireClip, vol);
+    }
+
+    /// <summary>
     /// Uçak veya Boss patladığında tok bir patlama sesi oynatır.
     /// </summary>
     public void PlayExplosion(bool isBoss = false)

@@ -13,6 +13,8 @@ public class PlaneShooter : MonoBehaviour
     public float fireRate = 0.28f;          // Seri ateş hızı
     public float bulletDamage = 20f;        // Mermi hasarı
     public float criticalChance = 0f;       // % Kritik Vuruş Şansı (2x Hasar)
+    public HangarManager.AircraftType aircraftType = HangarManager.AircraftType.F16Viper;
+    public bool isEnemy = false;
 
     [Header("Çoklu / Boss Atış Sistemi")]
     public int bulletsPerShot = 1;          // 1: Tekli, 2: Çiftli, 3: Üçlü
@@ -165,7 +167,14 @@ public class PlaneShooter : MonoBehaviour
         }
 
         // Dinamik Makineli Top Sesi
-        AudioManager.Instance?.PlayGunfire(bulletsPerShot > 1);
+        if (!isEnemy)
+        {
+            AudioManager.Instance?.PlayGunfireForAircraft(aircraftType, bulletsPerShot > 1);
+        }
+        else
+        {
+            AudioManager.Instance?.PlayGunfire(bulletsPerShot > 1);
+        }
 
         // Namlu ateşleme görsel geri bildirimi (Sprite ölçek tepmesi)
         if (enableRecoil)
@@ -217,7 +226,41 @@ public class PlaneShooter : MonoBehaviour
             _muzzleFlashObj.SetActive(true);
             if (_muzzleFlashRenderer != null)
             {
-                _muzzleFlashRenderer.color = Color.white;
+                if (isEnemy)
+                {
+                    _muzzleFlashRenderer.color = new Color(1.0f, 0.35f, 0.20f);
+                    _muzzleFlashObj.transform.localScale = Vector3.one * 1.15f;
+                }
+                else
+                {
+                    switch (aircraftType)
+                    {
+                        case HangarManager.AircraftType.A10TankBuster:
+                            _muzzleFlashRenderer.color = new Color(1.0f, 0.45f, 0.12f);
+                            _muzzleFlashObj.transform.localScale = Vector3.one * 1.60f;
+                            break;
+                        case HangarManager.AircraftType.F22Raptor:
+                            _muzzleFlashRenderer.color = new Color(0.35f, 0.95f, 1.0f);
+                            _muzzleFlashObj.transform.localScale = Vector3.one * 0.95f;
+                            break;
+                        case HangarManager.AircraftType.Su57Felon:
+                            _muzzleFlashRenderer.color = new Color(1.0f, 0.20f, 0.60f);
+                            _muzzleFlashObj.transform.localScale = Vector3.one * 1.35f;
+                            break;
+                        case HangarManager.AircraftType.F35Lightning:
+                            _muzzleFlashRenderer.color = new Color(0.30f, 1.0f, 0.60f);
+                            _muzzleFlashObj.transform.localScale = Vector3.one * 1.15f;
+                            break;
+                        case HangarManager.AircraftType.KaanApex:
+                            _muzzleFlashRenderer.color = new Color(0.10f, 0.95f, 1.0f);
+                            _muzzleFlashObj.transform.localScale = Vector3.one * 1.45f;
+                            break;
+                        default:
+                            _muzzleFlashRenderer.color = new Color(1.0f, 0.85f, 0.30f);
+                            _muzzleFlashObj.transform.localScale = Vector3.one * 1.05f;
+                            break;
+                    }
+                }
             }
             yield return new WaitForSeconds(0.045f);
             if (_muzzleFlashObj != null)
@@ -230,9 +273,6 @@ public class PlaneShooter : MonoBehaviour
 
     private void TriggerRecoil()
     {
-        // Uçağın Transform veya Rigidbody konumunu ASLA sıfırlamıyoruz.
-        // Konumu sıfırlamak hareket halindeyken uçağın takılmasına ve titremesine sebep oluyordu.
-        // Yalnızca uçağın görsel Sprite'ına anlık hafif bir tepme hissi veriyoruz:
         if (_recoilCoroutine != null)
             StopCoroutine(_recoilCoroutine);
 
@@ -265,6 +305,15 @@ public class PlaneShooter : MonoBehaviour
             b.isCritical = isCrit;
             b.damage = bulletDamage * (isCrit ? 2.0f : 1.0f);
             b.owner = gameObject;
+
+            if (isEnemy)
+            {
+                b.ApplyEnemyStyle(bulletsPerShot > 2, false, null);
+            }
+            else
+            {
+                b.ApplyAircraftStyle(aircraftType);
+            }
         }
 
         // Merminin ateş eden uçağın collider'ına çarpıp uçağı takmasını/durdurmasını kesinlikle engelle
@@ -293,12 +342,19 @@ public class PlaneShooter : MonoBehaviour
             b.speed = speed;
             b.damage = damage;
             b.owner = gameObject;
-        }
 
-        if (bulletColor.HasValue)
-        {
-            SpriteRenderer sr = bullet.GetComponent<SpriteRenderer>();
-            if (sr != null) sr.color = bulletColor.Value;
+            if (bulletColor.HasValue)
+            {
+                b.ApplyCustomStyle(bulletColor.Value, speed);
+            }
+            else if (isEnemy)
+            {
+                b.ApplyEnemyStyle(false, false, null);
+            }
+            else
+            {
+                b.ApplyAircraftStyle(aircraftType);
+            }
         }
 
         Collider2D planeCol = GetComponent<Collider2D>();

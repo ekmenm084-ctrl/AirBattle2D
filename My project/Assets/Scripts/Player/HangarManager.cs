@@ -1388,6 +1388,8 @@ public class HangarManager : MonoBehaviour
 
         if (shooter != null)
         {
+            shooter.aircraftType = activeAircraft;
+            shooter.isEnemy = false;
             shooter.bulletDamage = finalDmg;
             shooter.bulletsPerShot = baseBullets;
             shooter.criticalChance = finalCrit;

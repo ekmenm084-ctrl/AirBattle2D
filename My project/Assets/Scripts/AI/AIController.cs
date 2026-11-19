@@ -52,6 +52,7 @@ public class AIController : MonoBehaviour
     {
         _controller = GetComponent<PlaneController>();
         _shooter = GetComponent<PlaneShooter>();
+        if (_shooter != null) _shooter.isEnemy = true;
         _health = GetComponent<PlaneHealth>();
         _sr = GetComponent<SpriteRenderer>();
         _visuals = GetComponent<PlaneVisualEffects>();
@@ -161,6 +162,7 @@ public class AIController : MonoBehaviour
     {
         if (_controller == null) _controller = GetComponent<PlaneController>();
         if (_shooter == null) _shooter = GetComponent<PlaneShooter>();
+        if (_shooter != null) _shooter.isEnemy = true;
         if (_health == null) _health = GetComponent<PlaneHealth>();
         if (_sr == null) _sr = GetComponent<SpriteRenderer>();
         if (_visuals == null) _visuals = GetComponent<PlaneVisualEffects>();

@@ -141,13 +141,26 @@ public class TwoPlayerDuelManager : MonoBehaviour
             ph.transform.position = new Vector3(0f, -3.8f, 0f);
             ph.transform.rotation = Quaternion.identity;
             if (sr != null) sr.color = Color.white;
+            if (ps != null)
+            {
+                ps.aircraftType = (HangarManager.Instance != null) ? HangarManager.Instance.activeAircraft : HangarManager.AircraftType.F16Viper;
+                ps.isEnemy = false;
+            }
         }
         else
         {
             ph.transform.position = new Vector3(0f, 3.8f, 0f);
             ph.transform.rotation = Quaternion.Euler(0f, 0f, 180f);
-            // P2 için kızıl/turuncu rakip yarış kamuflajı tonu
-            if (sr != null) sr.color = new Color(1f, 0.42f, 0.42f, 1f);
+            // P2 için kızıl/turuncu rakip yarış kamuflajı tonu ve Su-57 plazma mermisi
+            if (sr != null)
+            {
+                sr.color = new Color(1f, 0.42f, 0.42f, 1f);
+            }
+            if (ps != null)
+            {
+                ps.aircraftType = HangarManager.AircraftType.Su57Felon;
+                ps.isEnemy = false;
+            }
         }
     }
 
