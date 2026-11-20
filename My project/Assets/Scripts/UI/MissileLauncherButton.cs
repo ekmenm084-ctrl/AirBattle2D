@@ -172,12 +172,12 @@ public class MissileLauncherButton : MonoBehaviour
         RectTransform rt = GetComponent<RectTransform>();
         if (rt == null) return;
 
-        // Ateş Butonunun (-185, 165) sol-üst çaprazında (-330, 245) nizami güvenli yerleşim
+        // Ateş Butonunun (-220, 150) sol sütununda (-360, 210) nizami ergonomik yerleşim
         rt.anchorMin = new Vector2(1f, 0f);
         rt.anchorMax = new Vector2(1f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(-330f, 245f);
-        rt.sizeDelta = new Vector2(90f, 90f);
+        rt.anchoredPosition = new Vector2(-360f, 210f);
+        rt.sizeDelta = new Vector2(85f, 85f);
 
         _bgImage = GetComponent<Image>();
         if (_bgImage == null) _bgImage = gameObject.AddComponent<Image>();
@@ -221,7 +221,7 @@ public class MissileLauncherButton : MonoBehaviour
         txtRt.offsetMax = Vector2.zero;
 
         _btnTMP = txtObj.AddComponent<TextMeshProUGUI>();
-        _btnTMP.text = "FÜZE\n<size=68%>[Q]</size>";
+        _btnTMP.text = "FÜZE\n<size=85%>[Q]</size>";
         _btnTMP.fontSize = 24f;
         _btnTMP.fontStyle = FontStyles.Bold;
         _btnTMP.alignment = TextAlignmentOptions.Center;
@@ -246,7 +246,7 @@ public class MissileLauncherButton : MonoBehaviour
         else
         {
             _cooldownFillImg.fillAmount = 0f;
-            _btnTMP.text = "FÜZE\n<size=68%>[Q]</size>";
+            _btnTMP.text = "FÜZE\n<size=85%>[Q]</size>";
             _btnTMP.color = Color.white;
             if (_outline != null) _outline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
         }

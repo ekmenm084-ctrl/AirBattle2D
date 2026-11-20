@@ -180,7 +180,7 @@ public class LeaderboardUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "TACTICAL // KÜRESEL LİDERLİK & REKOR VERİTABANI\n<size=65%><color=#8AB4F8>GLOBAL DEFCON AS PİLOTLARI SIRALAMASI • GERÇEK ZAMANLI VERİ HATTI</color></size>";
+        titleTMP.text = "TACTICAL // KÜRESEL LİDERLİK & REKOR VERİTABANI\n<size=78%><color=#8AB4F8>GLOBAL DEFCON AS PİLOTLARI SIRALAMASI • GERÇEK ZAMANLI VERİ HATTI</color></size>";
         titleTMP.fontSize = 26f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.characterSpacing = 2.0f;
@@ -252,7 +252,7 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI eTmp = eTxt.AddComponent<TextMeshProUGUI>();
         eTmp.font = MainMenuManager.GetTacticalFont();
         eTmp.text = "ÇAĞRI KODU DEĞİŞ";
-        eTmp.fontSize = 16f;
+        eTmp.fontSize = 20f;
         eTmp.fontStyle = FontStyles.Bold;
         eTmp.characterSpacing = 1.4f;
         eTmp.alignment = TextAlignmentOptions.Center;
@@ -365,7 +365,7 @@ public class LeaderboardUI : MonoBehaviour
 
         _connectionStatusTMP = statusObj.AddComponent<TextMeshProUGUI>();
         _connectionStatusTMP.font = MainMenuManager.GetTacticalFont();
-        _connectionStatusTMP.fontSize = 17f;
+        _connectionStatusTMP.fontSize = 20f;
         _connectionStatusTMP.fontStyle = FontStyles.Bold;
         _connectionStatusTMP.characterSpacing = 1.3f;
         _connectionStatusTMP.alignment = TextAlignmentOptions.Left;
@@ -399,7 +399,7 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI tmp = cell.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = title;
-        tmp.fontSize = 18f;
+        tmp.fontSize = 22f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 1.4f;
         tmp.alignment = align;
@@ -438,7 +438,7 @@ public class LeaderboardUI : MonoBehaviour
         labelTmp = tObj.AddComponent<TextMeshProUGUI>();
         labelTmp.font = MainMenuManager.GetTacticalFont();
         labelTmp.text = text;
-        labelTmp.fontSize = 17f;
+        labelTmp.fontSize = 20f;
         labelTmp.fontStyle = FontStyles.Bold;
         labelTmp.characterSpacing = 1.4f;
         labelTmp.alignment = TextAlignmentOptions.Center;
@@ -479,7 +479,7 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI tmp = tObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = text;
-        tmp.fontSize = 17f;
+        tmp.fontSize = 20f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 1.4f;
         tmp.alignment = TextAlignmentOptions.Center;
@@ -820,7 +820,7 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
         subTMP.font = MainMenuManager.GetTacticalFont();
         subTMP.text = "Liderlik tablosunda diğer pilotların göreceği çağrı kodu:";
-        subTMP.fontSize = 15f;
+        subTMP.fontSize = 19f;
         subTMP.characterSpacing = 1.2f;
         subTMP.alignment = TextAlignmentOptions.Center;
         subTMP.color = new Color(0.75f, 0.85f, 0.95f);
@@ -951,7 +951,7 @@ public class LeaderboardUI : MonoBehaviour
 
         _cloudStatusDetailTMP = subObj.AddComponent<TextMeshProUGUI>();
         _cloudStatusDetailTMP.font = MainMenuManager.GetTacticalFont();
-        _cloudStatusDetailTMP.fontSize = 14f;
+        _cloudStatusDetailTMP.fontSize = 18f;
         _cloudStatusDetailTMP.characterSpacing = 1.1f;
         _cloudStatusDetailTMP.alignment = TextAlignmentOptions.TopLeft;
         _cloudStatusDetailTMP.color = new Color(0.80f, 0.88f, 0.95f);
@@ -983,7 +983,7 @@ public class LeaderboardUI : MonoBehaviour
         TextMeshProUGUI lbl = lblObj.AddComponent<TextMeshProUGUI>();
         lbl.font = MainMenuManager.GetTacticalFont();
         lbl.text = labelText;
-        lbl.fontSize = 13f;
+        lbl.fontSize = 18f;
         lbl.fontStyle = FontStyles.Bold;
         lbl.color = new Color(0.3f, 0.85f, 1f);
 
@@ -1011,7 +1011,7 @@ public class LeaderboardUI : MonoBehaviour
 
         TextMeshProUGUI inputText = textObj.AddComponent<TextMeshProUGUI>();
         inputText.font = MainMenuManager.GetTacticalFont();
-        inputText.fontSize = 14f;
+        inputText.fontSize = 18f;
         inputText.characterSpacing = 1.1f;
         inputText.alignment = TextAlignmentOptions.Left;
         inputText.color = Color.white;

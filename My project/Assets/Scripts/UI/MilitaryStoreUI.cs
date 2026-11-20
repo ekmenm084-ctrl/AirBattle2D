@@ -201,7 +201,7 @@ public class MilitaryStoreUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "<b><color=#00E5FF>AVIONICS // ASKERİ MÜHİMMAT & TEKNOLOJİ MAĞAZASI</color></b>\n<size=52%><color=#94A3B8>GERÇEK SAVAŞ UÇAĞI AVİYONİK, MOTOR, ZIRH & ELEKTRONİK HARP TEDARİK HATTI</color></size>";
+        titleTMP.text = "<b><color=#00E5FF>AVIONICS // ASKERİ MÜHİMMAT & TEKNOLOJİ MAĞAZASI</color></b>\n<size=75%><color=#94A3B8>GERÇEK SAVAŞ UÇAĞI AVİYONİK, MOTOR, ZIRH & ELEKTRONİK HARP TEDARİK HATTI</color></size>";
         titleTMP.fontSize = 26f;
         titleTMP.characterSpacing = 2.2f;
         titleTMP.fontStyle = FontStyles.Bold;
@@ -297,7 +297,7 @@ public class MilitaryStoreUI : MonoBehaviour
         TextMeshProUGUI prevTMP = prevTxtObj.AddComponent<TextMeshProUGUI>();
         prevTMP.font = MainMenuManager.GetTacticalFont();
         prevTMP.text = "[<<] ÖNCEKİ";
-        prevTMP.fontSize = 18f;
+        prevTMP.fontSize = 22f;
         prevTMP.characterSpacing = 1.8f;
         prevTMP.fontStyle = FontStyles.Bold;
         prevTMP.alignment = TextAlignmentOptions.Center;
@@ -327,7 +327,7 @@ public class MilitaryStoreUI : MonoBehaviour
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.font = MainMenuManager.GetTacticalFont();
         nextTMP.text = "SONRAKİ [>>]";
-        nextTMP.fontSize = 18f;
+        nextTMP.fontSize = 22f;
         nextTMP.characterSpacing = 1.8f;
         nextTMP.fontStyle = FontStyles.Bold;
         nextTMP.alignment = TextAlignmentOptions.Center;
@@ -375,7 +375,7 @@ public class MilitaryStoreUI : MonoBehaviour
         _activePlaneToggleTMP = atTxtObj.AddComponent<TextMeshProUGUI>();
         _activePlaneToggleTMP.font = MainMenuManager.GetTacticalFont();
         _activePlaneToggleTMP.text = "HAREKÂTA SEÇ";
-        _activePlaneToggleTMP.fontSize = 18f;
+        _activePlaneToggleTMP.fontSize = 22f;
         _activePlaneToggleTMP.characterSpacing = 1.8f;
         _activePlaneToggleTMP.fontStyle = FontStyles.Bold;
         _activePlaneToggleTMP.alignment = TextAlignmentOptions.Center;
@@ -816,7 +816,7 @@ public class MilitaryStoreUI : MonoBehaviour
         TextMeshProUGUI lTMP = loreObj.AddComponent<TextMeshProUGUI>();
         lTMP.font = MainMenuManager.GetTacticalFont();
         lTMP.text = $"<color=#94A3B8><i>{part.realWorldLore}</i></color>";
-        lTMP.fontSize = 17f;
+        lTMP.fontSize = 21f;
 
         // Muharebe Bonusları (Sol Alt)
         GameObject statsObj = new GameObject("Stats", typeof(RectTransform));

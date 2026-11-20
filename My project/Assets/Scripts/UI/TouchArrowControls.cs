@@ -44,6 +44,7 @@ public class TouchArrowControls : MonoBehaviour
     private void OnDestroy()
     {
         GameSettings.OnControlSchemeChanged -= HandleControlSchemeChanged;
+        if (Instance == this) Instance = null;
     }
 
     private void Start()
@@ -137,6 +138,7 @@ public class TouchArrowControls : MonoBehaviour
 
     public void UpdateVisibility()
     {
+        if (this == null) return;
         if (_rootContainer == null)
         {
             EnsureArrowUI();
@@ -178,7 +180,9 @@ public class TouchArrowControls : MonoBehaviour
 
     public void EnsureArrowUI()
     {
-        Canvas canvas = GetComponentInParent<Canvas>();
+        if (this == null) return;
+        Canvas canvas = null;
+        try { canvas = GetComponentInParent<Canvas>(); } catch { }
         if (canvas == null) canvas = FindAnyObjectByType<Canvas>();
         if (canvas == null) return;
 
@@ -197,8 +201,8 @@ public class TouchArrowControls : MonoBehaviour
         rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe
         rRt.anchorMax = new Vector2(0f, 0f);
         rRt.pivot = new Vector2(0f, 0f);
-        rRt.anchoredPosition = new Vector2(65f, 50f);
-        rRt.sizeDelta = new Vector2(360f, 210f);
+        rRt.anchoredPosition = new Vector2(75f, 60f);
+        rRt.sizeDelta = new Vector2(380f, 210f);
 
         // 1. SOL OK BUTONU (◀) - Boyut: 130x120
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
@@ -208,7 +212,7 @@ public class TouchArrowControls : MonoBehaviour
             RectTransform lrt = leftButtonObj.GetComponent<RectTransform>();
             if (lrt != null)
             {
-                lrt.anchoredPosition = new Vector2(85f, 95f);
+                lrt.anchoredPosition = new Vector2(95f, 105f);
                 lrt.sizeDelta = new Vector2(130f, 120f);
             }
             Transform lbl = leftT.Find("Label");
@@ -217,7 +221,7 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
-                new Vector2(85f, 95f), "btn_arrow_left", isLeft: true);
+                new Vector2(95f, 105f), "btn_arrow_left", isLeft: true);
         }
 
         // 2. SAĞ OK BUTONU (▶) - Boyut: 130x120
@@ -228,7 +232,7 @@ public class TouchArrowControls : MonoBehaviour
             RectTransform rrt = rightButtonObj.GetComponent<RectTransform>();
             if (rrt != null)
             {
-                rrt.anchoredPosition = new Vector2(235f, 95f);
+                rrt.anchoredPosition = new Vector2(245f, 105f);
                 rrt.sizeDelta = new Vector2(130f, 120f);
             }
             Transform lbl = rightT.Find("Label");
@@ -237,7 +241,7 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
-                new Vector2(235f, 95f), "btn_arrow_right", isLeft: false);
+                new Vector2(245f, 105f), "btn_arrow_right", isLeft: false);
         }
 
         _rootContainer.transform.SetAsLastSibling();
@@ -424,7 +428,8 @@ public class TouchArrowControls : MonoBehaviour
         GameObject mgrGo = mgrT != null ? mgrT.gameObject : new GameObject("TouchArrowControlsManager");
         if (mgrT == null) mgrGo.transform.SetParent(canvas.transform, false);
 
-        TouchArrowControls ctrl = mgrGo.GetComponent<TouchArrowControls>() ?? mgrGo.AddComponent<TouchArrowControls>();
+        TouchArrowControls ctrl = mgrGo.GetComponent<TouchArrowControls>();
+        if (ctrl == null) ctrl = mgrGo.AddComponent<TouchArrowControls>();
         Instance = ctrl;
         ctrl.EnsureArrowUI();
         return ctrl;

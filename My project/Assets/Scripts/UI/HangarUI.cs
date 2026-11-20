@@ -514,7 +514,7 @@ public class HangarUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "<b><color=#00E5FF>DEFCON-1 // ASKERİ HANGAR</color> & FİLO ÜSSÜ</b>\n<size=52%><color=#94A3B8>Gelişmiş 5.+ nesil savaş jetleri ve taktik otonom destek filosu</color></size>";
+        titleTMP.text = "<b><color=#00E5FF>DEFCON-1 // ASKERİ HANGAR</color> & FİLO ÜSSÜ</b>\n<size=75%><color=#94A3B8>Gelişmiş 5.+ nesil savaş jetleri ve taktik otonom destek filosu</color></size>";
         titleTMP.fontSize = 26f;
         titleTMP.characterSpacing = 2.4f;
         titleTMP.fontStyle = FontStyles.Bold;
@@ -833,7 +833,7 @@ public class HangarUI : MonoBehaviour
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
         tTMP.font = MainMenuManager.GetTacticalFont();
-        tTMP.text = $"<b>{name}</b>\n<size=70%><color=#8AB4F8>{subtitle}</color></size>";
+        tTMP.text = $"<b>{name}</b>\n<size=85%><color=#8AB4F8>{subtitle}</color></size>";
         tTMP.fontSize = 20f;
         tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
@@ -879,7 +879,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI tagTMP = tagObj.AddComponent<TextMeshProUGUI>();
         tagTMP.font = MainMenuManager.GetTacticalFont();
         tagTMP.text = $"[ {badgeTag} ]";
-        tagTMP.fontSize = 12f;
+        tagTMP.fontSize = 18f;
         tagTMP.characterSpacing = 1.6f;
         tagTMP.fontStyle = FontStyles.Bold;
         tagTMP.alignment = TextAlignmentOptions.Center;
@@ -897,7 +897,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI sTMP = statObj.AddComponent<TextMeshProUGUI>();
         sTMP.font = MainMenuManager.GetTacticalFont();
         sTMP.text = stats;
-        sTMP.fontSize = 15f;
+        sTMP.fontSize = 20f;
         sTMP.lineSpacing = 2.0f;
         sTMP.alignment = TextAlignmentOptions.Center;
         sTMP.color = new Color(0.9f, 0.95f, 1f);
@@ -942,7 +942,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI actionBtnTMP = btnTxtObj.AddComponent<TextMeshProUGUI>();
         actionBtnTMP.font = MainMenuManager.GetTacticalFont();
         actionBtnTMP.text = "GÖREVE SEÇ";
-        actionBtnTMP.fontSize = 18f;
+        actionBtnTMP.fontSize = 22f;
         actionBtnTMP.characterSpacing = 2.0f;
         actionBtnTMP.fontStyle = FontStyles.Bold;
         actionBtnTMP.alignment = TextAlignmentOptions.Center;
@@ -1058,7 +1058,7 @@ public class HangarUI : MonoBehaviour
 
         TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
         tTMP.font = MainMenuManager.GetTacticalFont();
-        tTMP.text = $"<b>{title}</b>\n<size=70%><color=#8AB4F8>{subtitle}</color></size>";
+        tTMP.text = $"<b>{title}</b>\n<size=85%><color=#8AB4F8>{subtitle}</color></size>";
         tTMP.fontSize = 20f;
         tTMP.characterSpacing = 2.0f;
         tTMP.alignment = TextAlignmentOptions.Center;
@@ -1104,7 +1104,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI tagTMP = tagObj.AddComponent<TextMeshProUGUI>();
         tagTMP.font = MainMenuManager.GetTacticalFont();
         tagTMP.text = $"[ {tierBadge} ]";
-        tagTMP.fontSize = 12f;
+        tagTMP.fontSize = 18f;
         tagTMP.characterSpacing = 1.6f;
         tagTMP.fontStyle = FontStyles.Bold;
         tagTMP.alignment = TextAlignmentOptions.Center;
@@ -1146,7 +1146,7 @@ public class HangarUI : MonoBehaviour
 
         TextMeshProUGUI hpTMP = hpTxtObj.AddComponent<TextMeshProUGUI>();
         hpTMP.font = MainMenuManager.GetTacticalFont();
-        hpTMP.fontSize = 12f;
+        hpTMP.fontSize = 18f;
         hpTMP.fontStyle = FontStyles.Bold;
         hpTMP.alignment = TextAlignmentOptions.Center;
         hpTMP.color = Color.white;
@@ -1163,7 +1163,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI dTMP = dObj.AddComponent<TextMeshProUGUI>();
         dTMP.font = MainMenuManager.GetTacticalFont();
         dTMP.text = description;
-        dTMP.fontSize = 14f;
+        dTMP.fontSize = 20f;
         dTMP.lineSpacing = 2.0f;
         dTMP.alignment = TextAlignmentOptions.Center;
         dTMP.color = new Color(0.9f, 0.95f, 1f);
@@ -1290,7 +1290,7 @@ public class HangarUI : MonoBehaviour
         TextMeshProUGUI tmp = tObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = text;
-        tmp.fontSize = 18f;
+        tmp.fontSize = 22f;
         tmp.characterSpacing = 1.8f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;

@@ -87,8 +87,14 @@ public class GameUI : MonoBehaviour
         if (!visible && _redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
         if (!visible && _modeIntroObj != null) _modeIntroObj.SetActive(false);
         if (!visible && _waveAlertObj != null) _waveAlertObj.SetActive(false);
-        if (!visible && RadioChatterManager.Instance != null) RadioChatterManager.Instance.SetHUDVisible(false);
-        TouchArrowControls.Instance?.UpdateVisibility();
+        if (!visible && RadioChatterManager.Instance != null)
+        {
+            try { RadioChatterManager.Instance.SetHUDVisible(false); } catch { }
+        }
+        if (TouchArrowControls.Instance != null)
+        {
+            try { TouchArrowControls.Instance.UpdateVisibility(); } catch { }
+        }
     }
 
     private void FindPlanesIfNull()
@@ -195,7 +201,7 @@ public class GameUI : MonoBehaviour
 
         TextMeshProUGUI tmp = EnsureComponent<TextMeshProUGUI>(labelObj);
 
-        tmp.fontSize = isPlayer ? 16f : 17f;
+        tmp.fontSize = 20f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Left;
 
@@ -245,7 +251,7 @@ public class GameUI : MonoBehaviour
 
         _waveBadgeTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
-        _waveBadgeTMP.fontSize = 18f;
+        _waveBadgeTMP.fontSize = 22f;
         _waveBadgeTMP.fontStyle = FontStyles.Bold;
         _waveBadgeTMP.alignment = TextAlignmentOptions.Center;
         _waveBadgeTMP.color = new Color(0.95f, 0.95f, 1f);
@@ -271,11 +277,11 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, 60f);
-        rt.sizeDelta = new Vector2(650f, 64f);
+        rt.anchoredPosition = new Vector2(0f, 130f);
+        rt.sizeDelta = new Vector2(580f, 54f);
 
         _waveAlertTMP = EnsureComponent<TextMeshProUGUI>(_waveAlertObj);
-        _waveAlertTMP.fontSize = 32f;
+        _waveAlertTMP.fontSize = 24f;
         _waveAlertTMP.fontStyle = FontStyles.Bold;
         _waveAlertTMP.alignment = TextAlignmentOptions.Center;
         _waveAlertTMP.raycastTarget = false;
@@ -361,31 +367,31 @@ public class GameUI : MonoBehaviour
         _modeIntroObj = EnsureUIGameObject(canvas.transform, "HUD_ModeIntroBanner");
 
         RectTransform rt = EnsureComponent<RectTransform>(_modeIntroObj);
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, 160f);
-        rt.sizeDelta = new Vector2(680f, 130f);
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -80f);
+        rt.sizeDelta = new Vector2(520f, 58f);
 
         Image bg = EnsureComponent<Image>(_modeIntroObj);
-        bg.color = new Color(0.04f, 0.08f, 0.14f, 0.94f);
+        bg.color = new Color(0.02f, 0.05f, 0.10f, 0.90f);
         bg.raycastTarget = false;
 
         _modeIntroOutline = EnsureComponent<Outline>(_modeIntroObj);
         _modeIntroOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
-        _modeIntroOutline.effectDistance = new Vector2(2.5f, -2.5f);
+        _modeIntroOutline.effectDistance = new Vector2(2f, -2f);
 
         _modeIntroCanvasGroup = EnsureComponent<CanvasGroup>(_modeIntroObj);
 
         // 1. Başlık
         GameObject titleObj = EnsureUIGameObject(_modeIntroObj.transform, "TitleText");
         RectTransform titleRt = EnsureComponent<RectTransform>(titleObj);
-        titleRt.anchorMin = new Vector2(0f, 0.60f);
+        titleRt.anchorMin = new Vector2(0f, 0.45f);
         titleRt.anchorMax = new Vector2(1f, 0.98f);
         titleRt.offsetMin = Vector2.zero;
         titleRt.offsetMax = Vector2.zero;
         _modeIntroTitleTMP = EnsureComponent<TextMeshProUGUI>(titleObj);
-        _modeIntroTitleTMP.fontSize = 28f;
+        _modeIntroTitleTMP.fontSize = 24f;
         _modeIntroTitleTMP.fontStyle = FontStyles.Bold;
         _modeIntroTitleTMP.alignment = TextAlignmentOptions.Center;
         _modeIntroTitleTMP.raycastTarget = false;
@@ -393,8 +399,8 @@ public class GameUI : MonoBehaviour
         // 2. Alt Başlık
         GameObject subObj = EnsureUIGameObject(_modeIntroObj.transform, "SubtitleText");
         RectTransform subRt = EnsureComponent<RectTransform>(subObj);
-        subRt.anchorMin = new Vector2(0f, 0.30f);
-        subRt.anchorMax = new Vector2(1f, 0.62f);
+        subRt.anchorMin = new Vector2(0f, 0.04f);
+        subRt.anchorMax = new Vector2(1f, 0.48f);
         subRt.offsetMin = Vector2.zero;
         subRt.offsetMax = Vector2.zero;
         _modeIntroSubtitleTMP = EnsureComponent<TextMeshProUGUI>(subObj);
@@ -403,18 +409,9 @@ public class GameUI : MonoBehaviour
         _modeIntroSubtitleTMP.alignment = TextAlignmentOptions.Center;
         _modeIntroSubtitleTMP.raycastTarget = false;
 
-        // 3. Açıklama & Hazır Mesajı
+        // 3. Açıklama (Kompakt modda gizlenir)
         GameObject descObj = EnsureUIGameObject(_modeIntroObj.transform, "DescText");
-        RectTransform descRt = EnsureComponent<RectTransform>(descObj);
-        descRt.anchorMin = new Vector2(0f, 0.04f);
-        descRt.anchorMax = new Vector2(1f, 0.32f);
-        descRt.offsetMin = Vector2.zero;
-        descRt.offsetMax = Vector2.zero;
-        _modeIntroDescTMP = EnsureComponent<TextMeshProUGUI>(descObj);
-        _modeIntroDescTMP.fontSize = 15f;
-        _modeIntroDescTMP.fontStyle = FontStyles.Normal;
-        _modeIntroDescTMP.alignment = TextAlignmentOptions.Center;
-        _modeIntroDescTMP.raycastTarget = false;
+        descObj.SetActive(false);
 
         _modeIntroObj.SetActive(false);
     }
@@ -455,7 +452,7 @@ public class GameUI : MonoBehaviour
 
         _goldHUDTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
-        _goldHUDTMP.fontSize = 18f;
+        _goldHUDTMP.fontSize = 22f;
         _goldHUDTMP.fontStyle = FontStyles.Bold;
         _goldHUDTMP.alignment = TextAlignmentOptions.Center;
         _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
@@ -549,7 +546,7 @@ public class GameUI : MonoBehaviour
         mainRt.offsetMax = new Vector2(-8f, -2f);
 
         _comboMainTMP = EnsureComponent<TextMeshProUGUI>(mainObj);
-        _comboMainTMP.fontSize = 18f;
+        _comboMainTMP.fontSize = 24f;
         _comboMainTMP.fontStyle = FontStyles.Bold;
         _comboMainTMP.alignment = TextAlignmentOptions.Center;
         _comboMainTMP.color = new Color(0.75f, 0.88f, 1f);
@@ -564,7 +561,7 @@ public class GameUI : MonoBehaviour
         subRt.offsetMax = new Vector2(-6f, 0f);
 
         _comboSubTMP = EnsureComponent<TextMeshProUGUI>(subObj);
-        _comboSubTMP.fontSize = 11f;
+        _comboSubTMP.fontSize = 17f;
         _comboSubTMP.fontStyle = FontStyles.Bold;
         _comboSubTMP.alignment = TextAlignmentOptions.Center;
         _comboSubTMP.color = new Color(0.85f, 0.92f, 0.98f);
@@ -704,7 +701,7 @@ public class GameUI : MonoBehaviour
         txtRt.offsetMax = new Vector2(-8f, 0f);
 
         _airspaceBannerTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
-        _airspaceBannerTMP.fontSize = 16f;
+        _airspaceBannerTMP.fontSize = 22f;
         _airspaceBannerTMP.fontStyle = FontStyles.Bold;
         _airspaceBannerTMP.alignment = TextAlignmentOptions.Center;
         _airspaceBannerTMP.raycastTarget = false;
@@ -819,7 +816,7 @@ public class GameUI : MonoBehaviour
         txtRt.offsetMax = Vector2.zero;
 
         _ultiBarTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
-        _ultiBarTMP.fontSize = 14f;
+        _ultiBarTMP.fontSize = 18f;
         _ultiBarTMP.fontStyle = FontStyles.Bold;
         _ultiBarTMP.alignment = TextAlignmentOptions.Center;
         _ultiBarTMP.color = Color.white;
@@ -840,7 +837,7 @@ public class GameUI : MonoBehaviour
         dRt.anchorMin = new Vector2(1f, 0f);
         dRt.anchorMax = new Vector2(1f, 0f);
         dRt.pivot = new Vector2(0.5f, 0.5f);
-        dRt.anchoredPosition = new Vector2(-330f, 125f);
+        dRt.anchoredPosition = new Vector2(-360f, 105f);
         dRt.sizeDelta = new Vector2(85f, 85f);
 
         Image dImg = EnsureComponent<Image>(_dodgeBtnObj);
@@ -882,8 +879,8 @@ public class GameUI : MonoBehaviour
         dTxtRt.offsetMax = Vector2.zero;
 
         _dodgeBtnTMP = EnsureComponent<TextMeshProUGUI>(dTxtObj);
-        _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SHIFT]</size>";
-        _dodgeBtnTMP.fontSize = 17f;
+        _dodgeBtnTMP.text = "KAÇIŞ\n<size=85%>[SHIFT]</size>";
+        _dodgeBtnTMP.fontSize = 20f;
         _dodgeBtnTMP.fontStyle = FontStyles.Bold;
         _dodgeBtnTMP.alignment = TextAlignmentOptions.Center;
         _dodgeBtnTMP.color = Color.white;
@@ -896,8 +893,8 @@ public class GameUI : MonoBehaviour
         uRt.anchorMin = new Vector2(1f, 0f);
         uRt.anchorMax = new Vector2(1f, 0f);
         uRt.pivot = new Vector2(0.5f, 0.5f);
-        uRt.anchoredPosition = new Vector2(-185f, 305f);
-        uRt.sizeDelta = new Vector2(90f, 90f);
+        uRt.anchoredPosition = new Vector2(-220f, 270f);
+        uRt.sizeDelta = new Vector2(85f, 85f);
         _ultiBtnBaseScale = Vector3.one;
 
         Image uImg = EnsureComponent<Image>(_ultiBtnObj);
@@ -939,8 +936,8 @@ public class GameUI : MonoBehaviour
         uTxtRt.offsetMax = Vector2.zero;
 
         _ultiBtnTMP = EnsureComponent<TextMeshProUGUI>(uTxtObj);
-        _ultiBtnTMP.text = "ULTİ\n<size=65%>[E]</size>";
-        _ultiBtnTMP.fontSize = 18f;
+        _ultiBtnTMP.text = "ULTİ\n<size=85%>[E]</size>";
+        _ultiBtnTMP.fontSize = 20f;
         _ultiBtnTMP.fontStyle = FontStyles.Bold;
         _ultiBtnTMP.alignment = TextAlignmentOptions.Center;
         _ultiBtnTMP.color = Color.white;
@@ -998,7 +995,7 @@ public class GameUI : MonoBehaviour
             else
             {
                 _dodgeFillImg.fillAmount = 0f;
-                _dodgeBtnTMP.text = "KAÇIŞ\n<size=65%>[SHIFT]</size>";
+                _dodgeBtnTMP.text = "KAÇIŞ\n<size=85%>[SHIFT]</size>";
                 _dodgeBtnTMP.color = Color.white;
                 if (_dodgeBtnOutline != null) _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
             }
@@ -1010,7 +1007,7 @@ public class GameUI : MonoBehaviour
             if (pcm.isOverdriveActive)
             {
                 _ultiFillImg.fillAmount = 0f;
-                _ultiBtnTMP.text = $"[AKTİF]\n<size=65%>{pcm.overdriveRemaining:F1}s</size>";
+                _ultiBtnTMP.text = $"[AKTİF]\n<size=85%>{pcm.overdriveRemaining:F1}s</size>";
                 _ultiBtnTMP.color = new Color(1f, 0.9f, 0.3f);
                 if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(1f, 0.5f, 0.1f);
                 _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
@@ -1018,7 +1015,7 @@ public class GameUI : MonoBehaviour
             else if (pcm.IsUltiReady)
             {
                 _ultiFillImg.fillAmount = 0f;
-                _ultiBtnTMP.text = "[ULTİ]\n<size=65%>HAZIR! [E]</size>";
+                _ultiBtnTMP.text = "[ULTİ]\n<size=85%>HAZIR! [E]</size>";
                 _ultiBtnTMP.color = Color.white;
                 if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = Color.yellow;
 
@@ -1029,7 +1026,7 @@ public class GameUI : MonoBehaviour
             {
                 float uncharged = 1f - (pcm.currentUlti / pcm.maxUlti);
                 _ultiFillImg.fillAmount = uncharged;
-                _ultiBtnTMP.text = $"ULTİ\n<size=65%>%{(int)pcm.currentUlti} [E]</size>";
+                _ultiBtnTMP.text = $"ULTİ\n<size=85%>%{(int)pcm.currentUlti} [E]</size>";
                 _ultiBtnTMP.color = new Color(0.75f, 0.75f, 0.75f);
                 if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(0.5f, 0.45f, 0.2f, 0.7f);
                 _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
@@ -1157,7 +1154,7 @@ public class GameUI : MonoBehaviour
     /// <summary>
     /// Savaşa başlamadan önce seçilen oyun modunu ve hedeflerini tanıtan askeri brifing kartı gösterir.
     /// </summary>
-    public void ShowModeIntroBanner(string title, string subtitle, string description, Color themeColor, float duration = 2.8f)
+    public void ShowModeIntroBanner(string title, string subtitle, string description, Color themeColor, float duration = 1.6f)
     {
         if (_modeIntroObj == null)
             SetupModeIntroBanner();
@@ -1187,11 +1184,6 @@ public class GameUI : MonoBehaviour
             _modeIntroSubtitleTMP.color = Color.white;
         }
 
-        if (_modeIntroDescTMP != null)
-        {
-            _modeIntroDescTMP.text = $"{description}\n<size=80%><color=#2ECC71><b>» HAVA SAHASINA GİRİLDİ • MOTORLAR ÇALIŞTI «</b></color></size>";
-        }
-
         if (_modeIntroOutline != null)
         {
             _modeIntroOutline.effectColor = themeColor;
@@ -1201,7 +1193,7 @@ public class GameUI : MonoBehaviour
         AudioManager.Instance?.PlayWarningAlarm();
 
         // Yumuşak Beliriş (Fade In)
-        float fadeIn = 0.28f;
+        float fadeIn = 0.20f;
         float elapsed = 0f;
         while (elapsed < fadeIn)
         {
@@ -1212,8 +1204,8 @@ public class GameUI : MonoBehaviour
         }
         if (_modeIntroCanvasGroup != null) _modeIntroCanvasGroup.alpha = 1f;
 
-        // Ekranda Kalma Süresi
-        float stayTime = duration - 0.6f;
+        // Ekranda Kalma Süresi (Kompakt 0.9 sn)
+        float stayTime = Mathf.Max(0.8f, duration - 0.5f);
         elapsed = 0f;
         while (elapsed < stayTime)
         {
@@ -1222,7 +1214,7 @@ public class GameUI : MonoBehaviour
         }
 
         // Yumuşak Kayboluş (Fade Out)
-        float fadeOut = 0.32f;
+        float fadeOut = 0.25f;
         elapsed = 0f;
         while (elapsed < fadeOut)
         {
@@ -1240,8 +1232,8 @@ public class GameUI : MonoBehaviour
 
     private void Update()
     {
-        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
-        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
+        MainMenuManager menu = FindObjectOfType<MainMenuManager>(true);
+        bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy && menu.IsAnyMenuPanelOpen());
         bool isCinematicActive = (StoryCampaignManager.Instance != null && StoryCampaignManager.Instance.IsCinematicActive);
         bool shouldHideAll = isMenuOpen || isCinematicActive;
 

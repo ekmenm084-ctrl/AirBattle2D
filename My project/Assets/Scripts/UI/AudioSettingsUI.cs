@@ -256,8 +256,8 @@ public class AudioSettingsUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "DEFCON // SAVAŞ HAREKATI DURAKLATILDI\n<size=52%><color=#8AB4F8>AVIONICS KOKPİT & SES KONTROL PANELİ</color></size>";
-        titleTMP.fontSize = 20f;
+        titleTMP.text = "DEFCON // SAVAŞ HAREKATI DURAKLATILDI\n<size=75%><color=#8AB4F8>AVIONICS KOKPİT & SES KONTROL PANELİ</color></size>";
+        titleTMP.fontSize = 22f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.characterSpacing = 2.0f;
         titleTMP.alignment = TextAlignmentOptions.Center;
@@ -303,11 +303,12 @@ public class AudioSettingsUI : MonoBehaviour
 
         _controlBtnTMP = ctrlTxtObj.AddComponent<TextMeshProUGUI>();
         _controlBtnTMP.font = MainMenuManager.GetTacticalFont();
-        _controlBtnTMP.fontSize = 17f;
+        _controlBtnTMP.fontSize = 21f;
         _controlBtnTMP.fontStyle = FontStyles.Bold;
         _controlBtnTMP.characterSpacing = 1.6f;
         _controlBtnTMP.alignment = TextAlignmentOptions.Center;
         _controlBtnTMP.color = Color.white;
+        _controlBtnTMP.extraPadding = true;
         _controlBtnTMP.extraPadding = true;
         _controlBtnTMP.raycastTarget = false;
 
@@ -342,7 +343,7 @@ public class AudioSettingsUI : MonoBehaviour
 
         _muteBtnTMP = muteTxtObj.AddComponent<TextMeshProUGUI>();
         _muteBtnTMP.font = MainMenuManager.GetTacticalFont();
-        _muteBtnTMP.fontSize = 17f;
+        _muteBtnTMP.fontSize = 21f;
         _muteBtnTMP.fontStyle = FontStyles.Bold;
         _muteBtnTMP.characterSpacing = 1.6f;
         _muteBtnTMP.alignment = TextAlignmentOptions.Center;
@@ -414,7 +415,7 @@ public class AudioSettingsUI : MonoBehaviour
         TextMeshProUGUI homeTMP = homeTxtObj.AddComponent<TextMeshProUGUI>();
         homeTMP.font = MainMenuManager.GetTacticalFont();
         homeTMP.text = "[<<] ANA ÜSSE GERİ DÖN";
-        homeTMP.fontSize = 19f;
+        homeTMP.fontSize = 22f;
         homeTMP.fontStyle = FontStyles.Bold;
         homeTMP.characterSpacing = 1.8f;
         homeTMP.alignment = TextAlignmentOptions.Center;

@@ -199,12 +199,12 @@ public class CratesUI : MonoBehaviour
         tmp.font = MainMenuManager.GetTacticalFont();
         if (hasKey)
         {
-            tmp.text = $"<b>{keyName} ANAHTARLA AÇ (1x)</b>\n<size=72%><color=#FFD700>» {keyCount} ADET MEVCUT - DOKUN VE AÇ «</color></size>";
+            tmp.text = $"<b>{keyName} ANAHTARLA AÇ (1x)</b>\n<size=85%><color=#FFD700>» {keyCount} ADET MEVCUT - DOKUN VE AÇ «</color></size>";
             tmp.color = Color.white;
         }
         else
         {
-            tmp.text = $"<b>{keyName} ANAHTARI GEREKLİ (0/1)</b>\n<size=68%><color=#EF4444>Anahtar Yok - Bosslardan veya Görevlerden Düşer</color></size>";
+            tmp.text = $"<b>{keyName} ANAHTARI GEREKLİ (0/1)</b>\n<size=85%><color=#EF4444>Anahtar Yok - Bosslardan veya Görevlerden Düşer</color></size>";
             tmp.color = new Color(0.9f, 0.65f, 0.65f);
         }
     }
@@ -271,7 +271,7 @@ public class CratesUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "<b><color=#00E5FF>SUPPLY // ASKERİ HAVA İKMAL VE GANİMET SANDIKLARI</color></b>\n<size=52%><color=#94A3B8>Boss anahtarlarıyla açıldığında 6. Nesil jet sortileri, MK-5 Titan droneları ve nadir parçalar</color></size>";
+        titleTMP.text = "<b><color=#00E5FF>SUPPLY // ASKERİ HAVA İKMAL VE GANİMET SANDIKLARI</color></b>\n<size=75%><color=#94A3B8>Boss anahtarlarıyla açıldığında 6. Nesil jet sortileri, MK-5 Titan droneları ve nadir parçalar</color></size>";
         titleTMP.fontSize = 26f;
         titleTMP.characterSpacing = 2.2f;
         titleTMP.fontStyle = FontStyles.Bold;
@@ -293,7 +293,7 @@ public class CratesUI : MonoBehaviour
         _keysTMP = keysBadgeObj.AddComponent<TextMeshProUGUI>();
         _keysTMP.font = MainMenuManager.GetTacticalFont();
         _keysTMP.text = "<b>ANAHTARLARINIZ:</b> <color=#CD7F32>Bronz: 0</color>  |  <color=#C0C0C0>Gümüş: 0</color>  |  <color=#FFD700>Altın As: 0</color>";
-        _keysTMP.fontSize = 19f;
+        _keysTMP.fontSize = 22f;
         _keysTMP.characterSpacing = 1.6f;
         _keysTMP.fontStyle = FontStyles.Bold;
         _keysTMP.alignment = TextAlignmentOptions.Center;
@@ -413,7 +413,7 @@ public class CratesUI : MonoBehaviour
         keyBadgeTMP = kbObj.AddComponent<TextMeshProUGUI>();
         keyBadgeTMP.font = MainMenuManager.GetTacticalFont();
         keyBadgeTMP.text = "<b>ANAHTAR: 0 ADET</b>";
-        keyBadgeTMP.fontSize = 17f;
+        keyBadgeTMP.fontSize = 21f;
         keyBadgeTMP.characterSpacing = 1.6f;
         keyBadgeTMP.fontStyle = FontStyles.Bold;
         keyBadgeTMP.alignment = TextAlignmentOptions.Center;
@@ -457,7 +457,7 @@ public class CratesUI : MonoBehaviour
         TextMeshProUGUI dTMP = dObj.AddComponent<TextMeshProUGUI>();
         dTMP.font = MainMenuManager.GetTacticalFont();
         dTMP.text = lootDetails;
-        dTMP.fontSize = 16f;
+        dTMP.fontSize = 20f;
         dTMP.characterSpacing = 1.2f;
         dTMP.lineSpacing = 3f;
         dTMP.alignment = TextAlignmentOptions.Center;
@@ -490,7 +490,7 @@ public class CratesUI : MonoBehaviour
         keyBtnTMP = ktTxtObj.AddComponent<TextMeshProUGUI>();
         keyBtnTMP.font = MainMenuManager.GetTacticalFont();
         keyBtnTMP.text = "ANAHTAR İLE AÇ";
-        keyBtnTMP.fontSize = 17f;
+        keyBtnTMP.fontSize = 21f;
         keyBtnTMP.characterSpacing = 1.6f;
         keyBtnTMP.fontStyle = FontStyles.Bold;
         keyBtnTMP.alignment = TextAlignmentOptions.Center;
@@ -685,7 +685,7 @@ public class CratesUI : MonoBehaviour
 
         _keyAlertTMP = txtObj.AddComponent<TextMeshProUGUI>();
         _keyAlertTMP.font = MainMenuManager.GetTacticalFont();
-        _keyAlertTMP.fontSize = 17f;
+        _keyAlertTMP.fontSize = 21f;
         _keyAlertTMP.characterSpacing = 1.2f;
         _keyAlertTMP.alignment = TextAlignmentOptions.Center;
         _keyAlertTMP.color = Color.white;

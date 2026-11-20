@@ -59,7 +59,7 @@ public class RadioChatterManager : MonoBehaviour
 
     private static readonly string[] WaveformFrames = new string[]
     {
-        " ▃▅", "▂▅▇", "▃▇▅", "▅▃▂", "▇▅▃", "▅▇▅", "▃▅▇"
+        "|||", "|:|", "::|", "|::", "||:", ":||", ":::"
     };
 
     private void Awake()
@@ -316,8 +316,8 @@ public class RadioChatterManager : MonoBehaviour
             rt.localScale = Vector3.one;
         }
 
-        // 5. Ses Çalarken Dalga Formu ve TX Yanıp Sönme Animasyonu
-        float clipDuration = (tx.clip != null) ? tx.clip.length : 3.0f;
+        // 5. Ses Çalarken Dalga Formu ve TX Yanıp Sönme Animasyonu (Kısa & Öz: maks 2 sn)
+        float clipDuration = (tx.clip != null) ? Mathf.Min(tx.clip.length, 2.0f) : 1.8f;
         float playElapsed = 0f;
         int frameIdx = 0;
         float waveTimer = 0f;
@@ -341,12 +341,12 @@ public class RadioChatterManager : MonoBehaviour
             yield return null;
         }
 
-        // 6. Çok uzatmadan hızlıca kapat (yalnızca 0.20s bekleme)
+        // 6. Çok uzatmadan hızlıca kapat (yalnızca 0.12s bekleme)
         if (_waveformTMP != null) _waveformTMP.text = "<color=#546E7A>---</color>";
-        yield return new WaitForSecondsRealtime(0.20f);
+        yield return new WaitForSecondsRealtime(0.12f);
 
-        // 7. Panel Kapanış Animasyonu (Fade-Out)
-        float animOut = 0.18f;
+        // 7. Panel Kapanış Animasyonu (Hızlı Fade-Out)
+        float animOut = 0.12f;
         elapsed = 0f;
         while (elapsed < animOut)
         {
@@ -379,8 +379,8 @@ public class RadioChatterManager : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 1f);
         rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -145f);
-        rt.sizeDelta = new Vector2(480f, 66f);
+        rt.anchoredPosition = new Vector2(0f, -140f);
+        rt.sizeDelta = new Vector2(640f, 84f);
 
         _radioCanvasGroup = _radioPanelObj.AddComponent<CanvasGroup>();
         _radioCanvasGroup.alpha = 0f;
@@ -410,11 +410,12 @@ public class RadioChatterManager : MonoBehaviour
         headerRt.anchorMin = new Vector2(0f, 1f);
         headerRt.anchorMax = new Vector2(1f, 1f);
         headerRt.pivot = new Vector2(0f, 1f);
-        headerRt.anchoredPosition = new Vector2(12f, -4f);
-        headerRt.sizeDelta = new Vector2(-70f, 20f);
+        headerRt.anchoredPosition = new Vector2(16f, -6f);
+        headerRt.sizeDelta = new Vector2(-100f, 26f);
 
         _headerTMP = headerObj.AddComponent<TextMeshProUGUI>();
-        _headerTMP.fontSize = 13.5f;
+        _headerTMP.fontSize = 18f;
+        _headerTMP.fontStyle = FontStyles.Bold;
         _headerTMP.alignment = TextAlignmentOptions.Left;
         _headerTMP.raycastTarget = false;
 
@@ -425,11 +426,12 @@ public class RadioChatterManager : MonoBehaviour
         waveRt.anchorMin = new Vector2(1f, 1f);
         waveRt.anchorMax = new Vector2(1f, 1f);
         waveRt.pivot = new Vector2(1f, 1f);
-        waveRt.anchoredPosition = new Vector2(-12f, -4f);
-        waveRt.sizeDelta = new Vector2(60f, 20f);
+        waveRt.anchoredPosition = new Vector2(-16f, -6f);
+        waveRt.sizeDelta = new Vector2(80f, 26f);
 
         _waveformTMP = waveObj.AddComponent<TextMeshProUGUI>();
-        _waveformTMP.fontSize = 13f;
+        _waveformTMP.fontSize = 16f;
+        _waveformTMP.fontStyle = FontStyles.Bold;
         _waveformTMP.alignment = TextAlignmentOptions.Right;
         _waveformTMP.raycastTarget = false;
 
@@ -440,11 +442,12 @@ public class RadioChatterManager : MonoBehaviour
         subRt.anchorMin = Vector2.zero;
         subRt.anchorMax = new Vector2(1f, 1f);
         subRt.pivot = new Vector2(0.5f, 0f);
-        subRt.offsetMin = new Vector2(12f, 4f);
-        subRt.offsetMax = new Vector2(-12f, -24f);
+        subRt.offsetMin = new Vector2(16f, 8f);
+        subRt.offsetMax = new Vector2(-16f, -32f);
 
         _subtitleTMP = subObj.AddComponent<TextMeshProUGUI>();
-        _subtitleTMP.fontSize = 14f;
+        _subtitleTMP.fontSize = 20f;
+        _subtitleTMP.fontStyle = FontStyles.Bold;
         _subtitleTMP.alignment = TextAlignmentOptions.Left;
         _subtitleTMP.color = new Color(0.92f, 0.96f, 1f);
         _subtitleTMP.textWrappingMode = TextWrappingModes.Normal;

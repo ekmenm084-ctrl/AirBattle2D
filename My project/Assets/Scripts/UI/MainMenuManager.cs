@@ -230,8 +230,8 @@ public class MainMenuManager : MonoBehaviour
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 1f; // 1080p yüksekliği koru, genişliği dinamik genişlet
-            scaler.dynamicPixelsPerUnit = 2f;
+            scaler.matchWidthOrHeight = 1f; // 1080p yüksekliği koru, tüm en-boy oranlarına (16:9, 18:9, 20:9, 21:9, 4:3) uyum sağla
+            scaler.dynamicPixelsPerUnit = 3f;
             scaler.referencePixelsPerUnit = 100f;
         }
     }
@@ -250,6 +250,7 @@ public class MainMenuManager : MonoBehaviour
         try { AudioManager.EnsureInstance(); } catch (System.Exception e) { Debug.LogError(e); }
         try { StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen(); } catch (System.Exception e) { Debug.LogError(e); }
 
+        MakeFullScreenRect(GetComponent<RectTransform>());
         MakeFullScreenRect(mainPanel?.GetComponent<RectTransform>());
         MakeFullScreenRect(modesPanel?.GetComponent<RectTransform>());
         MakeFullScreenRect(settingsPanel?.GetComponent<RectTransform>());
@@ -418,7 +419,7 @@ public class MainMenuManager : MonoBehaviour
 
         TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
         tmp.font = GetTacticalFont();
-        tmp.text = "<size=36%><color=#80D8FF>« TACTICAL FLIGHT SIMULATION • DEFCON-1 »</color></size>\n<b><color=#00E5FF>AIR</color> BATTLE <color=#FFD700>2D</color></b>\n<size=38%><color=#90CAF9>« ASKERİ HAVA HARP HAREKÂTI // İT DALAŞI »</color></size>";
+        tmp.text = "<size=48%><color=#80D8FF>« TACTICAL FLIGHT SIMULATION • DEFCON-1 »</color></size>\n<b><color=#00E5FF>AIR</color> BATTLE <color=#FFD700>2D</color></b>\n<size=50%><color=#90CAF9>« ASKERİ HAVA HARP HAREKÂTI // İT DALAŞI »</color></size>";
         tmp.fontSize = 50f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 3.2f;
@@ -720,10 +721,10 @@ public class MainMenuManager : MonoBehaviour
 
         tmp.font = GetTacticalFont();
         tmp.text = text;
-        tmp.fontSize = (height >= 58f) ? 22f : 18f;
+        tmp.fontSize = (height >= 58f) ? 23f : 20f;
         tmp.enableAutoSizing = true;
-        tmp.fontSizeMin = 15f;
-        tmp.fontSizeMax = (height >= 58f) ? 23f : 19f;
+        tmp.fontSizeMin = 18f;
+        tmp.fontSizeMax = (height >= 58f) ? 24f : 21f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 0.5f; // Temiz, keskin askeri yazı aralığı
         tmp.color = new Color(0.95f, 0.98f, 1f);
@@ -736,23 +737,23 @@ public class MainMenuManager : MonoBehaviour
     public static void FormatBottomLeftBackBtn(Button btn, UnityEngine.Events.UnityAction onClick = null)
     {
         if (btn == null) return;
+
+        FormatBtn(btn, 0f, "« TACTICAL // GERİ DÖN", new Color(0.35f, 0.65f, 0.95f), 300f, 54f, 0f, "hud_btn_blue");
+
         RectTransform rt = btn.GetComponent<RectTransform>();
         if (rt != null)
         {
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.zero;
             rt.pivot = Vector2.zero;
-            rt.anchoredPosition = new Vector2(60f, 55f);
-            rt.sizeDelta = new Vector2(260f, 52f);
+            rt.anchoredPosition = new Vector2(50f, 35f);
+            rt.sizeDelta = new Vector2(300f, 54f);
         }
 
         Image img = btn.GetComponent<Image>() ?? btn.gameObject.AddComponent<Image>();
         btn.targetGraphic = img;
         img.raycastTarget = true;
         btn.interactable = true;
-        btn.transform.SetAsLastSibling();
-
-        FormatBtn(btn, 55f, "« TACTICAL // GERİ DÖN", new Color(0.35f, 0.65f, 0.95f), 260f, 52f, 60f, "hud_btn_blue");
 
         if (onClick != null)
         {
@@ -769,19 +770,19 @@ public class MainMenuManager : MonoBehaviour
         GameObject btnObj = existing != null ? existing.gameObject : new GameObject("QuitButton", typeof(RectTransform));
         btnObj.transform.SetParent(mainPanel.transform, false);
 
+        Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
+        FormatBtn(btn, 0f, "[X] ABORT // ÜSSE DÖN", new Color(0.95f, 0.20f, 0.25f), 300f, 54f, 0f, "hud_btn_red");
+
         RectTransform rt = btnObj.GetComponent<RectTransform>();
         if (rt != null)
         {
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.zero;
             rt.pivot = Vector2.zero;
-            rt.anchoredPosition = new Vector2(60f, 55f);
-            rt.sizeDelta = new Vector2(260f, 52f);
+            rt.anchoredPosition = new Vector2(50f, 35f);
+            rt.sizeDelta = new Vector2(300f, 54f);
         }
         btnObj.transform.SetAsLastSibling();
-
-        Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
-        FormatBtn(btn, 55f, "[X] ABORT // ÜSSE DÖN", new Color(0.95f, 0.20f, 0.25f), 260f, 52f, 60f, "hud_btn_red");
 
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
@@ -801,22 +802,22 @@ public class MainMenuManager : MonoBehaviour
         GameObject btnObj = existing != null ? existing.gameObject : new GameObject("DailyOpsButton", typeof(RectTransform));
         btnObj.transform.SetParent(mainPanel.transform, false);
 
+        _dailyOpsButton = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
+        _dailyOpsButton.onClick.RemoveAllListeners();
+        _dailyOpsButton.onClick.AddListener(OpenDailyOpsPanel);
+
+        RefreshDailyOpsButtonVisual();
+
         RectTransform rt = btnObj.GetComponent<RectTransform>();
         if (rt != null)
         {
             rt.anchorMin = new Vector2(1f, 0f);
             rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(1f, 0f);
-            rt.anchoredPosition = new Vector2(-60f, 55f);
-            rt.sizeDelta = new Vector2(380f, 52f);
+            rt.anchoredPosition = new Vector2(-50f, 35f);
+            rt.sizeDelta = new Vector2(350f, 54f);
         }
         btnObj.transform.SetAsLastSibling();
-
-        _dailyOpsButton = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
-        _dailyOpsButton.onClick.RemoveAllListeners();
-        _dailyOpsButton.onClick.AddListener(OpenDailyOpsPanel);
-
-        RefreshDailyOpsButtonVisual();
     }
 
     private void RefreshDailyOpsButtonVisual()
@@ -834,7 +835,26 @@ public class MainMenuManager : MonoBehaviour
             : new Color(0.14f, 0.85f, 0.80f);
         string spriteKey = claimable > 0 ? "hud_btn_ops_ready" : "hud_btn_ops_idle";
 
-        FormatBtn(_dailyOpsButton, 55f, label, accent, 380f, 52f, -60f, spriteKey);
+        FormatBtn(_dailyOpsButton, 0f, label, accent, 350f, 54f, 0f, spriteKey);
+
+        RectTransform rt = _dailyOpsButton.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+            rt.anchoredPosition = new Vector2(-50f, 35f);
+            rt.sizeDelta = new Vector2(350f, 54f);
+        }
+    }
+
+    public bool IsAnyMenuPanelOpen()
+    {
+        if (!gameObject.activeInHierarchy) return false;
+        if (mainPanel != null && mainPanel.activeInHierarchy) return true;
+        if (modesPanel != null && modesPanel.activeInHierarchy) return true;
+        if (settingsPanel != null && settingsPanel.activeInHierarchy) return true;
+        return false;
     }
 
     private void SetupModesHeader()
@@ -874,7 +894,7 @@ public class MainMenuManager : MonoBehaviour
 
         TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
         tmp.font = GetTacticalFont();
-        tmp.text = "<b><color=#00E5FF>HAVA HAREKÂTI</color> VE GÖREV SEFERLERİ</b>\n<size=52%><color=#94A3B8>Taktik senaryo operasyonları veya sınırsız it dalaşı seçin</color></size>";
+        tmp.text = "<b><color=#00E5FF>HAVA HAREKÂTI</color> VE GÖREV SEFERLERİ</b>\n<size=75%><color=#94A3B8>Taktik senaryo operasyonları veya sınırsız it dalaşı seçin</color></size>";
         tmp.fontSize = 26f;
         tmp.characterSpacing = 2.4f;
         tmp.fontStyle = FontStyles.Bold;
@@ -923,7 +943,7 @@ public class MainMenuManager : MonoBehaviour
 
         TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
         tmp.font = GetTacticalFont();
-        tmp.text = "<b><color=#00E5FF>KOKPİT SİSTEMLERİ</color> VE SES AYARLARI</b>\n<size=52%><color=#94A3B8>Zorluk kalibrasyonu ve aviyonik ses seviyeleri</color></size>";
+        tmp.text = "<b><color=#00E5FF>KOKPİT SİSTEMLERİ</color> VE SES AYARLARI</b>\n<size=75%><color=#94A3B8>Zorluk kalibrasyonu ve aviyonik ses seviyeleri</color></size>";
         tmp.fontSize = 26f;
         tmp.characterSpacing = 2.4f;
         tmp.fontStyle = FontStyles.Bold;
@@ -1090,7 +1110,7 @@ public class MainMenuManager : MonoBehaviour
 
             TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
             tmp.font = GetTacticalFont();
-            tmp.fontSize = 17f;
+            tmp.fontSize = 21f;
             tmp.fontStyle = FontStyles.Bold;
             tmp.characterSpacing = 1.6f;
             tmp.alignment = TextAlignmentOptions.Center;
@@ -1110,7 +1130,7 @@ public class MainMenuManager : MonoBehaviour
             {
                 GameSettings.ToggleControlType();
                 UpdateUIFeedback();
-                TouchArrowControls.Instance?.UpdateVisibility();
+                try { TouchArrowControls.EnsureInstance()?.UpdateVisibility(); } catch { }
                 AudioManager.Instance?.PlayButtonClick();
             });
         }
@@ -1674,7 +1694,7 @@ public class MainMenuManager : MonoBehaviour
             if (qTmp != null)
             {
                 qTmp.font = GetTacticalFont();
-                qTmp.text = $"<b>PROTOCOL // DIFF-06</b>  <color={diffHex}><b>[ {diffName.ToUpper()} ]</b></color> <size=68%><color=#90A4AE>(Dokun Değiştir)</color></size>";
+                qTmp.text = $"<b>PROTOCOL // DIFF-06</b>  <color={diffHex}><b>[ {diffName.ToUpper()} ]</b></color> <size=85%><color=#90A4AE>(Dokun Değiştir)</color></size>";
                 qTmp.characterSpacing = 2.0f;
             }
             Image qImg = _quickDiffButton.GetComponent<Image>();
@@ -1712,7 +1732,7 @@ public class MainMenuManager : MonoBehaviour
                     : isHardcore ? $"<color=#FF2A2A>[HARDCORE (Tek Can)]</color>"
                     : $"<color=#FFE082>[{StoryCampaignManager.GetCampaignName(activeCamp)}]</color>";
 
-                playTMP.text = $"<b><color=#00FFA3>SYS // OPS-01  » HAREKÂTI BAŞLAT</color></b>\n<size=54%>{modeBadge} • <color={diffHex}><b>[{diffName.ToUpper()}]</b></color></size>";
+                playTMP.text = $"<b><color=#00FFA3>SYS // OPS-01  » HAREKÂTI BAŞLAT</color></b>\n<size=80%>{modeBadge} • <color={diffHex}><b>[{diffName.ToUpper()}]</b></color></size>";
             }
         }
 
@@ -1727,8 +1747,8 @@ public class MainMenuManager : MonoBehaviour
             {
                 cTmp.font = GetTacticalFont();
                 cTmp.text = isArrows
-                    ? "UÇUŞ KONTROLÜ: <color=#00E5FF><b>[ ◀ SOL / SAĞ OK TUŞLARI ▶ ]</b></color> <size=68%><color=#90A4AE>(Dokun Değiştir)</color></size>"
-                    : "UÇUŞ KONTROLÜ: <color=#FFE082><b>[ 🕹️ SANAL JOYSTICK ]</b></color> <size=68%><color=#90A4AE>(Dokun Değiştir)</color></size>";
+                    ? "UÇUŞ KONTROLÜ: <color=#00E5FF><b>[ ◀ SOL / SAĞ OK TUŞLARI ▶ ]</b></color> <size=85%><color=#90A4AE>(Dokun Değiştir)</color></size>"
+                    : "UÇUŞ KONTROLÜ: <color=#FFE082><b>[ 🕹️ SANAL JOYSTICK ]</b></color> <size=85%><color=#90A4AE>(Dokun Değiştir)</color></size>";
                 cTmp.characterSpacing = 1.8f;
             }
             if (cImg != null)
@@ -1900,8 +1920,8 @@ public class MainMenuManager : MonoBehaviour
 
         tmp.font = GetTacticalFont();
         tmp.enableAutoSizing = true;
-        tmp.fontSizeMin = 13f;
-        tmp.fontSizeMax = 18f;
+        tmp.fontSizeMin = 18f;
+        tmp.fontSizeMax = 22f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
@@ -1936,6 +1956,9 @@ public class MainMenuManager : MonoBehaviour
 
         // Menüyü kapat ve savaşı başlat
         gameObject.SetActive(false);
+        if (mainPanel != null) mainPanel.SetActive(false);
+        if (modesPanel != null) modesPanel.SetActive(false);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
         PlayerProfileUI.Instance?.HideMenuStatusBar();
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -1945,7 +1968,7 @@ public class MainMenuManager : MonoBehaviour
         if (DailyOpsUI.Instance != null) DailyOpsUI.Instance.CloseDirectly();
 
         if (inGameUI != null) inGameUI.SetActive(true);
-        TouchArrowControls.EnsureInstance()?.UpdateVisibility();
+        try { TouchArrowControls.EnsureInstance()?.UpdateVisibility(); } catch { }
 
         // MODU KESİN OLARAK UYGULA:
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);

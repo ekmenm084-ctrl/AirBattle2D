@@ -215,8 +215,8 @@ public class DailyOpsUI : MonoBehaviour
 
         _subtitleText = CreateTMP("SubtitleText", headerObj.transform, "", 19, new Color(0.86f, 0.94f, 1f, 1f), FontStyles.Bold, TextAlignmentOptions.Center);
         _subtitleText.enableAutoSizing = true;
-        _subtitleText.fontSizeMin = 15f;
-        _subtitleText.fontSizeMax = 20f;
+        _subtitleText.fontSizeMin = 18f;
+        _subtitleText.fontSizeMax = 22f;
         StretchChild(_subtitleText.rectTransform, 20f, -20f, 4f, -54f);
         MainMenuManager.SetOutlineSafe(_subtitleText, 0.14f, Color.black);
 

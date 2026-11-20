@@ -41,7 +41,6 @@ public class LeaderboardManager : MonoBehaviour
     [Serializable]
     public class SupabaseScoreRecord
     {
-        public int id;
         public string player_name;
         public string mode;
         public int score;
@@ -100,12 +99,26 @@ public class LeaderboardManager : MonoBehaviour
         }
     }
 
+    private static bool _isQuitting = false;
+
+    private void OnApplicationQuit()
+    {
+        _isQuitting = true;
+    }
+
     public static LeaderboardManager EnsureInstance()
     {
         if (Instance != null) return Instance;
+        if (_isQuitting) return null;
 
         GameObject go = GameObject.Find("LeaderboardManager");
-        if (go == null) go = new GameObject("LeaderboardManager");
+        if (go == null)
+        {
+            #if UNITY_EDITOR
+            if (!UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) return null;
+            #endif
+            go = new GameObject("LeaderboardManager");
+        }
         Instance = go.GetComponent<LeaderboardManager>();
         if (Instance == null) Instance = go.AddComponent<LeaderboardManager>();
         DontDestroyOnLoad(go);

@@ -663,7 +663,7 @@ public class StoryCampaignManager : MonoBehaviour
         pageRt.offsetMin = Vector2.zero;
         pageRt.offsetMax = Vector2.zero;
         _pageIndicatorTMP = pageObj.AddComponent<TextMeshProUGUI>();
-        _pageIndicatorTMP.fontSize = 18f;
+        _pageIndicatorTMP.fontSize = 22f;
         _pageIndicatorTMP.fontStyle = FontStyles.Bold;
         _pageIndicatorTMP.alignment = TextAlignmentOptions.Right;
         _pageIndicatorTMP.color = new Color(1f, 0.85f, 0.3f);
@@ -693,7 +693,7 @@ public class StoryCampaignManager : MonoBehaviour
         skipTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI skipTMP = skipTxtObj.AddComponent<TextMeshProUGUI>();
         skipTMP.text = "GEÇ >>";
-        skipTMP.fontSize = 17f;
+        skipTMP.fontSize = 21f;
         skipTMP.fontStyle = FontStyles.Bold;
         skipTMP.alignment = TextAlignmentOptions.Center;
         skipTMP.color = Color.white;
@@ -728,7 +728,7 @@ public class StoryCampaignManager : MonoBehaviour
         hintRt.offsetMax = Vector2.zero;
         TextMeshProUGUI hintTMP = hintObj.AddComponent<TextMeshProUGUI>();
         hintTMP.text = "<size=85%><color=#8AB4F8>Ekrana dokunarak veya 'İlerle'ye basarak sonraki cümleye geçebilirsiniz.</color></size>";
-        hintTMP.fontSize = 15f;
+        hintTMP.fontSize = 19f;
         hintTMP.alignment = TextAlignmentOptions.Left;
         hintTMP.extraPadding = true;
 
@@ -754,7 +754,7 @@ public class StoryCampaignManager : MonoBehaviour
         nextTxtRt.offsetMax = Vector2.zero;
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.text = "İLERLE >>";
-        nextTMP.fontSize = 17f;
+        nextTMP.fontSize = 21f;
         nextTMP.fontStyle = FontStyles.Bold;
         nextTMP.alignment = TextAlignmentOptions.Center;
         nextTMP.color = Color.white;
@@ -1288,7 +1288,7 @@ public class StoryCampaignManager : MonoBehaviour
             spkRt.offsetMax = Vector2.zero;
 
             _speakerTMP = spkObj.AddComponent<TextMeshProUGUI>();
-            _speakerTMP.fontSize = 18f;
+            _speakerTMP.fontSize = 22f;
             _speakerTMP.fontStyle = FontStyles.Bold;
             _speakerTMP.alignment = TextAlignmentOptions.Left;
             _speakerTMP.extraPadding = true;
@@ -1304,7 +1304,7 @@ public class StoryCampaignManager : MonoBehaviour
             frqRt.offsetMax = Vector2.zero;
 
             _freqTMP = frqObj.AddComponent<TextMeshProUGUI>();
-            _freqTMP.fontSize = 14f;
+            _freqTMP.fontSize = 18f;
             _freqTMP.fontStyle = FontStyles.Bold;
             _freqTMP.alignment = TextAlignmentOptions.Right;
             _freqTMP.color = new Color(0.5f, 0.85f, 1f, 0.9f);
@@ -1320,7 +1320,7 @@ public class StoryCampaignManager : MonoBehaviour
             msgRt.offsetMax = new Vector2(-14f, 0f);
 
             _messageTMP = msgObj.AddComponent<TextMeshProUGUI>();
-            _messageTMP.fontSize = 17f;
+            _messageTMP.fontSize = 21f;
             _messageTMP.fontStyle = FontStyles.Bold;
             _messageTMP.alignment = TextAlignmentOptions.Left;
             _messageTMP.color = Color.white;

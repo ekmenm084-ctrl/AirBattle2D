@@ -1553,7 +1553,10 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
-        SaveAndSubmitActiveScore(isFinal: true);
+        if (LeaderboardManager.Instance != null)
+        {
+            SaveAndSubmitActiveScore(isFinal: true);
+        }
         CleanUpBulletHellPlane();
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;

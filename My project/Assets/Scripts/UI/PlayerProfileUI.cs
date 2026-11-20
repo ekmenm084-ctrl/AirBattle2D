@@ -226,7 +226,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         _levelBadgeTMP = lTxtObj.AddComponent<TextMeshProUGUI>();
         _levelBadgeTMP.font = MainMenuManager.GetTacticalFont();
-        _levelBadgeTMP.fontSize = 18f;
+        _levelBadgeTMP.fontSize = 22f;
         _levelBadgeTMP.fontStyle = FontStyles.Bold;
         _levelBadgeTMP.characterSpacing = 1.5f;
         _levelBadgeTMP.alignment = TextAlignmentOptions.Center;
@@ -245,15 +245,15 @@ public class PlayerProfileUI : MonoBehaviour
 
         _rankTitleTMP = rObj.AddComponent<TextMeshProUGUI>();
         _rankTitleTMP.font = MainMenuManager.GetTacticalFont();
-        _rankTitleTMP.fontSize = 19f;
+        _rankTitleTMP.fontSize = 22f;
         _rankTitleTMP.fontStyle = FontStyles.Bold;
         _rankTitleTMP.characterSpacing = 1.8f;
         _rankTitleTMP.alignment = TextAlignmentOptions.Left;
         _rankTitleTMP.color = Color.white;
         _rankTitleTMP.raycastTarget = false;
         _rankTitleTMP.enableAutoSizing = true;
-        _rankTitleTMP.fontSizeMin = 14f;
-        _rankTitleTMP.fontSizeMax = 20f;
+        _rankTitleTMP.fontSizeMin = 18f;
+        _rankTitleTMP.fontSizeMax = 23f;
 
         // EXP Bar Çerçevesi
         GameObject barBgObj = new GameObject("ExpBarBg", typeof(RectTransform));
@@ -294,7 +294,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         _expBarTMP = barTxtObj.AddComponent<TextMeshProUGUI>();
         _expBarTMP.font = MainMenuManager.GetTacticalFont();
-        _expBarTMP.fontSize = 13f;
+        _expBarTMP.fontSize = 17f;
         _expBarTMP.fontStyle = FontStyles.Bold;
         _expBarTMP.characterSpacing = 1.4f;
         _expBarTMP.alignment = TextAlignmentOptions.Center;
@@ -413,7 +413,7 @@ public class PlayerProfileUI : MonoBehaviour
         }
 
         _hudLevelTMP = lvlObj.GetComponent<TextMeshProUGUI>() ?? lvlObj.AddComponent<TextMeshProUGUI>();
-        _hudLevelTMP.fontSize = 14f;
+        _hudLevelTMP.fontSize = 18f;
         _hudLevelTMP.fontStyle = FontStyles.Bold;
         _hudLevelTMP.alignment = TextAlignmentOptions.Center;
         _hudLevelTMP.color = new Color(1f, 0.85f, 0.2f);
@@ -472,7 +472,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         _hudExpTMP = txtObj.GetComponent<TextMeshProUGUI>();
         if (_hudExpTMP == null) _hudExpTMP = txtObj.AddComponent<TextMeshProUGUI>();
-        _hudExpTMP.fontSize = 12f;
+        _hudExpTMP.fontSize = 16f;
         _hudExpTMP.fontStyle = FontStyles.Bold;
         _hudExpTMP.alignment = TextAlignmentOptions.Center;
         _hudExpTMP.color = Color.white;
@@ -679,7 +679,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         _dossierStatsTMP = sTxtObj.AddComponent<TextMeshProUGUI>();
         _dossierStatsTMP.font = MainMenuManager.GetTacticalFont();
-        _dossierStatsTMP.fontSize = 17f;
+        _dossierStatsTMP.fontSize = 20f;
         _dossierStatsTMP.characterSpacing = 1.3f;
         _dossierStatsTMP.lineSpacing = 6f;
         _dossierStatsTMP.alignment = TextAlignmentOptions.MidlineLeft;
@@ -710,7 +710,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         _dossierPerksTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
         _dossierPerksTMP.font = MainMenuManager.GetTacticalFont();
-        _dossierPerksTMP.fontSize = 17f;
+        _dossierPerksTMP.fontSize = 20f;
         _dossierPerksTMP.characterSpacing = 1.3f;
         _dossierPerksTMP.lineSpacing = 5f;
         _dossierPerksTMP.alignment = TextAlignmentOptions.MidlineLeft;
@@ -752,7 +752,7 @@ public class PlayerProfileUI : MonoBehaviour
         TextMeshProUGUI enTMP = enTxtObj.AddComponent<TextMeshProUGUI>();
         enTMP.font = MainMenuManager.GetTacticalFont();
         enTMP.text = "ÇAĞRI KODUNU DEĞİŞTİR";
-        enTMP.fontSize = 15f;
+        enTMP.fontSize = 19f;
         enTMP.fontStyle = FontStyles.Bold;
         enTMP.characterSpacing = 1.4f;
         enTMP.alignment = TextAlignmentOptions.Center;

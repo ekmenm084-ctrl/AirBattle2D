@@ -305,7 +305,7 @@ public class InventoryUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "<b><color=#00E5FF>DEPOT // ASKERİ ENVANTER VE DONANIM DEPOSU</color></b>\n<size=52%><color=#94A3B8>Kazanılan tüm kalıcı As çipleri, drone hangarı ve filo güç değerlendirmesi</color></size>";
+        titleTMP.text = "<b><color=#00E5FF>DEPOT // ASKERİ ENVANTER VE DONANIM DEPOSU</color></b>\n<size=75%><color=#94A3B8>Kazanılan tüm kalıcı As çipleri, drone hangarı ve filo güç değerlendirmesi</color></size>";
         titleTMP.fontSize = 26f;
         titleTMP.characterSpacing = 2.2f;
         titleTMP.fontStyle = FontStyles.Bold;
@@ -405,7 +405,7 @@ public class InventoryUI : MonoBehaviour
         contentTMP = dObj.AddComponent<TextMeshProUGUI>();
         contentTMP.font = MainMenuManager.GetTacticalFont();
         contentTMP.text = "Yükleniyor...";
-        contentTMP.fontSize = 19f;
+        contentTMP.fontSize = 22f;
         contentTMP.characterSpacing = 1.2f;
         contentTMP.lineSpacing = 3.5f;
         contentTMP.alignment = TextAlignmentOptions.TopLeft;
