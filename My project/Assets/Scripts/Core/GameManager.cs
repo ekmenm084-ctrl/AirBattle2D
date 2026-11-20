@@ -58,6 +58,15 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+        if (Screen.orientation != ScreenOrientation.LandscapeLeft && Screen.orientation != ScreenOrientation.LandscapeRight)
+        {
+            Screen.orientation = ScreenOrientation.AutoRotation;
+        }
     }
 
     private void Start()

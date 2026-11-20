@@ -196,7 +196,7 @@ public class TouchArrowControls : MonoBehaviour
             rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe
             rRt.anchorMax = new Vector2(0f, 0f);
             rRt.pivot = new Vector2(0f, 0f);
-            rRt.anchoredPosition = new Vector2(15f, 15f);
+            rRt.anchoredPosition = new Vector2(35f, 25f);
             rRt.sizeDelta = new Vector2(380f, 220f);
         }
 

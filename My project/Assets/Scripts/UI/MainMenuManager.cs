@@ -23,10 +23,9 @@ public class MainMenuManager : MonoBehaviour
     public static TMP_FontAsset GetTacticalFont()
     {
         if (_cachedTacticalFont != null) return _cachedTacticalFont;
-        _cachedTacticalFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF")
-            ?? Resources.Load<TMP_FontAsset>("Fonts & Materials/Roboto-Bold SDF")
-            ?? Resources.Load<TMP_FontAsset>("Fonts & Materials/Electronic Highway Sign SDF")
-            ?? TMP_Settings.defaultFontAsset;
+        _cachedTacticalFont = TMP_Settings.defaultFontAsset
+            ?? Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF")
+            ?? Resources.Load<TMP_FontAsset>("Fonts & Materials/Oswald Bold SDF");
         return _cachedTacticalFont;
     }
 
@@ -203,29 +202,36 @@ public class MainMenuManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Tablet ve yüksek çözünürlüklü ekranlarda tüm menülerin, yazıların ve butonların
-    /// ideal büyüklükte, ferah ve okunabilir görünmesini sağlayan dinamik ölçekleyici.
+    /// Mobil, tablet ve tüm ekranlarda UI öğelerinin ve butonların taşmasını önleyen,
+    /// yazıları kristal netliğinde (high-DPI) gösteren dinamik Canvas ölçekleyici.
     /// </summary>
     public static void OptimizeCanvasForTablet()
     {
-        Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas == null) return;
-
-        CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
-        if (scaler == null) scaler = canvas.gameObject.AddComponent<CanvasScaler>();
-
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
-
-        float aspect = (float)Screen.width / Mathf.Max(1f, Screen.height);
-        if (aspect < 1f) // Dikey (Portrait)
+        // 1. Ekranı kesin olarak Yatay (Landscape) olarak kilitle ve dikey dönüşü engelle
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = true;
+        Screen.autorotateToLandscapeRight = true;
+        if (Screen.orientation != ScreenOrientation.LandscapeLeft && Screen.orientation != ScreenOrientation.LandscapeRight)
         {
-            scaler.referenceResolution = new Vector2(1080f, 1920f);
+            Screen.orientation = ScreenOrientation.AutoRotation;
         }
-        else // Yatay (Landscape)
+
+        // 2. Sahnedeki tüm Canvas nesnelerine taşmayı engelleyen Expand ölçekleme uygula
+        Canvas[] allCanvases = FindObjectsOfType<Canvas>(true);
+        if (allCanvases == null || allCanvases.Length == 0) return;
+
+        foreach (var canvas in allCanvases)
         {
+            if (canvas == null) continue;
+            CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
+            if (scaler == null) scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+            scaler.dynamicPixelsPerUnit = 3f;
+            scaler.referencePixelsPerUnit = 100f;
         }
     }
 
