@@ -143,44 +143,36 @@ public class LootItem : MonoBehaviour
 
         PlaneHealth health = other.GetComponent<PlaneHealth>();
         PlaneShooter shooter = other.GetComponent<PlaneShooter>();
-        var gameUI = FindObjectOfType<GameUI>();
 
         switch (type)
         {
             case LootType.Health:
                 health?.Heal(35f);
-                gameUI?.ShowWaveAlert("[+] <b>[ SAHRA BAKIM KİTİ ALINDI // GÖVDE ONARILDI (+35 HP) ]</b>", new Color(0.2f, 1f, 0.5f), 1.6f);
                 break;
 
             case LootType.Shield:
                 PlayerUpgradeManager.Instance?.GrantShield(60f);
-                gameUI?.ShowWaveAlert("[KALKAN] <b>[ +60 PLAZMA ENERJİ KALKANI AKTİF ]</b>", new Color(0f, 0.9f, 1f), 1.4f);
                 break;
 
             case LootType.Overdrive:
                 shooter?.ActivateOverdrive(7.0f);
-                gameUI?.ShowWaveAlert("[AŞIRI YÜK] <b>[ 3'LÜ HİPER ATEŞ (7s) ]</b>", new Color(1f, 0.85f, 0.1f), 1.6f);
                 break;
 
             case LootType.Gold:
                 int dropGold = 50;
                 PlayerUpgradeManager.Instance?.AddGold(dropGold);
-                gameUI?.ShowWaveAlert($"[ALTIN] <b>[ +{dropGold} HANGAR ALTINI KAZANILDI ]</b>", new Color(1f, 0.88f, 0.2f), 1.4f);
                 break;
 
             case LootType.BronzeKey:
                 HangarManager.EnsureInstance()?.AddKey(HangarManager.KeyType.Bronze, 1);
-                gameUI?.ShowWaveAlert("[ANAHTAR] <b>[ BRONZ SANDIK ANAHTARI KAZANILDI! ]</b>", new Color(0.85f, 0.55f, 0.25f), 2.5f);
                 break;
 
             case LootType.SilverKey:
                 HangarManager.EnsureInstance()?.AddKey(HangarManager.KeyType.Silver, 1);
-                gameUI?.ShowWaveAlert("[ANAHTAR] <b>[ GÜMÜŞ CEPHANE ANAHTARI KAZANILDI! ]</b>", new Color(0.35f, 0.80f, 1f), 2.8f);
                 break;
 
             case LootType.GoldKey:
                 HangarManager.EnsureInstance()?.AddKey(HangarManager.KeyType.Gold, 1);
-                gameUI?.ShowWaveAlert("[EFSANEVİ] <b>[ ALTIN AS ANAHTARI DÜŞTÜ! ]</b>", new Color(1f, 0.85f, 0.15f), 3.2f);
                 CameraShake.Shake(0.3f, 0.12f);
                 break;
         }

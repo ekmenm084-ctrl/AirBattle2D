@@ -234,30 +234,8 @@ public class CombatComboManager : MonoBehaviour
             AudioManager.Instance?.PlayGraze(currentCombo);
         }
 
-        _pendingGrazeTextCount++;
-        _pendingGrazeGold += grazeGold;
-
-        if (!duringDodge && Time.time >= _lastGrazeTextTime + 0.22f)
-        {
-            _lastGrazeTextTime = Time.time;
-            string label = (_pendingGrazeTextCount > 1)
-                ? $"SIYIRMA x{_pendingGrazeTextCount}! +{_pendingGrazeGold}G"
-                : $"SIYIRMA! +{_pendingGrazeGold}G";
-            _pendingGrazeTextCount = 0;
-            _pendingGrazeGold = 0;
-
-            DamageNumberManager.EnsureInstance()?.SpawnCustomText(
-                playerPos + new Vector3(0f, 0.72f, 0f),
-                label,
-                new Color(0.28f, 0.96f, 1f),
-                0.98f
-            );
-        }
-        else if (duringDodge)
-        {
-            _pendingGrazeTextCount = 0;
-            _pendingGrazeGold = 0;
-        }
+        _pendingGrazeTextCount = 0;
+        _pendingGrazeGold = 0;
     }
 
     public void NotifyPlayerHullDamaged()
@@ -270,17 +248,6 @@ public class CombatComboManager : MonoBehaviour
 
         waveTookDamage = true;
         noDamageWavesStreak = 0;
-
-        if (currentCombo >= 3 && Time.time >= _lastComboLostTextTime + 0.6f)
-        {
-            _lastComboLostTextTime = Time.time;
-            DamageNumberManager.EnsureInstance()?.SpawnCustomText(
-                GetPlayerPosition() + new Vector3(0f, 0.85f, 0f),
-                "COMBO BOZULDU!",
-                new Color(1f, 0.36f, 0.24f),
-                1.08f
-            );
-        }
 
         currentCombo = 0;
         comboTimer = 0f;

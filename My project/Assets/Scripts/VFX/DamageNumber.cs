@@ -58,9 +58,9 @@ public class DamageNumber : MonoBehaviour
 
         if (isPlayerDamage)
         {
-            _animCoroutine = StartCoroutine(AnimateLabelRoutine(
-                "-" + displayVal, 3.2f, FontStyles.Bold,
-                new Color(1f, 0.28f, 0.28f, 1f), duration, baseScale, floatSpeedY, 1.25f));
+            // Savaşta oyuncunun kendi uçağında beliren hasar yazıları kaldırılmıştır (can barı ve kıvılcım yeterlidir)
+            gameObject.SetActive(false);
+            return;
         }
         else if (isCrit)
         {

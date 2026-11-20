@@ -711,26 +711,9 @@ public class GameUI : MonoBehaviour
 
     private void UpdateAirspaceBanner()
     {
-        if (_airspaceBannerObj == null) return;
-
-        AirspaceHazardDirector dir = AirspaceHazardDirector.Instance;
-        bool shouldShow = (dir != null && dir.HasActiveBanner &&
-            (GameManager.Instance == null || (!GameManager.Instance.IsGameEnded && GameManager.Instance.CurrentMode != GameManager.GameMode.TwoPlayer)));
-
-        if (_airspaceBannerObj.activeSelf != shouldShow)
-            _airspaceBannerObj.SetActive(shouldShow);
-
-        if (!shouldShow) return;
-
-        if (_airspaceBannerTMP != null)
+        if (_airspaceBannerObj != null && _airspaceBannerObj.activeSelf)
         {
-            _airspaceBannerTMP.text = dir.ActiveBannerText;
-            _airspaceBannerTMP.color = dir.ActiveBannerColor;
-        }
-        if (_airspaceBannerOutline != null)
-        {
-            Color c = dir.ActiveBannerColor;
-            _airspaceBannerOutline.effectColor = new Color(c.r, c.g, c.b, 0.85f);
+            _airspaceBannerObj.SetActive(false);
         }
     }
 
@@ -1036,196 +1019,62 @@ public class GameUI : MonoBehaviour
 
     public void ShowWaveAlert(string message, Color color, float duration = 2.0f)
     {
-        MainMenuManager menu = FindObjectOfType<MainMenuManager>();
-        if (menu != null && menu.mainPanel != null && menu.mainPanel.activeInHierarchy)
+        // Savaş esnasında ekranda dikkat dağıtan veya görüşü kapatan banner ve uyarı metinleri gösterilmez.
+        // Sadece Kombo rozeti ve sahaya düşen eşyalar (loot) görünür.
+        if (_waveAlertObj != null && _waveAlertObj.activeSelf)
         {
-            if (_waveAlertObj != null) _waveAlertObj.SetActive(false);
-            return;
+            _waveAlertObj.SetActive(false);
         }
-
         if (_modeIntroObj != null && _modeIntroObj.activeSelf)
         {
             _modeIntroObj.SetActive(false);
         }
-
-        if (_waveAlertObj == null || _waveAlertTMP == null)
-            SetupWaveAlertObject();
-
-        if (_alertCoroutine != null)
-            StopCoroutine(_alertCoroutine);
-
-        _alertCoroutine = StartCoroutine(WaveAlertRoutine(message, color, duration));
     }
 
     private IEnumerator WaveAlertRoutine(string message, Color color, float duration)
     {
-        _waveAlertObj.SetActive(true);
-        _waveAlertTMP.text = message;
-        _waveAlertTMP.color = color;
-
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            MainMenuManager menu = FindObjectOfType<MainMenuManager>();
-            if (menu != null && menu.mainPanel != null && menu.mainPanel.activeInHierarchy)
-            {
-                break;
-            }
-
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        _waveAlertObj.SetActive(false);
+        if (_waveAlertObj != null) _waveAlertObj.SetActive(false);
         _alertCoroutine = null;
+        yield break;
     }
 
     /// <summary>
-    /// Boss Rush modunda veya Final Boss yaklaşırken ekranı kırmızı alarm (Red Zone) ve sarsıntı ile kaplar.
+    /// Boss Rush modunda veya Final Boss yaklaşırken sesli uyarı ve hafif sarsıntı verir.
+    /// Ekranda görüşü kapatan kırmızı yazı açılmaz.
     /// </summary>
     public void TriggerRedZoneWarning(float duration = 2.8f, System.Action onComplete = null)
     {
-        if (_redZoneOverlayObj == null || _redZoneAlertTMP == null)
-            SetupRedZoneOverlay();
-
-        if (_redZoneCoroutine != null)
-            StopCoroutine(_redZoneCoroutine);
-
-        _redZoneCoroutine = StartCoroutine(RedZoneRoutine(duration, onComplete));
+        AudioManager.Instance?.PlayWarningAlarm();
+        CameraShake.Shake(0.20f, 0.40f);
+        if (_redZoneOverlayObj != null && _redZoneOverlayObj.activeSelf)
+            _redZoneOverlayObj.SetActive(false);
+        onComplete?.Invoke();
     }
 
     private IEnumerator RedZoneRoutine(float duration, System.Action onComplete)
     {
-        if (_redZoneOverlayObj == null) yield break;
-
-        _redZoneOverlayObj.SetActive(true);
-        _redZoneOverlayObj.transform.SetAsLastSibling();
-
-        if (_redZoneAlertTMP != null)
-        {
-            _redZoneAlertTMP.text = "[!] <color=#FFE600><b>[ RED ZONE: KRİTİK TEHLİKE ]</b></color> [!]\n<size=75%><color=#FF2222>FİNAL BOSS HAVA SAHASINA GİRİYOR!</color></size>\n<size=52%><color=#FFFFFF>NÜKLEER AS TESPİT EDİLDİ - DİKKAT!</color></size>";
-        }
-
-        AudioManager.Instance?.PlayWarningAlarm();
-        // Alarm süresince ekrana sürekli tok sarsıntı ver
-        CameraShake.Shake(0.30f, duration);
-
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-
-            // Nabız atan derin kırmızı ekran efekti
-            float pulse = Mathf.PingPong(elapsed * 4.5f, 1f);
-            float alpha = Mathf.Lerp(0.12f, 0.44f, pulse);
-            if (_redZoneBgImage != null)
-                _redZoneBgImage.color = new Color(0.95f, 0.05f, 0.05f, alpha);
-
-            // Uyarı metni nabız parlaklığı
-            if (_redZoneAlertTMP != null)
-            {
-                float textAlpha = Mathf.Lerp(0.65f, 1f, pulse);
-                _redZoneAlertTMP.alpha = textAlpha;
-            }
-
-            yield return null;
-        }
-
-        // Yumuşak kayboluş (Fade out)
-        float fadeOutTime = 0.40f;
-        float fadeElapsed = 0f;
-        Color initialColor = (_redZoneBgImage != null) ? _redZoneBgImage.color : Color.clear;
-        while (fadeElapsed < fadeOutTime)
-        {
-            fadeElapsed += Time.unscaledDeltaTime;
-            float t = fadeElapsed / fadeOutTime;
-            if (_redZoneBgImage != null)
-                _redZoneBgImage.color = new Color(initialColor.r, initialColor.g, initialColor.b, Mathf.Lerp(initialColor.a, 0f, t));
-            if (_redZoneAlertTMP != null)
-                _redZoneAlertTMP.alpha = Mathf.Lerp(1f, 0f, t);
-            yield return null;
-        }
-
-        _redZoneOverlayObj.SetActive(false);
+        if (_redZoneOverlayObj != null) _redZoneOverlayObj.SetActive(false);
         _redZoneCoroutine = null;
         onComplete?.Invoke();
+        yield break;
     }
 
     /// <summary>
-    /// Savaşa başlamadan önce seçilen oyun modunu ve hedeflerini tanıtan askeri brifing kartı gösterir.
+    /// Savaşa başlarken ekranın ortasını kapatan büyük mod tanıtım kartı açılmaz; görüş daima açık ve berraktır.
     /// </summary>
     public void ShowModeIntroBanner(string title, string subtitle, string description, Color themeColor, float duration = 1.6f)
     {
-        if (_modeIntroObj == null)
-            SetupModeIntroBanner();
-
-        if (_modeIntroCoroutine != null)
-            StopCoroutine(_modeIntroCoroutine);
-
-        _modeIntroCoroutine = StartCoroutine(ModeIntroBannerRoutine(title, subtitle, description, themeColor, duration));
+        if (_modeIntroObj != null && _modeIntroObj.activeSelf)
+        {
+            _modeIntroObj.SetActive(false);
+        }
     }
 
     private IEnumerator ModeIntroBannerRoutine(string title, string subtitle, string description, Color themeColor, float duration)
     {
-        if (_modeIntroObj == null) yield break;
-
-        _modeIntroObj.SetActive(true);
-        _modeIntroObj.transform.SetAsLastSibling();
-
-        if (_modeIntroTitleTMP != null)
-        {
-            _modeIntroTitleTMP.text = title;
-            _modeIntroTitleTMP.color = themeColor;
-        }
-
-        if (_modeIntroSubtitleTMP != null)
-        {
-            _modeIntroSubtitleTMP.text = subtitle;
-            _modeIntroSubtitleTMP.color = Color.white;
-        }
-
-        if (_modeIntroOutline != null)
-        {
-            _modeIntroOutline.effectColor = themeColor;
-        }
-
-        // Telsiz / uyarı sinyali ile bildirim
-        AudioManager.Instance?.PlayWarningAlarm();
-
-        // Yumuşak Beliriş (Fade In)
-        float fadeIn = 0.20f;
-        float elapsed = 0f;
-        while (elapsed < fadeIn)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            if (_modeIntroCanvasGroup != null)
-                _modeIntroCanvasGroup.alpha = Mathf.Clamp01(elapsed / fadeIn);
-            yield return null;
-        }
-        if (_modeIntroCanvasGroup != null) _modeIntroCanvasGroup.alpha = 1f;
-
-        // Ekranda Kalma Süresi (Kompakt 0.9 sn)
-        float stayTime = Mathf.Max(0.8f, duration - 0.5f);
-        elapsed = 0f;
-        while (elapsed < stayTime)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        // Yumuşak Kayboluş (Fade Out)
-        float fadeOut = 0.25f;
-        elapsed = 0f;
-        while (elapsed < fadeOut)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            if (_modeIntroCanvasGroup != null)
-                _modeIntroCanvasGroup.alpha = Mathf.Clamp01(1f - (elapsed / fadeOut));
-            yield return null;
-        }
-
-        _modeIntroObj.SetActive(false);
+        if (_modeIntroObj != null) _modeIntroObj.SetActive(false);
         _modeIntroCoroutine = null;
+        yield break;
     }
 
 
@@ -1297,6 +1146,9 @@ public class GameUI : MonoBehaviour
         {
             _goldHUDObj.SetActive(true);
         }
+
+        if (_waveAlertObj != null && _waveAlertObj.activeSelf) _waveAlertObj.SetActive(false);
+        if (_modeIntroObj != null && _modeIntroObj.activeSelf) _modeIntroObj.SetActive(false);
 
         UpdateUltiAndManeuverVisuals();
         UpdateComboHUD();

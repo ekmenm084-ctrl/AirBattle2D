@@ -257,8 +257,6 @@ public class PlayerUpgradeManager : MonoBehaviour
         if (_shieldVisualObj != null)
             _shieldVisualObj.SetActive(false);
 
-        var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("[!] KALKAN PARÇALANDI!", new Color(1f, 0.3f, 0.2f), 1.5f);
         RadioChatterManager.Instance?.PlayShieldDown();
     }
 
@@ -548,7 +546,6 @@ public class PlayerUpgradeManager : MonoBehaviour
 
         var gameUI = FindObjectOfType<GameUI>();
         gameUI?.UpdateHealthBars();
-        gameUI?.ShowWaveAlert(upgradeTitle, new Color(0.2f, 1f, 0.8f), 2.5f);
     }
 }
 

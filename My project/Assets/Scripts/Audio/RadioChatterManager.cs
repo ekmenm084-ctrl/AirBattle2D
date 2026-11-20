@@ -289,74 +289,19 @@ public class RadioChatterManager : MonoBehaviour
             _borderImage.color = new Color(tx.speakerColor.r, tx.speakerColor.g, tx.speakerColor.b, 0.85f);
         }
 
-        // 4. Panel Açılış Animasyonu (Yumuşak Fade-In ve Hafif Pop Efekti)
-        if (_radioPanelObj != null) _radioPanelObj.SetActive(true);
-        float animIn = 0.12f;
-        float elapsed = 0f;
-        RectTransform rt = _radioPanelObj != null ? _radioPanelObj.GetComponent<RectTransform>() : null;
-        Vector2 basePos = new Vector2(0f, -145f);
+        // 4. Panel ekranda gösterilmez (savaşta görüş daima açık ve berraktır)
+        if (_radioPanelObj != null) _radioPanelObj.SetActive(false);
 
-        while (elapsed < animIn)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / animIn);
-            if (_radioCanvasGroup != null) _radioCanvasGroup.alpha = t;
-            if (rt != null)
-            {
-                rt.anchoredPosition = Vector2.Lerp(basePos + new Vector2(0f, 10f), basePos, t);
-                rt.localScale = Vector3.Lerp(new Vector3(0.94f, 0.94f, 1f), Vector3.one, t);
-            }
-            yield return null;
-        }
-
-        if (_radioCanvasGroup != null) _radioCanvasGroup.alpha = 1f;
-        if (rt != null)
-        {
-            rt.anchoredPosition = basePos;
-            rt.localScale = Vector3.one;
-        }
-
-        // 5. Ses Çalarken Dalga Formu ve TX Yanıp Sönme Animasyonu (Kısa & Öz: maks 2 sn)
+        // 5. Ses Çalarken bekleme (arka plan telsiz sesi çalar, UI açılmaz)
         float clipDuration = (tx.clip != null) ? Mathf.Min(tx.clip.length, 2.0f) : 1.8f;
         float playElapsed = 0f;
-        int frameIdx = 0;
-        float waveTimer = 0f;
 
         while (playElapsed < clipDuration)
         {
             playElapsed += Time.unscaledDeltaTime;
-            waveTimer += Time.unscaledDeltaTime;
-
-            if (waveTimer >= 0.08f)
-            {
-                waveTimer = 0f;
-                frameIdx = (frameIdx + 1) % WaveformFrames.Length;
-                if (_waveformTMP != null)
-                {
-                    string bars = WaveformFrames[frameIdx] + WaveformFrames[(frameIdx + 2) % WaveformFrames.Length];
-                    _waveformTMP.text = $"<color=#{hex}>{bars}</color>";
-                }
-            }
-
             yield return null;
         }
 
-        // 6. Çok uzatmadan hızlıca kapat (yalnızca 0.12s bekleme)
-        if (_waveformTMP != null) _waveformTMP.text = "<color=#546E7A>---</color>";
-        yield return new WaitForSecondsRealtime(0.12f);
-
-        // 7. Panel Kapanış Animasyonu (Hızlı Fade-Out)
-        float animOut = 0.12f;
-        elapsed = 0f;
-        while (elapsed < animOut)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = 1f - Mathf.Clamp01(elapsed / animOut);
-            if (_radioCanvasGroup != null) _radioCanvasGroup.alpha = t;
-            yield return null;
-        }
-
-        if (_radioCanvasGroup != null) _radioCanvasGroup.alpha = 0f;
         if (_radioPanelObj != null) _radioPanelObj.SetActive(false);
 
         // 8. Savaş Müziğini Eski Seviyesine Döndür
