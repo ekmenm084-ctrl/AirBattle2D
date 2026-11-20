@@ -6,10 +6,11 @@ using TMPro;
 
 /// <summary>
 /// Askeri Havacılık Telsiz & AWACS Seslendirme Yöneticisi (Military Radio Chatter & Tactical Voiceover).
-/// - AWACS Kule (Hava Erken İhbar Merkezi) ve Kartal-1 (Avcı Pilotu) telsiz anonsları.
-/// - Gerçekçi VHF/UHF telsiz filtreleri, PTT mandal klikleri, roger bipleri ve arka plan paraziti.
-/// - Telsiz devreye girdiğinde savaş müziğini otomatik kısan Audio Ducking sistemi.
-/// - Ekranda şık taktiksel askeri telsiz kutusu, yanıp sönen [● TX] sinyali ve dalga formu animasyonu.
+/// - Yalnızca 2 kritik durumda devreye girer:
+///   1. İlk görev girişi / kalkışta (Takeoff clearance).
+///   2. İt dalaşı / dalga modunda her 5 düşmanda bir gelen Boss savaş jeti tanıtımında.
+/// - Kısa, tok, net, erkeksi komutan/pilot ses tonu ve gerçekçi RF paraziti.
+/// - Audio Ducking: Telsiz konuşurken arka plan müziğini yumuşakça kısar ve hemen geri yükler.
 /// </summary>
 public class RadioChatterManager : MonoBehaviour
 {
@@ -43,12 +44,8 @@ public class RadioChatterManager : MonoBehaviour
     private AudioSource _audioSource;
     private readonly Dictionary<string, RadioTransmission> _transmissionMap = new Dictionary<string, RadioTransmission>();
 
-    // Cooldown sayaçları (Spam engelleme)
-    private float _lastKillVoiceTime = -999f;
-    private float _lastHullVoiceTime = -999f;
-    private float _lastStreakVoiceTime = -999f;
     private float _lastBossVoiceTime = -999f;
-    private int _lastKillIndex = -1;
+    private bool _hasPlayedTakeoffThisMatch = false;
 
     // HUD UI Elemanları
     private GameObject _radioPanelObj;
@@ -119,52 +116,32 @@ public class RadioChatterManager : MonoBehaviour
 
     private void RegisterRadioTransmissions()
     {
-        // 1. AWACS & KULE KONTROL (Tok & Otoriter Askeri Komutan - VHF 121.5 MHz)
-        AddLine("radio_takeoff", "KULE KONTROL", "Kartal-1, kalkış serbest. Hava sahasına intikal edin, av serbest!",
+        _transmissionMap.Clear();
+
+        // 1. İLK GİRİŞ / KALKIŞ (Kısa & Net)
+        AddLine("radio_takeoff", "KULE KONTROL", "Kartal-1, kalkış serbest. Av serbest!",
             new Color(0f, 0.92f, 1f), Priority.High);
 
-        AddLine("radio_boss_warning", "AWACS KONTROL", "DİKKAT! Radarda devasa düşman imzası! Ağır bombardıman yaklaşıyor!",
-            new Color(1f, 0.22f, 0.22f), Priority.Critical);
+        // 2. HER 5 DÜŞMANDAN SONRA GELEN BOSS JETLERİ TANITIMI
+        // Tu-22M Stratejik Bombardıman (Dalga 5 / 25 / 45...)
+        AddLine("radio_boss_tu22", "AWACS KONTROL", "DİKKAT! Ağır Tu-22M Bombardıman sahada, savunma pozisyonu al!",
+            new Color(1f, 0.35f, 0.15f), Priority.Critical);
 
-        AddLine("radio_missile_warning", "AWACS KONTROL", "FÜZE KİLİDİ! Üzerine füze geliyor, kaçış manevrası yap!",
-            new Color(1f, 0.28f, 0.28f), Priority.Critical);
+        // Su-35 Flanker-E Elit Lider (Dalga 10 / 30 / 50...)
+        AddLine("radio_boss_su35", "AWACS KONTROL", "DİKKAT! Elit Su-35 Flanker sahada, manevraya geç!",
+            new Color(1f, 0.45f, 0.10f), Priority.Critical);
 
-        AddLine("radio_squadron_clear", "AWACS KONTROL", "Düşman filosu tamamen imha edildi! Hava sahası temizlendi!",
-            new Color(0.2f, 1f, 0.55f), Priority.High);
+        // S-37 Berkut Süpersonik Nişancı (Dalga 15 / 35 / 55...)
+        AddLine("radio_boss_s37", "AWACS KONTROL", "DİKKAT! Süpersonik Berkut yaklaşıyor, füzelerine dikkat et!",
+            new Color(0.95f, 0.20f, 0.40f), Priority.Critical);
 
-        AddLine("radio_hull_warning", "AWACS KONTROL", "DİKKAT! Kritik gövde hasarı! Uçak parçalanıyor, irtifayı koru!",
-            new Color(1f, 0.32f, 0.32f), Priority.Critical);
+        // J-20 Hayalet Amiral Gemisi (Dalga 20 / 40 / 60...)
+        AddLine("radio_boss_j20", "AWACS KONTROL", "DİKKAT! Düşman J-20 Amiral Gemisi sahada! Tam güçle vur!",
+            new Color(1f, 0.18f, 0.18f), Priority.Critical);
 
-        AddLine("radio_hazard_storm", "AWACS KONTROL", "DİKKAT! Ağır manyetik fırtına! Radar kilitlendi, gözle temas kur!",
-            new Color(1f, 0.72f, 0.15f), Priority.High);
-
-        // 2. KARTAL-1 AVCI PİLOTU (Sert & Agresif Muharebe Pilotu - UHF 243.0 MHz)
-        AddLine("radio_kill_1", "KARTAL-1", "Hedef vuruldu! Düşman jeti imha edildi!",
-            new Color(1f, 0.82f, 0.2f), Priority.Normal);
-
-        AddLine("radio_kill_2", "KARTAL-1", "Fox Two! Düşman havada parçalandı!",
-            new Color(1f, 0.82f, 0.2f), Priority.Normal);
-
-        AddLine("radio_kill_3", "KARTAL-1", "Splash One! Düşman düştü, sonraki hedefe geçiyorum!",
-            new Color(1f, 0.82f, 0.2f), Priority.Normal);
-
-        AddLine("radio_streak_triple", "KARTAL-1", "Üçte üç! Hepsini tek tek indireceğim!",
-            new Color(1f, 0.65f, 0.15f), Priority.Normal);
-
-        AddLine("radio_streak_ace", "KARTAL-1", "Gökyüzünün ası! Kimse karşımda duramaz!",
-            new Color(1f, 0.85f, 0.05f), Priority.High);
-
-        AddLine("radio_overdrive", "KARTAL-1", "Tam itki devrede! Son sürat hücum!",
-            new Color(0.2f, 0.85f, 1f), Priority.High);
-
-        AddLine("radio_shield_down", "KARTAL-1", "Kalkan parçalandı! İt dalaşına giriyorum!",
-            new Color(1f, 0.45f, 0.45f), Priority.High);
-
-        AddLine("radio_crate_loot", "KARTAL-1", "Mühimmat sandığı alındı, silahlar dolu!",
-            new Color(0.35f, 0.95f, 0.45f), Priority.Normal);
-
-        AddLine("radio_boss_down", "KARTAL-1", "Amiral gemisi alevler içinde düşüyor! Zafer bizim!",
-            new Color(1f, 0.90f, 0.15f), Priority.High);
+        // Genel / Yedek Boss Çağrısı
+        AddLine("radio_boss_warning", "AWACS KONTROL", "DİKKAT! Ağır Boss jeti yaklaşıyor, savunma pozisyonu al!",
+            new Color(1f, 0.25f, 0.25f), Priority.Critical);
     }
 
     private void AddLine(string id, string speaker, string subtitle, Color color, Priority prio)
@@ -189,16 +166,6 @@ public class RadioChatterManager : MonoBehaviour
         if (!isEnabled || (AudioManager.Instance != null && AudioManager.Instance.isMuted)) return false;
         if (!_transmissionMap.TryGetValue(id, out RadioTransmission tx)) return false;
 
-        // Halihazırda oynayan telsiz varsa öncelik kontrolü yap
-        if (_activeRadioRoutine != null && !force)
-        {
-            if (tx.priority < Priority.Critical)
-            {
-                // Kritik olmayan mesajlar çalmakta olan bir yayını kesmez
-                return false;
-            }
-        }
-
         if (_activeRadioRoutine != null)
         {
             StopCoroutine(_activeRadioRoutine);
@@ -209,91 +176,79 @@ public class RadioChatterManager : MonoBehaviour
         return true;
     }
 
-    // ==========================================
-    // ÖZEL TETİKLEYİCİ METOTLAR (Oynanış Kancaları)
-    // ==========================================
+    // ========================================================
+    // SADECE GİRİŞ VE HER 5 DÜŞMANDAN SONRA GELEN BOSS TETİKLEYİCİLERİ
+    // ========================================================
 
+    /// <summary>
+    /// Yalnızca oyun ilk açıldığında / kalkış anında 1 kez çalar.
+    /// </summary>
     public void PlayTakeoff()
     {
+        if (_hasPlayedTakeoffThisMatch) return;
+        _hasPlayedTakeoffThisMatch = true;
         PlayTransmission("radio_takeoff", force: true);
+    }
+
+    /// <summary>
+    /// İt dalaşında her 5 düşmanda bir gelen Boss'u modeline göre tanıtır.
+    /// </summary>
+    public void PlayBossIntroduction(AIController.EnemyJetModel model, int waveIndex)
+    {
+        if (Time.time - _lastBossVoiceTime < 14.0f) return;
+        _lastBossVoiceTime = Time.time;
+
+        string targetId = model switch
+        {
+            AIController.EnemyJetModel.Tu22_Bomber     => "radio_boss_tu22",
+            AIController.EnemyJetModel.Su35_Flanker    => "radio_boss_su35",
+            AIController.EnemyJetModel.S37_Berkut      => "radio_boss_s37",
+            AIController.EnemyJetModel.J20_Dreadnought => "radio_boss_j20",
+            _                                          => "radio_boss_warning"
+        };
+
+        PlayTransmission(targetId, force: true);
     }
 
     public void PlayBossWarning()
     {
-        if (Time.time - _lastBossVoiceTime < 20.0f) return;
+        if (Time.time - _lastBossVoiceTime < 14.0f) return;
         _lastBossVoiceTime = Time.time;
         PlayTransmission("radio_boss_warning", force: true);
     }
 
-    public void PlayBossDown()
+    /// <summary>
+    /// Yeni maç başladığında kalkış bayrağını sıfırlar.
+    /// </summary>
+    public void ResetMatchState()
     {
-        PlayTransmission("radio_boss_down", force: true);
-    }
-
-    public void PlayMissileWarning()
-    {
-        PlayTransmission("radio_missile_warning", force: true);
-    }
-
-    public void PlaySquadronClear()
-    {
-        PlayTransmission("radio_squadron_clear", force: true);
-    }
-
-    public void PlayHullWarning()
-    {
-        if (Time.time - _lastHullVoiceTime < 16.0f) return;
-        _lastHullVoiceTime = Time.time;
-        PlayTransmission("radio_hull_warning", force: true);
-    }
-
-    public void PlayAirKill()
-    {
-        if (Time.time - _lastKillVoiceTime < 4.2f) return;
-        _lastKillVoiceTime = Time.time;
-
-        // 3 farklı vuruş cümlesinden birini sırayla seç
-        int nextIdx = Random.Range(1, 4);
-        if (nextIdx == _lastKillIndex) nextIdx = (nextIdx % 3) + 1;
-        _lastKillIndex = nextIdx;
-
-        PlayTransmission($"radio_kill_{nextIdx}");
-    }
-
-    public void PlayStreak(int streakCount)
-    {
-        if (Time.time - _lastStreakVoiceTime < 5.0f) return;
-        _lastStreakVoiceTime = Time.time;
-
-        if (streakCount >= 5)
+        _hasPlayedTakeoffThisMatch = false;
+        _lastBossVoiceTime = -999f;
+        if (_activeRadioRoutine != null)
         {
-            PlayTransmission("radio_streak_ace", force: true);
+            StopCoroutine(_activeRadioRoutine);
+            _activeRadioRoutine = null;
         }
-        else if (streakCount >= 3)
+        if (_radioPanelObj != null)
         {
-            PlayTransmission("radio_streak_triple");
+            _radioPanelObj.SetActive(false);
         }
+        AudioManager.Instance?.RestoreMusic(0.1f);
     }
 
-    public void PlayOverdrive()
-    {
-        PlayTransmission("radio_overdrive", force: true);
-    }
-
-    public void PlayShieldDown()
-    {
-        PlayTransmission("radio_shield_down", force: true);
-    }
-
-    public void PlayCrateLoot()
-    {
-        PlayTransmission("radio_crate_loot");
-    }
-
-    public void PlayHazardStorm()
-    {
-        PlayTransmission("radio_hazard_storm", force: true);
-    }
+    // ========================================================
+    // DİĞER DURUMLARDA TELSİZ DEVREYE GİRMEZ (SESSİZ - NO-OP)
+    // ========================================================
+    public void PlayAirKill() { }
+    public void PlayStreak(int streakCount) { }
+    public void PlayBossDown() { }
+    public void PlayMissileWarning() { }
+    public void PlaySquadronClear() { }
+    public void PlayHullWarning() { }
+    public void PlayOverdrive() { }
+    public void PlayShieldDown() { }
+    public void PlayCrateLoot() { }
+    public void PlayHazardStorm() { }
 
     // ==========================================
     // TELSİZ SEKANS KORUTİNİ & HUD GÖRSELİ
@@ -304,7 +259,7 @@ public class RadioChatterManager : MonoBehaviour
         EnsureHUDPanel();
 
         // 1. Audio Ducking (Arka plan savaş müziğini %35 seviyesine kıs)
-        AudioManager.Instance?.DuckMusic(0.35f, 0.15f);
+        AudioManager.Instance?.DuckMusic(0.35f, 0.12f);
 
         // 2. Ses Dosyasını Başlat
         if (tx.clip != null && _audioSource != null)
@@ -317,7 +272,7 @@ public class RadioChatterManager : MonoBehaviour
 
         // 3. HUD Kutusunu Doldur
         string hex = ColorUtility.ToHtmlStringRGB(tx.speakerColor);
-        string channel = tx.speaker.Contains("AWACS") ? "VHF 121.5 MHz" : "UHF 243.0 MHz";
+        string channel = tx.speaker.Contains("AWACS") ? "VHF 121.5 MHz" : "VHF 118.1 MHz";
         
         if (_headerTMP != null)
         {
@@ -336,7 +291,7 @@ public class RadioChatterManager : MonoBehaviour
 
         // 4. Panel Açılış Animasyonu (Yumuşak Fade-In ve Hafif Pop Efekti)
         if (_radioPanelObj != null) _radioPanelObj.SetActive(true);
-        float animIn = 0.15f;
+        float animIn = 0.12f;
         float elapsed = 0f;
         RectTransform rt = _radioPanelObj != null ? _radioPanelObj.GetComponent<RectTransform>() : null;
         Vector2 basePos = new Vector2(0f, -145f);
@@ -348,8 +303,8 @@ public class RadioChatterManager : MonoBehaviour
             if (_radioCanvasGroup != null) _radioCanvasGroup.alpha = t;
             if (rt != null)
             {
-                rt.anchoredPosition = Vector2.Lerp(basePos + new Vector2(0f, 12f), basePos, t);
-                rt.localScale = Vector3.Lerp(new Vector3(0.92f, 0.92f, 1f), Vector3.one, t);
+                rt.anchoredPosition = Vector2.Lerp(basePos + new Vector2(0f, 10f), basePos, t);
+                rt.localScale = Vector3.Lerp(new Vector3(0.94f, 0.94f, 1f), Vector3.one, t);
             }
             yield return null;
         }
@@ -362,7 +317,7 @@ public class RadioChatterManager : MonoBehaviour
         }
 
         // 5. Ses Çalarken Dalga Formu ve TX Yanıp Sönme Animasyonu
-        float clipDuration = (tx.clip != null) ? tx.clip.length : 3.5f;
+        float clipDuration = (tx.clip != null) ? tx.clip.length : 3.0f;
         float playElapsed = 0f;
         int frameIdx = 0;
         float waveTimer = 0f;
@@ -386,12 +341,12 @@ public class RadioChatterManager : MonoBehaviour
             yield return null;
         }
 
-        // 6. Cümle bittikten sonra oyuncunun okuması için kısa bekleme (0.45s)
+        // 6. Çok uzatmadan hızlıca kapat (yalnızca 0.20s bekleme)
         if (_waveformTMP != null) _waveformTMP.text = "<color=#546E7A>---</color>";
-        yield return new WaitForSecondsRealtime(0.45f);
+        yield return new WaitForSecondsRealtime(0.20f);
 
         // 7. Panel Kapanış Animasyonu (Fade-Out)
-        float animOut = 0.22f;
+        float animOut = 0.18f;
         elapsed = 0f;
         while (elapsed < animOut)
         {
@@ -405,7 +360,7 @@ public class RadioChatterManager : MonoBehaviour
         if (_radioPanelObj != null) _radioPanelObj.SetActive(false);
 
         // 8. Savaş Müziğini Eski Seviyesine Döndür
-        AudioManager.Instance?.RestoreMusic(0.35f);
+        AudioManager.Instance?.RestoreMusic(0.25f);
 
         _activeRadioRoutine = null;
     }

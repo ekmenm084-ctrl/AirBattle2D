@@ -117,7 +117,7 @@ public class GameManager : MonoBehaviour
 
         // Arka plan savaş müziğini ve ses ayar butonunu başlat
         AudioManager.EnsureInstance();
-        RadioChatterManager.EnsureInstance();
+        RadioChatterManager.EnsureInstance()?.ResetMatchState();
         AudioSettingsUI.EnsureInstance();
 
         FindPlanesIfNull();
@@ -449,7 +449,8 @@ public class GameManager : MonoBehaviour
         // Boss dalgası ise bildirim veya tanıtım sinematiğini oynat
         if (isBoss)
         {
-            RadioChatterManager.Instance?.PlayBossWarning();
+            var model = ai != null ? ai.currentModel : AIController.EnemyJetModel.Tu22_Bomber;
+            RadioChatterManager.Instance?.PlayBossIntroduction(model, waveIndex);
 
             if (CurrentMode == GameMode.Hardcore)
             {
@@ -991,6 +992,7 @@ public class GameManager : MonoBehaviour
         EnemyFormationManager.Instance?.StopDirector();
         AirspaceHazardDirector.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
+        RadioChatterManager.Instance?.ResetMatchState();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
@@ -1517,6 +1519,7 @@ public class GameManager : MonoBehaviour
         EnemyFormationManager.Instance?.StopDirector();
         AirspaceHazardDirector.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
+        RadioChatterManager.Instance?.ResetMatchState();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
@@ -1532,6 +1535,7 @@ public class GameManager : MonoBehaviour
         EnemyFormationManager.Instance?.StopDirector();
         AirspaceHazardDirector.Instance?.StopDirector();
         DroneManager.EnsureInstance()?.ClearDrones();
+        RadioChatterManager.Instance?.ResetMatchState();
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
