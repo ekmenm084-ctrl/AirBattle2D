@@ -119,51 +119,51 @@ public class RadioChatterManager : MonoBehaviour
 
     private void RegisterRadioTransmissions()
     {
-        // 1. AWACS & KULE KONTROL (Emel - VHF 121.5 MHz)
-        AddLine("radio_takeoff", "AWACS KULE", "Kartal-1, kalkış onaylandı. Hava sahası emrinizde, iyi avlar!",
+        // 1. AWACS & KULE KONTROL (Tok & Otoriter Askeri Komutan - VHF 121.5 MHz)
+        AddLine("radio_takeoff", "KULE KONTROL", "Kartal-1, kalkış serbest. Hava sahasına intikal edin, av serbest!",
             new Color(0f, 0.92f, 1f), Priority.High);
 
-        AddLine("radio_boss_warning", "AWACS KONTROL", "DİKKAT! Radarda devasa düşman imzası, amiral gemisi yaklaşıyor!",
+        AddLine("radio_boss_warning", "AWACS KONTROL", "DİKKAT! Radarda devasa düşman imzası! Ağır bombardıman yaklaşıyor!",
             new Color(1f, 0.22f, 0.22f), Priority.Critical);
 
-        AddLine("radio_missile_warning", "AWACS KONTROL", "FÜZE UYARISI! Acil kaçış manevrası yapın!",
+        AddLine("radio_missile_warning", "AWACS KONTROL", "FÜZE KİLİDİ! Üzerine füze geliyor, kaçış manevrası yap!",
             new Color(1f, 0.28f, 0.28f), Priority.Critical);
 
-        AddLine("radio_squadron_clear", "AWACS KONTROL", "Düşman hava filosu tamamen temizlendi. Harika iş Kartal-1!",
+        AddLine("radio_squadron_clear", "AWACS KONTROL", "Düşman filosu tamamen imha edildi! Hava sahası temizlendi!",
             new Color(0.2f, 1f, 0.55f), Priority.High);
 
-        AddLine("radio_hull_warning", "AWACS KONTROL", "UYARI! Gövde bütünlüğü kritik seviyede, dikkatli olun!",
+        AddLine("radio_hull_warning", "AWACS KONTROL", "DİKKAT! Kritik gövde hasarı! Uçak parçalanıyor, irtifayı koru!",
             new Color(1f, 0.32f, 0.32f), Priority.Critical);
 
-        AddLine("radio_hazard_storm", "AWACS KONTROL", "Hava sahasında manyetik fırtına, radarda parazit var!",
+        AddLine("radio_hazard_storm", "AWACS KONTROL", "DİKKAT! Ağır manyetik fırtına! Radar kilitlendi, gözle temas kur!",
             new Color(1f, 0.72f, 0.15f), Priority.High);
 
-        // 2. KARTAL-1 AVCI PİLOTU (Ahmet - UHF 243.0 MHz)
-        AddLine("radio_kill_1", "KARTAL-1", "Hedef vuruldu! Düşman jeti düşürüldü!",
+        // 2. KARTAL-1 AVCI PİLOTU (Sert & Agresif Muharebe Pilotu - UHF 243.0 MHz)
+        AddLine("radio_kill_1", "KARTAL-1", "Hedef vuruldu! Düşman jeti imha edildi!",
             new Color(1f, 0.82f, 0.2f), Priority.Normal);
 
-        AddLine("radio_kill_2", "KARTAL-1", "Fox Two! Tam isabet!",
+        AddLine("radio_kill_2", "KARTAL-1", "Fox Two! Düşman havada parçalandı!",
             new Color(1f, 0.82f, 0.2f), Priority.Normal);
 
-        AddLine("radio_kill_3", "KARTAL-1", "Splash One! Hava sahası temizleniyor!",
+        AddLine("radio_kill_3", "KARTAL-1", "Splash One! Düşman düştü, sonraki hedefe geçiyorum!",
             new Color(1f, 0.82f, 0.2f), Priority.Normal);
 
-        AddLine("radio_streak_triple", "KARTAL-1", "Üçte üç! Baskıyı artırıyoruz!",
+        AddLine("radio_streak_triple", "KARTAL-1", "Üçte üç! Hepsini tek tek indireceğim!",
             new Color(1f, 0.65f, 0.15f), Priority.Normal);
 
-        AddLine("radio_streak_ace", "KARTAL-1", "Gökyüzünün ası! Kimse bizi durduramaz!",
+        AddLine("radio_streak_ace", "KARTAL-1", "Gökyüzünün ası! Kimse karşımda duramaz!",
             new Color(1f, 0.85f, 0.05f), Priority.High);
 
-        AddLine("radio_overdrive", "KARTAL-1", "Tam güç devrede! Son sürat taarruz!",
+        AddLine("radio_overdrive", "KARTAL-1", "Tam itki devrede! Son sürat hücum!",
             new Color(0.2f, 0.85f, 1f), Priority.High);
 
-        AddLine("radio_shield_down", "KARTAL-1", "Kalkan çöktü, acil manevraya geçiyorum!",
+        AddLine("radio_shield_down", "KARTAL-1", "Kalkan parçalandı! İt dalaşına giriyorum!",
             new Color(1f, 0.45f, 0.45f), Priority.High);
 
-        AddLine("radio_crate_loot", "KARTAL-1", "Mühimmat sandığı ele geçirildi, ikmal tamam!",
+        AddLine("radio_crate_loot", "KARTAL-1", "Mühimmat sandığı alındı, silahlar dolu!",
             new Color(0.35f, 0.95f, 0.45f), Priority.Normal);
 
-        AddLine("radio_boss_down", "KARTAL-1", "Düşman amiral gemisi parçalandı! Zafer bizim!",
+        AddLine("radio_boss_down", "KARTAL-1", "Amiral gemisi alevler içinde düşüyor! Zafer bizim!",
             new Color(1f, 0.90f, 0.15f), Priority.High);
     }
 
