@@ -191,20 +191,26 @@ public class TouchArrowControls : MonoBehaviour
         {
             _rootContainer = new GameObject("HUD_TouchArrowControls", typeof(RectTransform));
             _rootContainer.transform.SetParent(canvas.transform, false);
-
-            RectTransform rRt = _rootContainer.GetComponent<RectTransform>();
-            rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe
-            rRt.anchorMax = new Vector2(0f, 0f);
-            rRt.pivot = new Vector2(0f, 0f);
-            rRt.anchoredPosition = new Vector2(65f, 50f);
-            rRt.sizeDelta = new Vector2(360f, 210f);
         }
+
+        RectTransform rRt = _rootContainer.GetComponent<RectTransform>() ?? _rootContainer.AddComponent<RectTransform>();
+        rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe
+        rRt.anchorMax = new Vector2(0f, 0f);
+        rRt.pivot = new Vector2(0f, 0f);
+        rRt.anchoredPosition = new Vector2(65f, 50f);
+        rRt.sizeDelta = new Vector2(360f, 210f);
 
         // 1. SOL OK BUTONU (◀) - Boyut: 130x120
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
         if (leftT != null)
         {
             leftButtonObj = leftT.gameObject;
+            RectTransform lrt = leftButtonObj.GetComponent<RectTransform>();
+            if (lrt != null)
+            {
+                lrt.anchoredPosition = new Vector2(85f, 95f);
+                lrt.sizeDelta = new Vector2(130f, 120f);
+            }
             Transform lbl = leftT.Find("Label");
             if (lbl != null) Destroy(lbl.gameObject);
         }
@@ -219,6 +225,12 @@ public class TouchArrowControls : MonoBehaviour
         if (rightT != null)
         {
             rightButtonObj = rightT.gameObject;
+            RectTransform rrt = rightButtonObj.GetComponent<RectTransform>();
+            if (rrt != null)
+            {
+                rrt.anchoredPosition = new Vector2(235f, 95f);
+                rrt.sizeDelta = new Vector2(130f, 120f);
+            }
             Transform lbl = rightT.Find("Label");
             if (lbl != null) Destroy(lbl.gameObject);
         }

@@ -76,6 +76,12 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
         _button.onClick.RemoveAllListeners();
         _button.onClick.AddListener(OnFirePressed);
+        ApplyMilitaryFireStyling();
+    }
+
+    private void OnEnable()
+    {
+        ApplyMilitaryFireStyling();
     }
 
     private void Start()

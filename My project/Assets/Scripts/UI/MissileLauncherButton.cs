@@ -31,6 +31,12 @@ public class MissileLauncherButton : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        SetupUI();
+    }
+
+    private void OnEnable()
+    {
+        SetupUI();
     }
 
     private void Start()

@@ -175,8 +175,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             fireRt.anchorMin = new Vector2(0f, 1f); // Ekran Sol Üst (P2'nin Sağ Eli)
             fireRt.anchorMax = new Vector2(0f, 1f);
             fireRt.pivot = new Vector2(0.5f, 0.5f);
-            fireRt.anchoredPosition = new Vector2(130f, -130f);
-            fireRt.sizeDelta = new Vector2(150f, 150f);
+            fireRt.anchoredPosition = new Vector2(185f, -165f);
+            fireRt.sizeDelta = new Vector2(140f, 140f);
             fireRt.localEulerAngles = new Vector3(0f, 0f, 180f); // P2 için 180° ters
 
             Image fireImg = fireObj.AddComponent<Image>();
@@ -230,8 +230,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             dodgeRt.anchorMin = new Vector2(0f, 1f);
             dodgeRt.anchorMax = new Vector2(0f, 1f);
             dodgeRt.pivot = new Vector2(0.5f, 0.5f);
-            dodgeRt.anchoredPosition = new Vector2(285f, -105f);
-            dodgeRt.sizeDelta = new Vector2(90f, 90f);
+            dodgeRt.anchoredPosition = new Vector2(330f, -125f);
+            dodgeRt.sizeDelta = new Vector2(85f, 85f);
             dodgeRt.localEulerAngles = new Vector3(0f, 0f, 180f);
 
             Image dodgeImg = dodgeObj.AddComponent<Image>();
