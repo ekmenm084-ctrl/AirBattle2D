@@ -190,7 +190,7 @@ public class PlayerProfileUI : MonoBehaviour
         bRt.anchorMin = new Vector2(0f, 1f);
         bRt.anchorMax = new Vector2(0f, 1f);
         bRt.pivot = new Vector2(0f, 1f);
-        bRt.anchoredPosition = new Vector2(30f, -20f);
+        bRt.anchoredPosition = new Vector2(50f, -30f);
         bRt.sizeDelta = new Vector2(390f, 84f);
 
         Image bg = _badgeRoot.AddComponent<Image>();
@@ -313,7 +313,7 @@ public class PlayerProfileUI : MonoBehaviour
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-30f, -20f);
+        gRt.anchoredPosition = new Vector2(-50f, -30f);
         gRt.sizeDelta = new Vector2(260f, 54f);
 
         Image gBg = _goldBadgeRoot.AddComponent<Image>();

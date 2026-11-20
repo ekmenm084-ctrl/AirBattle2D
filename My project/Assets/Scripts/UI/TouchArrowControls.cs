@@ -196,11 +196,11 @@ public class TouchArrowControls : MonoBehaviour
             rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe
             rRt.anchorMax = new Vector2(0f, 0f);
             rRt.pivot = new Vector2(0f, 0f);
-            rRt.anchoredPosition = new Vector2(35f, 25f);
-            rRt.sizeDelta = new Vector2(380f, 220f);
+            rRt.anchoredPosition = new Vector2(65f, 50f);
+            rRt.sizeDelta = new Vector2(360f, 210f);
         }
 
-        // 1. SOL OK BUTONU (◀) - Boyut: 140x130
+        // 1. SOL OK BUTONU (◀) - Boyut: 130x120
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
         if (leftT != null)
         {
@@ -211,10 +211,10 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
-                new Vector2(90f, 105f), "btn_arrow_left", isLeft: true);
+                new Vector2(85f, 95f), "btn_arrow_left", isLeft: true);
         }
 
-        // 2. SAĞ OK BUTONU (▶) - Boyut: 140x130
+        // 2. SAĞ OK BUTONU (▶) - Boyut: 130x120
         Transform rightT = _rootContainer.transform.Find("Btn_ArrowRight");
         if (rightT != null)
         {
@@ -225,7 +225,7 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
-                new Vector2(245f, 105f), "btn_arrow_right", isLeft: false);
+                new Vector2(235f, 95f), "btn_arrow_right", isLeft: false);
         }
 
         _rootContainer.transform.SetAsLastSibling();
@@ -241,7 +241,7 @@ public class TouchArrowControls : MonoBehaviour
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(140f, 130f); // Geniş, dokunması çok konforlu askeri alan
+        rt.sizeDelta = new Vector2(130f, 120f); // Geniş, dokunması çok konforlu askeri alan
 
         Image bg = btnObj.AddComponent<Image>();
         Sprite arrowSpr = GetArrowSprite(spriteResName, isLeft);

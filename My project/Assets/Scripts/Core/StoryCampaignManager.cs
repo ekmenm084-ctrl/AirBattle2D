@@ -74,6 +74,7 @@ public class StoryCampaignManager : MonoBehaviour
     private bool _advanceSentenceRequested = false;
     private bool _skipRequested = false;
     private bool _isCinematicActive = false;
+    public bool IsCinematicActive => _isCinematicActive;
     private Coroutine _cinematicCoroutine;
 
     [Header("Sinematik Bitiş Kartı UI")]

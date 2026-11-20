@@ -66,10 +66,7 @@ public class GameUI : MonoBehaviour
 
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
-        if (isMenuOpen)
-        {
-            SetHUDVisibility(false);
-        }
+        SetHUDVisibility(!isMenuOpen);
     }
 
     private bool _isHUDHiddenByCinematic = false;
@@ -123,7 +120,7 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0f, 1f);
-                rt.anchoredPosition = new Vector2(35f, -25f);
+                rt.anchoredPosition = new Vector2(50f, -32f);
                 rt.sizeDelta = new Vector2(320f, 28f);
             }
             else
@@ -131,7 +128,7 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(0.5f, 1f);
                 rt.anchorMax = new Vector2(0.5f, 1f);
                 rt.pivot = new Vector2(0.5f, 1f);
-                rt.anchoredPosition = new Vector2(0f, -25f);
+                rt.anchoredPosition = new Vector2(0f, -32f);
                 rt.sizeDelta = new Vector2(520f, 30f);
             }
         }
@@ -229,7 +226,7 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 1f); // Üst Orta
         rt.anchorMax = new Vector2(0.5f, 1f);
         rt.pivot = new Vector2(0.5f, 1f);
-        rt.anchoredPosition = new Vector2(0f, -62f);
+        rt.anchoredPosition = new Vector2(0f, -70f);
         rt.sizeDelta = new Vector2(380f, 32f);
 
         Image bg = EnsureComponent<Image>(badgeObj);
@@ -274,8 +271,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, 80f);
-        rt.sizeDelta = new Vector2(800f, 100f);
+        rt.anchoredPosition = new Vector2(0f, 60f);
+        rt.sizeDelta = new Vector2(650f, 64f);
 
         _waveAlertTMP = EnsureComponent<TextMeshProUGUI>(_waveAlertObj);
         _waveAlertTMP.fontSize = 32f;
@@ -367,11 +364,11 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, 75f);
-        rt.sizeDelta = new Vector2(760f, 180f);
+        rt.anchoredPosition = new Vector2(0f, 160f);
+        rt.sizeDelta = new Vector2(680f, 130f);
 
         Image bg = EnsureComponent<Image>(_modeIntroObj);
-        bg.color = new Color(0.03f, 0.07f, 0.13f, 0.94f);
+        bg.color = new Color(0.04f, 0.08f, 0.14f, 0.94f);
         bg.raycastTarget = false;
 
         _modeIntroOutline = EnsureComponent<Outline>(_modeIntroObj);
@@ -439,7 +436,7 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-35f, -25f);
+        rt.anchoredPosition = new Vector2(-50f, -32f);
         rt.sizeDelta = new Vector2(210f, 36f);
 
         Image bg = EnsureComponent<Image>(_goldHUDObj);
@@ -480,7 +477,7 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(1f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(1f, 1f);
-                rt.anchoredPosition = new Vector2(-35f, -25f);
+                rt.anchoredPosition = new Vector2(-50f, -32f);
                 rt.sizeDelta = new Vector2(210f, 36f);
             }
         }
@@ -534,7 +531,7 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-35f, -68f);
+        rt.anchoredPosition = new Vector2(-50f, -76f);
         rt.sizeDelta = new Vector2(200f, 44f);
 
         Image bg = EnsureComponent<Image>(_comboHUDObj);
@@ -790,7 +787,7 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
-        rt.anchoredPosition = new Vector2(35f, -60f);
+        rt.anchoredPosition = new Vector2(50f, -66f);
         rt.sizeDelta = new Vector2(320f, 20f);
 
         Image bg = EnsureComponent<Image>(_ultiBarObj);
@@ -843,8 +840,8 @@ public class GameUI : MonoBehaviour
         dRt.anchorMin = new Vector2(1f, 0f);
         dRt.anchorMax = new Vector2(1f, 0f);
         dRt.pivot = new Vector2(0.5f, 0.5f);
-        dRt.anchoredPosition = new Vector2(-285f, 105f);
-        dRt.sizeDelta = new Vector2(90f, 90f);
+        dRt.anchoredPosition = new Vector2(-330f, 125f);
+        dRt.sizeDelta = new Vector2(85f, 85f);
 
         Image dImg = EnsureComponent<Image>(_dodgeBtnObj);
         dImg.color = new Color(0.08f, 0.16f, 0.25f, 0.94f);
@@ -899,8 +896,8 @@ public class GameUI : MonoBehaviour
         uRt.anchorMin = new Vector2(1f, 0f);
         uRt.anchorMax = new Vector2(1f, 0f);
         uRt.pivot = new Vector2(0.5f, 0.5f);
-        uRt.anchoredPosition = new Vector2(-130f, 280f);
-        uRt.sizeDelta = new Vector2(95f, 95f);
+        uRt.anchoredPosition = new Vector2(-185f, 305f);
+        uRt.sizeDelta = new Vector2(90f, 90f);
         _ultiBtnBaseScale = Vector3.one;
 
         Image uImg = EnsureComponent<Image>(_ultiBtnObj);
@@ -1047,6 +1044,11 @@ public class GameUI : MonoBehaviour
         {
             if (_waveAlertObj != null) _waveAlertObj.SetActive(false);
             return;
+        }
+
+        if (_modeIntroObj != null && _modeIntroObj.activeSelf)
+        {
+            _modeIntroObj.SetActive(false);
         }
 
         if (_waveAlertObj == null || _waveAlertTMP == null)
@@ -1240,7 +1242,8 @@ public class GameUI : MonoBehaviour
     {
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
-        bool shouldHideAll = isMenuOpen || _isHUDHiddenByCinematic;
+        bool isCinematicActive = (StoryCampaignManager.Instance != null && StoryCampaignManager.Instance.IsCinematicActive);
+        bool shouldHideAll = isMenuOpen || isCinematicActive;
 
         if (shouldHideAll)
         {

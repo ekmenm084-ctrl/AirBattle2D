@@ -229,8 +229,9 @@ public class MainMenuManager : MonoBehaviour
 
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
-            scaler.dynamicPixelsPerUnit = 3f;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 1f; // 1080p yüksekliği koru, genişliği dinamik genişlet
+            scaler.dynamicPixelsPerUnit = 2f;
             scaler.referencePixelsPerUnit = 100f;
         }
     }
@@ -721,14 +722,14 @@ public class MainMenuManager : MonoBehaviour
         tmp.text = text;
         tmp.fontSize = (height >= 58f) ? 22f : 18f;
         tmp.enableAutoSizing = true;
-        tmp.fontSizeMin = 14f;
+        tmp.fontSizeMin = 15f;
         tmp.fontSizeMax = (height >= 58f) ? 23f : 19f;
         tmp.fontStyle = FontStyles.Bold;
-        tmp.characterSpacing = 2.0f; // Askeri HUD havacılık yazı aralığı
+        tmp.characterSpacing = 0.5f; // Temiz, keskin askeri yazı aralığı
         tmp.color = new Color(0.95f, 0.98f, 1f);
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.extraPadding = true;
-        SetOutlineSafe(tmp, 0.08f, new Color(0.01f, 0.03f, 0.06f, 0.95f));
+        SetOutlineSafe(tmp, 0.0f, new Color(0.01f, 0.03f, 0.06f, 0.95f));
         tmp.raycastTarget = false;
     }
 
@@ -741,8 +742,8 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.zero;
             rt.pivot = Vector2.zero;
-            rt.anchoredPosition = new Vector2(40f, 25f);
-            rt.sizeDelta = new Vector2(260f, 50f);
+            rt.anchoredPosition = new Vector2(60f, 55f);
+            rt.sizeDelta = new Vector2(260f, 52f);
         }
 
         Image img = btn.GetComponent<Image>() ?? btn.gameObject.AddComponent<Image>();
@@ -751,7 +752,7 @@ public class MainMenuManager : MonoBehaviour
         btn.interactable = true;
         btn.transform.SetAsLastSibling();
 
-        FormatBtn(btn, 25f, "« TACTICAL // GERİ DÖN", new Color(0.35f, 0.65f, 0.95f), 260f, 50f, 40f, "hud_btn_blue");
+        FormatBtn(btn, 55f, "« TACTICAL // GERİ DÖN", new Color(0.35f, 0.65f, 0.95f), 260f, 52f, 60f, "hud_btn_blue");
 
         if (onClick != null)
         {
@@ -774,13 +775,13 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.zero;
             rt.pivot = Vector2.zero;
-            rt.anchoredPosition = new Vector2(40f, 25f);
-            rt.sizeDelta = new Vector2(260f, 50f);
+            rt.anchoredPosition = new Vector2(60f, 55f);
+            rt.sizeDelta = new Vector2(260f, 52f);
         }
         btnObj.transform.SetAsLastSibling();
 
         Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
-        FormatBtn(btn, 25f, "[X] ABORT // ÜSSE DÖN", new Color(0.95f, 0.20f, 0.25f), 260f, 50f, 40f, "hud_btn_red");
+        FormatBtn(btn, 55f, "[X] ABORT // ÜSSE DÖN", new Color(0.95f, 0.20f, 0.25f), 260f, 52f, 60f, "hud_btn_red");
 
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
@@ -806,8 +807,8 @@ public class MainMenuManager : MonoBehaviour
             rt.anchorMin = new Vector2(1f, 0f);
             rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(1f, 0f);
-            rt.anchoredPosition = new Vector2(-40f, 25f);
-            rt.sizeDelta = new Vector2(360f, 52f);
+            rt.anchoredPosition = new Vector2(-60f, 55f);
+            rt.sizeDelta = new Vector2(380f, 52f);
         }
         btnObj.transform.SetAsLastSibling();
 
@@ -833,7 +834,7 @@ public class MainMenuManager : MonoBehaviour
             : new Color(0.14f, 0.85f, 0.80f);
         string spriteKey = claimable > 0 ? "hud_btn_ops_ready" : "hud_btn_ops_idle";
 
-        FormatBtn(_dailyOpsButton, 25f, label, accent, 390f, 54f, -40f, spriteKey);
+        FormatBtn(_dailyOpsButton, 55f, label, accent, 380f, 52f, -60f, spriteKey);
     }
 
     private void SetupModesHeader()

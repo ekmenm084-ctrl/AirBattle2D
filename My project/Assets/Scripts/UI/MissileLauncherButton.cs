@@ -166,12 +166,12 @@ public class MissileLauncherButton : MonoBehaviour
         RectTransform rt = GetComponent<RectTransform>();
         if (rt == null) return;
 
-        // Ateş Butonunun (-130, 130) sol-üst çaprazında (-285, 235) nizami yerleşim
+        // Ateş Butonunun (-185, 165) sol-üst çaprazında (-330, 245) nizami güvenli yerleşim
         rt.anchorMin = new Vector2(1f, 0f);
         rt.anchorMax = new Vector2(1f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(-285f, 235f);
-        rt.sizeDelta = new Vector2(95f, 95f);
+        rt.anchoredPosition = new Vector2(-330f, 245f);
+        rt.sizeDelta = new Vector2(90f, 90f);
 
         _bgImage = GetComponent<Image>();
         if (_bgImage == null) _bgImage = gameObject.AddComponent<Image>();
