@@ -1101,16 +1101,38 @@ public class HangarUI : MonoBehaviour
             if (_hudUniqueTraitTMP != null) _hudUniqueTraitTMP.text = $"» {stats.uniqueTraitTitle}";
             if (_hudTierTMP != null) _hudTierTMP.text = $"KADEME {stats.tier} (SEV. {stats.requiredLevel}+)";
 
-            SetBarFillAmount(_hudSpeedFill, stats.speedBar);
-            SetBarFillAmount(_hudManeuverFill, stats.maneuverBar);
-            SetBarFillAmount(_hudArmorFill, stats.armorBar);
-            SetBarFillAmount(_hudFirepowerFill, stats.firepowerBar);
+            MilitaryStoreManager.LoadoutStats loadout = default;
+            if (MilitaryStoreManager.EnsureInstance() != null)
+            {
+                loadout = MilitaryStoreManager.EnsureInstance().GetLoadoutStats(type);
+            }
 
-            float salvoDmg = stats.bulletDamage * stats.bulletsPerShot;
-            if (_hudSpeedValTMP != null) _hudSpeedValTMP.text = $"{stats.baseSpeed:0.0}M";
-            if (_hudManeuverValTMP != null) _hudManeuverValTMP.text = $"%{stats.maneuverBar * 100f:0}";
-            if (_hudArmorValTMP != null) _hudArmorValTMP.text = $"{stats.baseHp:0}HP";
-            if (_hudFirepowerValTMP != null) _hudFirepowerValTMP.text = $"{salvoDmg:0}DMG";
+            float speedBarVal = Mathf.Clamp01(stats.speedBar + (loadout.bonusSpeed / 12.6f));
+            float maneuverBonus = (loadout.dodgeCdReduction / 2.2f) + (loadout.bonusSpeed / 25f) + (loadout.ultiBonusPercent * 0.4f);
+            float maneuverBarVal = Mathf.Clamp01(stats.maneuverBar + maneuverBonus);
+            float armorBonusBar = ((loadout.bonusHp + loadout.bonusShield) / 350f) + (loadout.damageReductionPercent * 0.8f);
+            float armorBarVal = Mathf.Clamp01(stats.armorBar + armorBonusBar);
+            float baseSalvoDmg = stats.bulletDamage * stats.bulletsPerShot;
+            float bonusSalvoDmg = loadout.bonusDamage * stats.bulletsPerShot;
+            float totalSalvoDmg = baseSalvoDmg + bonusSalvoDmg;
+            float fireBonusBar = (bonusSalvoDmg / 114f) + (loadout.bonusCrit / 100f);
+            float firepowerBarVal = Mathf.Clamp01(stats.firepowerBar + fireBonusBar);
+
+            SetBarFillAmount(_hudSpeedFill, speedBarVal);
+            SetBarFillAmount(_hudManeuverFill, maneuverBarVal);
+            SetBarFillAmount(_hudArmorFill, armorBarVal);
+            SetBarFillAmount(_hudFirepowerFill, firepowerBarVal);
+
+            float totalSpeed = stats.baseSpeed + loadout.bonusSpeed;
+            float totalHpAndShield = stats.baseHp + loadout.bonusHp + loadout.bonusShield;
+            if (_hudSpeedValTMP != null)
+                _hudSpeedValTMP.text = loadout.bonusSpeed > 0.01f ? $"<color=#4ADE80>{totalSpeed:0.0}M</color>" : $"{stats.baseSpeed:0.0}M";
+            if (_hudManeuverValTMP != null)
+                _hudManeuverValTMP.text = maneuverBonus > 0.005f ? $"<color=#4ADE80>%{maneuverBarVal * 100f:0}</color>" : $"%{stats.maneuverBar * 100f:0}";
+            if (_hudArmorValTMP != null)
+                _hudArmorValTMP.text = (loadout.bonusHp + loadout.bonusShield) > 0.1f ? $"<color=#4ADE80>{totalHpAndShield:0}HP</color>" : $"{stats.baseHp:0}HP";
+            if (_hudFirepowerValTMP != null)
+                _hudFirepowerValTMP.text = (bonusSalvoDmg > 0.1f || loadout.bonusCrit > 0.1f) ? $"<color=#4ADE80>{totalSalvoDmg:0}DMG</color>" : $"{baseSalvoDmg:0}DMG";
 
             UpdateHudActionButtonVisual(hm, type, playerLevel);
         }
@@ -2242,6 +2264,20 @@ public class HangarUI : MonoBehaviour
 
         if (_specsDetailsTMP != null)
         {
+            MilitaryStoreManager.LoadoutStats loadout = default;
+            if (MilitaryStoreManager.EnsureInstance() != null)
+            {
+                loadout = MilitaryStoreManager.EnsureInstance().GetLoadoutStats(type);
+            }
+            bool hasLoadout = loadout.bonusSpeed > 0.01f || loadout.bonusHp > 0.1f || loadout.bonusDamage > 0.1f ||
+                              loadout.bonusCrit > 0.1f || loadout.bonusShield > 0.1f || loadout.dodgeCdReduction > 0.01f ||
+                              loadout.damageReductionPercent > 0.001f || loadout.ultiBonusPercent > 0.001f;
+
+            string loadoutSection = hasLoadout
+                ? $"\n\n<color=#4ADE80><b>» TAKILI ASKERİ MAĞAZA DONANIM BONUSLARI</b></color>\n" +
+                  $"  • <color=#7DD3FC>+{loadout.bonusSpeed:0.#} Hız</color> | <color=#4ADE80>+{loadout.bonusHp:0} HP</color> | <color=#F87171>+{loadout.bonusDamage:0} Dmg</color> | <color=#FACC15>+%{loadout.bonusCrit:0} Kritik</color> | <color=#38BDF8>+{loadout.bonusShield:0} Kalkan</color> | <color=#A3E635>-%{loadout.damageReductionPercent * 100f:0} Hasar Emilimi</color>"
+                : "";
+
             _specsDetailsTMP.text =
                 $"<color=#00E5FF><b>» GÖVDE & ZIRH SİSTEMİ</b></color>\n" +
                 $"  • <b>Gövde Zırhı:</b> <color=#2ECC71>{data.armorText}</color>\n" +
@@ -2250,7 +2286,8 @@ public class HangarUI : MonoBehaviour
                 $"  • <b>Ana Silah:</b> <color=#FFFFFF>{data.weaponText}</color>\n" +
                 $"  • <b>Mühimmat Salvosu:</b> <color=#E2E8F0>{data.ammoText}</color>\n\n" +
                 $"<color=#{ColorUtility.ToHtmlStringRGB(data.accentColor)}><b>» TAKTİK HARP ÜSTÜNLÜĞÜ</b></color>\n" +
-                $"  • <b>Operasyonel Rol:</b> <color=#FFFFFF>{data.perkText}</color>";
+                $"  • <b>Operasyonel Rol:</b> <color=#FFFFFF>{data.perkText}</color>" +
+                loadoutSection;
         }
 
         if (_specsModalBoxBg != null)
