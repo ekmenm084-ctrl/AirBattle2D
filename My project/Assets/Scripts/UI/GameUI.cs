@@ -79,7 +79,7 @@ public class GameUI : MonoBehaviour
         if (plane2HealthBar != null) plane2HealthBar.gameObject.SetActive(visible);
         if (_missileBtnObj != null) _missileBtnObj.SetActive(visible);
         if (_goldHUDObj != null) _goldHUDObj.SetActive(visible);
-        if (_comboHUDObj != null) _comboHUDObj.SetActive(visible);
+        if (_comboHUDObj != null) _comboHUDObj.SetActive(false);
         if (!visible && _airspaceBannerObj != null) _airspaceBannerObj.SetActive(false);
         if (_ultiBarObj != null) _ultiBarObj.SetActive(visible);
         if (_dodgeBtnObj != null) _dodgeBtnObj.SetActive(visible);
@@ -433,8 +433,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-50f, -32f);
-        rt.sizeDelta = new Vector2(210f, 36f);
+        rt.anchoredPosition = new Vector2(-66f, -14f);
+        rt.sizeDelta = new Vector2(185f, 34f);
 
         Image bg = EnsureComponent<Image>(_goldHUDObj);
         bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
@@ -452,7 +452,7 @@ public class GameUI : MonoBehaviour
 
         _goldHUDTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
-        _goldHUDTMP.fontSize = 22f;
+        _goldHUDTMP.fontSize = 20f;
         _goldHUDTMP.fontStyle = FontStyles.Bold;
         _goldHUDTMP.alignment = TextAlignmentOptions.Center;
         _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
@@ -474,8 +474,8 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(1f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(1f, 1f);
-                rt.anchoredPosition = new Vector2(-50f, -32f);
-                rt.sizeDelta = new Vector2(210f, 36f);
+                rt.anchoredPosition = new Vector2(-66f, -14f);
+                rt.sizeDelta = new Vector2(185f, 34f);
             }
         }
 
@@ -594,75 +594,19 @@ public class GameUI : MonoBehaviour
         _comboFillImg.color = new Color(0.18f, 0.90f, 1f, 0.95f);
         _comboFillImg.fillAmount = 0f;
         _comboFillImg.raycastTarget = false;
+
+        _comboHUDObj.SetActive(false);
     }
 
     public void PulseComboHUD()
     {
-        if (_comboHUDObj == null || !_comboHUDObj.activeInHierarchy) return;
-        if (_comboPulseCoroutine != null) StopCoroutine(_comboPulseCoroutine);
-        _comboPulseCoroutine = StartCoroutine(ComboPulseRoutine());
-    }
-
-    private IEnumerator ComboPulseRoutine()
-    {
-        if (_comboHUDObj == null) yield break;
-        _comboHUDObj.transform.localScale = Vector3.one * 1.12f;
-        yield return new WaitForSecondsRealtime(0.14f);
-        if (_comboHUDObj != null)
-            _comboHUDObj.transform.localScale = Vector3.one;
-        _comboPulseCoroutine = null;
     }
 
     private void UpdateComboHUD()
     {
-        if (_comboHUDObj == null) return;
-
-        bool hideForMode = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
-        if (hideForMode)
+        if (_comboHUDObj != null && _comboHUDObj.activeSelf)
         {
-            if (_comboHUDObj.activeSelf) _comboHUDObj.SetActive(false);
-            return;
-        }
-
-        CombatComboManager combo = CombatComboManager.Instance;
-        if (combo == null)
-        {
-            if (_comboMainTMP != null) _comboMainTMP.text = "COMBO x1.0";
-            if (_comboSubTMP != null) _comboSubTMP.text = "SIYIRMA: 0  |  <color=#00FFAA>HASARSIZ</color>";
-            if (_comboFillImg != null) _comboFillImg.fillAmount = 0f;
-            return;
-        }
-
-        Color tierCol = combo.GetTierColor();
-        float mult = combo.GetMultiplier();
-
-        if (_comboMainTMP != null)
-        {
-            _comboMainTMP.color = tierCol;
-            _comboMainTMP.text = (combo.currentCombo > 0)
-                ? $"COMBO x{mult:0.0}  [{combo.currentCombo} {combo.GetTierLabel()}]"
-                : "COMBO x1.0";
-        }
-
-        if (_comboSubTMP != null)
-        {
-            string flawlessTxt = combo.waveTookDamage
-                ? "<color=#FF7043>HASAR ALINDI</color>"
-                : (combo.noDamageWavesStreak > 0
-                    ? $"<color=#00FFAA>HASARSIZ x{combo.noDamageWavesStreak}</color>"
-                    : "<color=#00FFAA>HASARSIZ</color>");
-            _comboSubTMP.text = $"SIYIRMA: {combo.totalGrazes}  |  {flawlessTxt}";
-        }
-
-        if (_comboFillImg != null)
-        {
-            _comboFillImg.fillAmount = combo.ComboTimerNormalized;
-            _comboFillImg.color = tierCol;
-        }
-
-        if (_comboOutline != null)
-        {
-            _comboOutline.effectColor = new Color(tierCol.r, tierCol.g, tierCol.b, combo.currentCombo > 0 ? 0.90f : 0.45f);
+            _comboHUDObj.SetActive(false);
         }
     }
 
@@ -1136,10 +1080,9 @@ public class GameUI : MonoBehaviour
             _ultiBtnObj.SetActive(true);
         }
 
-        bool showComboHud = (GameManager.Instance == null || GameManager.Instance.CurrentMode != GameManager.GameMode.TwoPlayer);
-        if (_comboHUDObj != null && _comboHUDObj.activeSelf != showComboHud)
+        if (_comboHUDObj != null && _comboHUDObj.activeSelf)
         {
-            _comboHUDObj.SetActive(showComboHud);
+            _comboHUDObj.SetActive(false);
         }
 
         if (_goldHUDObj != null && !_goldHUDObj.activeSelf)

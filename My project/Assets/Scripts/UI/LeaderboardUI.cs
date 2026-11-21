@@ -180,7 +180,7 @@ public class LeaderboardUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = titleObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "TACTICAL // KÜRESEL LİDERLİK & REKOR VERİTABANI\n<size=78%><color=#8AB4F8>GLOBAL DEFCON AS PİLOTLARI SIRALAMASI • GERÇEK ZAMANLI VERİ HATTI</color></size>";
+        titleTMP.text = "KÜRESEL LİDERLİK & REKOR VERİTABANI\n<size=78%><color=#8AB4F8>KÜRESEL AS PİLOT SIRALAMASI • GERÇEK ZAMANLI VERİ HATTI</color></size>";
         titleTMP.fontSize = 26f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.characterSpacing = 2.0f;
@@ -570,7 +570,7 @@ public class LeaderboardUI : MonoBehaviour
             var lm = LeaderboardManager.Instance;
             if (isOnline)
             {
-                _connectionStatusTMP.text = "[ONLINE] <b>SUPABASE POSTGRESQL VERİTABANI AKTİF</b> (Canlı Gerçek Skorlar)";
+                _connectionStatusTMP.text = "[ÇEVRİMİÇİ] <b>BULUT REKOR VERİTABANI AKTİF</b> (Canlı Gerçek Skorlar)";
                 _connectionStatusTMP.color = new Color(0.2f, 0.95f, 0.4f);
             }
             else if (lm != null && lm.IsSupabaseConfigured)
@@ -800,7 +800,7 @@ public class LeaderboardUI : MonoBehaviour
 
         TextMeshProUGUI titleTMP = tObj.AddComponent<TextMeshProUGUI>();
         titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "DEFCON // PİLOT ÇAĞRI KODU BELİRLE";
+        titleTMP.text = "PİLOT ÇAĞRI KODU BELİRLE";
         titleTMP.fontSize = 20f;
         titleTMP.fontStyle = FontStyles.Bold;
         titleTMP.characterSpacing = 1.8f;

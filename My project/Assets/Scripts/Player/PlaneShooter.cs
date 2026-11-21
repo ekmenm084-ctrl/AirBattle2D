@@ -38,10 +38,10 @@ public class PlaneShooter : MonoBehaviour
         PlaneController pc = GetComponent<PlaneController>();
         if (pc != null && pc.isPlayer1)
         {
-            // Player 1 için taban %15 kritik darbe şansı
             if (criticalChance <= 0f)
             {
-                criticalChance = 0.15f;
+                var stats = HangarManager.GetAircraftBaseStats(aircraftType);
+                criticalChance = Mathf.Clamp01(stats.critChancePercent / 100f);
             }
         }
     }

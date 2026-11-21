@@ -203,7 +203,7 @@ public class GameManager : MonoBehaviour
             currentPlaneIndex = 1;
             if (plane1Health != null)
             {
-                plane1Health.ResetHealth(200f); // UÇAĞIMIZIN CAN BARI 200 OLACAK
+                plane1Health.ResetHealth(Mathf.Max(200f, plane1Health.maxHealth)); // En az 200 HP veya üst seviye uçağın kendi yüksek canı
             }
             PlayerUpgradeManager.EnsureInstance();
             UpgradeSelectionUI.EnsureInstance();
@@ -1103,7 +1103,7 @@ public class GameManager : MonoBehaviour
 
         if (plane1Health != null)
         {
-            plane1Health.ResetHealth(100f);
+            plane1Health.ResetHealth(Mathf.Max(100f, plane1Health.maxHealth));
             plane1Health.transform.position = new Vector3(0f, -3.5f, 0f);
             plane1Health.gameObject.SetActive(true);
         }

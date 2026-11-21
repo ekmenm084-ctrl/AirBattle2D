@@ -68,8 +68,8 @@ public class MilitaryStoreManager : MonoBehaviour
         {
             case HangarManager.AircraftType.F16Viper: return 20;
             case HangarManager.AircraftType.A10TankBuster: return 40;
-            case HangarManager.AircraftType.F22Raptor: return 60;
-            case HangarManager.AircraftType.Su57Felon: return 75;
+            case HangarManager.AircraftType.F22Raptor: return 55;
+            case HangarManager.AircraftType.Su57Felon: return 70;
             case HangarManager.AircraftType.F35Lightning: return 85;
             case HangarManager.AircraftType.KaanApex: return 100;
             default: return 20;
@@ -85,7 +85,7 @@ public class MilitaryStoreManager : MonoBehaviour
             case HangarManager.AircraftType.F22Raptor: return "F-22A Raptor";
             case HangarManager.AircraftType.Su57Felon: return "Su-57 Felon";
             case HangarManager.AircraftType.F35Lightning: return "F-35A Lightning II";
-            case HangarManager.AircraftType.KaanApex: return "KAAN Apex";
+            case HangarManager.AircraftType.KaanApex: return "KAAN TF-X";
             default: return "Savaş Jeti";
         }
     }
@@ -99,22 +99,22 @@ public class MilitaryStoreManager : MonoBehaviour
             case HangarManager.AircraftType.F22Raptor: return "F-22";
             case HangarManager.AircraftType.Su57Felon: return "Su-57";
             case HangarManager.AircraftType.F35Lightning: return "F-35";
-            case HangarManager.AircraftType.KaanApex: return "KAAN";
+            case HangarManager.AircraftType.KaanApex: return "KAAN TF-X";
             default: return "Jet";
         }
     }
 
     /// <summary>
-    /// Bir parçanın takılabileceği uçakların isimlerini döner (Örn: "F-22, Su-57, F-35, KAAN" veya "Yalnızca KAAN Apex")
+    /// Bir parçanın takılabileceği uçakların isimlerini döner (Örn: "F-22, Su-57, F-35, KAAN TF-X" veya "Yalnızca KAAN TF-X")
     /// </summary>
     public static string GetCompatibleAircraftNames(int minLevel)
     {
-        if (minLevel <= 20) return "Tüm Jetler (F-16, A-10, F-22, Su-57, F-35, KAAN)";
-        if (minLevel <= 40) return "A-10, F-22, Su-57, F-35, KAAN";
-        if (minLevel <= 60) return "F-22, Su-57, F-35, KAAN";
-        if (minLevel <= 75) return "Su-57, F-35, KAAN";
-        if (minLevel <= 85) return "F-35, KAAN";
-        return "Yalnızca KAAN Apex";
+        if (minLevel <= 20) return "Tüm Jetler (F-16, A-10, F-22, Su-57, F-35, KAAN TF-X)";
+        if (minLevel <= 40) return "A-10, F-22, Su-57, F-35, KAAN TF-X";
+        if (minLevel <= 55) return "F-22, Su-57, F-35, KAAN TF-X";
+        if (minLevel <= 70) return "Su-57, F-35, KAAN TF-X";
+        if (minLevel <= 85) return "F-35 Lightning II, KAAN TF-X";
+        return "Yalnızca KAAN TF-X (Seviye 100)";
     }
 
     private void InitializeCatalog()

@@ -33,11 +33,105 @@ public class MilitaryStoreUI : MonoBehaviour
     private StoreTab _currentTab = StoreTab.Engine;
     private HangarManager.AircraftType _selectedAircraft = HangarManager.AircraftType.F16Viper;
 
-    // Tab Butonları
+    // Tab Butonları (İkmal Sandıkları bu menüden kaldırıldı - 5 ana sekme)
     private Button _tabEngineBtn, _tabRadarBtn, _tabAirframeBtn, _tabEwBtn, _tabLoadoutBtn;
     private GameObject _cardsScrollContainer;
     private GameObject _loadoutContainer;
     private Transform _cardsContentTransform;
+
+    private static Sprite _storeBgSprite;
+    private static readonly Dictionary<string, Sprite> _partIconCache = new Dictionary<string, Sprite>();
+
+    public static Sprite GetStoreBgSprite()
+    {
+        if (_storeBgSprite != null) return _storeBgSprite;
+
+        string[] paths = new string[]
+        {
+            System.IO.Path.Combine(Application.dataPath, "Sprites/store_background.jpg"),
+            System.IO.Path.Combine(Application.dataPath, "Resources/store_background.jpg")
+        };
+        foreach (var p in paths)
+        {
+            if (System.IO.File.Exists(p))
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(p);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    _storeBgSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                    break;
+                }
+            }
+        }
+
+        if (_storeBgSprite == null)
+            _storeBgSprite = Resources.Load<Sprite>("store_background");
+
+        return _storeBgSprite;
+    }
+
+    public static Sprite LoadStoreIconSprite(string iconKey)
+    {
+        if (_partIconCache.TryGetValue(iconKey, out Sprite cached) && cached != null)
+            return cached;
+
+        string[] paths = new string[]
+        {
+            System.IO.Path.Combine(Application.dataPath, $"Sprites/{iconKey}.png"),
+            System.IO.Path.Combine(Application.dataPath, $"Resources/{iconKey}.png")
+        };
+        foreach (var p in paths)
+        {
+            if (System.IO.File.Exists(p))
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(p);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    Sprite spr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                    _partIconCache[iconKey] = spr;
+                    return spr;
+                }
+            }
+        }
+
+        Sprite resSpr = Resources.Load<Sprite>(iconKey);
+        if (resSpr != null) _partIconCache[iconKey] = resSpr;
+        return resSpr;
+    }
+
+    public static Sprite GetPart3DIcon(AircraftPart part, int indexInCategory = 0)
+    {
+        if (part == null) return LoadStoreIconSprite("store_icon_empty");
+
+        // Her parçanın (20 farklı askeri parça) kendine has benzersiz gerçekçi 3D görseli ("part_<id>.png")
+        if (!string.IsNullOrEmpty(part.id))
+        {
+            Sprite uniqueIcon = LoadStoreIconSprite("part_" + part.id);
+            if (uniqueIcon != null)
+                return uniqueIcon;
+        }
+
+        switch (part.category)
+        {
+            case AircraftPartCategory.Radar:
+            {
+                int rIdx = Mathf.Clamp(indexInCategory, 0, 3);
+                return LoadStoreIconSprite($"store_icon_radar_{rIdx}") ?? LoadStoreIconSprite("store_icon_radar");
+            }
+            case AircraftPartCategory.Engine:
+                return LoadStoreIconSprite("store_icon_engine");
+            case AircraftPartCategory.Airframe:
+                return LoadStoreIconSprite("store_icon_airframe");
+            case AircraftPartCategory.ElectronicWarfare:
+                return LoadStoreIconSprite("store_icon_radar_0");
+            default:
+                return LoadStoreIconSprite("store_icon_radar_0");
+        }
+    }
 
     // Uyumsuzluk / Aşırı Yükleme Modal Penceresi
     private GameObject _warningModalObj;
@@ -146,19 +240,19 @@ public class MilitaryStoreUI : MonoBehaviour
         _panelRoot.transform.SetParent(transform, false);
         MakeFullScreenRect(GetRect(_panelRoot));
 
-        // Arka Plan
+        // Arka Plan (1:1 Askeri Hangar Atölye Sahnesi)
         Image bgImg = _panelRoot.AddComponent<Image>();
-        bgImg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.65f), new Color(0.02f, 0.05f, 0.09f, 0.92f), false);
-        bgImg.type = Image.Type.Sliced;
+        bgImg.sprite = GetStoreBgSprite();
         bgImg.color = Color.white;
+        bgImg.raycastTarget = false;
 
         // 1. Üst Başlık & Altın Barı
         BuildHeader();
 
-        // 2. Uçak Seçim Barı (F-16, A-10, F-22, Su-57, F-35, KAAN)
+        // 2. Uçak Seçim Barı (F-16, A-10, F-22, Su-57, F-35, KAAN TF-X)
         BuildAircraftSelectorBar();
 
-        // 3. Kategori Sekmeleri (Motor, Radar, Gövde, EW, Mevcut Donatım)
+        // 3. Kategori Sekmeleri (Motor, Radar, Gövde, EW, Mevcut Donatım - İkmal Sandıkları kaldırıldı)
         BuildCategoryTabs();
 
         // 4. Parça Kartları Scroll Alanı
@@ -175,86 +269,44 @@ public class MilitaryStoreUI : MonoBehaviour
 
     private void BuildHeader()
     {
-        // Başlık
-        GameObject headerObj = new GameObject("HeaderTitle", typeof(RectTransform));
-        headerObj.transform.SetParent(_panelRoot.transform, false);
-        RectTransform hRt = GetRect(headerObj);
-        hRt.anchorMin = new Vector2(0.5f, 1f);
-        hRt.anchorMax = new Vector2(0.5f, 1f);
-        hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -14f);
-        hRt.sizeDelta = new Vector2(1080f, 66f);
+        // 1. Sol Alt « GERİ DÖN Butonu (Arka plan görselindeki x=118..434, y=982..1046 çerçevesine birebir kilitli)
+        HangarUI.FormatPixelExactButton(
+            "BackFromStoreButton",
+            _panelRoot.transform,
+            new Vector2(-684.0f, -474.0f),
+            new Vector2(316.0f, 64.0f),
+            new Color(0f, 0.85f, 1f, 0.18f),
+            new Color(0f, 0.7f, 0.95f, 0.35f),
+            CloseStore);
 
-        Image hBg = headerObj.AddComponent<Image>();
-        hBg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), false);
-        hBg.type = Image.Type.Sliced;
-        hBg.color = Color.white;
-        hBg.raycastTarget = false;
-
-        GameObject textObj = new GameObject("TitleText", typeof(RectTransform));
-        textObj.transform.SetParent(headerObj.transform, false);
-        RectTransform tRt = GetRect(textObj);
-        tRt.anchorMin = Vector2.zero;
-        tRt.anchorMax = Vector2.one;
-        tRt.offsetMin = new Vector2(10f, 4f);
-        tRt.offsetMax = new Vector2(-10f, -4f);
-
-        TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "<b><color=#00E5FF>AVIONICS // ASKERİ MÜHİMMAT & TEKNOLOJİ MAĞAZASI</color></b>\n<size=75%><color=#94A3B8>GERÇEK SAVAŞ UÇAĞI AVİYONİK, MOTOR, ZIRH & ELEKTRONİK HARP TEDARİK HATTI</color></size>";
-        titleTMP.fontSize = 26f;
-        titleTMP.characterSpacing = 2.2f;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.color = new Color(0.92f, 0.96f, 1.0f);
-        titleTMP.outlineWidth = 0.10f;
-        titleTMP.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
-
-        // Geri Dön Butonu (Sol Alt)
-        GameObject backBtnObj = new GameObject("StoreBackButton", typeof(RectTransform));
-        backBtnObj.transform.SetParent(_panelRoot.transform, false);
-        Image bImg = backBtnObj.AddComponent<Image>();
-        bImg.raycastTarget = true;
-        Button bBtn = backBtnObj.AddComponent<Button>();
-        bBtn.targetGraphic = bImg;
-        GameObject bTxtObj = new GameObject("Text", typeof(RectTransform));
-        bTxtObj.transform.SetParent(backBtnObj.transform, false);
-        bTxtObj.AddComponent<TextMeshProUGUI>();
-        MainMenuManager.FormatBottomLeftBackBtn(bBtn, CloseStore);
-        backBtnObj.transform.SetAsLastSibling();
-
-        // Altın Rozeti (Sağ Üst)
-        GameObject goldBadgeObj = new GameObject("GoldBadge", typeof(RectTransform));
+        // 2. Üst Sağ Canlı Altın Göstergesi (Hangar ve Sandık menüsüyle birebir aynı boyutta ve konumda)
+        GameObject goldBadgeObj = new GameObject("LiveGoldBadge", typeof(RectTransform));
         goldBadgeObj.transform.SetParent(_panelRoot.transform, false);
-        RectTransform gRt = GetRect(goldBadgeObj);
-        gRt.anchorMin = new Vector2(1f, 1f);
-        gRt.anchorMax = new Vector2(1f, 1f);
-        gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-40f, -16f);
-        gRt.sizeDelta = new Vector2(280f, 52f);
-
-        Image gBg = goldBadgeObj.AddComponent<Image>();
-        gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.08f, 0.12f, 0.18f, 0.95f), true);
-        gBg.type = Image.Type.Sliced;
-        gBg.color = Color.white;
+        HangarUI.SetNormalizedRect1080p(GetRect(goldBadgeObj), new Vector2(685.0f, 526.0f), new Vector2(215.0f, 30.0f));
 
         GameObject goldTxtObj = new GameObject("GoldText", typeof(RectTransform));
         goldTxtObj.transform.SetParent(goldBadgeObj.transform, false);
-        RectTransform gtRt = GetRect(goldTxtObj);
-        gtRt.anchorMin = Vector2.zero;
-        gtRt.anchorMax = Vector2.one;
-        gtRt.offsetMin = new Vector2(10f, 0f);
-        gtRt.offsetMax = new Vector2(-10f, 0f);
+        MakeFullScreenRect(GetRect(goldTxtObj));
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
         _goldTMP.font = MainMenuManager.GetTacticalFont();
         _goldTMP.text = "ALTIN: 0 G";
-        _goldTMP.fontSize = 22f;
-        _goldTMP.characterSpacing = 2.0f;
+        _goldTMP.fontSize = 18f;
+        _goldTMP.characterSpacing = 1.6f;
         _goldTMP.fontStyle = FontStyles.Bold;
-        _goldTMP.alignment = TextAlignmentOptions.Center;
+        _goldTMP.alignment = TextAlignmentOptions.Left;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
         _goldTMP.raycastTarget = false;
+
+        // 3. Üst Sol Profil Tetikleyicisi
+        HangarUI.FormatPixelExactButton(
+            "ProfileBadgeTrigger",
+            _panelRoot.transform,
+            new Vector2(-565.6f, 513.7f),
+            new Vector2(361.0f, 52.6f),
+            new Color(0f, 0.85f, 1f, 0.10f),
+            new Color(0f, 0.7f, 0.95f, 0.18f),
+            () => PlayerProfileUI.EnsureUI()?.OpenDossierModal());
     }
 
     private void BuildAircraftSelectorBar()
@@ -262,29 +314,24 @@ public class MilitaryStoreUI : MonoBehaviour
         GameObject barObj = new GameObject("AircraftSelectorBar", typeof(RectTransform));
         barObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform barRt = GetRect(barObj);
-        barRt.anchorMin = new Vector2(0.5f, 1f);
-        barRt.anchorMax = new Vector2(0.5f, 1f);
-        barRt.pivot = new Vector2(0.5f, 1f);
-        barRt.anchoredPosition = new Vector2(0f, -84f);
-        barRt.sizeDelta = new Vector2(1200f, 54f);
+        HangarUI.SetNormalizedRect1080p(barRt, new Vector2(0f, 422.0f), new Vector2(1180f, 46f));
 
         Image barBg = barObj.AddComponent<Image>();
-        barBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0.20f, 0.50f, 0.80f), new Color(0.04f, 0.08f, 0.14f, 0.90f), false);
+        barBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0.20f, 0.50f, 0.80f, 0.85f), new Color(0.03f, 0.07f, 0.13f, 0.92f), false);
         barBg.type = Image.Type.Sliced;
         barBg.color = Color.white;
 
-        // Önceki Uçak Butonu
+        // Önceki Uçak Butonu (< ÖNCEKİ)
         GameObject prevBtnObj = new GameObject("PrevPlaneBtn", typeof(RectTransform));
         prevBtnObj.transform.SetParent(barObj.transform, false);
         RectTransform prevRt = GetRect(prevBtnObj);
-        prevRt.anchorMin = new Vector2(0f, 0.5f);
-        prevRt.anchorMax = new Vector2(0f, 0.5f);
-        prevRt.pivot = new Vector2(0f, 0.5f);
-        prevRt.anchoredPosition = new Vector2(20f, 0f);
-        prevRt.sizeDelta = new Vector2(140f, 40f);
+        prevRt.anchorMin = new Vector2(0.01f, 0.10f);
+        prevRt.anchorMax = new Vector2(0.14f, 0.90f);
+        prevRt.offsetMin = Vector2.zero;
+        prevRt.offsetMax = Vector2.zero;
 
         Image prevImg = prevBtnObj.AddComponent<Image>();
-        prevImg.sprite = MainMenuManager.GetHudSprite("hud_btn_blue", new Color(0.35f, 0.65f, 0.95f), new Color(0.05f, 0.10f, 0.18f, 0.92f), true);
+        prevImg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.35f, 0.65f, 0.95f), new Color(0.05f, 0.10f, 0.18f, 0.92f), true);
         prevImg.type = Image.Type.Sliced;
         prevImg.color = Color.white;
 
@@ -296,25 +343,24 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(prevTxtObj));
         TextMeshProUGUI prevTMP = prevTxtObj.AddComponent<TextMeshProUGUI>();
         prevTMP.font = MainMenuManager.GetTacticalFont();
-        prevTMP.text = "[<<] ÖNCEKİ";
-        prevTMP.fontSize = 22f;
-        prevTMP.characterSpacing = 1.8f;
+        prevTMP.text = "< ÖNCEKİ";
+        prevTMP.fontSize = 17f;
+        prevTMP.characterSpacing = 1.4f;
         prevTMP.fontStyle = FontStyles.Bold;
         prevTMP.alignment = TextAlignmentOptions.Center;
-        prevTMP.color = Color.white;
+        prevTMP.color = new Color(0.85f, 0.92f, 1f);
 
-        // Sonraki Uçak Butonu
+        // Sonraki Uçak Butonu (SONRAKİ >)
         GameObject nextBtnObj = new GameObject("NextPlaneBtn", typeof(RectTransform));
         nextBtnObj.transform.SetParent(barObj.transform, false);
         RectTransform nextRt = GetRect(nextBtnObj);
-        nextRt.anchorMin = new Vector2(1f, 0.5f);
-        nextRt.anchorMax = new Vector2(1f, 0.5f);
-        nextRt.pivot = new Vector2(1f, 0.5f);
-        nextRt.anchoredPosition = new Vector2(-20f, 0f);
-        nextRt.sizeDelta = new Vector2(140f, 40f);
+        nextRt.anchorMin = new Vector2(0.86f, 0.10f);
+        nextRt.anchorMax = new Vector2(0.99f, 0.90f);
+        nextRt.offsetMin = Vector2.zero;
+        nextRt.offsetMax = Vector2.zero;
 
         Image nextImg = nextBtnObj.AddComponent<Image>();
-        nextImg.sprite = MainMenuManager.GetHudSprite("hud_btn_blue", new Color(0.35f, 0.65f, 0.95f), new Color(0.05f, 0.10f, 0.18f, 0.92f), true);
+        nextImg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.35f, 0.65f, 0.95f), new Color(0.05f, 0.10f, 0.18f, 0.92f), true);
         nextImg.type = Image.Type.Sliced;
         nextImg.color = Color.white;
 
@@ -326,28 +372,27 @@ public class MilitaryStoreUI : MonoBehaviour
         MakeFullScreenRect(GetRect(nextTxtObj));
         TextMeshProUGUI nextTMP = nextTxtObj.AddComponent<TextMeshProUGUI>();
         nextTMP.font = MainMenuManager.GetTacticalFont();
-        nextTMP.text = "SONRAKİ [>>]";
-        nextTMP.fontSize = 22f;
-        nextTMP.characterSpacing = 1.8f;
+        nextTMP.text = "SONRAKİ >";
+        nextTMP.fontSize = 17f;
+        nextTMP.characterSpacing = 1.4f;
         nextTMP.fontStyle = FontStyles.Bold;
         nextTMP.alignment = TextAlignmentOptions.Center;
-        nextTMP.color = Color.white;
+        nextTMP.color = new Color(0.85f, 0.92f, 1f);
 
-        // Ortadaki Uçak Bilgisi
+        // Ortadaki Uçak Bilgisi (F-16C VIPER [AKTİF])
         GameObject infoObj = new GameObject("SelectedPlaneInfo", typeof(RectTransform));
         infoObj.transform.SetParent(barObj.transform, false);
         RectTransform infoRt = GetRect(infoObj);
-        infoRt.anchorMin = new Vector2(0.5f, 0.5f);
-        infoRt.anchorMax = new Vector2(0.5f, 0.5f);
-        infoRt.pivot = new Vector2(0.5f, 0.5f);
-        infoRt.anchoredPosition = new Vector2(-70f, 0f);
-        infoRt.sizeDelta = new Vector2(620f, 48f);
+        infoRt.anchorMin = new Vector2(0.16f, 0.05f);
+        infoRt.anchorMax = new Vector2(0.68f, 0.95f);
+        infoRt.offsetMin = Vector2.zero;
+        infoRt.offsetMax = Vector2.zero;
 
         _planeInfoTMP = infoObj.AddComponent<TextMeshProUGUI>();
         _planeInfoTMP.font = MainMenuManager.GetTacticalFont();
-        _planeInfoTMP.text = "<b>F-16C Viper</b> (SEVİYE 20)";
-        _planeInfoTMP.fontSize = 22f;
-        _planeInfoTMP.characterSpacing = 1.8f;
+        _planeInfoTMP.text = "<b>F-16C VIPER</b> <color=#4ADE80>[AKTİF]</color>";
+        _planeInfoTMP.fontSize = 20f;
+        _planeInfoTMP.characterSpacing = 1.6f;
         _planeInfoTMP.alignment = TextAlignmentOptions.Center;
         _planeInfoTMP.color = Color.white;
 
@@ -355,11 +400,10 @@ public class MilitaryStoreUI : MonoBehaviour
         GameObject activeToggleObj = new GameObject("ActiveToggleBtn", typeof(RectTransform));
         activeToggleObj.transform.SetParent(barObj.transform, false);
         RectTransform atRt = GetRect(activeToggleObj);
-        atRt.anchorMin = new Vector2(0.5f, 0.5f);
-        atRt.anchorMax = new Vector2(0.5f, 0.5f);
-        atRt.pivot = new Vector2(0.5f, 0.5f);
-        atRt.anchoredPosition = new Vector2(330f, 0f);
-        atRt.sizeDelta = new Vector2(200f, 40f);
+        atRt.anchorMin = new Vector2(0.69f, 0.10f);
+        atRt.anchorMax = new Vector2(0.84f, 0.90f);
+        atRt.offsetMin = Vector2.zero;
+        atRt.offsetMax = Vector2.zero;
 
         Image atImg = activeToggleObj.AddComponent<Image>();
         atImg.sprite = MainMenuManager.GetHudSprite("hud_btn_emerald", new Color(0.18f, 0.85f, 0.45f), new Color(0.04f, 0.14f, 0.08f, 0.95f), true);
@@ -375,8 +419,8 @@ public class MilitaryStoreUI : MonoBehaviour
         _activePlaneToggleTMP = atTxtObj.AddComponent<TextMeshProUGUI>();
         _activePlaneToggleTMP.font = MainMenuManager.GetTacticalFont();
         _activePlaneToggleTMP.text = "HAREKÂTA SEÇ";
-        _activePlaneToggleTMP.fontSize = 22f;
-        _activePlaneToggleTMP.characterSpacing = 1.8f;
+        _activePlaneToggleTMP.fontSize = 14.5f;
+        _activePlaneToggleTMP.characterSpacing = 1.2f;
         _activePlaneToggleTMP.fontStyle = FontStyles.Bold;
         _activePlaneToggleTMP.alignment = TextAlignmentOptions.Center;
         _activePlaneToggleTMP.color = Color.white;
@@ -387,21 +431,17 @@ public class MilitaryStoreUI : MonoBehaviour
         GameObject tabsObj = new GameObject("CategoryTabs", typeof(RectTransform));
         tabsObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform tRt = GetRect(tabsObj);
-        tRt.anchorMin = new Vector2(0f, 1f);
-        tRt.anchorMax = new Vector2(1f, 1f);
-        tRt.pivot = new Vector2(0.5f, 1f);
-        tRt.anchoredPosition = new Vector2(0f, -148f);
-        tRt.sizeDelta = new Vector2(0f, 50f);
+        HangarUI.SetNormalizedRect1080p(tRt, new Vector2(0f, 366.0f), new Vector2(1180f, 44f));
 
         HorizontalLayoutGroup hlg = tabsObj.AddComponent<HorizontalLayoutGroup>();
-        hlg.spacing = 10f;
+        hlg.spacing = 12f;
         hlg.childAlignment = TextAnchor.MiddleCenter;
         hlg.childControlWidth = false;
         hlg.childControlHeight = true;
         hlg.childForceExpandWidth = false;
         hlg.childForceExpandHeight = true;
 
-        float tabW = 230f;
+        float tabW = 226f;
         _tabEngineBtn = CreateTabButton(tabsObj.transform, "MOTOR & İTKİ", tabW, () => SwitchTab(StoreTab.Engine));
         _tabRadarBtn = CreateTabButton(tabsObj.transform, "RADAR / AVİYONİK", tabW, () => SwitchTab(StoreTab.Radar));
         _tabAirframeBtn = CreateTabButton(tabsObj.transform, "GÖVDE & ZIRH", tabW, () => SwitchTab(StoreTab.Airframe));
@@ -445,14 +485,11 @@ public class MilitaryStoreUI : MonoBehaviour
         _cardsScrollContainer = new GameObject("CardsScrollContainer", typeof(RectTransform));
         _cardsScrollContainer.transform.SetParent(_panelRoot.transform, false);
         RectTransform sRt = GetRect(_cardsScrollContainer);
-        sRt.anchorMin = new Vector2(0f, 0f);
-        sRt.anchorMax = new Vector2(1f, 1f);
-        sRt.offsetMin = new Vector2(25f, 90f);
-        sRt.offsetMax = new Vector2(-25f, -218f);
+        HangarUI.SetNormalizedRect1080p(sRt, new Vector2(0f, -62.0f), new Vector2(1180f, 770f));
 
         Image scrollBg = _cardsScrollContainer.AddComponent<Image>();
-        scrollBg.color = new Color(0.06f, 0.09f, 0.14f, 0.85f);
-        _cardsScrollContainer.AddComponent<Mask>().showMaskGraphic = true;
+        scrollBg.color = new Color(0f, 0f, 0f, 0.005f);
+        _cardsScrollContainer.AddComponent<RectMask2D>();
 
         ScrollRect sr = _cardsScrollContainer.AddComponent<ScrollRect>();
         sr.horizontal = false;
@@ -470,8 +507,8 @@ public class MilitaryStoreUI : MonoBehaviour
         cRt.sizeDelta = new Vector2(0f, 800f);
 
         VerticalLayoutGroup vlg = content.AddComponent<VerticalLayoutGroup>();
-        vlg.spacing = 14f;
-        vlg.padding = new RectOffset(16, 16, 16, 24);
+        vlg.spacing = 12f;
+        vlg.padding = new RectOffset(4, 4, 4, 16);
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.childForceExpandWidth = true;
@@ -489,13 +526,10 @@ public class MilitaryStoreUI : MonoBehaviour
         _loadoutContainer = new GameObject("LoadoutContainer", typeof(RectTransform));
         _loadoutContainer.transform.SetParent(_panelRoot.transform, false);
         RectTransform lRt = GetRect(_loadoutContainer);
-        lRt.anchorMin = new Vector2(0f, 0f);
-        lRt.anchorMax = new Vector2(1f, 1f);
-        lRt.offsetMin = new Vector2(25f, 90f);
-        lRt.offsetMax = new Vector2(-25f, -218f);
+        HangarUI.SetNormalizedRect1080p(lRt, new Vector2(0f, -62.0f), new Vector2(1180f, 770f));
 
         Image lBg = _loadoutContainer.AddComponent<Image>();
-        lBg.color = new Color(0.05f, 0.08f, 0.13f, 0.95f);
+        lBg.color = new Color(0.02f, 0.05f, 0.10f, 0.55f);
 
         // İçerik dinamik olarak RefreshLoadoutView'da doldurulacaktır
         _loadoutContainer.SetActive(false);
@@ -705,9 +739,9 @@ public class MilitaryStoreUI : MonoBehaviour
 
         if (_planeInfoTMP != null)
         {
-            string activeTag = isActiveJet ? " <color=#4ADE80>[HAREKÂT JETİ]</color>" : "";
+            string activeTag = isActiveJet ? " <color=#4ADE80>[AKTİF]</color>" : "";
             string lockTag = isUnlockedJet ? "" : " <color=#F87171>[HANGARDA KİLİTLİ]</color>";
-            _planeInfoTMP.text = $"<b>{planeName}</b>{activeTag}{lockTag}";
+            _planeInfoTMP.text = $"<b>{planeName.ToUpper()}</b>{activeTag}{lockTag}";
         }
 
         if (_activePlaneToggleBtn != null && _activePlaneToggleTMP != null)
@@ -760,13 +794,13 @@ public class MilitaryStoreUI : MonoBehaviour
         int planeLevel = MilitaryStoreManager.GetAircraftLevel(_selectedAircraft);
         string equippedPartId = sm.GetEquippedPartId(_selectedAircraft, cat);
 
-        foreach (var part in parts)
+        for (int i = 0; i < parts.Count; i++)
         {
-            CreatePartCard(part, planeLevel, equippedPartId, sm, hm);
+            CreatePartCard(parts[i], i, planeLevel, equippedPartId, sm, hm);
         }
     }
 
-    private void CreatePartCard(AircraftPart part, int planeLevel, string equippedPartId, MilitaryStoreManager sm, HangarManager hm)
+    private void CreatePartCard(AircraftPart part, int indexInCat, int planeLevel, string equippedPartId, MilitaryStoreManager sm, HangarManager hm)
     {
         bool isUnlocked = sm.IsPartUnlocked(part.id);
         bool isEquipped = (equippedPartId == part.id);
@@ -778,71 +812,103 @@ public class MilitaryStoreUI : MonoBehaviour
         GameObject cardObj = new GameObject("Card_" + part.id, typeof(RectTransform));
         cardObj.transform.SetParent(_cardsContentTransform, false);
         RectTransform cRt = GetRect(cardObj);
-        cRt.sizeDelta = new Vector2(0f, 185f);
+        cRt.sizeDelta = new Vector2(0f, 134f);
 
-        Color cardBorderCol = isEquipped ? new Color(0.2f, 0.90f, 0.45f) : (isCompatible ? new Color(0.20f, 0.55f, 0.85f) : new Color(0.85f, 0.25f, 0.25f));
+        Color cardBorderCol = isEquipped ? new Color(0.25f, 0.65f, 0.88f, 0.90f) : (isCompatible ? new Color(0.20f, 0.50f, 0.78f, 0.85f) : new Color(0.75f, 0.25f, 0.28f, 0.85f));
         Image cBg = cardObj.AddComponent<Image>();
-        cBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", cardBorderCol, new Color(0.03f, 0.06f, 0.11f, 0.95f), false);
+        cBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", cardBorderCol, new Color(0.03f, 0.07f, 0.12f, 0.92f), false);
         cBg.type = Image.Type.Sliced;
         cBg.color = Color.white;
 
-        // Başlık ve Uyumlu Uçaklar (Sol Üst)
-        GameObject titleObj = new GameObject("Title", typeof(RectTransform));
+        // 1. Sol 3D Donanım İkonu (Görseldekiyle birebir aynı 3D parça ikonu)
+        GameObject iconObj = new GameObject("Part3DIcon", typeof(RectTransform));
+        iconObj.transform.SetParent(cardObj.transform, false);
+        RectTransform iRt = GetRect(iconObj);
+        iRt.anchorMin = new Vector2(0f, 0.5f);
+        iRt.anchorMax = new Vector2(0f, 0.5f);
+        iRt.pivot = new Vector2(0f, 0.5f);
+        iRt.anchoredPosition = new Vector2(22f, 0f);
+        iRt.sizeDelta = new Vector2(96f, 96f);
+
+        Image iconImg = iconObj.AddComponent<Image>();
+        iconImg.sprite = GetPart3DIcon(part, indexInCat);
+        iconImg.preserveAspect = true;
+        iconImg.raycastTarget = false;
+
+        // 2. Orta Üst: Parça Adı & Uyumlu Uçaklar
+        GameObject titleObj = new GameObject("TitleAndCompat", typeof(RectTransform));
         titleObj.transform.SetParent(cardObj.transform, false);
         RectTransform tRt = GetRect(titleObj);
         tRt.anchorMin = new Vector2(0f, 1f);
         tRt.anchorMax = new Vector2(1f, 1f);
         tRt.pivot = new Vector2(0f, 1f);
-        tRt.anchoredPosition = new Vector2(24f, -12f);
-        tRt.sizeDelta = new Vector2(-320f, 56f);
+        tRt.anchoredPosition = new Vector2(138f, -14f);
+        tRt.sizeDelta = new Vector2(-380f, 58f);
 
         TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
         tTMP.font = MainMenuManager.GetTacticalFont();
-        tTMP.text = $"{part.GetCategoryIcon()} <b>{part.name}</b>\n<size=85%><color=#38BDF8>» Uyumlu Uçaklar: <b>{compPlanes}</b></color></size>";
-        tTMP.fontSize = 22f;
-        tTMP.characterSpacing = 1.6f;
+        tTMP.text = $"<b>{part.name}</b>\n<size=78%><color=#38BDF8>» Uyumlu: {compPlanes}</color></size>";
+        tTMP.fontSize = 21f;
+        tTMP.characterSpacing = 1.1f;
+        tTMP.lineSpacing = 2.0f;
         tTMP.color = Color.white;
+        tTMP.raycastTarget = false;
 
-        // Gerçek Askeri Bilgi (Lore) (Orta)
-        GameObject loreObj = new GameObject("Lore", typeof(RectTransform));
-        loreObj.transform.SetParent(cardObj.transform, false);
-        RectTransform lRt = GetRect(loreObj);
-        lRt.anchorMin = new Vector2(0f, 1f);
-        lRt.anchorMax = new Vector2(1f, 1f);
-        lRt.pivot = new Vector2(0f, 1f);
-        lRt.anchoredPosition = new Vector2(24f, -70f);
-        lRt.sizeDelta = new Vector2(-320f, 52f);
+        // 3. Orta Alt: Çerçeveli Muharebe Stat Rozetleri (+5 Mermi Dmg | +%8 Kritik)
+        GameObject badgesRow = new GameObject("StatBadgesRow", typeof(RectTransform));
+        badgesRow.transform.SetParent(cardObj.transform, false);
+        RectTransform brRt = GetRect(badgesRow);
+        brRt.anchorMin = new Vector2(0f, 0f);
+        brRt.anchorMax = new Vector2(1f, 0f);
+        brRt.pivot = new Vector2(0f, 0f);
+        brRt.anchoredPosition = new Vector2(138f, 14f);
+        brRt.sizeDelta = new Vector2(-380f, 34f);
 
-        TextMeshProUGUI lTMP = loreObj.AddComponent<TextMeshProUGUI>();
-        lTMP.font = MainMenuManager.GetTacticalFont();
-        lTMP.text = $"<color=#94A3B8><i>{part.realWorldLore}</i></color>";
-        lTMP.fontSize = 21f;
+        HorizontalLayoutGroup bhlg = badgesRow.AddComponent<HorizontalLayoutGroup>();
+        bhlg.spacing = 10f;
+        bhlg.childAlignment = TextAnchor.MiddleLeft;
+        bhlg.childControlWidth = false;
+        bhlg.childControlHeight = true;
+        bhlg.childForceExpandWidth = false;
+        bhlg.childForceExpandHeight = true;
 
-        // Muharebe Bonusları (Sol Alt)
-        GameObject statsObj = new GameObject("Stats", typeof(RectTransform));
-        statsObj.transform.SetParent(cardObj.transform, false);
-        RectTransform stRt = GetRect(statsObj);
-        stRt.anchorMin = new Vector2(0f, 0f);
-        stRt.anchorMax = new Vector2(1f, 0f);
-        stRt.pivot = new Vector2(0f, 0f);
-        stRt.anchoredPosition = new Vector2(24f, 14f);
-        stRt.sizeDelta = new Vector2(-320f, 36f);
+        var badges = part.GetStatBadges();
+        foreach (var b in badges)
+        {
+            GameObject pillObj = new GameObject("Badge_" + b.text, typeof(RectTransform));
+            pillObj.transform.SetParent(badgesRow.transform, false);
+            RectTransform pRt = GetRect(pillObj);
+            float pillW = Mathf.Max(135f, b.text.Length * 10.5f + 24f);
+            pRt.sizeDelta = new Vector2(pillW, 32f);
 
-        TextMeshProUGUI stTMP = statsObj.AddComponent<TextMeshProUGUI>();
-        stTMP.font = MainMenuManager.GetTacticalFont();
-        stTMP.text = $"<b>BONUS:</b> {part.GetStatsSummary()}";
-        stTMP.fontSize = 19f;
-        stTMP.characterSpacing = 1.4f;
+            Image pBg = pillObj.AddComponent<Image>();
+            pBg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", b.borderColor, b.bgColor, true);
+            pBg.type = Image.Type.Sliced;
+            pBg.color = Color.white;
+            pBg.raycastTarget = false;
 
-        // Sağ Aksiyon Butonu (Satın Al / Donat / Çıkar / Uyumsuzluk Uyarısı)
+            GameObject pTxtObj = new GameObject("Text", typeof(RectTransform));
+            pTxtObj.transform.SetParent(pillObj.transform, false);
+            MakeFullScreenRect(GetRect(pTxtObj));
+            TextMeshProUGUI pTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
+            pTMP.font = MainMenuManager.GetTacticalFont();
+            pTMP.text = $"<b>{b.text}</b>";
+            pTMP.fontSize = 15.5f;
+            pTMP.characterSpacing = 0.8f;
+            pTMP.alignment = TextAlignmentOptions.Center;
+            pTMP.color = b.textColor;
+            pTMP.raycastTarget = false;
+        }
+
+        // 4. Sağ Aksiyon Butonu ([ DONATILDI ] / SATIN AL 2.100 ALTIN)
         GameObject actBtnObj = new GameObject("ActionButton", typeof(RectTransform));
         actBtnObj.transform.SetParent(cardObj.transform, false);
         RectTransform aRt = GetRect(actBtnObj);
         aRt.anchorMin = new Vector2(1f, 0.5f);
         aRt.anchorMax = new Vector2(1f, 0.5f);
         aRt.pivot = new Vector2(1f, 0.5f);
-        aRt.anchoredPosition = new Vector2(-22f, 0f);
-        aRt.sizeDelta = new Vector2(260f, 90f);
+        aRt.anchoredPosition = new Vector2(-24f, 0f);
+        aRt.sizeDelta = new Vector2(215f, 70f);
 
         Image aImg = actBtnObj.AddComponent<Image>();
         aImg.type = Image.Type.Sliced;
@@ -855,16 +921,15 @@ public class MilitaryStoreUI : MonoBehaviour
         TextMeshProUGUI aTMP = aTxtObj.AddComponent<TextMeshProUGUI>();
         aTMP.font = MainMenuManager.GetTacticalFont();
         aTMP.alignment = TextAlignmentOptions.Center;
-        aTMP.characterSpacing = 1.6f;
+        aTMP.characterSpacing = 1.4f;
         aTMP.fontStyle = FontStyles.Bold;
 
         if (!isUnlocked)
         {
-            // DURUM 1: SATIN ALINMAMIŞ
             bool canAfford = (hm.gold >= part.price);
-            aImg.sprite = MainMenuManager.GetHudSprite(canAfford ? "hud_btn_emerald" : "hud_btn_slate", canAfford ? new Color(0.18f, 0.85f, 0.45f) : new Color(0.40f, 0.40f, 0.45f), new Color(0.04f, 0.10f, 0.06f, 0.95f), true);
-            aTMP.text = $"SATIN AL\n<size=88%><color=#FDE047>{part.price:N0} ALTIN</color></size>";
-            aTMP.fontSize = 21f;
+            aImg.sprite = MainMenuManager.GetHudSprite(canAfford ? "hud_btn_emerald" : "hud_btn_slate", canAfford ? new Color(0.18f, 0.85f, 0.45f) : new Color(0.40f, 0.40f, 0.45f), new Color(0.04f, 0.12f, 0.07f, 0.95f), true);
+            aTMP.text = $"SATIN AL\n<size=90%><color=#FDE047>{part.price:N0} ALTIN</color></size>";
+            aTMP.fontSize = 18.5f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -881,10 +946,9 @@ public class MilitaryStoreUI : MonoBehaviour
         }
         else if (isEquipped)
         {
-            // DURUM 2: BU UÇAKTA DONATILMIŞ (ÇIKAR)
-            aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.35f, 0.70f, 0.55f), new Color(0.04f, 0.10f, 0.07f, 0.95f), true);
-            aTMP.text = "[DONATILDI]\n<size=80%><color=#FCA5A5>(Çıkarmak İçin Tıkla)</color></size>";
-            aTMP.fontSize = 20f;
+            aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_slate", new Color(0.38f, 0.48f, 0.60f), new Color(0.05f, 0.08f, 0.13f, 0.95f), true);
+            aTMP.text = "<color=#94A3B8>[ DONATILDI ]</color>";
+            aTMP.fontSize = 18f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -894,10 +958,9 @@ public class MilitaryStoreUI : MonoBehaviour
         }
         else if (isCompatible)
         {
-            // DURUM 3: SATIN ALINMIŞ & UYUMLU (DONAT)
-            aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f), new Color(0.04f, 0.09f, 0.18f, 0.95f), true);
-            aTMP.text = "UÇAĞA MONTE ET";
-            aTMP.fontSize = 21f;
+            aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f), new Color(0.04f, 0.10f, 0.18f, 0.95f), true);
+            aTMP.text = "UÇAĞA DONAT";
+            aTMP.fontSize = 18.5f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -910,10 +973,9 @@ public class MilitaryStoreUI : MonoBehaviour
         }
         else
         {
-            // DURUM 4: SATIN ALINMIŞ ANCAK SEÇİLİ UÇAK DESTEKLEMİYOR
             aImg.sprite = MainMenuManager.GetHudSprite("hud_btn_red", new Color(0.95f, 0.25f, 0.25f), new Color(0.12f, 0.04f, 0.05f, 0.95f), true);
-            aTMP.text = $"[!] {currentPlaneShort} DESTEKLEMEZ\n<size=80%><color=#FECACA>(Uçak Uyumsuz)</color></size>";
-            aTMP.fontSize = 19f;
+            aTMP.text = $"[!] {currentPlaneShort} UYUMSUZ\n<size=78%><color=#FECACA>(Detay İçin Tıkla)</color></size>";
+            aTMP.fontSize = 16.5f;
 
             aBtn.onClick.AddListener(() =>
             {
@@ -999,7 +1061,7 @@ public class MilitaryStoreUI : MonoBehaviour
         sTMP.characterSpacing = 1.4f;
 
         string statsStr = $"<b>TOPLAM DONATIM GÜÇLENDİRMELERİ:</b>\n" +
-            $"<color=#38BDF8>+{totalStats.bonusSpeed:0.1f} Hız</color>  |  " +
+            $"<color=#38BDF8>+{totalStats.bonusSpeed:0.#} Hız</color>  |  " +
             $"<color=#4ADE80>+{totalStats.bonusHp:0} Gövde HP</color>  |  " +
             $"<color=#F87171>+{totalStats.bonusDamage:0} Dmg</color>  |  " +
             $"<color=#FBBF24>+%{totalStats.bonusCrit:0} Kritik</color>  |  " +
@@ -1025,7 +1087,22 @@ public class MilitaryStoreUI : MonoBehaviour
         rBg.type = Image.Type.Sliced;
         rBg.color = Color.white;
 
-        // Kategori Rozeti (Sol)
+        // 1. Sol 3D Yuva İkonu (Donatılmış parça ikonu veya boş yuva '+' ikonu)
+        GameObject slotIconObj = new GameObject("Slot3DIcon", typeof(RectTransform));
+        slotIconObj.transform.SetParent(rowObj.transform, false);
+        RectTransform siRt = GetRect(slotIconObj);
+        siRt.anchorMin = new Vector2(0f, 0.5f);
+        siRt.anchorMax = new Vector2(0f, 0.5f);
+        siRt.pivot = new Vector2(0f, 0.5f);
+        siRt.anchoredPosition = new Vector2(20f, 0f);
+        siRt.sizeDelta = new Vector2(72f, 72f);
+
+        Image siImg = slotIconObj.AddComponent<Image>();
+        siImg.sprite = GetPart3DIcon(part, 0);
+        siImg.preserveAspect = true;
+        siImg.raycastTarget = false;
+
+        // 2. Kategori Rozeti ve Parça Bilgisi
         string catIcon = "[PRÇ]";
         string catName = "YUVA";
         switch (cat)
@@ -1041,7 +1118,7 @@ public class MilitaryStoreUI : MonoBehaviour
         RectTransform tRt = GetRect(textObj);
         tRt.anchorMin = Vector2.zero;
         tRt.anchorMax = Vector2.one;
-        tRt.offsetMin = new Vector2(24f, 0f);
+        tRt.offsetMin = new Vector2(110f, 0f);
         tRt.offsetMax = new Vector2(-220f, 0f);
 
         TextMeshProUGUI tTMP = textObj.AddComponent<TextMeshProUGUI>();

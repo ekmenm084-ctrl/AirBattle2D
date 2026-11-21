@@ -260,7 +260,7 @@ public class TwoPlayerInputRouter : MonoBehaviour
 
             TextMeshProUGUI dTmp = dTextObj.AddComponent<TextMeshProUGUI>();
             dTmp.text = "MANEVRA\n<size=65%>[SHIFT]</size>";
-            dTmp.fontSize = 17f;
+            dTmp.fontSize = 20f;
             dTmp.fontStyle = FontStyles.Bold;
             dTmp.alignment = TextAlignmentOptions.Center;
             dTmp.color = new Color(1f, 0.75f, 0.4f);

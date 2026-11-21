@@ -120,39 +120,30 @@ public class DynamicStormBackground : MonoBehaviour
 
     private void SetupContinuousScrollingLayers()
     {
-        // Katman 1
+        // Tek ve Net Sinematik Arka Plan Katmanı (Sıfır şerit, sıfır dikiş, tam ekran)
         GameObject bg1Obj = new GameObject("DynamicStorm_Layer1", typeof(RectTransform));
         bg1Obj.transform.SetParent(transform, false);
         bg1Obj.transform.SetAsFirstSibling();
         _bg1Rt = bg1Obj.GetComponent<RectTransform>();
-        ConfigureLayerRect(_bg1Rt, 0f);
+        _bg1Rt.anchorMin = Vector2.zero;
+        _bg1Rt.anchorMax = Vector2.one;
+        _bg1Rt.pivot = new Vector2(0.5f, 0.5f);
+        _bg1Rt.offsetMin = Vector2.zero;
+        _bg1Rt.offsetMax = Vector2.zero;
+
         _bg1Img = bg1Obj.AddComponent<Image>();
         _bg1Img.sprite = _stormSprite;
         _bg1Img.color = Color.white;
         _bg1Img.raycastTarget = false;
-
-        // Katman 2 (Üstüne eklenen ikinci görsel)
-        GameObject bg2Obj = new GameObject("DynamicStorm_Layer2", typeof(RectTransform));
-        bg2Obj.transform.SetParent(transform, false);
-        bg2Obj.transform.SetAsFirstSibling();
-        _bg2Rt = bg2Obj.GetComponent<RectTransform>();
-        ConfigureLayerRect(_bg2Rt, _layerHeight);
-        _bg2Img = bg2Obj.AddComponent<Image>();
-        _bg2Img.sprite = _stormSprite;
-        _bg2Img.color = Color.white;
-        _bg2Img.raycastTarget = false;
-
-        _pos1Y = 0f;
-        _pos2Y = _layerHeight;
     }
 
     private void ConfigureLayerRect(RectTransform rt, float startY)
     {
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(0f, startY);
-        rt.sizeDelta = new Vector2(_layerWidth, _layerHeight + 2f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
     }
 
     private void SetupLightningOverlay()
@@ -174,37 +165,7 @@ public class DynamicStormBackground : MonoBehaviour
 
     private void Update()
     {
-        float dt = Time.unscaledDeltaTime;
-        if (dt <= 0f) return;
-
-        // 1. Kesintisiz Çift Katmanlı Sonsuz Konveyör Hareketi (Sıfır Şerit, Sıfır Boşluk)
-        if (_bg1Rt != null && _bg2Rt != null)
-        {
-            _pos1Y -= scrollSpeed * dt;
-            _pos2Y -= scrollSpeed * dt;
-
-            // Katman 1 alt sınıra indiğinde Katman 2'nin üst ucuna kilitlenir
-            if (_pos1Y <= -_layerHeight)
-            {
-                _pos1Y = _pos2Y + _layerHeight;
-            }
-
-            // Katman 2 alt sınıra indiğinde Katman 1'in üst ucuna kilitlenir
-            if (_pos2Y <= -_layerHeight)
-            {
-                _pos2Y = _pos1Y + _layerHeight;
-            }
-
-            // Sinematik yatay süzülme
-            float swayX = 0f;
-            if (enableSway)
-            {
-                swayX = Mathf.Sin(Time.unscaledTime * swayFrequency) * swayAmount;
-            }
-
-            _bg1Rt.anchoredPosition = new Vector2(swayX, _pos1Y);
-            _bg2Rt.anchoredPosition = new Vector2(swayX, _pos2Y);
-        }
+        // Görsel arka planda sabit, sinematik ve kristal netliğinde durur
     }
 
     private IEnumerator LightningRoutine()
@@ -260,15 +221,26 @@ public class DynamicStormBackground : MonoBehaviour
 
     private static Sprite LoadSpriteFromDisk(string relativePath)
     {
-        string fullPath = System.IO.Path.Combine(Application.dataPath, "../", relativePath);
-        if (System.IO.File.Exists(fullPath))
+        string[] searchPaths = new string[]
         {
-            byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-            if (tex.LoadImage(bytes))
+            System.IO.Path.Combine(Application.dataPath, "Sprites/menu_background.jpg"),
+            System.IO.Path.Combine(Application.dataPath, "Resources/menu_background.jpg"),
+            System.IO.Path.Combine(Application.dataPath, "../", relativePath),
+            System.IO.Path.Combine(Application.dataPath, relativePath),
+            relativePath
+        };
+
+        foreach (var fullPath in searchPaths)
+        {
+            if (System.IO.File.Exists(fullPath))
             {
-                tex.wrapMode = TextureWrapMode.Clamp;
-                return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                }
             }
         }
         return null;

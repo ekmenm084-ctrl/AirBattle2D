@@ -200,7 +200,7 @@ public class GameOverUI : MonoBehaviour
         Text t = txtObj.AddComponent<Text>();
         t.text = "HANGAR'A GİT (UÇAK GELİŞTİR)";
         t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
-        t.fontSize = 17;
+        t.fontSize = 20;
         t.fontStyle = FontStyle.Bold;
         t.alignment = TextAnchor.MiddleCenter;
         t.color = Color.white;

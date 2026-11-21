@@ -151,13 +151,13 @@ public class AudioSettingsUI : MonoBehaviour
 
         soundButtonObj.SetActive(true);
 
-        // İkon boyutunu ve konumunu şık ve orijinal pause ikonuna göre ayarla
+        // İkon boyutunu ve konumunu en köşeye şık ve kompakt olarak ayarla
         RectTransform rt = soundButtonObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-25f, -25f);
-        rt.sizeDelta = new Vector2(56f, 56f);
+        rt.anchoredPosition = new Vector2(-12f, -12f);
+        rt.sizeDelta = new Vector2(44f, 44f);
 
         Image btnBg = soundButtonObj.GetComponent<Image>();
         if (btnBg == null) btnBg = soundButtonObj.AddComponent<Image>();

@@ -182,58 +182,30 @@ public class InventoryUI : MonoBehaviour
         // 3. Filo Muharebe Gücü ve Skoru
         if (_combatContentTMP != null)
         {
-            float baseHp = hm.activeAircraft switch
+            var baseStats = HangarManager.GetAircraftBaseStats(hm.activeAircraft);
+            MilitaryStoreManager.LoadoutStats loadout = default;
+            if (MilitaryStoreManager.EnsureInstance() != null)
             {
-                HangarManager.AircraftType.A10TankBuster => 180f,
-                HangarManager.AircraftType.F22Raptor     => 120f,
-                HangarManager.AircraftType.Su57Felon     => 160f,
-                HangarManager.AircraftType.F35Lightning  => 150f,
-                HangarManager.AircraftType.KaanApex      => 220f,
-                _                                        => 100f
-            };
+                loadout = MilitaryStoreManager.EnsureInstance().GetLoadoutStats(hm.activeAircraft);
+            }
 
-            float baseDmg = hm.activeAircraft switch
-            {
-                HangarManager.AircraftType.A10TankBuster => 32f,
-                HangarManager.AircraftType.F22Raptor     => 24f,
-                HangarManager.AircraftType.Su57Felon     => 28f,
-                HangarManager.AircraftType.F35Lightning  => 22f,
-                HangarManager.AircraftType.KaanApex      => 34f,
-                _                                        => 20f
-            };
+            float totalHp = baseStats.baseHp + hm.chipBonusHealth + loadout.bonusHp;
+            float totalDmg = baseStats.bulletDamage + hm.chipBonusDamage + loadout.bonusDamage;
+            float totalSpd = baseStats.baseSpeed + loadout.bonusSpeed;
+            float totalCrit = baseStats.critChancePercent + loadout.bonusCrit;
+            int salvoCount = baseStats.bulletsPerShot;
+            float salvoDmg = totalDmg * salvoCount;
 
-            float baseSpd = hm.activeAircraft switch
-            {
-                HangarManager.AircraftType.A10TankBuster => 6.2f,
-                HangarManager.AircraftType.F22Raptor     => 10.5f,
-                HangarManager.AircraftType.Su57Felon     => 9.8f,
-                HangarManager.AircraftType.F35Lightning  => 11.2f,
-                HangarManager.AircraftType.KaanApex      => 12.0f,
-                _                                        => 8.0f
-            };
-
-            float baseCrit = hm.activeAircraft switch
-            {
-                HangarManager.AircraftType.Su57Felon     => 15f,
-                HangarManager.AircraftType.F35Lightning  => 10f,
-                HangarManager.AircraftType.KaanApex      => 25f,
-                _                                        => 0f
-            };
-
-            float totalHp = baseHp + hm.chipBonusHealth;
-            float totalDmg = baseDmg + hm.chipBonusDamage;
-            float totalSpd = baseSpd;
-            float totalCrit = baseCrit;
-
-            int ratingScore = (int)((totalHp * 1.5f) + (totalDmg * 12f) + (totalSpd * 18f) + (totalCrit * 10f));
+            int ratingScore = (int)((totalHp * 1.5f) + (salvoDmg * 12f) + (totalSpd * 18f) + (totalCrit * 10f));
             string planeName = HangarManager.GetAircraftDisplayName(hm.activeAircraft);
 
             _combatContentTMP.text =
                 $"<b>[AKTİF MUHAREBE GÜCÜ]</b>\n\n" +
-                $"• Görev Uçağı: <color=#FFE082>{planeName.ToUpper()}</color>\n\n" +
-                $"• Toplam Can: <color=#2ECC71>{totalHp:0} HP</color>\n\n" +
-                $"• Mermi Hasarı: <color=#E74C3C>{totalDmg:0.0} DMG</color>\n\n" +
-                $"• Uçuş Hızı: <color=#3498DB>{totalSpd:0.0} Mach</color>\n\n" +
+                $"• Görev Uçağı: <color=#FFE082>{planeName.ToUpper()} (KADEME {baseStats.tier})</color>\n" +
+                $"• Özel Yetenek: <color=#00E5FF>{baseStats.uniqueTraitTitle}</color>\n\n" +
+                $"• Toplam Can: <color=#2ECC71>{totalHp:0} HP</color> (Zırh Koruması: %{(baseStats.damageReduction + loadout.damageReductionPercent) * 100f:0})\n" +
+                $"• Salvo Hasarı: <color=#E74C3C>{totalDmg:0.0} x {salvoCount} Namlu ({salvoDmg:0} DMG)</color>\n" +
+                $"• Uçuş Hızı: <color=#3498DB>{totalSpd:0.0} Mach</color>\n" +
                 $"• Kritik Vuruş Şansı: <color=#F1C40F>%{totalCrit:0}</color>\n\n" +
                 $"• Toplam Muharebe Skoru:\n  <color=#F1C40F><size=125%>{ratingScore:N0} GP</size></color>";
         }
@@ -314,15 +286,15 @@ public class InventoryUI : MonoBehaviour
         titleTMP.outlineWidth = 0.10f;
         titleTMP.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
 
-        // Üst Sağda Altın Rozeti
+        // Üst Sağda Altın Rozeti (Kompakt ve En Üst Kenara Sabitlenmiş)
         GameObject goldBadgeObj = new GameObject("GoldBadge", typeof(RectTransform));
         goldBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform gRt = GetRect(goldBadgeObj);
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-40f, -16f);
-        gRt.sizeDelta = new Vector2(280f, 52f);
+        gRt.anchoredPosition = new Vector2(-20f, -6f);
+        gRt.sizeDelta = new Vector2(200f, 38f);
 
         Image gBg = goldBadgeObj.AddComponent<Image>();
         gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.08f, 0.12f, 0.18f, 0.95f), true);
@@ -341,7 +313,7 @@ public class InventoryUI : MonoBehaviour
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
         _goldTMP.font = MainMenuManager.GetTacticalFont();
         _goldTMP.text = "ALTIN: 0 G";
-        _goldTMP.fontSize = 22f;
+        _goldTMP.fontSize = 17f;
         _goldTMP.characterSpacing = 2.0f;
         _goldTMP.fontStyle = FontStyles.Bold;
         _goldTMP.alignment = TextAlignmentOptions.Center;

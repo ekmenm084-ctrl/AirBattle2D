@@ -219,6 +219,13 @@ public class HangarManager : MonoBehaviour
         silverKeys = ProfileManager.GetInt(PREF_KEY_SILVER, 0);
         goldKeys = ProfileManager.GetInt(PREF_KEY_GOLD, 0);
         singleUseSuperPlanes = ProfileManager.GetInt(PREF_SUPER_PLANES, 0);
+
+        // Seçili uçak kilitliyse veya seviye şartını karşılamıyorsa başlangıç uçağı F-16'ya sıfırla
+        if (!IsAircraftUnlocked(activeAircraft))
+        {
+            activeAircraft = AircraftType.F16Viper;
+            ProfileManager.SetInt(PREF_ACTIVE_PLANE, (int)AircraftType.F16Viper);
+        }
     }
 
     public void SaveHangarData()
@@ -739,9 +746,205 @@ public class HangarManager : MonoBehaviour
         };
     }
 
+    public struct AircraftCombatStats
+    {
+        public int tier;
+        public int requiredLevel;
+        public int unlockCost;
+        public float baseHp;
+        public float damageReduction;
+        public float baseSpeed;
+        public float fireRate;
+        public float bulletDamage;
+        public int bulletsPerShot;
+        public float critChancePercent;
+        public float startingShield;
+        public float dodgeCooldown;
+        public float missileCooldown;
+        public float ultiChargeBonus;
+        public float speedBar;
+        public float maneuverBar;
+        public float armorBar;
+        public float firepowerBar;
+        public string roleTag;
+        public string uniqueTraitTitle;
+        public string uniqueTraitDesc;
+    }
+
+    /// <summary>
+    /// Her uçağın kademesine göre artan temel muharebe istatistiklerini ve kendine has özel yeteneğini döner.
+    /// Kademe 1 (F-16 Viper) en düşük başlangıç özelliklerine sahipken, Kademe 6 (KAAN Apex) en yüksek zirve değerlere sahiptir.
+    /// </summary>
+    public static AircraftCombatStats GetAircraftBaseStats(AircraftType type)
+    {
+        switch (type)
+        {
+            case AircraftType.A10TankBuster:
+                return new AircraftCombatStats
+                {
+                    tier = 2,
+                    requiredLevel = 15,
+                    unlockCost = A10_UNLOCK_COST,
+                    baseHp = 150f,
+                    damageReduction = 0.08f,
+                    baseSpeed = 7.6f,
+                    fireRate = 0.25f,
+                    bulletDamage = 32f,
+                    bulletsPerShot = 1,
+                    critChancePercent = 10f,
+                    startingShield = 0f,
+                    dodgeCooldown = 2.9f,
+                    missileCooldown = 11.5f,
+                    ultiChargeBonus = 0.10f,
+                    speedBar = 0.38f,
+                    maneuverBar = 0.36f,
+                    armorBar = 0.44f,
+                    firepowerBar = 0.40f,
+                    roleTag = "AĞIR ZIRHLI TAARRUZ JETİ",
+                    uniqueTraitTitle = "TİTANYUM KÜVET ZIRH & URANYUM TOPU",
+                    uniqueTraitDesc = "Alınan tüm hasarı %8 azaltır; 30mm GAU-8 zırh delici kor mermileri düşmanı sarsar."
+                };
+
+            case AircraftType.F22Raptor:
+                return new AircraftCombatStats
+                {
+                    tier = 3,
+                    requiredLevel = 30,
+                    unlockCost = F22_UNLOCK_COST,
+                    baseHp = 190f,
+                    damageReduction = 0.13f,
+                    baseSpeed = 9.0f,
+                    fireRate = 0.22f,
+                    bulletDamage = 24f,
+                    bulletsPerShot = 2,
+                    critChancePercent = 16f,
+                    startingShield = 25f,
+                    dodgeCooldown = 2.3f,
+                    missileCooldown = 10.2f,
+                    ultiChargeBonus = 0.18f,
+                    speedBar = 0.56f,
+                    maneuverBar = 0.58f,
+                    armorBar = 0.54f,
+                    firepowerBar = 0.54f,
+                    roleTag = "5. NESİL SÜPERSONİK HAYALET AVCI",
+                    uniqueTraitTitle = "SÜPERSEYİR, ÇİFT NAMLU & +25 HP KALKAN",
+                    uniqueTraitDesc = "Savaşa +25 HP kalkanla başlar, çift namlulu süpersonik Vulcan ve %25 hızlı kaçış manevrası."
+                };
+
+            case AircraftType.Su57Felon:
+                return new AircraftCombatStats
+                {
+                    tier = 4,
+                    requiredLevel = 50,
+                    unlockCost = SU57_UNLOCK_COST,
+                    baseHp = 235f,
+                    damageReduction = 0.17f,
+                    baseSpeed = 10.3f,
+                    fireRate = 0.19f,
+                    bulletDamage = 33f,
+                    bulletsPerShot = 2,
+                    critChancePercent = 22f,
+                    startingShield = 45f,
+                    dodgeCooldown = 1.9f,
+                    missileCooldown = 9.2f,
+                    ultiChargeBonus = 0.25f,
+                    speedBar = 0.72f,
+                    maneuverBar = 0.75f,
+                    armorBar = 0.70f,
+                    firepowerBar = 0.72f,
+                    roleTag = "5. NESİL SÜPER-MANEVRA & PLAZMA AVCISI",
+                    uniqueTraitTitle = "3D VEKTÖR & %22 KRİTİK PLAZMA TOPU",
+                    uniqueTraitDesc = "Savaşa +45 HP kalkanla başlar, çift 30mm plazma topu (%22 kritik) ve +%25 hızlı Ulti dolumu."
+                };
+
+            case AircraftType.F35Lightning:
+                return new AircraftCombatStats
+                {
+                    tier = 5,
+                    requiredLevel = 75,
+                    unlockCost = F35_UNLOCK_COST,
+                    baseHp = 285f,
+                    damageReduction = 0.21f,
+                    baseSpeed = 11.4f,
+                    fireRate = 0.17f,
+                    bulletDamage = 29f,
+                    bulletsPerShot = 3,
+                    critChancePercent = 28f,
+                    startingShield = 70f,
+                    dodgeCooldown = 1.7f,
+                    missileCooldown = 8.2f,
+                    ultiChargeBonus = 0.34f,
+                    speedBar = 0.86f,
+                    maneuverBar = 0.85f,
+                    armorBar = 0.86f,
+                    firepowerBar = 0.86f,
+                    roleTag = "5. NESİL ÇOK AMAÇLI 3'LÜ SALVO JETİ",
+                    uniqueTraitTitle = "3'LÜ İYON SALVOSU & +70 HP ENERJİ KALKANI",
+                    uniqueTraitDesc = "Savaşa +70 HP enerji kalkanıyla başlar, 3 namlulu GAU-22/A yaylım ateşi ve %30 hızlı füze kilidi."
+                };
+
+            case AircraftType.KaanApex:
+                return new AircraftCombatStats
+                {
+                    tier = 6,
+                    requiredLevel = 100,
+                    unlockCost = KAAN_UNLOCK_COST,
+                    baseHp = 350f,
+                    damageReduction = 0.26f,
+                    baseSpeed = 12.6f,
+                    fireRate = 0.14f,
+                    bulletDamage = 38f,
+                    bulletsPerShot = 3,
+                    critChancePercent = 35f,
+                    startingShield = 110f,
+                    dodgeCooldown = 1.4f,
+                    missileCooldown = 7.0f,
+                    ultiChargeBonus = 0.45f,
+                    speedBar = 1.00f,
+                    maneuverBar = 1.00f,
+                    armorBar = 1.00f,
+                    firepowerBar = 1.00f,
+                    roleTag = "5.+ NESİL MİLLİ HAVA HÂKİMİYETİ ZİRVESİ",
+                    uniqueTraitTitle = "MİLLİ KUANTUM KALKAN (+110 HP) & ZİRVE SALVO",
+                    uniqueTraitDesc = "Savaşa +110 HP Kuantum Kalkanla başlar, 3'lü zirve plazma salvosu, %35 kritik ve +%45 hızlı Ulti!"
+                };
+
+            case AircraftType.F16Viper:
+            default:
+                return new AircraftCombatStats
+                {
+                    tier = 1,
+                    requiredLevel = 1,
+                    unlockCost = 0,
+                    baseHp = 100f,
+                    damageReduction = 0.00f,
+                    baseSpeed = 6.5f,
+                    fireRate = 0.30f,
+                    bulletDamage = 18f,
+                    bulletsPerShot = 1,
+                    critChancePercent = 5f,
+                    startingShield = 0f,
+                    dodgeCooldown = 3.2f,
+                    missileCooldown = 13.0f,
+                    ultiChargeBonus = 0.00f,
+                    speedBar = 0.22f,
+                    maneuverBar = 0.24f,
+                    armorBar = 0.22f,
+                    firepowerBar = 0.22f,
+                    roleTag = "BAŞLANGIÇ DEVRİYE & TAKTİK AVCISI",
+                    uniqueTraitTitle = "TEMEL 1. SEVİYE BAŞLANGIÇ JETİ",
+                    uniqueTraitDesc = "Standart hafif gövde ve tekli 20mm Vulcan topu. Diğer açılacak uçaklara göre en düşük temel özelliklere sahiptir."
+                };
+        }
+    }
+
     public bool IsAircraftUnlocked(AircraftType type)
     {
         if (type == AircraftType.F16Viper) return true;
+
+        // Seviye şartı karşılanmıyorsa uçak kesinlikle kilitlidir (Seviye seviye açılma kuralı)
+        int playerLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+        if (playerLvl < GetAircraftRequiredLevel(type)) return false;
 
         return type switch
         {
@@ -1100,8 +1303,9 @@ public class HangarManager : MonoBehaviour
             // ==========================================
             if (roll < 0.35f)
             {
-                // ÖDÜL 1: Çok Üst Düzey Tek Kullanımlık Süper Uçak (veya kalıcı süper jet kilidi!)
-                if (!IsAircraftUnlocked(AircraftType.KaanApex) && UnityEngine.Random.value < 0.40f)
+                // ÖDÜL 1: Çok Üst Düzey Tek Kullanımlık Süper Uçak (veya Seviye 90+ ise kalıcı KAAN Apex kilidi!)
+                int playerLvl = PlayerProfileManager.EnsureInstance()?.level ?? 1;
+                if (playerLvl >= GetAircraftRequiredLevel(AircraftType.KaanApex) && !IsAircraftUnlocked(AircraftType.KaanApex) && UnityEngine.Random.value < 0.40f)
                 {
                     ProfileManager.SetInt(PREF_UNLOCKED_KAAN, 1);
                     reward.title = "[EFSANE] 5.+ NESİL KAAN APEX AÇILDI!";
@@ -1278,7 +1482,7 @@ public class HangarManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Seçili uçağın temel özelliklerini ve kalıcı atölye geliştirmelerini oyuncunun uçağına uygular.
+    /// Seçili uçağın temel özelliklerini, kendine has özel yeteneğini ve kalıcı geliştirmelerini oyuncunun uçağına uygular.
     /// </summary>
     public void ApplyActiveAircraftStats(PlaneController pc, bool isActualCombatStart = false)
     {
@@ -1290,67 +1494,12 @@ public class HangarManager : MonoBehaviour
         PlaneShooter shooter = pc.GetComponent<PlaneShooter>();
         SpriteRenderer sr = pc.GetComponent<SpriteRenderer>();
 
-        float baseHp = 100f;
-        float baseSpd = 8.0f;
-        float baseDmg = 20f;
-        int baseBullets = 1;
-        float baseCrit = 0f;
-        Color planeTint = Color.white;
-
-        switch (activeAircraft)
-        {
-            case AircraftType.A10TankBuster:
-                baseHp = 180f;
-                baseSpd = 6.2f;
-                baseDmg = 32f;
-                baseBullets = 1;
-                planeTint = new Color(0.68f, 0.82f, 0.60f); // Kamuflaj Yeşili
-                break;
-
-            case AircraftType.F22Raptor:
-                baseHp = 120f;
-                baseSpd = 10.5f;
-                baseDmg = 24f;
-                baseBullets = 2; // Çift Namlu Vulcan Topu
-                planeTint = new Color(0.55f, 0.68f, 0.88f); // Hayalet Mavi-Gri
-                break;
-
-            case AircraftType.Su57Felon:
-                baseHp = 160f;
-                baseSpd = 9.8f;
-                baseDmg = 28f;
-                baseBullets = 2; // Çift Ağır Plazma Topu
-                baseCrit = 15f; // %15 Kritik Vuruş Şansı
-                planeTint = new Color(0.45f, 0.60f, 0.75f); // Rus Dijital Kamuflaj
-                break;
-
-            case AircraftType.F35Lightning:
-                baseHp = 150f;
-                baseSpd = 11.2f;
-                baseDmg = 22f;
-                baseBullets = 3; // Üçlü Taktik Yaylım Atışı
-                baseCrit = 10f; // %10 Kritik Vuruş Şansı
-                planeTint = new Color(0.40f, 0.45f, 0.55f); // Karbon Hayalet Gri
-                break;
-
-            case AircraftType.KaanApex:
-                baseHp = 220f;
-                baseSpd = 12.0f;
-                baseDmg = 34f;
-                baseBullets = 3; // Üçlü Ağır Plazma & Merkez Ağır Salvo
-                baseCrit = 25f; // %25 Kritik Vuruş Şansı
-                planeTint = new Color(0.50f, 0.55f, 0.65f); // Milli As Titanyum
-                break;
-
-            default: // F-16 Viper
-                baseHp = 100f;
-                baseSpd = 8.0f;
-                baseDmg = 20f;
-                baseBullets = 1;
-                baseCrit = 0f;
-                planeTint = Color.white;
-                break;
-        }
+        AircraftCombatStats baseStats = GetAircraftBaseStats(activeAircraft);
+        float baseHp = baseStats.baseHp;
+        float baseSpd = baseStats.baseSpeed;
+        float baseDmg = baseStats.bulletDamage;
+        int baseBullets = baseStats.bulletsPerShot;
+        float baseCritPercent = baseStats.critChancePercent;
 
         // Sandık kalıcı çip bonusları ve Askeri Mağaza donatım parçaları eklenir
         MilitaryStoreManager.LoadoutStats loadout = default;
@@ -1362,7 +1511,8 @@ public class HangarManager : MonoBehaviour
         float finalHp = baseHp + chipBonusHealth + loadout.bonusHp;
         float finalSpd = baseSpd + loadout.bonusSpeed;
         float finalDmg = baseDmg + chipBonusDamage + loadout.bonusDamage;
-        float finalCrit = baseCrit + loadout.bonusCrit;
+        float finalCritPercent = baseCritPercent + loadout.bonusCrit;
+        float finalFireRate = baseStats.fireRate;
 
         // TEK KULLANIMLIK 6. NESİL SÜPER AVCI SORTİSİ KONTROLÜ (Sadece gerçek savaş başladığında uygulanır)
         if (isActualCombatStart && singleUseSuperPlanes > 0 && isSingleUseSuperPlaneActive)
@@ -1372,7 +1522,7 @@ public class HangarManager : MonoBehaviour
             finalSpd += 3.0f;
             finalDmg += 15f;
             baseBullets = Mathf.Max(baseBullets, 3);
-            finalCrit += 25f;
+            finalCritPercent += 25f;
 
             var gameUI = FindObjectOfType<GameUI>();
             gameUI?.ShowWaveAlert("[6. NESİL] <b>[ PROTOTİP SÜPER AVCI SORTİSİ AKTİF! ]</b>\n<color=#FFD700>+160 Can | +15 Hasar | 3'lü Plazma Salvosu</color>", new Color(0f, 1f, 0.9f), 3.5f);
@@ -1382,7 +1532,7 @@ public class HangarManager : MonoBehaviour
 
         if (health != null)
         {
-            health.damageReductionPercent = Mathf.Clamp(loadout.damageReductionPercent, 0f, 0.50f);
+            health.damageReductionPercent = Mathf.Clamp(baseStats.damageReduction + loadout.damageReductionPercent, 0f, 0.60f);
             health.ResetHealth(finalHp);
         }
 
@@ -1390,28 +1540,37 @@ public class HangarManager : MonoBehaviour
         {
             shooter.aircraftType = activeAircraft;
             shooter.isEnemy = false;
+            shooter.fireRate = finalFireRate;
             shooter.bulletDamage = finalDmg;
             shooter.bulletsPerShot = baseBullets;
-            shooter.criticalChance = finalCrit;
+            shooter.criticalChance = Mathf.Clamp(finalCritPercent / 100f, 0f, 0.85f);
         }
 
-        // Askeri Zırh / EW Kalkanı Uygula
-        if (loadout.bonusShield > 0f)
+        // Uçağın kendi başlangıç kalkanı (F-35: +60 HP, KAAN: +100 HP) + Askeri Zırh / EW Kalkanı Uygula
+        float totalStartingShield = baseStats.startingShield + loadout.bonusShield;
+        if (totalStartingShield > 0f)
         {
-            PlayerUpgradeManager.EnsureInstance()?.GrantShield(loadout.bonusShield);
+            PlayerUpgradeManager.EnsureInstance()?.GrantShield(totalStartingShield);
         }
 
-        // İtki Yönlendirme ve Elektronik Harp Manevra Bonusları
-        if (PlayerCombatManeuvers.Instance != null)
+        if (PlayerUpgradeManager.Instance != null)
         {
-            if (loadout.dodgeCdReduction > 0f)
-            {
-                PlayerCombatManeuvers.Instance.dodgeCooldown = Mathf.Max(1.0f, 3.0f - loadout.dodgeCdReduction);
-            }
-            if (loadout.ultiBonusPercent > 0f)
-            {
-                PlayerCombatManeuvers.Instance.ultiChargeMultiplier = 1.0f + loadout.ultiBonusPercent;
-            }
+            PlayerUpgradeManager.Instance.weaponLevel = Mathf.Max(1, baseBullets);
+        }
+
+        // Uçağa özel İtki Yönlendirme (Kaçış Cooldown) ve Ulti Şarj Bonusları
+        PlayerCombatManeuvers maneuvers = pc.GetComponent<PlayerCombatManeuvers>();
+        if (maneuvers == null) maneuvers = PlayerCombatManeuvers.Instance;
+        if (maneuvers != null)
+        {
+            maneuvers.dodgeCooldown = Mathf.Max(0.95f, baseStats.dodgeCooldown - loadout.dodgeCdReduction);
+            maneuvers.ultiChargeMultiplier = 1.0f + baseStats.ultiChargeBonus + loadout.ultiBonusPercent;
+        }
+
+        // Uçağa özel Güdümlü Füze Dolum Süresi (F-35 ve KAAN daha hızlı füze kilitler)
+        if (MissileLauncherButton.Instance != null)
+        {
+            MissileLauncherButton.Instance.cooldownDuration = baseStats.missileCooldown;
         }
 
         // Uçak ölçeğini tablet ekranı ve it dalaşı için ideal çevik boyuta ayarla

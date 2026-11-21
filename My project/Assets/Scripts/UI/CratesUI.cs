@@ -47,9 +47,41 @@ public class CratesUI : MonoBehaviour
     private Action _onBackCallback;
 
     // Önbelleğe alınmış Sandık Dokuları
+    private static Sprite _cratesBgSprite;
     private static Sprite[] _cachedClosedSprites;
     private static Sprite[] _cachedOpenSprites;
     private static Sprite _cachedSunburstSprite;
+
+    public static Sprite GetCratesBgSprite()
+    {
+        if (_cratesBgSprite != null) return _cratesBgSprite;
+
+        string[] paths = new string[]
+        {
+            System.IO.Path.Combine(Application.dataPath, "Sprites/crates_background.jpg"),
+            System.IO.Path.Combine(Application.dataPath, "Resources/crates_background.jpg")
+        };
+        foreach (var p in paths)
+        {
+            if (System.IO.File.Exists(p))
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(p);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    _cratesBgSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f));
+                    break;
+                }
+            }
+        }
+
+        if (_cratesBgSprite == null)
+        {
+            _cratesBgSprite = Resources.Load<Sprite>("crates_background");
+        }
+        return _cratesBgSprite;
+    }
 
     private static RectTransform GetRect(GameObject go)
     {
@@ -177,39 +209,29 @@ public class CratesUI : MonoBehaviour
         {
             badgeTMP.font = MainMenuManager.GetTacticalFont();
             badgeTMP.text = (keyCount > 0)
-                ? $"<b><color=#{ColorUtility.ToHtmlStringRGB(keyCol)}>{keyName} ANAHTAR: {keyCount} ADET MEVCUT</color></b>"
-                : $"<b><color=#94A3B8>{keyName} ANAHTARI: 0 ADET</color></b>";
+                ? $"<b><color=#{ColorUtility.ToHtmlStringRGB(keyCol)}>{keyName} ANAHTARI: {keyCount} ADET</color></b>"
+                : $"<color=#94A3B8>{keyName} ANAHTARI: 0 ADET</color>";
         }
 
         if (btn == null || tmp == null) return;
         bool hasKey = (keyCount > 0) && !_isOpeningCrate;
-        btn.interactable = !_isOpeningCrate; // Tıklamaya açık tutulur ki anahtar yokken dokunulduğunda görsel & sesli ikaz verilebilsin
-
-        Image img = btn.GetComponent<Image>();
-        if (img != null)
-        {
-            string spriteName = hasKey ? "hud_btn_emerald" : "hud_btn_slate";
-            Color borderCol = hasKey ? keyCol : new Color(0.40f, 0.25f, 0.25f);
-            Color glassCol = hasKey ? new Color(0.04f, 0.12f, 0.08f, 0.95f) : new Color(0.08f, 0.04f, 0.05f, 0.90f);
-            img.sprite = MainMenuManager.GetHudSprite(spriteName, borderCol, glassCol, true);
-            img.type = Image.Type.Sliced;
-            img.color = Color.white;
-        }
+        btn.interactable = !_isOpeningCrate;
 
         tmp.font = MainMenuManager.GetTacticalFont();
         if (hasKey)
         {
-            tmp.text = $"<b>{keyName} ANAHTARLA AÇ (1x)</b>\n<size=85%><color=#FFD700>» {keyCount} ADET MEVCUT - DOKUN VE AÇ «</color></size>";
+            tmp.text = $"<b><color=#{ColorUtility.ToHtmlStringRGB(keyCol)}>{keyName} ANAHTARLA AÇ (1x)</color></b>\n<size=82%><color=#4ADE80>» {keyCount} ADET MEVCUT - DOKUN VE AÇ «</color></size>";
             tmp.color = Color.white;
         }
         else
         {
-            tmp.text = $"<b>{keyName} ANAHTARI GEREKLİ (0/1)</b>\n<size=85%><color=#EF4444>Anahtar Yok - Bosslardan veya Görevlerden Düşer</color></size>";
-            tmp.color = new Color(0.9f, 0.65f, 0.65f);
+            string topCol = keyName == "ALTIN AS" ? "#FDE047" : (keyName == "GÜMÜŞ" ? "#93C5FD" : "#FCA5A5");
+            tmp.text = $"<b><color={topCol}>{keyName} ANAHTARI GEREKLİ (0/1)</color></b>\n<size=80%><color=#F87171>Anahtar Yok - Bosslardan veya\nGörevlerden Düşer</color></size>";
+            tmp.color = Color.white;
         }
     }
 
-    // ==================== UI YAPISI ====================
+    // ==================== UI YAPISI (1:1 3D SANDIK MENÜSÜ) ====================
     private void BuildUI()
     {
         Canvas canvas = GetComponentInParent<Canvas>();
@@ -222,20 +244,20 @@ public class CratesUI : MonoBehaviour
         MakeFullScreenRect(rootRt);
 
         Image panelBg = _panelRoot.AddComponent<Image>();
-        panelBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.65f), new Color(0.02f, 0.05f, 0.09f, 0.92f), false);
-        panelBg.type = Image.Type.Sliced;
+        panelBg.sprite = GetCratesBgSprite();
         panelBg.color = Color.white;
+        panelBg.raycastTarget = false;
 
         // 1. ÜST PANEL & ALTIN GÖSTERGESİ
         BuildHeader();
 
-        // 2. GERÇEK 3 SANDIK KARTI (GÖRSEL SANDIK + DETAYLAR)
+        // 2. 1:1 3 SANDIK KARTI DİNAMİK ANAHTAR & AÇMA BUTONLARI
         BuildCrateCards();
 
         // 2.1 ANAHTAR EKSİK İKAZ BİLDİRİMİ (TOAST)
         BuildAlertToast();
 
-        // 3. ALT NAVİGASYON (GERİ DÖN & HANGAR ENVANTERİ BUTONLARI)
+        // 3. ALT NAVİGASYON (« GERİ DÖN - Askeri Envanter kaldırıldı)
         BuildBottomBar();
 
         // 4. SİNEMATİK SANDIK AÇILMA SAHNESİ
@@ -246,294 +268,133 @@ public class CratesUI : MonoBehaviour
 
     private void BuildHeader()
     {
-        GameObject headerObj = new GameObject("HeaderTitle", typeof(RectTransform));
-        headerObj.transform.SetParent(_panelRoot.transform, false);
-        RectTransform hRt = GetRect(headerObj);
-        hRt.anchorMin = new Vector2(0.5f, 1f);
-        hRt.anchorMax = new Vector2(0.5f, 1f);
-        hRt.pivot = new Vector2(0.5f, 1f);
-        hRt.anchoredPosition = new Vector2(0f, -14f);
-        hRt.sizeDelta = new Vector2(1080f, 66f);
-
-        Image hBg = headerObj.AddComponent<Image>();
-        hBg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), false);
-        hBg.type = Image.Type.Sliced;
-        hBg.color = Color.white;
-        hBg.raycastTarget = false;
-
-        GameObject textObj = new GameObject("TitleText", typeof(RectTransform));
-        textObj.transform.SetParent(headerObj.transform, false);
-        RectTransform tRt = GetRect(textObj);
-        tRt.anchorMin = Vector2.zero;
-        tRt.anchorMax = Vector2.one;
-        tRt.offsetMin = new Vector2(10f, 4f);
-        tRt.offsetMax = new Vector2(-10f, -4f);
-
-        TextMeshProUGUI titleTMP = textObj.AddComponent<TextMeshProUGUI>();
-        titleTMP.font = MainMenuManager.GetTacticalFont();
-        titleTMP.text = "<b><color=#00E5FF>SUPPLY // ASKERİ HAVA İKMAL VE GANİMET SANDIKLARI</color></b>\n<size=75%><color=#94A3B8>Boss anahtarlarıyla açıldığında 6. Nesil jet sortileri, MK-5 Titan droneları ve nadir parçalar</color></size>";
-        titleTMP.fontSize = 26f;
-        titleTMP.characterSpacing = 2.2f;
-        titleTMP.fontStyle = FontStyles.Bold;
-        titleTMP.alignment = TextAlignmentOptions.Center;
-        titleTMP.color = Color.white;
-        titleTMP.outlineWidth = 0.10f;
-        titleTMP.outlineColor = new Color(0.02f, 0.04f, 0.08f, 0.95f);
-
-        // Üstte Anahtar Rozeti
+        // 1. Üstতে Anahtar Rozeti (Arka plan görselindeki y=122..162 satırına tam oturur)
         GameObject keysBadgeObj = new GameObject("KeysBadge", typeof(RectTransform));
         keysBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform kRt = GetRect(keysBadgeObj);
-        kRt.anchorMin = new Vector2(0.5f, 1f);
-        kRt.anchorMax = new Vector2(0.5f, 1f);
-        kRt.pivot = new Vector2(0.5f, 1f);
-        kRt.anchoredPosition = new Vector2(0f, -84f);
-        kRt.sizeDelta = new Vector2(900f, 36f);
+        HangarUI.SetNormalizedRect1080p(kRt, new Vector2(0f, 396.0f), new Vector2(960f, 38f));
 
         _keysTMP = keysBadgeObj.AddComponent<TextMeshProUGUI>();
         _keysTMP.font = MainMenuManager.GetTacticalFont();
         _keysTMP.text = "<b>ANAHTARLARINIZ:</b> <color=#CD7F32>Bronz: 0</color>  |  <color=#C0C0C0>Gümüş: 0</color>  |  <color=#FFD700>Altın As: 0</color>";
-        _keysTMP.fontSize = 22f;
-        _keysTMP.characterSpacing = 1.6f;
+        _keysTMP.fontSize = 20f;
+        _keysTMP.characterSpacing = 1.4f;
         _keysTMP.fontStyle = FontStyles.Bold;
         _keysTMP.alignment = TextAlignmentOptions.Center;
-        _keysTMP.color = new Color(0.9f, 0.95f, 1f);
+        _keysTMP.color = new Color(0.92f, 0.96f, 1f);
+        _keysTMP.raycastTarget = false;
 
-        // Üst Sağda Belirgin Altın Gösterge Rozeti
-        GameObject goldBadgeObj = new GameObject("GoldBadge", typeof(RectTransform));
+        // 2. Üst Sağ Canlı Altın Göstergesi (Hangar ve Drone menüsüyle birebir aynı konum ve boyutta)
+        GameObject goldBadgeObj = new GameObject("LiveGoldBadge", typeof(RectTransform));
         goldBadgeObj.transform.SetParent(_panelRoot.transform, false);
         RectTransform gRt = GetRect(goldBadgeObj);
-        gRt.anchorMin = new Vector2(1f, 1f);
-        gRt.anchorMax = new Vector2(1f, 1f);
-        gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-40f, -16f);
-        gRt.sizeDelta = new Vector2(280f, 52f);
-
-        Image gBg = goldBadgeObj.AddComponent<Image>();
-        gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.82f, 0.2f), new Color(0.08f, 0.12f, 0.18f, 0.95f), true);
-        gBg.type = Image.Type.Sliced;
-        gBg.color = Color.white;
-        gBg.raycastTarget = false;
+        HangarUI.SetNormalizedRect1080p(gRt, new Vector2(685.0f, 526.0f), new Vector2(215.0f, 30.0f));
 
         GameObject goldTxtObj = new GameObject("GoldText", typeof(RectTransform));
         goldTxtObj.transform.SetParent(goldBadgeObj.transform, false);
-        RectTransform gtRt = GetRect(goldTxtObj);
-        gtRt.anchorMin = Vector2.zero;
-        gtRt.anchorMax = Vector2.one;
-        gtRt.offsetMin = new Vector2(10f, 0f);
-        gtRt.offsetMax = new Vector2(-10f, 0f);
+        MakeFullScreenRect(GetRect(goldTxtObj));
 
         _goldTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
         _goldTMP.font = MainMenuManager.GetTacticalFont();
         _goldTMP.text = "ALTIN: 0 G";
-        _goldTMP.fontSize = 22f;
-        _goldTMP.characterSpacing = 2.0f;
+        _goldTMP.fontSize = 18f;
+        _goldTMP.characterSpacing = 1.6f;
         _goldTMP.fontStyle = FontStyles.Bold;
-        _goldTMP.alignment = TextAlignmentOptions.Center;
+        _goldTMP.alignment = TextAlignmentOptions.Left;
         _goldTMP.color = new Color(1f, 0.88f, 0.25f);
         _goldTMP.raycastTarget = false;
+
+        // 3. Üst Sol Profil Tetikleyicisi
+        HangarUI.FormatPixelExactButton(
+            "ProfileBadgeTrigger",
+            _panelRoot.transform,
+            new Vector2(-565.6f, 513.7f),
+            new Vector2(361.0f, 52.6f),
+            new Color(0f, 0.85f, 1f, 0.10f),
+            new Color(0f, 0.7f, 0.95f, 0.18f),
+            () => PlayerProfileUI.EnsureUI()?.OpenDossierModal());
     }
 
     private void BuildCrateCards()
     {
-        float cardY = -15f;
-        float spacingX = 490f;
-
-        CreateCrateCard("BronzeCard", -spacingX, cardY,
-            "BRONZ İKMAL KUTUSU",
-            "• <b>BRONZ ANAHTAR İLE AÇILIR</b>\n• MK-2 Avcı İHA / GE Turbofan / 1.800G Donatım\n• +10 Can / +1.0 Kalıcı Hasar Çipleri",
+        // Arka plandaki 3 adet 3D sandık kartının (x=126..652, 700..1226, 1280..1806) merkez X koordinatları:
+        CreateCrateCardOverlay("BronzeCardOverlay", -571.0f,
             new Color(0.85f, 0.50f, 0.20f),
             HangarManager.CrateType.Bronze,
-            out _bronzeKeyBtn, out _bronzeKeyBtnTMP, out _bronzeKeyBadgeTMP,
-            out _bronzeCardImg);
+            out _bronzeKeyBtn, out _bronzeKeyBtnTMP, out _bronzeKeyBadgeTMP);
 
-        CreateCrateCard("SilverCard", 0f, cardY,
-            "GÜMÜŞ CEPHANE KASASI",
-            "• <b>GÜMÜŞ ANAHTAR İLE AÇILIR</b>\n• 6. Nesil Süper Avcı Sortisi / MK-4 Valkyrie İHA\n• 11.500G Parçalar & Titanyum Kompozit Zırh",
-            new Color(0.25f, 0.75f, 1f),
+        CreateCrateCardOverlay("SilverCardOverlay", 3.0f,
+            new Color(0.35f, 0.75f, 1f),
             HangarManager.CrateType.Silver,
-            out _silverKeyBtn, out _silverKeyBtnTMP, out _silverKeyBadgeTMP,
-            out _silverCardImg);
+            out _silverKeyBtn, out _silverKeyBtnTMP, out _silverKeyBadgeTMP);
 
-        CreateCrateCard("GoldCard", spacingX, cardY,
-            "ALTIN AS SANDIĞI",
-            "• <b>ALTIN AS ANAHTARI İLE AÇILIR</b>\n• 5.+ Nesil KAAN APEX / 6. Nesil Darkstar\n• MK-5 Titan Aegis İHA / 30.000G Apex Parçaları",
+        CreateCrateCardOverlay("GoldCardOverlay", 583.0f,
             new Color(1f, 0.85f, 0.2f),
             HangarManager.CrateType.GoldAce,
-            out _goldKeyBtn, out _goldKeyBtnTMP, out _goldKeyBadgeTMP,
-            out _goldCardImg);
+            out _goldKeyBtn, out _goldKeyBtnTMP, out _goldKeyBadgeTMP);
     }
 
-    private void CreateCrateCard(string objName, float posX, float posY, string title, string lootDetails,
+    private void CreateCrateCardOverlay(string objName, float centerX1080,
         Color accentColor, HangarManager.CrateType type,
-        out Button keyBtn, out TextMeshProUGUI keyBtnTMP, out TextMeshProUGUI keyBadgeTMP,
-        out Image crateImgRef)
+        out Button keyBtn, out TextMeshProUGUI keyBtnTMP, out TextMeshProUGUI keyBadgeTMP)
     {
-        GameObject cardObj = new GameObject(objName, typeof(RectTransform));
-        cardObj.transform.SetParent(_panelRoot.transform, false);
-
-        RectTransform cRt = GetRect(cardObj);
-        cRt.anchorMin = new Vector2(0.5f, 0.5f);
-        cRt.anchorMax = new Vector2(0.5f, 0.5f);
-        cRt.pivot = new Vector2(0.5f, 0.5f);
-        cRt.anchoredPosition = new Vector2(posX, posY);
-        cRt.sizeDelta = new Vector2(440f, 570f);
-
-        Image cBg = cardObj.AddComponent<Image>();
-        cBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", accentColor, new Color(0.03f, 0.06f, 0.11f, 0.95f), false);
-        cBg.type = Image.Type.Sliced;
-        cBg.color = Color.white;
-
-        // 1. Başlık Kutusu
-        GameObject tObj = new GameObject("Title", typeof(RectTransform));
-        tObj.transform.SetParent(cardObj.transform, false);
-        RectTransform tRt = GetRect(tObj);
-        tRt.anchorMin = new Vector2(0f, 0.88f);
-        tRt.anchorMax = new Vector2(1f, 1f);
-        tRt.offsetMin = Vector2.zero;
-        tRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
-        tTMP.font = MainMenuManager.GetTacticalFont();
-        tTMP.text = $"<b>{title}</b>";
-        tTMP.fontSize = 22f;
-        tTMP.characterSpacing = 2.0f;
-        tTMP.alignment = TextAlignmentOptions.Center;
-        tTMP.color = Color.white;
-
-        // 1.1 Anahtar Rozeti
-        GameObject kbObj = new GameObject("KeyBadge", typeof(RectTransform));
-        kbObj.transform.SetParent(cardObj.transform, false);
-        RectTransform kbRt = GetRect(kbObj);
-        kbRt.anchorMin = new Vector2(0.05f, 0.80f);
-        kbRt.anchorMax = new Vector2(0.95f, 0.88f);
-        kbRt.offsetMin = Vector2.zero;
-        kbRt.offsetMax = Vector2.zero;
+        // 1. Kart İçi Dinamik Anahtar Sayısı Satırı (y0 = 342..386 -> centerY = 540 - 364 = +176.0f)
+        GameObject kbObj = new GameObject(objName + "_KeyBadge", typeof(RectTransform));
+        kbObj.transform.SetParent(_panelRoot.transform, false);
+        HangarUI.SetNormalizedRect1080p(GetRect(kbObj), new Vector2(centerX1080, 176.0f), new Vector2(460.0f, 36.0f));
 
         keyBadgeTMP = kbObj.AddComponent<TextMeshProUGUI>();
         keyBadgeTMP.font = MainMenuManager.GetTacticalFont();
-        keyBadgeTMP.text = "<b>ANAHTAR: 0 ADET</b>";
-        keyBadgeTMP.fontSize = 21f;
-        keyBadgeTMP.characterSpacing = 1.6f;
+        keyBadgeTMP.text = "ANAHTARI: 0 ADET";
+        keyBadgeTMP.fontSize = 18.5f;
+        keyBadgeTMP.characterSpacing = 1.2f;
         keyBadgeTMP.fontStyle = FontStyles.Bold;
         keyBadgeTMP.alignment = TextAlignmentOptions.Center;
-        keyBadgeTMP.color = accentColor;
+        keyBadgeTMP.color = new Color(0.58f, 0.64f, 0.72f);
+        keyBadgeTMP.raycastTarget = false;
 
-        // 2. GERÇEK ASKERİ SANDIK GÖRSELİ
-        GameObject crateObj = new GameObject("CrateGraphic", typeof(RectTransform));
-        crateObj.transform.SetParent(cardObj.transform, false);
-        RectTransform crtRt = GetRect(crateObj);
-        crtRt.anchorMin = new Vector2(0.5f, 0.60f);
-        crtRt.anchorMax = new Vector2(0.5f, 0.60f);
-        crtRt.pivot = new Vector2(0.5f, 0.5f);
-        crtRt.anchoredPosition = Vector2.zero;
-        crtRt.sizeDelta = new Vector2(180f, 180f);
-
-        crateImgRef = crateObj.AddComponent<Image>();
-        crateImgRef.sprite = GetCrateSprite(type, isOpen: false);
-        crateImgRef.preserveAspect = true;
-
-        // Sandık arkasında hafif atmosferik parlama efekti
-        GameObject glowObj = new GameObject("GlowBackdrop", typeof(RectTransform));
-        glowObj.transform.SetParent(crateObj.transform, false);
-        glowObj.transform.SetAsFirstSibling();
-        RectTransform gRt = GetRect(glowObj);
-        gRt.anchorMin = new Vector2(0.5f, 0.5f);
-        gRt.anchorMax = new Vector2(0.5f, 0.5f);
-        gRt.sizeDelta = new Vector2(210f, 210f);
-        Image glowImg = glowObj.AddComponent<Image>();
-        glowImg.sprite = GetSunburstSprite();
-        glowImg.color = new Color(accentColor.r, accentColor.g, accentColor.b, 0.22f);
-
-        // 3. Sandık İçerik Açıklaması
-        GameObject dObj = new GameObject("LootDetails", typeof(RectTransform));
-        dObj.transform.SetParent(cardObj.transform, false);
-        RectTransform dRt = GetRect(dObj);
-        dRt.anchorMin = new Vector2(0.05f, 0.19f);
-        dRt.anchorMax = new Vector2(0.95f, 0.41f);
-        dRt.offsetMin = Vector2.zero;
-        dRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI dTMP = dObj.AddComponent<TextMeshProUGUI>();
-        dTMP.font = MainMenuManager.GetTacticalFont();
-        dTMP.text = lootDetails;
-        dTMP.fontSize = 20f;
-        dTMP.characterSpacing = 1.2f;
-        dTMP.lineSpacing = 3f;
-        dTMP.alignment = TextAlignmentOptions.Center;
-        dTMP.color = new Color(0.9f, 0.95f, 1f);
-
-        // 4. TEK VE BELİRGİN ASKERİ ANAHTARLA AÇ BUTONU
-        GameObject kBtnObj = new GameObject("OpenWithKeyBtn", typeof(RectTransform));
-        kBtnObj.transform.SetParent(cardObj.transform, false);
-        RectTransform kbBtnRt = GetRect(kBtnObj);
-        kbBtnRt.anchorMin = new Vector2(0.06f, 0.04f);
-        kbBtnRt.anchorMax = new Vector2(0.94f, 0.17f);
-        kbBtnRt.offsetMin = Vector2.zero;
-        kbBtnRt.offsetMax = Vector2.zero;
-
-        Image kbImg = kBtnObj.AddComponent<Image>();
-        kbImg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", accentColor, new Color(0.12f, 0.08f, 0.04f, 0.95f), true);
-        kbImg.type = Image.Type.Sliced;
-        kbImg.color = Color.white;
-
-        keyBtn = kBtnObj.AddComponent<Button>();
+        // 2. Kartın Kendisine veya Alt Çerçeveli Butona Tıklanarak Sandık Açma Butonu (y0 = 814..902 -> centerY = 540 - 858 = -318.0f)
         HangarManager.CrateType capturedType = type;
-        keyBtn.onClick.AddListener(() =>
-        {
-            OpenCrateWithKey(capturedType);
-        });
+        keyBtn = HangarUI.FormatPixelExactButton(
+            objName + "_OpenBtn",
+            _panelRoot.transform,
+            new Vector2(centerX1080, -318.0f),
+            new Vector2(458.0f, 88.0f),
+            new Color(accentColor.r, accentColor.g, accentColor.b, 0.14f),
+            new Color(accentColor.r, accentColor.g, accentColor.b, 0.26f),
+            () => OpenCrateWithKey(capturedType));
 
         GameObject ktTxtObj = new GameObject("Text", typeof(RectTransform));
-        ktTxtObj.transform.SetParent(kBtnObj.transform, false);
-        MakeFullScreenRect(GetRect(ktTxtObj));
+        ktTxtObj.transform.SetParent(keyBtn.transform, false);
+        RectTransform ktRt = GetRect(ktTxtObj);
+        ktRt.anchorMin = new Vector2(0.03f, 0.06f);
+        ktRt.anchorMax = new Vector2(0.97f, 0.94f);
+        ktRt.offsetMin = Vector2.zero;
+        ktRt.offsetMax = Vector2.zero;
+
         keyBtnTMP = ktTxtObj.AddComponent<TextMeshProUGUI>();
         keyBtnTMP.font = MainMenuManager.GetTacticalFont();
         keyBtnTMP.text = "ANAHTAR İLE AÇ";
-        keyBtnTMP.fontSize = 21f;
-        keyBtnTMP.characterSpacing = 1.6f;
+        keyBtnTMP.fontSize = 15.5f;
+        keyBtnTMP.characterSpacing = 1.0f;
+        keyBtnTMP.lineSpacing = 1.0f;
         keyBtnTMP.fontStyle = FontStyles.Bold;
         keyBtnTMP.alignment = TextAlignmentOptions.Center;
         keyBtnTMP.color = Color.white;
+        keyBtnTMP.raycastTarget = false;
     }
 
     private void BuildBottomBar()
     {
-        // 1. GERİ DÖN BUTONU
-        GameObject backBtnObj = new GameObject("BackFromCratesButton", typeof(RectTransform));
-        backBtnObj.transform.SetParent(_panelRoot.transform, false);
-        Image bImg = backBtnObj.AddComponent<Image>();
-        bImg.raycastTarget = true;
-        Button bBtn = backBtnObj.AddComponent<Button>();
-        bBtn.targetGraphic = bImg;
-        GameObject bTxtObj = new GameObject("Text", typeof(RectTransform));
-        bTxtObj.transform.SetParent(backBtnObj.transform, false);
-        bTxtObj.AddComponent<TextMeshProUGUI>();
-        MainMenuManager.FormatBottomLeftBackBtn(bBtn, CloseCratesPanel);
-        backBtnObj.transform.SetAsLastSibling();
-
-        // 2. HANGAR ENVANTERİNİ GÖR BUTONU
-        GameObject invBtnObj = new GameObject("GoToInventoryButton", typeof(RectTransform));
-        invBtnObj.transform.SetParent(_panelRoot.transform, false);
-        Button iBtn = invBtnObj.AddComponent<Button>();
-        GameObject iTxtObj = new GameObject("Text", typeof(RectTransform));
-        iTxtObj.transform.SetParent(invBtnObj.transform, false);
-        iTxtObj.AddComponent<TextMeshProUGUI>();
-
-        RectTransform iRt = GetRect(invBtnObj);
-        iRt.anchorMin = new Vector2(1f, 0f);
-        iRt.anchorMax = new Vector2(1f, 0f);
-        iRt.pivot = new Vector2(1f, 0f);
-        MainMenuManager.FormatBtn(iBtn, 22f, "ASKERİ ENVANTER", new Color(0.35f, 0.65f, 0.95f), 280f, 50f, posX: -40f, hudSpriteName: "hud_btn_blue");
-
-        iBtn.onClick.AddListener(() =>
-        {
-            Action savedBack = _onBackCallback;
-            CloseDirectly();
-            InventoryUI.EnsureUI()?.OpenInventory(() => OpenCratesPanel(savedBack));
-        });
-
-        backBtnObj.transform.SetAsLastSibling();
+        // Sol Alt « GERİ DÖN Butonu (Arka plan görselindeki x=118..434, y=982..1046 çerçevesine birebir kilitli)
+        HangarUI.FormatPixelExactButton(
+            "BackFromCratesButton",
+            _panelRoot.transform,
+            new Vector2(-684.0f, -474.0f),
+            new Vector2(316.0f, 64.0f),
+            new Color(0f, 0.85f, 1f, 0.18f),
+            new Color(0f, 0.7f, 0.95f, 0.35f),
+            CloseCratesPanel);
     }
 
     // ==================== SİNEMATİK SANDIK AÇILMA SAHNESİ ====================
@@ -869,15 +730,37 @@ public class CratesUI : MonoBehaviour
         }
     }
 
-    // ==================== PROCEDURAL GERÇEK SANDIK DOKULARI ====================
+    // ==================== 3D GERÇEK SANDIK DOKULARI ====================
     public static Sprite GetCrateSprite(HangarManager.CrateType type, bool isOpen)
     {
         if (_cachedClosedSprites == null) _cachedClosedSprites = new Sprite[3];
         if (_cachedOpenSprites == null) _cachedOpenSprites = new Sprite[3];
 
         int idx = Mathf.Clamp((int)type, 0, 2);
-        if (isOpen && _cachedOpenSprites[idx] != null) return _cachedOpenSprites[idx];
         if (!isOpen && _cachedClosedSprites[idx] != null) return _cachedClosedSprites[idx];
+        if (isOpen && _cachedOpenSprites[idx] != null) return _cachedOpenSprites[idx];
+
+        string[] paths = new string[]
+        {
+            System.IO.Path.Combine(Application.dataPath, $"Sprites/crate_3d_{idx}.png"),
+            System.IO.Path.Combine(Application.dataPath, $"Resources/crate_3d_{idx}.png")
+        };
+        foreach (var p in paths)
+        {
+            if (System.IO.File.Exists(p))
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(p);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    Sprite spr3d = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                    _cachedClosedSprites[idx] = spr3d;
+                    _cachedOpenSprites[idx] = spr3d;
+                    return spr3d;
+                }
+            }
+        }
 
         Sprite gen = GenerateCrateSprite(type, isOpen);
         if (isOpen) _cachedOpenSprites[idx] = gen;

@@ -91,12 +91,52 @@ public class AircraftPart
         }
     }
 
+    public struct StatBadgeInfo
+    {
+        public string text;
+        public Color textColor;
+        public Color borderColor;
+        public Color bgColor;
+
+        public StatBadgeInfo(string text, Color textColor, Color borderColor, Color bgColor)
+        {
+            this.text = text;
+            this.textColor = textColor;
+            this.borderColor = borderColor;
+            this.bgColor = bgColor;
+        }
+    }
+
+    public System.Collections.Generic.List<StatBadgeInfo> GetStatBadges()
+    {
+        var list = new System.Collections.Generic.List<StatBadgeInfo>();
+
+        if (bonusSpeed > 0f)
+            list.Add(new StatBadgeInfo($"+{bonusSpeed:0.#} Hız", new Color(0.22f, 0.74f, 0.97f), new Color(0.15f, 0.55f, 0.78f, 0.85f), new Color(0.04f, 0.14f, 0.22f, 0.92f)));
+        if (bonusHp > 0f)
+            list.Add(new StatBadgeInfo($"+{bonusHp:0} Gövde HP", new Color(0.29f, 0.87f, 0.50f), new Color(0.18f, 0.62f, 0.35f, 0.85f), new Color(0.04f, 0.16f, 0.09f, 0.92f)));
+        if (bonusDamage > 0f)
+            list.Add(new StatBadgeInfo($"+{bonusDamage:0} Mermi Dmg", new Color(0.29f, 0.87f, 0.50f), new Color(0.18f, 0.62f, 0.35f, 0.85f), new Color(0.04f, 0.16f, 0.09f, 0.92f)));
+        if (bonusCritChance > 0f)
+            list.Add(new StatBadgeInfo($"+%{bonusCritChance:0} Kritik", new Color(0.97f, 0.44f, 0.44f), new Color(0.65f, 0.24f, 0.26f, 0.85f), new Color(0.18f, 0.06f, 0.08f, 0.92f)));
+        if (bonusShield > 0f)
+            list.Add(new StatBadgeInfo($"+{bonusShield:0} Enerji Kalkanı", new Color(0.40f, 0.91f, 0.98f), new Color(0.20f, 0.65f, 0.75f, 0.85f), new Color(0.04f, 0.15f, 0.20f, 0.92f)));
+        if (dodgeCooldownReduction > 0f)
+            list.Add(new StatBadgeInfo($"-{dodgeCooldownReduction:0.#}s Kaçınma CD", new Color(0.65f, 0.55f, 0.98f), new Color(0.45f, 0.35f, 0.78f, 0.85f), new Color(0.10f, 0.07f, 0.20f, 0.92f)));
+        if (damageReductionPercent > 0f)
+            list.Add(new StatBadgeInfo($"-%{damageReductionPercent * 100f:0} Hasar Emilimi", new Color(0.98f, 0.75f, 0.14f), new Color(0.70f, 0.50f, 0.12f, 0.85f), new Color(0.18f, 0.13f, 0.04f, 0.92f)));
+        if (ultiChargeBonusPercent > 0f)
+            list.Add(new StatBadgeInfo($"+%{ultiChargeBonusPercent * 100f:0} Ulti Hızı", new Color(0.96f, 0.45f, 0.71f), new Color(0.70f, 0.28f, 0.50f, 0.85f), new Color(0.18f, 0.06f, 0.14f, 0.92f)));
+
+        return list;
+    }
+
     public string GetStatsSummary()
     {
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
         if (bonusSpeed > 0f)
-            sb.Append($"<color=#38BDF8>+{bonusSpeed:0.1f} Hız</color>  ");
+            sb.Append($"<color=#38BDF8>+{bonusSpeed:0.#} Hız</color>  ");
         if (bonusHp > 0f)
             sb.Append($"<color=#4ADE80>+{bonusHp:0} Gövde HP</color>  ");
         if (bonusDamage > 0f)
@@ -106,7 +146,7 @@ public class AircraftPart
         if (bonusShield > 0f)
             sb.Append($"<color=#67E8F9>+{bonusShield:0} Enerji Kalkanı</color>  ");
         if (dodgeCooldownReduction > 0f)
-            sb.Append($"<color=#A78BFA>-{dodgeCooldownReduction:0.1f}s Kaçınma CD</color>  ");
+            sb.Append($"<color=#A78BFA>-{dodgeCooldownReduction:0.#}s Kaçınma CD</color>  ");
         if (damageReductionPercent > 0f)
             sb.Append($"<color=#34D399>-%{damageReductionPercent * 100f:0} Hasar Emilimi</color>  ");
         if (ultiChargeBonusPercent > 0f)

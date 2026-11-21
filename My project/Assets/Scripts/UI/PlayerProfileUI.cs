@@ -190,8 +190,8 @@ public class PlayerProfileUI : MonoBehaviour
         bRt.anchorMin = new Vector2(0f, 1f);
         bRt.anchorMax = new Vector2(0f, 1f);
         bRt.pivot = new Vector2(0f, 1f);
-        bRt.anchoredPosition = new Vector2(50f, -30f);
-        bRt.sizeDelta = new Vector2(390f, 84f);
+        bRt.anchoredPosition = new Vector2(20f, -6f);
+        bRt.sizeDelta = new Vector2(330f, 40f);
 
         Image bg = _badgeRoot.AddComponent<Image>();
         bg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.85f), new Color(0.03f, 0.07f, 0.12f, 0.94f), false);
@@ -208,8 +208,8 @@ public class PlayerProfileUI : MonoBehaviour
         lRt.anchorMin = new Vector2(0f, 0.5f);
         lRt.anchorMax = new Vector2(0f, 0.5f);
         lRt.pivot = new Vector2(0f, 0.5f);
-        lRt.anchoredPosition = new Vector2(10f, 0f);
-        lRt.sizeDelta = new Vector2(64f, 64f);
+        lRt.anchoredPosition = new Vector2(5f, 0f);
+        lRt.sizeDelta = new Vector2(32f, 32f);
 
         Image lBg = lvlObj.AddComponent<Image>();
         lBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.85f, 0.2f, 1f), new Color(0.08f, 0.15f, 0.24f, 1f), false);
@@ -226,9 +226,9 @@ public class PlayerProfileUI : MonoBehaviour
 
         _levelBadgeTMP = lTxtObj.AddComponent<TextMeshProUGUI>();
         _levelBadgeTMP.font = MainMenuManager.GetTacticalFont();
-        _levelBadgeTMP.fontSize = 22f;
+        _levelBadgeTMP.fontSize = 15f;
         _levelBadgeTMP.fontStyle = FontStyles.Bold;
-        _levelBadgeTMP.characterSpacing = 1.5f;
+        _levelBadgeTMP.characterSpacing = 1.0f;
         _levelBadgeTMP.alignment = TextAlignmentOptions.Center;
         _levelBadgeTMP.color = new Color(1f, 0.88f, 0.25f);
         _levelBadgeTMP.raycastTarget = false;
@@ -240,20 +240,20 @@ public class PlayerProfileUI : MonoBehaviour
         rRt.anchorMin = new Vector2(0f, 1f);
         rRt.anchorMax = new Vector2(0f, 1f);
         rRt.pivot = new Vector2(0f, 1f);
-        rRt.anchoredPosition = new Vector2(86f, -10f);
-        rRt.sizeDelta = new Vector2(290f, 28f);
+        rRt.anchoredPosition = new Vector2(42f, -3f);
+        rRt.sizeDelta = new Vector2(280f, 16f);
 
         _rankTitleTMP = rObj.AddComponent<TextMeshProUGUI>();
         _rankTitleTMP.font = MainMenuManager.GetTacticalFont();
-        _rankTitleTMP.fontSize = 22f;
+        _rankTitleTMP.fontSize = 13f;
         _rankTitleTMP.fontStyle = FontStyles.Bold;
-        _rankTitleTMP.characterSpacing = 1.8f;
+        _rankTitleTMP.characterSpacing = 1.2f;
         _rankTitleTMP.alignment = TextAlignmentOptions.Left;
         _rankTitleTMP.color = Color.white;
         _rankTitleTMP.raycastTarget = false;
         _rankTitleTMP.enableAutoSizing = true;
-        _rankTitleTMP.fontSizeMin = 18f;
-        _rankTitleTMP.fontSizeMax = 23f;
+        _rankTitleTMP.fontSizeMin = 11f;
+        _rankTitleTMP.fontSizeMax = 14f;
 
         // EXP Bar Çerçevesi
         GameObject barBgObj = new GameObject("ExpBarBg", typeof(RectTransform));
@@ -262,8 +262,8 @@ public class PlayerProfileUI : MonoBehaviour
         barRt.anchorMin = new Vector2(0f, 0f);
         barRt.anchorMax = new Vector2(0f, 0f);
         barRt.pivot = new Vector2(0f, 0f);
-        barRt.anchoredPosition = new Vector2(86f, 10f);
-        barRt.sizeDelta = new Vector2(290f, 26f);
+        barRt.anchoredPosition = new Vector2(42f, 4f);
+        barRt.sizeDelta = new Vector2(280f, 15f);
 
         Image barBg = barBgObj.AddComponent<Image>();
         barBg.color = new Color(0.02f, 0.04f, 0.07f, 1f);
@@ -294,9 +294,9 @@ public class PlayerProfileUI : MonoBehaviour
 
         _expBarTMP = barTxtObj.AddComponent<TextMeshProUGUI>();
         _expBarTMP.font = MainMenuManager.GetTacticalFont();
-        _expBarTMP.fontSize = 17f;
+        _expBarTMP.fontSize = 11f;
         _expBarTMP.fontStyle = FontStyles.Bold;
-        _expBarTMP.characterSpacing = 1.4f;
+        _expBarTMP.characterSpacing = 1.0f;
         _expBarTMP.alignment = TextAlignmentOptions.Center;
         _expBarTMP.color = Color.white;
         _expBarTMP.raycastTarget = false;
@@ -313,8 +313,8 @@ public class PlayerProfileUI : MonoBehaviour
         gRt.anchorMin = new Vector2(1f, 1f);
         gRt.anchorMax = new Vector2(1f, 1f);
         gRt.pivot = new Vector2(1f, 1f);
-        gRt.anchoredPosition = new Vector2(-50f, -30f);
-        gRt.sizeDelta = new Vector2(260f, 54f);
+        gRt.anchoredPosition = new Vector2(-20f, -6f);
+        gRt.sizeDelta = new Vector2(200f, 38f);
 
         Image gBg = _goldBadgeRoot.AddComponent<Image>();
         gBg.sprite = MainMenuManager.GetHudSprite("hud_btn_amber", new Color(1f, 0.85f, 0.2f, 0.95f), new Color(0.06f, 0.05f, 0.02f, 0.95f), true);
@@ -340,9 +340,9 @@ public class PlayerProfileUI : MonoBehaviour
 
         _goldBadgeTMP = goldTxtObj.AddComponent<TextMeshProUGUI>();
         _goldBadgeTMP.font = MainMenuManager.GetTacticalFont();
-        _goldBadgeTMP.fontSize = 20f;
+        _goldBadgeTMP.fontSize = 17f;
         _goldBadgeTMP.fontStyle = FontStyles.Bold;
-        _goldBadgeTMP.characterSpacing = 2.0f;
+        _goldBadgeTMP.characterSpacing = 1.5f;
         _goldBadgeTMP.alignment = TextAlignmentOptions.Center;
         _goldBadgeTMP.color = new Color(1f, 0.88f, 0.25f);
         _goldBadgeTMP.raycastTarget = false;
@@ -472,7 +472,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         _hudExpTMP = txtObj.GetComponent<TextMeshProUGUI>();
         if (_hudExpTMP == null) _hudExpTMP = txtObj.AddComponent<TextMeshProUGUI>();
-        _hudExpTMP.fontSize = 16f;
+        _hudExpTMP.fontSize = 20f;
         _hudExpTMP.fontStyle = FontStyles.Bold;
         _hudExpTMP.alignment = TextAlignmentOptions.Center;
         _hudExpTMP.color = Color.white;
@@ -488,7 +488,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         // 1. Ana Menü Rozeti
         if (_levelBadgeTMP != null)
-            _levelBadgeTMP.text = $"<size=70%><color=#8AB4F8>SEV.</color></size>\n<b>{pm.level}</b>";
+            _levelBadgeTMP.text = $"<size=65%><color=#8AB4F8>S.</color></size><b>{pm.level}</b>";
 
         if (_rankTitleTMP != null)
         {
@@ -503,7 +503,7 @@ public class PlayerProfileUI : MonoBehaviour
         if (_expBarTMP != null)
         {
             int percent = Mathf.RoundToInt(pm.ExpProgress * 100f);
-            _expBarTMP.text = $"<b>{pm.currentExp:N0} / {pm.ExpForNextLevel:N0} EXP  (%{percent})</b>";
+            _expBarTMP.text = $"<b>{pm.currentExp:N0}/{pm.ExpForNextLevel:N0} EXP (%{percent})</b>";
         }
 
         // 2. Savaş İçi HUD Rozeti & EXP Barı

@@ -211,7 +211,7 @@ public class PilotLoginUI : MonoBehaviour
         TextMeshProUGUI subTMP = subObj.AddComponent<TextMeshProUGUI>();
         subTMP.font = MainMenuManager.GetTacticalFont();
         subTMP.text = "Her pilot kendi bağımsız seviyesine, altınlarına, hangarına ve rekorlarına sahiptir.";
-        subTMP.fontSize = 13f;
+        subTMP.fontSize = 18f;
         subTMP.characterSpacing = 1.1f;
         subTMP.alignment = TextAlignmentOptions.Center;
         subTMP.color = new Color(0.80f, 0.88f, 0.95f);
@@ -241,7 +241,7 @@ public class PilotLoginUI : MonoBehaviour
 
         _activePilotBannerTMP = acTxtObj.AddComponent<TextMeshProUGUI>();
         _activePilotBannerTMP.font = MainMenuManager.GetTacticalFont();
-        _activePilotBannerTMP.fontSize = 16f;
+        _activePilotBannerTMP.fontSize = 20f;
         _activePilotBannerTMP.fontStyle = FontStyles.Bold;
         _activePilotBannerTMP.characterSpacing = 1.2f;
         _activePilotBannerTMP.alignment = TextAlignmentOptions.Center;
@@ -255,12 +255,12 @@ public class PilotLoginUI : MonoBehaviour
         kplRt.anchorMax = new Vector2(0.5f, 1f);
         kplRt.pivot = new Vector2(0.5f, 1f);
         kplRt.anchoredPosition = new Vector2(0f, -145f);
-        kplRt.sizeDelta = new Vector2(640f, 20f);
+        kplRt.sizeDelta = new Vector2(640f, 24f);
 
         TextMeshProUGUI kplTMP = kpLblObj.AddComponent<TextMeshProUGUI>();
         kplTMP.font = MainMenuManager.GetTacticalFont();
         kplTMP.text = "CİHAZDAKİ KAYITLI PİLOTLAR (HIZLI GEÇİŞ):";
-        kplTMP.fontSize = 12f;
+        kplTMP.fontSize = 18f;
         kplTMP.fontStyle = FontStyles.Bold;
         kplTMP.characterSpacing = 1.2f;
         kplTMP.alignment = TextAlignmentOptions.Left;
@@ -273,7 +273,7 @@ public class PilotLoginUI : MonoBehaviour
         kpcRt.anchorMin = new Vector2(0.5f, 1f);
         kpcRt.anchorMax = new Vector2(0.5f, 1f);
         kpcRt.pivot = new Vector2(0.5f, 1f);
-        kpcRt.anchoredPosition = new Vector2(0f, -168f);
+        kpcRt.anchoredPosition = new Vector2(0f, -172f);
         kpcRt.sizeDelta = new Vector2(640f, 50f);
 
         _knownProfilesContainer = kpContObj.transform;
@@ -286,12 +286,12 @@ public class PilotLoginUI : MonoBehaviour
         inplRt.anchorMax = new Vector2(0.5f, 1f);
         inplRt.pivot = new Vector2(0.5f, 1f);
         inplRt.anchoredPosition = new Vector2(0f, -226f);
-        inplRt.sizeDelta = new Vector2(640f, 20f);
+        inplRt.sizeDelta = new Vector2(640f, 24f);
 
         TextMeshProUGUI inplTMP = inpLblObj.AddComponent<TextMeshProUGUI>();
         inplTMP.font = MainMenuManager.GetTacticalFont();
         inplTMP.text = "VEYA FARKLI / YENİ PİLOT ÇAĞRI KODU GİRİN:";
-        inplTMP.fontSize = 12f;
+        inplTMP.fontSize = 18f;
         inplTMP.fontStyle = FontStyles.Bold;
         inplTMP.characterSpacing = 1.2f;
         inplTMP.alignment = TextAlignmentOptions.Left;
@@ -341,7 +341,7 @@ public class PilotLoginUI : MonoBehaviour
         TextMeshProUGUI phText = phObj.AddComponent<TextMeshProUGUI>();
         phText.font = MainMenuManager.GetTacticalFont();
         phText.text = "Pilot Çağrı Kodu (Örn: Mustafa, Kaan)...";
-        phText.fontSize = 15f;
+        phText.fontSize = 18f;
         phText.fontStyle = FontStyles.Italic;
         phText.characterSpacing = 1.2f;
         phText.alignment = TextAlignmentOptions.Center;
@@ -366,7 +366,7 @@ public class PilotLoginUI : MonoBehaviour
 
         _charCountTMP = countObj.AddComponent<TextMeshProUGUI>();
         _charCountTMP.font = MainMenuManager.GetTacticalFont();
-        _charCountTMP.fontSize = 12f;
+        _charCountTMP.fontSize = 16f;
         _charCountTMP.alignment = TextAlignmentOptions.Right;
         _charCountTMP.color = new Color(0.6f, 0.75f, 0.9f);
 
@@ -382,7 +382,7 @@ public class PilotLoginUI : MonoBehaviour
 
         _validationTMP = valObj.AddComponent<TextMeshProUGUI>();
         _validationTMP.font = MainMenuManager.GetTacticalFont();
-        _validationTMP.fontSize = 12.5f;
+        _validationTMP.fontSize = 17f;
         _validationTMP.characterSpacing = 1.1f;
         _validationTMP.alignment = TextAlignmentOptions.Center;
         _validationTMP.color = new Color(0.9f, 0.9f, 0.9f);
@@ -503,7 +503,7 @@ public class PilotLoginUI : MonoBehaviour
         TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.text = label;
-        tmp.fontSize = 13f;
+        tmp.fontSize = 18f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.characterSpacing = 1.2f;
         tmp.alignment = TextAlignmentOptions.Center;

@@ -76,11 +76,12 @@ public class BackgroundScroller : MonoBehaviour
         transform.position = new Vector3(0f, 0f, 2f);
 
         _spriteHeightWorld = spriteH * maxScale;
+        float overlap = 0.04f; // 2 piksellik kusursuz harmanlama örtüşmesi (alt-üst çizgi oluşumunu kesinlikle önler)
 
         // 2. İkinci Katman (Kardeş nesne olarak sahnede oluşturulur, ebeveyn hareketiyle çakışmaz)
         _layer2Obj = new GameObject("GameBackground_CombatLayer2");
         _layer2Obj.transform.localScale = new Vector3(maxScale, maxScale, 1f);
-        _layer2Obj.transform.position = new Vector3(0f, _spriteHeightWorld, 2f);
+        _layer2Obj.transform.position = new Vector3(0f, _spriteHeightWorld - overlap, 2f);
 
         _sr2 = _layer2Obj.AddComponent<SpriteRenderer>();
         _sr2.sprite = _sr1.sprite;
@@ -103,16 +104,17 @@ public class BackgroundScroller : MonoBehaviour
         pos1.y -= scrollSpeed * dt;
         pos2.y -= scrollSpeed * dt;
 
-        // Katman 1 alt sınıra indiğinde Katman 2'nin üstüne atlar
+        float overlap = 0.04f;
+        // Katman 1 alt sınıra indiğinde Katman 2'nin üstüne kilitlenir
         if (pos1.y <= -_spriteHeightWorld)
         {
-            pos1.y = pos2.y + _spriteHeightWorld;
+            pos1.y = pos2.y + _spriteHeightWorld - overlap;
         }
 
-        // Katman 2 alt sınıra indiğinde Katman 1'in üstüne atlar
+        // Katman 2 alt sınıra indiğinde Katman 1'in üstüne kilitlenir
         if (pos2.y <= -_spriteHeightWorld)
         {
-            pos2.y = pos1.y + _spriteHeightWorld;
+            pos2.y = pos1.y + _spriteHeightWorld - overlap;
         }
 
         // Sinematik yatay süzülme
