@@ -36,6 +36,8 @@ public class LeaderboardManager : MonoBehaviour
         public string rankTitle;
         public bool isPlayer;
         public string extraInfo;
+        public string modeDisplayName;
+        public string stageDisplayText;
     }
 
     [Serializable]
@@ -321,6 +323,218 @@ public class LeaderboardManager : MonoBehaviour
             {
                 Debug.LogWarning($"[LeaderboardManager] Supabase yükleme hatası: {req.error} | Detay: {req.downloadHandler?.text}");
             }
+        }
+    }
+
+    public static string GetModeDisplayName(string modeKey, string extraInfo = "")
+    {
+        if (!string.IsNullOrEmpty(extraInfo) && extraInfo.IndexOf("HAREKAT", StringComparison.OrdinalIgnoreCase) >= 0)
+            return "HAREKAT MODU";
+
+        return (modeKey ?? "").ToLowerInvariant() switch
+        {
+            "campaign" or "story" or "harekat" => "HAREKAT MODU",
+            "endless" => "SONSUZ İT DALAŞI",
+            "boss_rush" => "BOSS HAREKATI",
+            "time_attack" => "ZAMAN TAARRUZU",
+            "bullet_hell" => "MERMİ CEHENNEMİ",
+            "hardcore" => "HARDCORE MODU",
+            _ => "HAREKAT MODU"
+        };
+    }
+
+    public static string GetStageDisplayText(string modeKey, int score, float timeSeconds = 0f, string extraInfo = "")
+    {
+        string modeDisp = GetModeDisplayName(modeKey, extraInfo);
+        if (modeDisp == "HAREKAT MODU")
+            return $"{Mathf.Max(1, score)}. BÖLÜM";
+        if (modeDisp == "SONSUZ İT DALAŞI")
+            return $"{Mathf.Max(1, score)}. DALGA";
+        if (modeDisp == "BOSS HAREKATI" || modeDisp == "HARDCORE MODU")
+            return $"{Mathf.Max(1, score)}. AŞAMA";
+        if (modeDisp == "ZAMAN TAARRUZU")
+            return $"{Mathf.Max(1, score)} İMHA";
+        if (modeDisp == "MERMİ CEHENNEMİ")
+        {
+            int sec = score > 0 ? score : Mathf.RoundToInt(timeSeconds);
+            return $"{Mathf.Max(1, sec)} SN";
+        }
+        return $"{Mathf.Max(1, score)}. BÖLÜM";
+    }
+
+    private static bool IsSamplePlaceholderName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return true;
+        string n = name.Trim().ToUpperInvariant();
+        return n == "AS_VIPER" || n == "SHADOW_FLIGHT" || n == "TIGER_PILOT" || n == "ROOKIE_ONE";
+    }
+
+    /// <summary>
+    /// Tüm oyun modlarındaki gerçek oyuncu rekorlarını Supabase veritabanından çeker
+    /// ve cihazdaki gerçek kayıtlı kullanıcı profilleriyle senkronize eder.
+    /// </summary>
+    public void FetchAllModesLeaderboard(Action<List<LeaderboardEntry>, bool> onComplete)
+    {
+        StartCoroutine(FetchAllModesLeaderboardRoutine(onComplete));
+    }
+
+    private IEnumerator FetchAllModesLeaderboardRoutine(Action<List<LeaderboardEntry>, bool> onComplete)
+    {
+        // Önce aktif oyuncunun yerel rekorunu veritabanına senkronize et
+        string activeUser = PlayerCallsign;
+        GetBestRecordForProfile(activeUser, out BoardMode myBestMode, out int myBestScore, out string myExtra);
+        if (IsSupabaseConfigured && myBestScore > 0)
+        {
+            yield return StartCoroutine(UploadScoreToSupabaseRoutine(myBestMode, myBestScore, 0f, myExtra));
+        }
+
+        List<LeaderboardEntry> entries = new List<LeaderboardEntry>();
+        bool isLiveOnline = false;
+
+        if (IsSupabaseConfigured)
+        {
+            string endpoint = $"{supabaseUrl}/rest/v1/leaderboard?select=*&order=score.desc,time_seconds.asc&limit=30";
+            using (UnityWebRequest req = UnityWebRequest.Get(endpoint))
+            {
+                req.timeout = 5;
+                req.SetRequestHeader("apikey", supabaseAnonKey);
+                req.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
+                req.SetRequestHeader("Accept", "application/json");
+
+                yield return req.SendWebRequest();
+
+                if (req.result == UnityWebRequest.Result.Success && !string.IsNullOrEmpty(req.downloadHandler.text))
+                {
+                    try
+                    {
+                        SupabaseScoreRecord[] records = JsonHelper.FromJson<SupabaseScoreRecord>(req.downloadHandler.text);
+                        if (records != null && records.Length > 0)
+                        {
+                            isLiveOnline = true;
+                            var seenUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                            for (int i = 0; i < records.Length; i++)
+                            {
+                                var r = records[i];
+                                if (r == null || string.IsNullOrEmpty(r.player_name)) continue;
+                                if (IsSamplePlaceholderName(r.player_name)) continue;
+
+                                // Her gerçek kullanıcı adının en yüksek rekorunu tabloya al
+                                if (seenUsers.Contains(r.player_name)) continue;
+                                seenUsers.Add(r.player_name);
+
+                                bool isMe = r.player_name.Equals(activeUser, StringComparison.OrdinalIgnoreCase);
+                                entries.Add(new LeaderboardEntry
+                                {
+                                    rank = entries.Count + 1,
+                                    playerName = r.player_name,
+                                    score = r.score,
+                                    timeInSeconds = r.time_seconds,
+                                    formattedScore = !string.IsNullOrEmpty(r.formatted_score) ? r.formatted_score : GetStageDisplayText(r.mode, r.score, r.time_seconds, r.extra_info),
+                                    rankTitle = r.rank_title,
+                                    isPlayer = isMe,
+                                    extraInfo = r.extra_info,
+                                    modeDisplayName = GetModeDisplayName(r.mode, r.extra_info),
+                                    stageDisplayText = GetStageDisplayText(r.mode, r.score, r.time_seconds, r.extra_info)
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[LeaderboardManager] Supabase tüm modlar JSON hatası: {ex.Message}");
+                    }
+                }
+            }
+        }
+
+        // Cihazda kayıtlı gerçek kullanıcı profillerini (ProfileManager.GetKnownProfiles) kontrol et ve listede yoksa ekle
+        List<string> knownProfiles = ProfileManager.GetKnownProfiles();
+        foreach (string prof in knownProfiles)
+        {
+            if (string.IsNullOrEmpty(prof) || IsSamplePlaceholderName(prof)) continue;
+            GetBestRecordForProfile(prof, out BoardMode pMode, out int pScore, out string pExtra);
+            if (pScore <= 0) continue;
+
+            string pModeKey = GetModeKey(pMode);
+            LeaderboardEntry existing = entries.Find(e => e.playerName.Equals(prof, StringComparison.OrdinalIgnoreCase));
+            bool isMe = prof.Equals(activeUser, StringComparison.OrdinalIgnoreCase);
+
+            if (existing != null)
+            {
+                if (isMe) existing.isPlayer = true;
+                if (pScore > existing.score)
+                {
+                    existing.score = pScore;
+                    existing.modeDisplayName = GetModeDisplayName(pModeKey, pExtra);
+                    existing.stageDisplayText = GetStageDisplayText(pModeKey, pScore, 0f, pExtra);
+                    existing.formattedScore = existing.stageDisplayText;
+                }
+            }
+            else
+            {
+                entries.Add(new LeaderboardEntry
+                {
+                    rank = entries.Count + 1,
+                    playerName = prof,
+                    score = pScore,
+                    timeInSeconds = 0f,
+                    formattedScore = GetStageDisplayText(pModeKey, pScore, 0f, pExtra),
+                    rankTitle = GetPilotRankByScore(pMode, pScore),
+                    isPlayer = isMe,
+                    extraInfo = pExtra,
+                    modeDisplayName = GetModeDisplayName(pModeKey, pExtra),
+                    stageDisplayText = GetStageDisplayText(pModeKey, pScore, 0f, pExtra)
+                });
+            }
+        }
+
+        // Skorlara göre büyükten küçüğe sırala
+        entries.Sort((a, b) => b.score.CompareTo(a.score));
+        for (int i = 0; i < entries.Count; i++)
+        {
+            entries[i].rank = i + 1;
+        }
+
+        onComplete?.Invoke(entries, isLiveOnline);
+    }
+
+    private void GetBestRecordForProfile(string profileName, out BoardMode bestMode, out int bestScore, out string extraInfo)
+    {
+        int endless = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_EndlessHighScore"), 0);
+        int timeAtk = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_TimeAttackHighScore"), 0);
+        int bulletHell = Mathf.RoundToInt(PlayerPrefs.GetFloat(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_BulletHellBestTime"), 0f));
+        int bossRush = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_BossRushHighScore"), 0);
+        int hardcore = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_HardcoreHighScore"), 0);
+        int totalWaves = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_Total_Waves"), 0);
+        int level = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_Pilot_Level"), 1);
+
+        bestMode = BoardMode.Endless;
+        bestScore = Mathf.Max(endless, Mathf.Max(totalWaves, level));
+        extraInfo = (endless >= totalWaves && endless > 5) ? "SONSUZ" : "HAREKAT";
+
+        if (bossRush > bestScore)
+        {
+            bestMode = BoardMode.BossRush;
+            bestScore = bossRush;
+            extraInfo = "BOSS";
+        }
+        if (hardcore > bestScore)
+        {
+            bestMode = BoardMode.Hardcore;
+            bestScore = hardcore;
+            extraInfo = "HARDCORE";
+        }
+        if (timeAtk > bestScore)
+        {
+            bestMode = BoardMode.TimeAttack;
+            bestScore = timeAtk;
+            extraInfo = "TIME";
+        }
+        if (bulletHell > bestScore)
+        {
+            bestMode = BoardMode.BulletHell;
+            bestScore = bulletHell;
+            extraInfo = "BULLET";
         }
     }
 

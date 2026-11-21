@@ -999,7 +999,7 @@ public class MainMenuManager : MonoBehaviour
         if (_titleObject != null) _titleObject.SetActive(false);
         if (backgroundImage != null) backgroundImage.enabled = true;
 
-        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: false);
+        PlayerProfileUI.Instance?.ShowMenuStatusBar(showGoldBadge: true);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
@@ -1159,7 +1159,17 @@ public class MainMenuManager : MonoBehaviour
         btnObj.transform.SetParent(mainPanel.transform, false);
 
         _dailyOpsButton = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
-        FormatPixelExactButton(_dailyOpsButton, new Vector2(549.9f, -452.8f), new Vector2(428.7f, 165.5f), new Color(1f, 0.78f, 0.18f, 0.16f), new Color(1f, 0.78f, 0.18f, 0.35f), OpenDailyOpsPanel);
+        FormatPixelExactButton(_dailyOpsButton, new Vector2(542.5f, -452.8f), new Vector2(415.0f, 165.5f), new Color(1f, 0.78f, 0.18f, 0.16f), new Color(1f, 0.78f, 0.18f, 0.35f), OpenDailyOpsPanel);
+
+        // GÖREVLER ve ETKİNLİKLER butonlarının yanındaki SKOR TABLOSU butonu (1920x1080 exact: x = 1718..1902, y = 936..987 -> center = (850.0, -421.0), size = (184.0, 56.0))
+        Transform existingLbTab = mainPanel.transform.Find("LeaderboardTabButton");
+        GameObject lbTabObj = existingLbTab != null ? existingLbTab.gameObject : new GameObject("LeaderboardTabButton", typeof(RectTransform));
+        lbTabObj.transform.SetParent(mainPanel.transform, false);
+        lbTabObj.SetActive(true);
+
+        Button lbTabBtn = lbTabObj.GetComponent<Button>() ?? lbTabObj.AddComponent<Button>();
+        FormatPixelExactButton(lbTabBtn, new Vector2(850.0f, -421.0f), new Vector2(184.0f, 56.0f), new Color(0f, 0.88f, 1f, 0.18f), new Color(0f, 0.88f, 1f, 0.38f), () => OpenLeaderboardPanel());
+        lbTabObj.transform.SetAsLastSibling();
     }
 
     private void RefreshDailyOpsButtonVisual()
