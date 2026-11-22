@@ -46,6 +46,7 @@ public class GameManager : MonoBehaviour
     public GameOverUI gameOverUI;
 
     private bool gameEnded = false;
+    private bool _matchStarted = false;
     public bool IsGameEnded => gameEnded;
     public void SetGameEnded(bool ended) { gameEnded = ended; }
     private Vector3 _plane2OriginalScale = Vector3.one;
@@ -104,6 +105,7 @@ public class GameManager : MonoBehaviour
     public void ApplyGameMode()
     {
         gameEnded = false;
+        _matchStarted = true;
         sessionGoldEarned = 0;
         GameSettings.LoadSettings();
         CombatComboManager.EnsureInstance().ResetSession();
@@ -1081,7 +1083,7 @@ public class GameManager : MonoBehaviour
 
         PlayerProfileManager.EnsureInstance()?.RecordKill(isBoss: true);
         PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(4);
-        LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, 400);
+        LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, 4, 0f, "BOSS");
 
         AudioManager.Instance?.PlayRewardFanfare();
 
@@ -1457,12 +1459,23 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void SaveAndSubmitActiveScore(bool isFinal = false)
     {
+        if (!_matchStarted) return;
         var lm = LeaderboardManager.EnsureInstance();
         if (lm == null) return;
 
         switch (CurrentMode)
         {
             case GameMode.SoloVsAI:
+                int currentStage = Mathf.Clamp(currentPlaneIndex, 1, MaxPlanes);
+                int bestStage = ProfileManager.GetInt("AirBattle_CampaignHighScore", 0);
+                if (currentStage > bestStage)
+                {
+                    ProfileManager.SetInt("AirBattle_CampaignHighScore", currentStage);
+                    PlayerPrefs.Save();
+                }
+                lm.SubmitScore(LeaderboardManager.BoardMode.Endless, currentStage, 0f, "HAREKAT");
+                break;
+
             case GameMode.Endless:
                 int currentWave = Mathf.Max(1, currentPlaneIndex);
                 int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
@@ -1471,7 +1484,7 @@ public class GameManager : MonoBehaviour
                     ProfileManager.SetInt("AirBattle_EndlessHighScore", currentWave);
                     PlayerPrefs.Save();
                 }
-                lm.SubmitScore(LeaderboardManager.BoardMode.Endless, currentWave);
+                lm.SubmitScore(LeaderboardManager.BoardMode.Endless, currentWave, 0f, "SONSUZ");
                 break;
 
             case GameMode.Hardcore:
@@ -1482,18 +1495,21 @@ public class GameManager : MonoBehaviour
                     ProfileManager.SetInt("AirBattle_HardcoreHighScore", defeatedBosses);
                     PlayerPrefs.Save();
                 }
-                lm.SubmitScore(LeaderboardManager.BoardMode.Hardcore, defeatedBosses);
+                if (defeatedBosses > 0)
+                    lm.SubmitScore(LeaderboardManager.BoardMode.Hardcore, defeatedBosses, 0f, "HARDCORE");
                 break;
 
             case GameMode.BossRush:
-                int bossScore = Mathf.Max(0, currentPlaneIndex - 1) * 100;
+                int bossStage = Mathf.Clamp(currentPlaneIndex - 1, 0, 4);
                 int bestBoss = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
-                if (bossScore > bestBoss)
+                if (bestBoss >= 100) bestBoss = Mathf.Clamp(bestBoss / 100, 1, 4);
+                if (bossStage > bestBoss)
                 {
-                    ProfileManager.SetInt("AirBattle_BossRushHighScore", bossScore);
+                    ProfileManager.SetInt("AirBattle_BossRushHighScore", bossStage);
                     PlayerPrefs.Save();
                 }
-                lm.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossScore);
+                if (bossStage > 0)
+                    lm.SubmitScore(LeaderboardManager.BoardMode.BossRush, bossStage, 0f, "BOSS");
                 break;
 
             case GameMode.TimeAttack:

@@ -93,10 +93,11 @@ public class LeaderboardManager : MonoBehaviour
 
     public void SyncPlayerCampaignHistory()
     {
-        int wave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
-        if (wave < 5)
+        // Eski BossRush *100 puan formatını (100..400) gerçek aşama (1..4) formatına normalize et
+        int bossRaw = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
+        if (bossRaw >= 100)
         {
-            ProfileManager.SetInt("AirBattle_EndlessHighScore", 5);
+            ProfileManager.SetInt("AirBattle_BossRushHighScore", Mathf.Clamp(bossRaw / 100, 1, 4));
             ProfileManager.Save();
         }
     }
@@ -380,12 +381,19 @@ public class LeaderboardManager : MonoBehaviour
 
     private IEnumerator FetchAllModesLeaderboardRoutine(Action<List<LeaderboardEntry>, bool> onComplete)
     {
-        // Önce aktif oyuncunun yerel rekorunu veritabanına senkronize et
         string activeUser = PlayerCallsign;
-        GetBestRecordForProfile(activeUser, out BoardMode myBestMode, out int myBestScore, out string myExtra);
-        if (IsSupabaseConfigured && myBestScore > 0)
+        List<string> knownProfiles = ProfileManager.GetKnownProfiles();
+
+        // Cihazdaki tüm gerçek profillerin doğru rekorlarını Supabase'e UPSERT ederek eski hatalı (örn. totalWaves=69) kayıtları ez
+        if (IsSupabaseConfigured)
         {
-            yield return StartCoroutine(UploadScoreToSupabaseRoutine(myBestMode, myBestScore, 0f, myExtra));
+            foreach (string prof in knownProfiles)
+            {
+                if (string.IsNullOrEmpty(prof) || IsSamplePlaceholderName(prof)) continue;
+                GetBestRecordForProfile(prof, out BoardMode pMode, out int pScore, out string pExtra);
+                int uploadScore = Mathf.Max(1, pScore);
+                yield return StartCoroutine(UploadProfileScoreToSupabaseRoutine(prof, pMode, uploadScore, 0f, pExtra));
+            }
         }
 
         List<LeaderboardEntry> entries = new List<LeaderboardEntry>();
@@ -418,23 +426,23 @@ public class LeaderboardManager : MonoBehaviour
                                 if (r == null || string.IsNullOrEmpty(r.player_name)) continue;
                                 if (IsSamplePlaceholderName(r.player_name)) continue;
 
-                                // Her gerçek kullanıcı adının en yüksek rekorunu tabloya al
                                 if (seenUsers.Contains(r.player_name)) continue;
                                 seenUsers.Add(r.player_name);
 
+                                int cleanScore = NormalizeModeScore(r.mode, r.score);
                                 bool isMe = r.player_name.Equals(activeUser, StringComparison.OrdinalIgnoreCase);
                                 entries.Add(new LeaderboardEntry
                                 {
                                     rank = entries.Count + 1,
                                     playerName = r.player_name,
-                                    score = r.score,
+                                    score = cleanScore,
                                     timeInSeconds = r.time_seconds,
-                                    formattedScore = !string.IsNullOrEmpty(r.formatted_score) ? r.formatted_score : GetStageDisplayText(r.mode, r.score, r.time_seconds, r.extra_info),
+                                    formattedScore = GetStageDisplayText(r.mode, cleanScore, r.time_seconds, r.extra_info),
                                     rankTitle = r.rank_title,
                                     isPlayer = isMe,
                                     extraInfo = r.extra_info,
                                     modeDisplayName = GetModeDisplayName(r.mode, r.extra_info),
-                                    stageDisplayText = GetStageDisplayText(r.mode, r.score, r.time_seconds, r.extra_info)
+                                    stageDisplayText = GetStageDisplayText(r.mode, cleanScore, r.time_seconds, r.extra_info)
                                 });
                             }
                         }
@@ -447,13 +455,12 @@ public class LeaderboardManager : MonoBehaviour
             }
         }
 
-        // Cihazda kayıtlı gerçek kullanıcı profillerini (ProfileManager.GetKnownProfiles) kontrol et ve listede yoksa ekle
-        List<string> knownProfiles = ProfileManager.GetKnownProfiles();
+        // Cihazda kayıtlı gerçek kullanıcı profillerinin yerel doğru değerlerini tabloya kesin olarak uygula
         foreach (string prof in knownProfiles)
         {
             if (string.IsNullOrEmpty(prof) || IsSamplePlaceholderName(prof)) continue;
             GetBestRecordForProfile(prof, out BoardMode pMode, out int pScore, out string pExtra);
-            if (pScore <= 0) continue;
+            int finalLocalScore = Mathf.Max(1, pScore);
 
             string pModeKey = GetModeKey(pMode);
             LeaderboardEntry existing = entries.Find(e => e.playerName.Equals(prof, StringComparison.OrdinalIgnoreCase));
@@ -462,13 +469,12 @@ public class LeaderboardManager : MonoBehaviour
             if (existing != null)
             {
                 if (isMe) existing.isPlayer = true;
-                if (pScore > existing.score)
-                {
-                    existing.score = pScore;
-                    existing.modeDisplayName = GetModeDisplayName(pModeKey, pExtra);
-                    existing.stageDisplayText = GetStageDisplayText(pModeKey, pScore, 0f, pExtra);
-                    existing.formattedScore = existing.stageDisplayText;
-                }
+                // Yerel profilin gerçek rekorunu her zaman esas al (veritabanında eski şişkin bir sayı kalmışsa bile düzelt)
+                existing.score = finalLocalScore;
+                existing.extraInfo = pExtra;
+                existing.modeDisplayName = GetModeDisplayName(pModeKey, pExtra);
+                existing.stageDisplayText = GetStageDisplayText(pModeKey, finalLocalScore, 0f, pExtra);
+                existing.formattedScore = existing.stageDisplayText;
             }
             else
             {
@@ -476,14 +482,14 @@ public class LeaderboardManager : MonoBehaviour
                 {
                     rank = entries.Count + 1,
                     playerName = prof,
-                    score = pScore,
+                    score = finalLocalScore,
                     timeInSeconds = 0f,
-                    formattedScore = GetStageDisplayText(pModeKey, pScore, 0f, pExtra),
-                    rankTitle = GetPilotRankByScore(pMode, pScore),
+                    formattedScore = GetStageDisplayText(pModeKey, finalLocalScore, 0f, pExtra),
+                    rankTitle = GetPilotRankByScore(pMode, finalLocalScore),
                     isPlayer = isMe,
                     extraInfo = pExtra,
                     modeDisplayName = GetModeDisplayName(pModeKey, pExtra),
-                    stageDisplayText = GetStageDisplayText(pModeKey, pScore, 0f, pExtra)
+                    stageDisplayText = GetStageDisplayText(pModeKey, finalLocalScore, 0f, pExtra)
                 });
             }
         }
@@ -498,43 +504,170 @@ public class LeaderboardManager : MonoBehaviour
         onComplete?.Invoke(entries, isLiveOnline);
     }
 
+    private static int NormalizeModeScore(string modeKey, int rawScore)
+    {
+        string m = (modeKey ?? "").ToLowerInvariant();
+        if (m == "boss_rush")
+        {
+            if (rawScore >= 100) return Mathf.Clamp(rawScore / 100, 1, 4);
+            return Mathf.Clamp(rawScore, 1, 4);
+        }
+        return Mathf.Max(1, rawScore);
+    }
+
+    private IEnumerator UploadProfileScoreToSupabaseRoutine(string profileName, BoardMode mode, int score, float timeSeconds, string extra)
+    {
+        if (!IsSupabaseConfigured || string.IsNullOrEmpty(profileName)) yield break;
+
+        string endpoint = $"{supabaseUrl}/rest/v1/leaderboard";
+        string modeKey = GetModeKey(mode);
+        string rankTitle = GetPilotRankByScore(mode, score);
+        string formatted = GetStageDisplayText(modeKey, score, timeSeconds, extra);
+
+        SupabaseScoreRecord record = new SupabaseScoreRecord
+        {
+            player_name = profileName,
+            mode = modeKey,
+            score = score,
+            time_seconds = timeSeconds,
+            formatted_score = formatted,
+            rank_title = rankTitle,
+            extra_info = extra
+        };
+
+        string jsonBody = JsonUtility.ToJson(record);
+
+        using (UnityWebRequest req = new UnityWebRequest(endpoint, "POST"))
+        {
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+            req.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.timeout = 5;
+
+            req.SetRequestHeader("apikey", supabaseAnonKey);
+            req.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
+            req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("Prefer", "resolution=merge-duplicates");
+
+            yield return req.SendWebRequest();
+        }
+    }
+
     private void GetBestRecordForProfile(string profileName, out BoardMode bestMode, out int bestScore, out string extraInfo)
     {
+        // Yalnızca gerçek tek-seferlik oyun modu rekorlarını oku (AirBattle_Total_Waves gibi kümülatif toplamları ASLA kullanma!)
+        int campaign = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_CampaignHighScore"), 0);
         int endless = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_EndlessHighScore"), 0);
         int timeAtk = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_TimeAttackHighScore"), 0);
         int bulletHell = Mathf.RoundToInt(PlayerPrefs.GetFloat(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_BulletHellBestTime"), 0f));
-        int bossRush = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_BossRushHighScore"), 0);
+        int bossRushRaw = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_BossRushHighScore"), 0);
+        int bossRush = bossRushRaw >= 100 ? Mathf.Clamp(bossRushRaw / 100, 1, 4) : Mathf.Clamp(bossRushRaw, 0, 4);
         int hardcore = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_HardcoreHighScore"), 0);
-        int totalWaves = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_Total_Waves"), 0);
-        int level = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_Pilot_Level"), 1);
 
-        bestMode = BoardMode.Endless;
-        bestScore = Mathf.Max(endless, Mathf.Max(totalWaves, level));
-        extraInfo = (endless >= totalWaves && endless > 5) ? "SONSUZ" : "HAREKAT";
+        // Eğer aktif profil ise oyuncunun şu an seçili olan aktif oyun modundaki gerçek rekoruna öncelik ver
+        bool isActiveProfile = profileName.Equals(PlayerCallsign, StringComparison.OrdinalIgnoreCase);
+        if (isActiveProfile)
+        {
+            switch (GameSettings.SelectedMode)
+            {
+                case GameSettings.GameMode.Endless:
+                    bestMode = BoardMode.Endless;
+                    bestScore = Mathf.Max(1, endless);
+                    extraInfo = "SONSUZ";
+                    return;
 
-        if (bossRush > bestScore)
+                case GameSettings.GameMode.Solo:
+                    bestMode = BoardMode.Endless;
+                    int stage = campaign > 0 ? Mathf.Clamp(campaign, 1, 20) : Mathf.Clamp(Mathf.Max(1, endless), 1, 20);
+                    bestScore = stage;
+                    extraInfo = "HAREKAT";
+                    return;
+
+                case GameSettings.GameMode.BossRush:
+                    if (bossRush > 0)
+                    {
+                        bestMode = BoardMode.BossRush;
+                        bestScore = bossRush;
+                        extraInfo = "BOSS";
+                        return;
+                    }
+                    break;
+
+                case GameSettings.GameMode.Hardcore:
+                    if (hardcore > 0)
+                    {
+                        bestMode = BoardMode.Hardcore;
+                        bestScore = hardcore;
+                        extraInfo = "HARDCORE";
+                        return;
+                    }
+                    break;
+
+                case GameSettings.GameMode.TimeAttack:
+                    if (timeAtk > 0)
+                    {
+                        bestMode = BoardMode.TimeAttack;
+                        bestScore = timeAtk;
+                        extraInfo = "TIME";
+                        return;
+                    }
+                    break;
+
+                case GameSettings.GameMode.BulletHell:
+                    if (bulletHell > 0)
+                    {
+                        bestMode = BoardMode.BulletHell;
+                        bestScore = bulletHell;
+                        extraInfo = "BULLET";
+                        return;
+                    }
+                    break;
+            }
+        }
+
+        // Varsayılan: Harekat Modu veya Sonsuz İt Dalaşı gerçek rekoru
+        if (campaign > 0 && campaign >= endless)
+        {
+            bestMode = BoardMode.Endless;
+            bestScore = Mathf.Clamp(campaign, 1, 20);
+            extraInfo = "HAREKAT";
+        }
+        else if (endless > 0)
+        {
+            bestMode = BoardMode.Endless;
+            bestScore = endless;
+            bool isEndlessSelected = (GameSettings.SelectedMode == GameSettings.GameMode.Endless);
+            extraInfo = (isEndlessSelected || endless > 20) ? "SONSUZ" : "HAREKAT";
+        }
+        else if (bossRush > 0)
         {
             bestMode = BoardMode.BossRush;
             bestScore = bossRush;
             extraInfo = "BOSS";
         }
-        if (hardcore > bestScore)
+        else if (hardcore > 0)
         {
             bestMode = BoardMode.Hardcore;
             bestScore = hardcore;
             extraInfo = "HARDCORE";
         }
-        if (timeAtk > bestScore)
+        else if (timeAtk > 0)
         {
             bestMode = BoardMode.TimeAttack;
             bestScore = timeAtk;
             extraInfo = "TIME";
         }
-        if (bulletHell > bestScore)
+        else if (bulletHell > 0)
         {
             bestMode = BoardMode.BulletHell;
             bestScore = bulletHell;
             extraInfo = "BULLET";
+        }
+        else
+        {
+            bestMode = BoardMode.Endless;
+            bestScore = 1;
+            extraInfo = (GameSettings.SelectedMode == GameSettings.GameMode.Endless) ? "SONSUZ" : "HAREKAT";
         }
     }
 
