@@ -28,7 +28,9 @@ public class GameUI : MonoBehaviour
     private float _targetP2Health = 1f;
     private Image _p1FillImage;
     private Image _p2FillImage;
+    private GameObject _p1FillCapObj;
     private TextMeshProUGUI _p1TmpLabel;
+    private TextMeshProUGUI _p1LivesTmpLabel;
     private TextMeshProUGUI _p2TmpLabel;
 
     private TextMeshProUGUI _waveBadgeTMP;
@@ -126,8 +128,8 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0f, 1f);
-                rt.anchoredPosition = new Vector2(50f, -32f);
-                rt.sizeDelta = new Vector2(320f, 28f);
+                rt.anchoredPosition = new Vector2(50f, -44f);
+                rt.sizeDelta = new Vector2(388f, 28f);
             }
             else
             {
@@ -148,9 +150,37 @@ public class GameUI : MonoBehaviour
         Transform bg = slider.transform.Find("Background");
         if (bg != null)
         {
+            RectTransform bgRt = bg.GetComponent<RectTransform>();
+            if (bgRt != null)
+            {
+                bgRt.anchorMin = Vector2.zero;
+                bgRt.anchorMax = Vector2.one;
+                bgRt.offsetMin = Vector2.zero;
+                bgRt.offsetMax = Vector2.zero;
+            }
+
             Image bgImg = bg.GetComponent<Image>();
             if (bgImg != null)
-                bgImg.color = new Color(0.08f, 0.11f, 0.16f, 0.85f);
+            {
+                if (isPlayer)
+                {
+                    Sprite hpTrackSpr = LoadHudBtnSprite("hud_hp_track_1to1.png", "hud_hp_track_1to1", ref _cachedHpTrackSprite);
+                    if (hpTrackSpr != null)
+                    {
+                        bgImg.sprite = hpTrackSpr;
+                        bgImg.type = Image.Type.Simple;
+                        bgImg.color = Color.white;
+                    }
+                    else
+                    {
+                        bgImg.color = new Color(0.06f, 0.11f, 0.18f, 0.94f);
+                    }
+                }
+                else
+                {
+                    bgImg.color = new Color(0.08f, 0.11f, 0.16f, 0.85f);
+                }
+            }
         }
 
         Transform fillArea = slider.transform.Find("Fill Area");
@@ -161,20 +191,59 @@ public class GameUI : MonoBehaviour
             {
                 fillAreaRt.anchorMin = Vector2.zero;
                 fillAreaRt.anchorMax = Vector2.one;
-                fillAreaRt.offsetMin = Vector2.zero;
-                fillAreaRt.offsetMax = Vector2.zero;
+                if (isPlayer)
+                {
+                    fillAreaRt.offsetMin = new Vector2(5f, 5f);
+                    fillAreaRt.offsetMax = new Vector2(-5f, -5f);
+                }
+                else
+                {
+                    fillAreaRt.offsetMin = Vector2.zero;
+                    fillAreaRt.offsetMax = Vector2.zero;
+                }
             }
 
             Transform fill = fillArea.Find("Fill");
             if (fill != null)
             {
+                RectTransform fillRt = fill.GetComponent<RectTransform>();
+                if (fillRt != null)
+                {
+                    fillRt.offsetMin = Vector2.zero;
+                    fillRt.offsetMax = Vector2.zero;
+                }
+
                 Image fillImg = fill.GetComponent<Image>();
                 if (fillImg != null)
                 {
                     if (isPlayer)
                     {
-                        fillImg.color = new Color(0f, 0.9f, 1f);
+                        Sprite barFillSpr = LoadHudBtnSprite("hud_bar_fill_1to1.png", "hud_bar_fill_1to1", ref _cachedBarFillSprite);
+                        if (barFillSpr != null)
+                        {
+                            fillImg.sprite = barFillSpr;
+                            fillImg.type = Image.Type.Simple;
+                        }
+                        fillImg.color = new Color(0.03f, 0.82f, 0.93f, 1f); // #08D1EC 1:1 parlak cyan
                         _p1FillImage = fillImg;
+
+                        // Sağ uçtaki 1:1 parlak beyaz dikey gösterge ucu (White Tip Cap)
+                        _p1FillCapObj = EnsureUIGameObject(fill, "FillCap");
+                        RectTransform capRt = EnsureComponent<RectTransform>(_p1FillCapObj);
+                        capRt.anchorMin = new Vector2(1f, 0f);
+                        capRt.anchorMax = new Vector2(1f, 1f);
+                        capRt.pivot = new Vector2(1f, 0.5f);
+                        capRt.anchoredPosition = Vector2.zero;
+                        capRt.sizeDelta = new Vector2(5f, 0f);
+
+                        Image capImg = EnsureComponent<Image>(_p1FillCapObj);
+                        if (barFillSpr != null)
+                        {
+                            capImg.sprite = barFillSpr;
+                            capImg.type = Image.Type.Simple;
+                        }
+                        capImg.color = new Color(0.92f, 0.98f, 1f, 1f);
+                        capImg.raycastTarget = false;
                     }
                     else
                     {
@@ -196,23 +265,46 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(0.5f, 0f);
-        rt.anchoredPosition = new Vector2(0f, 2f);
-        rt.sizeDelta = new Vector2(0f, 24f);
+        rt.anchoredPosition = new Vector2(0f, 5f);
+        rt.sizeDelta = new Vector2(0f, 28f);
 
         TextMeshProUGUI tmp = EnsureComponent<TextMeshProUGUI>(labelObj);
-
-        tmp.fontSize = 20f;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.alignment = TextAlignmentOptions.Left;
+        tmp.font = MainMenuManager.GetTacticalFont();
+        tmp.fontSize = isPlayer ? 21.5f : 20f;
+        tmp.fontStyle = FontStyles.Normal;
+        tmp.alignment = TextAlignmentOptions.BottomLeft;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
+        tmp.raycastTarget = false;
 
         if (isPlayer)
         {
-            tmp.color = new Color(0.4f, 0.9f, 1f);
-            tmp.text = "[P1] OYUNCU 1: %100";
+            tmp.color = Color.white;
+            tmp.text = "<b><color=#FFFFFF>CAN %100</color></b> <color=#82AABF>(100 HP)</color>";
             _p1TmpLabel = tmp;
+
+            // Sağ üstteki 1:1 ♦ ♦ ♦ [3 CAN] etiketi
+            GameObject livesObj = EnsureUIGameObject(slider.transform, "HUD_LivesLabel");
+            RectTransform lRt = EnsureComponent<RectTransform>(livesObj);
+            lRt.anchorMin = new Vector2(0f, 1f);
+            lRt.anchorMax = new Vector2(1f, 1f);
+            lRt.pivot = new Vector2(0.5f, 0f);
+            lRt.anchoredPosition = new Vector2(0f, 5f);
+            lRt.sizeDelta = new Vector2(0f, 28f);
+
+            TextMeshProUGUI lTmp = EnsureComponent<TextMeshProUGUI>(livesObj);
+            lTmp.font = MainMenuManager.GetTacticalFont();
+            lTmp.fontSize = 20.5f;
+            lTmp.fontStyle = FontStyles.Normal;
+            lTmp.alignment = TextAlignmentOptions.BottomRight;
+            lTmp.textWrappingMode = TextWrappingModes.NoWrap;
+            lTmp.color = new Color(0.94f, 0.41f, 0.41f, 1f); // #EF6868 mercan kırmızısı
+            lTmp.text = "<color=#EF6868>♦ ♦ ♦ <b>[3 CAN]</b></color>";
+            lTmp.raycastTarget = false;
+            _p1LivesTmpLabel = lTmp;
         }
         else
         {
+            tmp.fontStyle = FontStyles.Bold;
             tmp.color = new Color(1f, 0.4f, 0.4f);
             tmp.text = "[DÜŞMAN] %100";
             _p2TmpLabel = tmp;
@@ -686,6 +778,7 @@ public class GameUI : MonoBehaviour
     private GameObject _ultiBarObj;
     private Image _ultiBarFillImg;
     private TextMeshProUGUI _ultiBarTMP;
+    private TextMeshProUGUI _ultiBarPctTMP;
     private Outline _ultiBarOutline;
 
     private GameObject _dodgeBtnObj;
@@ -711,49 +804,90 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
-        rt.anchoredPosition = new Vector2(50f, -66f);
-        rt.sizeDelta = new Vector2(320f, 20f);
+        rt.anchoredPosition = new Vector2(50f, -83f);
+        rt.sizeDelta = new Vector2(388f, 20f);
 
         Image bg = EnsureComponent<Image>(_ultiBarObj);
-        bg.color = new Color(0.06f, 0.10f, 0.16f, 0.90f);
+        Outline oldOutline = _ultiBarObj.GetComponent<Outline>();
+        if (oldOutline != null) Destroy(oldOutline);
+        _ultiBarOutline = null;
 
-        _ultiBarOutline = EnsureComponent<Outline>(_ultiBarObj);
-        _ultiBarOutline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
-        _ultiBarOutline.effectDistance = new Vector2(2f, -2f);
+        Sprite ultiTrackSpr = LoadHudBtnSprite("hud_ulti_track_1to1.png", "hud_ulti_track_1to1", ref _cachedUltiTrackSprite);
+        if (ultiTrackSpr != null)
+        {
+            bg.sprite = ultiTrackSpr;
+            bg.type = Image.Type.Simple;
+            bg.color = Color.white;
+        }
+        else
+        {
+            bg.color = new Color(0.06f, 0.11f, 0.18f, 0.94f);
+        }
 
         GameObject fillObj = EnsureUIGameObject(_ultiBarObj.transform, "Fill");
         RectTransform fillRt = EnsureComponent<RectTransform>(fillObj);
         fillRt.anchorMin = Vector2.zero;
         fillRt.anchorMax = Vector2.one;
-        fillRt.offsetMin = new Vector2(2f, 2f);
-        fillRt.offsetMax = new Vector2(-2f, -2f);
+        fillRt.offsetMin = new Vector2(4f, 4f);
+        fillRt.offsetMax = new Vector2(-4f, -4f);
 
         _ultiBarFillImg = EnsureComponent<Image>(fillObj);
+        Sprite barFillSpr = LoadHudBtnSprite("hud_bar_fill_1to1.png", "hud_bar_fill_1to1", ref _cachedBarFillSprite);
+        if (barFillSpr != null)
+        {
+            _ultiBarFillImg.sprite = barFillSpr;
+        }
         _ultiBarFillImg.type = Image.Type.Filled;
         _ultiBarFillImg.fillMethod = Image.FillMethod.Horizontal;
         _ultiBarFillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
-        _ultiBarFillImg.color = new Color(0f, 0.95f, 1f, 0.95f);
+        _ultiBarFillImg.color = new Color(0.49f, 0.95f, 1f, 1f); // #7EF2FF 1:1 buz mavisi
         _ultiBarFillImg.fillAmount = 0f;
 
+        // Barın sağ altındaki 1:1 "ULTİ • SÜPER GÜÇ" başlığı
         GameObject txtObj = EnsureUIGameObject(_ultiBarObj.transform, "Text");
         RectTransform txtRt = EnsureComponent<RectTransform>(txtObj);
-        txtRt.anchorMin = Vector2.zero;
-        txtRt.anchorMax = Vector2.one;
-        txtRt.offsetMin = Vector2.zero;
-        txtRt.offsetMax = Vector2.zero;
+        txtRt.anchorMin = new Vector2(0.47f, 0f);
+        txtRt.anchorMax = new Vector2(0.84f, 0f);
+        txtRt.pivot = new Vector2(0f, 1f);
+        txtRt.anchoredPosition = new Vector2(0f, -5f);
+        txtRt.sizeDelta = new Vector2(0f, 22f);
 
         _ultiBarTMP = EnsureComponent<TextMeshProUGUI>(txtObj);
-        _ultiBarTMP.fontSize = 18f;
-        _ultiBarTMP.fontStyle = FontStyles.Bold;
-        _ultiBarTMP.alignment = TextAlignmentOptions.Center;
-        _ultiBarTMP.color = Color.white;
-        _ultiBarTMP.text = "[ULTİ] SÜPER GÜÇ: %0";
+        _ultiBarTMP.font = MainMenuManager.GetTacticalFont();
+        _ultiBarTMP.fontSize = 15.5f;
+        _ultiBarTMP.fontStyle = FontStyles.Normal;
+        _ultiBarTMP.alignment = TextAlignmentOptions.TopLeft;
+        _ultiBarTMP.textWrappingMode = TextWrappingModes.NoWrap;
+        _ultiBarTMP.color = new Color(0.90f, 0.95f, 0.98f, 1f);
+        _ultiBarTMP.text = "ULTİ • SÜPER GÜÇ";
         _ultiBarTMP.raycastTarget = false;
+
+        // Barın en sağ altındaki 1:1 "%44" yüzde değeri
+        GameObject pctObj = EnsureUIGameObject(_ultiBarObj.transform, "ValueText");
+        RectTransform pctRt = EnsureComponent<RectTransform>(pctObj);
+        pctRt.anchorMin = new Vector2(0.76f, 0f);
+        pctRt.anchorMax = new Vector2(1f, 0f);
+        pctRt.pivot = new Vector2(1f, 1f);
+        pctRt.anchoredPosition = new Vector2(0f, -5f);
+        pctRt.sizeDelta = new Vector2(0f, 22f);
+
+        _ultiBarPctTMP = EnsureComponent<TextMeshProUGUI>(pctObj);
+        _ultiBarPctTMP.font = MainMenuManager.GetTacticalFont();
+        _ultiBarPctTMP.fontSize = 16.5f;
+        _ultiBarPctTMP.fontStyle = FontStyles.Normal;
+        _ultiBarPctTMP.alignment = TextAlignmentOptions.TopRight;
+        _ultiBarPctTMP.textWrappingMode = TextWrappingModes.NoWrap;
+        _ultiBarPctTMP.color = Color.white;
+        _ultiBarPctTMP.text = "%0";
+        _ultiBarPctTMP.raycastTarget = false;
     }
 
     private static Sprite _cachedDodgeBtnSprite;
     private static Sprite _cachedUltiBaseSprite;
     private static Sprite _cachedUltiRingSprite;
+    private static Sprite _cachedHpTrackSprite;
+    private static Sprite _cachedUltiTrackSprite;
+    private static Sprite _cachedBarFillSprite;
 
     private static Sprite LoadHudBtnSprite(string fileName, string resName, ref Sprite cache)
     {
@@ -947,34 +1081,45 @@ public class GameUI : MonoBehaviour
         var pcm = PlayerCombatManeuvers.Instance;
         if (pcm == null) return;
 
-        // 1. ULTİ BARI
+        // 1. ULTİ BARI (1:1 referans: buz mavisi dolgu barı + sağ altında "ULTİ • SÜPER GÜÇ" ve "%44")
         if (_ultiBarFillImg != null && _ultiBarTMP != null)
         {
             if (pcm.isOverdriveActive)
             {
                 float fill = Mathf.Clamp01(pcm.overdriveRemaining / pcm.overdriveDuration);
                 _ultiBarFillImg.fillAmount = fill;
-                _ultiBarFillImg.color = new Color(1f, 0.6f, 0.1f);
-                _ultiBarTMP.text = $"[AŞIRI YÜK] {pcm.overdriveRemaining:F1}s";
-                if (_ultiBarOutline != null) _ultiBarOutline.effectColor = new Color(1f, 0.85f, 0.2f);
+                _ultiBarFillImg.color = new Color(1f, 0.65f, 0.15f, 1f);
+                _ultiBarTMP.text = "ULTİ • AŞIRI YÜK";
+                if (_ultiBarPctTMP != null)
+                {
+                    _ultiBarPctTMP.text = $"{pcm.overdriveRemaining:F1}s";
+                    _ultiBarPctTMP.color = new Color(1f, 0.85f, 0.35f, 1f);
+                }
             }
             else
             {
                 float fill = Mathf.Clamp01(pcm.currentUlti / pcm.maxUlti);
                 _ultiBarFillImg.fillAmount = fill;
+                _ultiBarTMP.text = "ULTİ • SÜPER GÜÇ";
 
                 if (pcm.IsUltiReady)
                 {
                     float pulse = Mathf.PingPong(Time.time * 4f, 1f);
-                    _ultiBarFillImg.color = Color.Lerp(new Color(0f, 0.95f, 1f), new Color(1f, 0.85f, 0.2f), pulse);
-                    _ultiBarTMP.text = "[ULTİ] SÜPER GÜÇ: %100 [HAZIR! • E]";
-                    if (_ultiBarOutline != null) _ultiBarOutline.effectColor = Color.yellow;
+                    _ultiBarFillImg.color = Color.Lerp(new Color(0.49f, 0.95f, 1f, 1f), new Color(1f, 0.88f, 0.35f, 1f), pulse);
+                    if (_ultiBarPctTMP != null)
+                    {
+                        _ultiBarPctTMP.text = "%100";
+                        _ultiBarPctTMP.color = new Color(1f, 0.88f, 0.35f, 1f);
+                    }
                 }
                 else
                 {
-                    _ultiBarFillImg.color = new Color(0f, 0.85f, 1f);
-                    _ultiBarTMP.text = $"[ULTİ] SÜPER GÜÇ: %{(int)pcm.currentUlti}";
-                    if (_ultiBarOutline != null) _ultiBarOutline.effectColor = new Color(0f, 0.85f, 1f, 0.85f);
+                    _ultiBarFillImg.color = new Color(0.49f, 0.95f, 1f, 1f); // #7EF2FF 1:1 buz mavisi
+                    if (_ultiBarPctTMP != null)
+                    {
+                        _ultiBarPctTMP.text = $"%{(int)pcm.currentUlti}";
+                        _ultiBarPctTMP.color = Color.white;
+                    }
                 }
             }
         }
@@ -1166,10 +1311,23 @@ public class GameUI : MonoBehaviour
         {
             plane1HealthBar.value = Mathf.MoveTowards(plane1HealthBar.value, _targetP1Health, Time.deltaTime * 2.5f);
 
-            if (_p1FillImage != null && _targetP1Health < 0.3f)
+            if (_p1FillCapObj != null)
             {
-                float pulse = Mathf.PingPong(Time.time * 4f, 1f);
-                _p1FillImage.color = Color.Lerp(Color.red, Color.yellow, pulse);
+                bool showCap = plane1HealthBar.value > 0.01f;
+                if (_p1FillCapObj.activeSelf != showCap) _p1FillCapObj.SetActive(showCap);
+            }
+
+            if (_p1FillImage != null)
+            {
+                if (_targetP1Health < 0.3f)
+                {
+                    float pulse = Mathf.PingPong(Time.time * 4f, 1f);
+                    _p1FillImage.color = Color.Lerp(new Color(0.95f, 0.25f, 0.25f, 1f), new Color(0.03f, 0.82f, 0.93f, 1f), pulse);
+                }
+                else
+                {
+                    _p1FillImage.color = new Color(0.03f, 0.82f, 0.93f, 1f); // #08D1EC 1:1 parlak cyan
+                }
             }
         }
 
@@ -1215,19 +1373,24 @@ public class GameUI : MonoBehaviour
             {
                 if (isTwoPlayer)
                 {
-                    _p1TmpLabel.text = $"OYUNCU 1: %{hpInt} ({rawHp} HP)";
+                    _p1TmpLabel.text = $"<b><color=#FFFFFF>OYUNCU 1 %{hpInt}</color></b> <color=#82AABF>({rawHp} HP)</color>";
+                    if (_p1LivesTmpLabel != null) _p1LivesTmpLabel.text = "";
                 }
                 else
                 {
                     int lives = GameManager.Instance != null ? GameManager.Instance.player1Lives : 3;
                     string hearts = GetHeartsDisplay(lives);
                     string livesDisplay = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.Hardcore)
-                        ? "<color=#FF2222><b>[TEK CAN!]</b></color>"
+                        ? "<color=#EF6868>♦ <b>[TEK CAN!]</b></color>"
                         : hearts;
                     string shieldTxt = (PlayerUpgradeManager.Instance != null && PlayerUpgradeManager.Instance.currentShield > 0f)
-                        ? $" <color=#00E5FF>[KALKAN: {Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color>"
+                        ? $" <size=82%><color=#00E5FF>[+{Mathf.CeilToInt(PlayerUpgradeManager.Instance.currentShield)}]</color></size>"
                         : "";
-                    _p1TmpLabel.text = $"CAN: %{hpInt} ({rawHp} HP){shieldTxt} | {livesDisplay}";
+                    _p1TmpLabel.text = $"<b><color=#FFFFFF>CAN %{hpInt}</color></b> <color=#82AABF>({rawHp} HP)</color>{shieldTxt}";
+                    if (_p1LivesTmpLabel != null)
+                    {
+                        _p1LivesTmpLabel.text = livesDisplay;
+                    }
                 }
             }
         }
@@ -1374,9 +1537,13 @@ public class GameUI : MonoBehaviour
 
     private string GetHeartsDisplay(int lives)
     {
-        if (lives <= 0) return "<color=#888888>[CAN YOK]</color>";
-        if (lives == 1) return "<color=#E74C3C>[SON CAN]</color>";
-        if (lives == 2) return "<color=#F39C12>[2 CAN]</color>";
-        return $"<color=#FF3366>[{lives} CAN]</color>";
+        if (lives <= 0) return "<color=#94A3B8><b>[CAN YOK]</b></color>";
+        int clamped = Mathf.Clamp(lives, 1, 5);
+        System.Text.StringBuilder diamonds = new System.Text.StringBuilder();
+        for (int i = 0; i < clamped; i++)
+        {
+            diamonds.Append("♦ ");
+        }
+        return $"<color=#EF6868>{diamonds}<b>[{lives} CAN]</b></color>";
     }
 }
