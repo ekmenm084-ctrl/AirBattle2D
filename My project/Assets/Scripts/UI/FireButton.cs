@@ -115,6 +115,42 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         }
     }
 
+    private static Sprite _cachedFireSprite;
+
+    private static Sprite LoadFire1To1Sprite()
+    {
+        if (_cachedFireSprite != null) return _cachedFireSprite;
+
+        string path = System.IO.Path.Combine(Application.dataPath, "Sprites/hud_btn_fire_1to1.png");
+        if (System.IO.File.Exists(path))
+        {
+            byte[] bytes = System.IO.File.ReadAllBytes(path);
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (tex.LoadImage(bytes))
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.filterMode = FilterMode.Bilinear;
+                _cachedFireSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                return _cachedFireSprite;
+            }
+        }
+
+        Sprite res = Resources.Load<Sprite>("hud_btn_fire_1to1");
+        if (res != null)
+        {
+            _cachedFireSprite = res;
+            return res;
+        }
+
+        Texture2D resTex = Resources.Load<Texture2D>("hud_btn_fire_1to1");
+        if (resTex != null)
+        {
+            _cachedFireSprite = Sprite.Create(resTex, new Rect(0, 0, resTex.width, resTex.height), new Vector2(0.5f, 0.5f), 100f);
+            return _cachedFireSprite;
+        }
+        return null;
+    }
+
     public void ApplyMilitaryFireStyling()
     {
         RectTransform rt = GetComponent<RectTransform>();
@@ -124,12 +160,12 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         {
             if (isPlayer1)
             {
-                // P1: Sağ Alt Köşe (-220, 150) - Ekran sınırlarından güvenli, ferah ve ergonomik taktik yerleşim
+                // P1: Sağ Alt Köşe 1:1 referans yerleşimi (-180, 160), boyut (260, 260)
                 rt.anchorMin = new Vector2(1f, 0f);
                 rt.anchorMax = new Vector2(1f, 0f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = new Vector2(-220f, 150f);
-                rt.sizeDelta = new Vector2(130f, 130f);
+                rt.anchoredPosition = new Vector2(-180f, 160f);
+                rt.sizeDelta = new Vector2(260f, 260f);
                 rt.localEulerAngles = Vector3.zero;
             }
             else
@@ -139,43 +175,48 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 rt.anchoredPosition = new Vector2(170f, -155f);
-                rt.sizeDelta = new Vector2(130f, 130f);
+                rt.sizeDelta = new Vector2(180f, 180f);
                 rt.localEulerAngles = new Vector3(0f, 0f, 180f);
             }
         }
 
         if (_image == null) _image = GetComponent<Image>();
         if (_image == null) _image = gameObject.AddComponent<Image>();
-        _image.color = new Color(0.92f, 0.18f, 0.22f, 0.90f);
 
-        // Kırmızı neon parlama efekti
         Outline outline = GetComponent<Outline>();
-        if (outline == null) outline = gameObject.AddComponent<Outline>();
-        outline.effectColor = new Color(1f, 0.85f, 0.2f, 1f);
-        outline.effectDistance = new Vector2(3f, -3f);
+        if (outline != null) Destroy(outline);
 
+        Sprite fireSpr = LoadFire1To1Sprite();
         Transform textChild = transform.Find("Text") ?? transform.Find("Ateş") ?? transform.Find("Text (TMP)");
-        GameObject textObj = textChild != null ? textChild.gameObject : null;
-        if (textObj == null)
+
+        if (fireSpr != null)
         {
-            textObj = new GameObject("Text", typeof(RectTransform));
+            _image.sprite = fireSpr;
+            _image.type = Image.Type.Simple;
+            _image.preserveAspect = true;
+            _image.color = Color.white;
+            if (textChild != null) textChild.gameObject.SetActive(false);
+        }
+        else
+        {
+            _image.color = new Color(0.92f, 0.18f, 0.22f, 0.90f);
+            GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("Text", typeof(RectTransform));
             textObj.transform.SetParent(transform, false);
+            textObj.SetActive(true);
             RectTransform trt = textObj.GetComponent<RectTransform>();
             trt.anchorMin = Vector2.zero;
             trt.anchorMax = Vector2.one;
             trt.offsetMin = Vector2.zero;
             trt.offsetMax = Vector2.zero;
+
+            TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
+            tmp.text = "<b>ATEŞ</b>\n<size=55%>[ SPACE ]</size>";
+            tmp.fontSize = 28f;
+            tmp.fontStyle = FontStyles.Bold;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.raycastTarget = false;
         }
-
-        TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>();
-        if (tmp == null) tmp = textObj.AddComponent<TextMeshProUGUI>();
-
-        tmp.text = "<b>ATEŞ</b>";
-        tmp.fontSize = 28f;
-        tmp.fontStyle = FontStyles.Bold;
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.color = Color.white;
-        tmp.raycastTarget = false;
 
         transform.SetAsLastSibling();
     }
@@ -183,14 +224,16 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     public void OnPointerDown(PointerEventData eventData)
     {
         _isPressed = true;
-        if (_image != null) _image.color = new Color(1f, 0.35f, 0.35f, 1f);
+        if (_image != null) _image.color = new Color(1f, 0.78f, 0.78f, 1f);
+        transform.localScale = Vector3.one * 0.95f;
         OnFirePressed();
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         _isPressed = false;
-        if (_image != null) _image.color = new Color(0.92f, 0.18f, 0.22f, 0.90f);
+        if (_image != null) _image.color = Color.white;
+        transform.localScale = Vector3.one;
     }
 
     private void OnFirePressed()

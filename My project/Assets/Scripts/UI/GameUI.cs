@@ -751,28 +751,77 @@ public class GameUI : MonoBehaviour
         _ultiBarTMP.raycastTarget = false;
     }
 
+    private static Sprite _cachedDodgeBtnSprite;
+    private static Sprite _cachedUltiBaseSprite;
+    private static Sprite _cachedUltiRingSprite;
+
+    private static Sprite LoadHudBtnSprite(string fileName, string resName, ref Sprite cache)
+    {
+        if (cache != null) return cache;
+
+        string path = System.IO.Path.Combine(Application.dataPath, "Sprites/" + fileName);
+        if (System.IO.File.Exists(path))
+        {
+            byte[] bytes = System.IO.File.ReadAllBytes(path);
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (tex.LoadImage(bytes))
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.filterMode = FilterMode.Bilinear;
+                cache = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                return cache;
+            }
+        }
+
+        Sprite res = Resources.Load<Sprite>(resName);
+        if (res != null)
+        {
+            cache = res;
+            return res;
+        }
+
+        Texture2D resTex = Resources.Load<Texture2D>(resName);
+        if (resTex != null)
+        {
+            cache = Sprite.Create(resTex, new Rect(0, 0, resTex.width, resTex.height), new Vector2(0.5f, 0.5f), 100f);
+            return cache;
+        }
+        return null;
+    }
+
     private void SetupCombatManeuverButtons()
     {
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
-        // 1. KAÇIŞ (DODGE ROLL) BUTONU
+        // 1. KAÇIŞ (DODGE ROLL) BUTONU (1:1 referans: FÜZE'nin hemen altında (-395, 82), boyut (154, 106))
         _dodgeBtnObj = EnsureUIGameObject(canvas.transform, "HUD_DodgeButton");
 
         RectTransform dRt = EnsureComponent<RectTransform>(_dodgeBtnObj);
         dRt.anchorMin = new Vector2(1f, 0f);
         dRt.anchorMax = new Vector2(1f, 0f);
         dRt.pivot = new Vector2(0.5f, 0.5f);
-        dRt.anchoredPosition = new Vector2(-360f, 105f);
-        dRt.sizeDelta = new Vector2(85f, 85f);
+        dRt.anchoredPosition = new Vector2(-395f, 82f);
+        dRt.sizeDelta = new Vector2(154f, 106f);
 
         Image dImg = EnsureComponent<Image>(_dodgeBtnObj);
-        dImg.color = new Color(0.08f, 0.16f, 0.25f, 0.94f);
+        Outline oldDodgeOutline = _dodgeBtnObj.GetComponent<Outline>();
+        if (oldDodgeOutline != null) Destroy(oldDodgeOutline);
+        _dodgeBtnOutline = null;
 
-        _dodgeBtnOutline = EnsureComponent<Outline>(_dodgeBtnObj);
-        _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
-        _dodgeBtnOutline.effectDistance = new Vector2(2f, -2f);
+        Sprite dodgeSpr = LoadHudBtnSprite("hud_btn_dodge_1to1.png", "hud_btn_dodge_1to1", ref _cachedDodgeBtnSprite);
+        if (dodgeSpr != null)
+        {
+            dImg.sprite = dodgeSpr;
+            dImg.type = Image.Type.Simple;
+            dImg.preserveAspect = true;
+            dImg.color = Color.white;
+        }
+        else
+        {
+            dImg.color = new Color(0.08f, 0.16f, 0.25f, 0.94f);
+        }
 
         Button dBtn = EnsureComponent<Button>(_dodgeBtnObj);
         dBtn.targetGraphic = dImg;
@@ -784,13 +833,13 @@ public class GameUI : MonoBehaviour
 
         GameObject dFillObj = EnsureUIGameObject(_dodgeBtnObj.transform, "CooldownFill");
         RectTransform dFillRt = EnsureComponent<RectTransform>(dFillObj);
-        dFillRt.anchorMin = Vector2.zero;
-        dFillRt.anchorMax = Vector2.one;
+        dFillRt.anchorMin = new Vector2(0.31f, 0.03f);
+        dFillRt.anchorMax = new Vector2(0.99f, 0.97f);
         dFillRt.offsetMin = Vector2.zero;
         dFillRt.offsetMax = Vector2.zero;
 
         _dodgeFillImg = EnsureComponent<Image>(dFillObj);
-        _dodgeFillImg.color = new Color(0f, 0f, 0f, 0.72f);
+        _dodgeFillImg.color = new Color(0f, 0f, 0f, 0.68f);
         _dodgeFillImg.type = Image.Type.Filled;
         _dodgeFillImg.fillMethod = Image.FillMethod.Radial360;
         _dodgeFillImg.fillOrigin = (int)Image.Origin360.Top;
@@ -800,36 +849,48 @@ public class GameUI : MonoBehaviour
 
         GameObject dTxtObj = EnsureUIGameObject(_dodgeBtnObj.transform, "Text");
         RectTransform dTxtRt = EnsureComponent<RectTransform>(dTxtObj);
-        dTxtRt.anchorMin = Vector2.zero;
-        dTxtRt.anchorMax = Vector2.one;
+        dTxtRt.anchorMin = new Vector2(0.31f, 0f);
+        dTxtRt.anchorMax = new Vector2(0.99f, 1f);
         dTxtRt.offsetMin = Vector2.zero;
         dTxtRt.offsetMax = Vector2.zero;
 
         _dodgeBtnTMP = EnsureComponent<TextMeshProUGUI>(dTxtObj);
-        _dodgeBtnTMP.text = "KAÇIŞ\n<size=85%>[SHIFT]</size>";
-        _dodgeBtnTMP.fontSize = 20f;
-        _dodgeBtnTMP.fontStyle = FontStyles.Bold;
+        _dodgeBtnTMP.font = MainMenuManager.GetTacticalFont();
+        _dodgeBtnTMP.text = "KAÇIŞ\n<size=60%><color=#60A5FA>[ SHIFT ]</color></size>";
+        _dodgeBtnTMP.fontSize = 21f;
+        _dodgeBtnTMP.fontStyle = FontStyles.Normal;
         _dodgeBtnTMP.alignment = TextAlignmentOptions.Center;
         _dodgeBtnTMP.color = Color.white;
         _dodgeBtnTMP.raycastTarget = false;
 
-        // 2. ULTİ (SÜPER YETENEK) BUTONU
+        // 2. ULTİ (SÜPER YETENEK) BUTONU (1:1 referans: ATEŞ butonunun tam üstünde (-180, 365), dairesel altın halkalı (126, 126))
         _ultiBtnObj = EnsureUIGameObject(canvas.transform, "HUD_UltiButton");
 
         RectTransform uRt = EnsureComponent<RectTransform>(_ultiBtnObj);
         uRt.anchorMin = new Vector2(1f, 0f);
         uRt.anchorMax = new Vector2(1f, 0f);
         uRt.pivot = new Vector2(0.5f, 0.5f);
-        uRt.anchoredPosition = new Vector2(-220f, 270f);
-        uRt.sizeDelta = new Vector2(85f, 85f);
+        uRt.anchoredPosition = new Vector2(-180f, 365f);
+        uRt.sizeDelta = new Vector2(126f, 126f);
         _ultiBtnBaseScale = Vector3.one;
 
         Image uImg = EnsureComponent<Image>(_ultiBtnObj);
-        uImg.color = new Color(0.18f, 0.12f, 0.04f, 0.94f);
+        Outline oldUltiOutline = _ultiBtnObj.GetComponent<Outline>();
+        if (oldUltiOutline != null) Destroy(oldUltiOutline);
+        _ultiBtnOutline = null;
 
-        _ultiBtnOutline = EnsureComponent<Outline>(_ultiBtnObj);
-        _ultiBtnOutline.effectColor = new Color(1f, 0.85f, 0.2f, 0.85f);
-        _ultiBtnOutline.effectDistance = new Vector2(2f, -2f);
+        Sprite ultiBaseSpr = LoadHudBtnSprite("hud_btn_ulti_base.png", "hud_btn_ulti_base", ref _cachedUltiBaseSprite);
+        if (ultiBaseSpr != null)
+        {
+            uImg.sprite = ultiBaseSpr;
+            uImg.type = Image.Type.Simple;
+            uImg.preserveAspect = true;
+            uImg.color = Color.white;
+        }
+        else
+        {
+            uImg.color = new Color(0.18f, 0.12f, 0.04f, 0.94f);
+        }
 
         Button uBtn = EnsureComponent<Button>(_ultiBtnObj);
         uBtn.targetGraphic = uImg;
@@ -847,25 +908,35 @@ public class GameUI : MonoBehaviour
         uFillRt.offsetMax = Vector2.zero;
 
         _ultiFillImg = EnsureComponent<Image>(uFillObj);
-        _ultiFillImg.color = new Color(0f, 0f, 0f, 0.70f);
+        Sprite ultiRingSpr = LoadHudBtnSprite("hud_btn_ulti_ring.png", "hud_btn_ulti_ring", ref _cachedUltiRingSprite);
+        if (ultiRingSpr != null)
+        {
+            _ultiFillImg.sprite = ultiRingSpr;
+            _ultiFillImg.color = Color.white;
+        }
+        else
+        {
+            _ultiFillImg.color = new Color(0.96f, 0.72f, 0.30f, 0.95f);
+        }
         _ultiFillImg.type = Image.Type.Filled;
         _ultiFillImg.fillMethod = Image.FillMethod.Radial360;
         _ultiFillImg.fillOrigin = (int)Image.Origin360.Top;
-        _ultiFillImg.fillClockwise = false;
+        _ultiFillImg.fillClockwise = true;
         _ultiFillImg.raycastTarget = false;
-        _ultiFillImg.fillAmount = 1f;
+        _ultiFillImg.fillAmount = 0f;
 
         GameObject uTxtObj = EnsureUIGameObject(_ultiBtnObj.transform, "Text");
         RectTransform uTxtRt = EnsureComponent<RectTransform>(uTxtObj);
         uTxtRt.anchorMin = Vector2.zero;
         uTxtRt.anchorMax = Vector2.one;
-        uTxtRt.offsetMin = Vector2.zero;
-        uTxtRt.offsetMax = Vector2.zero;
+        uTxtRt.offsetMin = new Vector2(6f, 6f);
+        uTxtRt.offsetMax = new Vector2(-6f, -6f);
 
         _ultiBtnTMP = EnsureComponent<TextMeshProUGUI>(uTxtObj);
-        _ultiBtnTMP.text = "ULTİ\n<size=85%>[E]</size>";
+        _ultiBtnTMP.font = MainMenuManager.GetTacticalFont();
+        _ultiBtnTMP.text = "<size=72%><color=#E2E8F0>ULTİ</color></size>\n<size=110%><color=#F6B94D><b>%0</b></color></size>\n<size=56%><color=#94A3B8>[ E ]</color></size>";
         _ultiBtnTMP.fontSize = 20f;
-        _ultiBtnTMP.fontStyle = FontStyles.Bold;
+        _ultiBtnTMP.fontStyle = FontStyles.Normal;
         _ultiBtnTMP.alignment = TextAlignmentOptions.Center;
         _ultiBtnTMP.color = Color.white;
         _ultiBtnTMP.raycastTarget = false;
@@ -916,46 +987,41 @@ public class GameUI : MonoBehaviour
             {
                 _dodgeFillImg.fillAmount = (rem / pcm.dodgeCooldown);
                 _dodgeBtnTMP.text = $"{rem:F1}s";
-                _dodgeBtnTMP.color = new Color(0.7f, 0.7f, 0.7f);
-                if (_dodgeBtnOutline != null) _dodgeBtnOutline.effectColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+                _dodgeBtnTMP.color = new Color(0.75f, 0.82f, 0.90f);
             }
             else
             {
                 _dodgeFillImg.fillAmount = 0f;
-                _dodgeBtnTMP.text = "KAÇIŞ\n<size=85%>[SHIFT]</size>";
+                _dodgeBtnTMP.text = "KAÇIŞ\n<size=60%><color=#60A5FA>[ SHIFT ]</color></size>";
                 _dodgeBtnTMP.color = Color.white;
-                if (_dodgeBtnOutline != null) _dodgeBtnOutline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
             }
         }
 
-        // 3. ULTİ BUTONU
+        // 3. ULTİ BUTONU (Altın halkalı dairesel gösterge: %0..%100 saat yönünde dolar)
         if (_ultiFillImg != null && _ultiBtnTMP != null && _ultiBtnObj != null)
         {
             if (pcm.isOverdriveActive)
             {
-                _ultiFillImg.fillAmount = 0f;
-                _ultiBtnTMP.text = $"[AKTİF]\n<size=85%>{pcm.overdriveRemaining:F1}s</size>";
-                _ultiBtnTMP.color = new Color(1f, 0.9f, 0.3f);
-                if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(1f, 0.5f, 0.1f);
+                _ultiFillImg.fillAmount = Mathf.Clamp01(pcm.overdriveRemaining / pcm.overdriveDuration);
+                _ultiBtnTMP.text = $"<size=68%><color=#F6B94D>AKTİF</color></size>\n<size=105%><color=#FFFFFF><b>{pcm.overdriveRemaining:F1}s</b></color></size>\n<size=56%><color=#94A3B8>[ E ]</color></size>";
+                _ultiBtnTMP.color = Color.white;
                 _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
             }
             else if (pcm.IsUltiReady)
             {
-                _ultiFillImg.fillAmount = 0f;
-                _ultiBtnTMP.text = "[ULTİ]\n<size=85%>HAZIR! [E]</size>";
+                _ultiFillImg.fillAmount = 1f;
+                _ultiBtnTMP.text = "<size=72%><color=#FFFFFF>ULTİ</color></size>\n<size=95%><color=#F6B94D><b>HAZIR!</b></color></size>\n<size=56%><color=#FDE047>[ E ]</color></size>";
                 _ultiBtnTMP.color = Color.white;
-                if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = Color.yellow;
 
-                float pulse = 1f + Mathf.Sin(Time.time * 6f) * 0.08f;
+                float pulse = 1f + Mathf.Sin(Time.time * 6f) * 0.06f;
                 _ultiBtnObj.transform.localScale = _ultiBtnBaseScale * pulse;
             }
             else
             {
-                float uncharged = 1f - (pcm.currentUlti / pcm.maxUlti);
-                _ultiFillImg.fillAmount = uncharged;
-                _ultiBtnTMP.text = $"ULTİ\n<size=85%>%{(int)pcm.currentUlti} [E]</size>";
-                _ultiBtnTMP.color = new Color(0.75f, 0.75f, 0.75f);
-                if (_ultiBtnOutline != null) _ultiBtnOutline.effectColor = new Color(0.5f, 0.45f, 0.2f, 0.7f);
+                float chargeRatio = Mathf.Clamp01(pcm.currentUlti / pcm.maxUlti);
+                _ultiFillImg.fillAmount = chargeRatio;
+                _ultiBtnTMP.text = $"<size=72%><color=#E2E8F0>ULTİ</color></size>\n<size=110%><color=#F6B94D><b>%{(int)pcm.currentUlti}</b></color></size>\n<size=56%><color=#94A3B8>[ E ]</color></size>";
+                _ultiBtnTMP.color = Color.white;
                 _ultiBtnObj.transform.localScale = _ultiBtnBaseScale;
             }
         }

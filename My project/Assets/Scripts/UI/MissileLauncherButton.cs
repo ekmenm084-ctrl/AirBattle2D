@@ -167,26 +167,72 @@ public class MissileLauncherButton : MonoBehaviour
         return missile;
     }
 
+    private static Sprite _cachedMissileSprite;
+
+    private static Sprite LoadMissile1To1Sprite()
+    {
+        if (_cachedMissileSprite != null) return _cachedMissileSprite;
+
+        string path = System.IO.Path.Combine(Application.dataPath, "Sprites/hud_btn_missile_1to1.png");
+        if (System.IO.File.Exists(path))
+        {
+            byte[] bytes = System.IO.File.ReadAllBytes(path);
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (tex.LoadImage(bytes))
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.filterMode = FilterMode.Bilinear;
+                _cachedMissileSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                return _cachedMissileSprite;
+            }
+        }
+
+        Sprite res = Resources.Load<Sprite>("hud_btn_missile_1to1");
+        if (res != null)
+        {
+            _cachedMissileSprite = res;
+            return res;
+        }
+
+        Texture2D resTex = Resources.Load<Texture2D>("hud_btn_missile_1to1");
+        if (resTex != null)
+        {
+            _cachedMissileSprite = Sprite.Create(resTex, new Rect(0, 0, resTex.width, resTex.height), new Vector2(0.5f, 0.5f), 100f);
+            return _cachedMissileSprite;
+        }
+        return null;
+    }
+
     private void SetupUI()
     {
         RectTransform rt = GetComponent<RectTransform>();
         if (rt == null) return;
 
-        // Ateş Butonunun (-220, 150) sol sütununda (-360, 210) nizami ergonomik yerleşim
+        // 1:1 Referans yerleşim: Ateş butonunun sol üst çaprazında (-395, 205), roket ikonu + kare kutu (154 x 110)
         rt.anchorMin = new Vector2(1f, 0f);
         rt.anchorMax = new Vector2(1f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(-360f, 210f);
-        rt.sizeDelta = new Vector2(85f, 85f);
+        rt.anchoredPosition = new Vector2(-395f, 205f);
+        rt.sizeDelta = new Vector2(154f, 110f);
 
         _bgImage = GetComponent<Image>();
         if (_bgImage == null) _bgImage = gameObject.AddComponent<Image>();
-        _bgImage.color = new Color(0.10f, 0.18f, 0.28f, 0.92f);
 
         _outline = GetComponent<Outline>();
-        if (_outline == null) _outline = gameObject.AddComponent<Outline>();
-        _outline.effectColor = new Color(0f, 0.85f, 1f, 0.9f);
-        _outline.effectDistance = new Vector2(2.5f, -2.5f);
+        if (_outline != null) Destroy(_outline);
+
+        Sprite mSpr = LoadMissile1To1Sprite();
+        if (mSpr != null)
+        {
+            _bgImage.sprite = mSpr;
+            _bgImage.type = Image.Type.Simple;
+            _bgImage.preserveAspect = true;
+            _bgImage.color = Color.white;
+        }
+        else
+        {
+            _bgImage.color = new Color(0.10f, 0.18f, 0.28f, 0.92f);
+        }
 
         _button = GetComponent<Button>();
         if (_button == null) _button = gameObject.AddComponent<Button>();
@@ -194,36 +240,39 @@ public class MissileLauncherButton : MonoBehaviour
         _button.onClick.RemoveAllListeners();
         _button.onClick.AddListener(TryLaunchMissiles);
 
-        // Dolum Karartma Göstergesi
-        GameObject fillObj = new GameObject("CooldownFill", typeof(RectTransform));
+        // Dolum Karartma Göstergesi (Sadece sağdaki kare kutu alanı: x = 0.31..0.99)
+        Transform existingFill = transform.Find("CooldownFill");
+        GameObject fillObj = existingFill != null ? existingFill.gameObject : new GameObject("CooldownFill", typeof(RectTransform));
         fillObj.transform.SetParent(transform, false);
         RectTransform fillRt = fillObj.GetComponent<RectTransform>();
-        fillRt.anchorMin = Vector2.zero;
-        fillRt.anchorMax = Vector2.one;
+        fillRt.anchorMin = new Vector2(0.31f, 0.02f);
+        fillRt.anchorMax = new Vector2(0.99f, 0.98f);
         fillRt.offsetMin = Vector2.zero;
         fillRt.offsetMax = Vector2.zero;
 
-        _cooldownFillImg = fillObj.AddComponent<Image>();
-        _cooldownFillImg.color = new Color(0f, 0f, 0f, 0.70f);
+        _cooldownFillImg = fillObj.GetComponent<Image>() ?? fillObj.AddComponent<Image>();
+        _cooldownFillImg.color = new Color(0f, 0f, 0f, 0.68f);
         _cooldownFillImg.type = Image.Type.Filled;
         _cooldownFillImg.fillMethod = Image.FillMethod.Radial360;
         _cooldownFillImg.fillOrigin = (int)Image.Origin360.Top;
         _cooldownFillImg.fillClockwise = false;
         _cooldownFillImg.raycastTarget = false;
 
-        // Metin
-        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        // Metin (Sağdaki kare kutunun tam ortasında: x = 0.31..0.99)
+        Transform existingTxt = transform.Find("Text");
+        GameObject txtObj = existingTxt != null ? existingTxt.gameObject : new GameObject("Text", typeof(RectTransform));
         txtObj.transform.SetParent(transform, false);
         RectTransform txtRt = txtObj.GetComponent<RectTransform>();
-        txtRt.anchorMin = Vector2.zero;
-        txtRt.anchorMax = Vector2.one;
+        txtRt.anchorMin = new Vector2(0.31f, 0f);
+        txtRt.anchorMax = new Vector2(0.99f, 1f);
         txtRt.offsetMin = Vector2.zero;
         txtRt.offsetMax = Vector2.zero;
 
-        _btnTMP = txtObj.AddComponent<TextMeshProUGUI>();
-        _btnTMP.text = "FÜZE\n<size=85%>[Q]</size>";
-        _btnTMP.fontSize = 24f;
-        _btnTMP.fontStyle = FontStyles.Bold;
+        _btnTMP = txtObj.GetComponent<TextMeshProUGUI>() ?? txtObj.AddComponent<TextMeshProUGUI>();
+        _btnTMP.font = MainMenuManager.GetTacticalFont();
+        _btnTMP.text = "FÜZE\n<size=62%><color=#60A5FA>[ Q ]</color></size>";
+        _btnTMP.fontSize = 23f;
+        _btnTMP.fontStyle = FontStyles.Normal;
         _btnTMP.alignment = TextAlignmentOptions.Center;
         _btnTMP.color = Color.white;
         _btnTMP.raycastTarget = false;
@@ -240,15 +289,13 @@ public class MissileLauncherButton : MonoBehaviour
             float remaining = cooldownDuration - elapsed;
             _cooldownFillImg.fillAmount = (remaining / cooldownDuration);
             _btnTMP.text = $"{remaining:F1}s";
-            _btnTMP.color = new Color(0.7f, 0.7f, 0.7f);
-            if (_outline != null) _outline.effectColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+            _btnTMP.color = new Color(0.75f, 0.82f, 0.90f);
         }
         else
         {
             _cooldownFillImg.fillAmount = 0f;
-            _btnTMP.text = "FÜZE\n<size=85%>[Q]</size>";
+            _btnTMP.text = "FÜZE\n<size=62%><color=#60A5FA>[ Q ]</color></size>";
             _btnTMP.color = Color.white;
-            if (_outline != null) _outline.effectColor = new Color(0f, 0.85f, 1f, 0.95f);
         }
     }
 }
