@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using TMPro;
 
 /// <summary>
-/// Günlük Operasyon Görevleri ve Pilot Madalyaları tam ekran Taktik HUD arayüzü.
-/// Ana menü, Hangar ve Lojistik Ekranı ile aynı aviyonik görsel dili paylaşır.
+/// 1:1 Günlük Operasyon Görevleri ve Pilot Madalyaları tam ekran Taktik HUD arayüzü (OPERASYON MERKEZİ // GÖREV & MADALYA).
 /// </summary>
 public class DailyOpsUI : MonoBehaviour
 {
@@ -22,6 +22,7 @@ public class DailyOpsUI : MonoBehaviour
     private struct CardViewRefs
     {
         public GameObject root;
+        public Image cardBg;
         public TextMeshProUGUI tagText;
         public TextMeshProUGUI titleText;
         public TextMeshProUGUI descText;
@@ -33,14 +34,19 @@ public class DailyOpsUI : MonoBehaviour
         public TextMeshProUGUI actionBtnText;
     }
 
-    private static readonly Color ColBgBackdrop   = new Color(0.03f, 0.06f, 0.11f, 0.96f);
-    private static readonly Color ColCardGlass    = new Color(0.05f, 0.09f, 0.16f, 0.90f);
-    private static readonly Color ColCardReadyBg  = new Color(0.11f, 0.09f, 0.03f, 0.94f);
-    private static readonly Color ColTeal         = new Color(0.18f, 0.85f, 0.92f, 1f);
-    private static readonly Color ColGold         = new Color(1.00f, 0.78f, 0.18f, 1f);
-    private static readonly Color ColEmerald      = new Color(0.16f, 0.92f, 0.56f, 1f);
-    private static readonly Color ColMuted        = new Color(0.55f, 0.65f, 0.76f, 1f);
-    private static readonly Color ColTrack        = new Color(0.08f, 0.13f, 0.22f, 0.95f);
+    private static readonly Color ColTeal    = new Color(0.18f, 0.88f, 0.96f, 1f);
+    private static readonly Color ColGold    = new Color(0.88f, 0.64f, 0.24f, 1f);
+    private static readonly Color ColEmerald = new Color(0.24f, 0.90f, 0.52f, 1f);
+    private static readonly Color ColMuted   = new Color(0.58f, 0.68f, 0.78f, 1f);
+    private static readonly Color ColTrack   = new Color(0.08f, 0.13f, 0.21f, 0.96f);
+
+    private static Sprite _cachedBgSprite;
+    private static Sprite _cachedTabActiveSprite;
+    private static Sprite _cachedTabInactiveSprite;
+    private static Sprite _cachedCardCyanSprite;
+    private static Sprite _cachedCardEmeraldSprite;
+    private static Sprite _cachedBtnSlateSprite;
+    private static Sprite _cachedBtnEmeraldSprite;
 
     private bool _built;
     private OpsTab _activeTab = OpsTab.DailyMissions;
@@ -63,9 +69,43 @@ public class DailyOpsUI : MonoBehaviour
     private ScrollRect _scrollRect;
     private RectTransform _contentRect;
     private TextMeshProUGUI _statusToastText;
-    private Button _backButton;
 
     private readonly List<GameObject> _spawnedCards = new List<GameObject>();
+
+    private static Sprite LoadOpsSprite(string fileName, string resName, ref Sprite cache)
+    {
+        if (cache != null) return cache;
+
+        string path = Path.Combine(Application.dataPath, "Sprites/" + fileName);
+        if (File.Exists(path))
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (tex.LoadImage(bytes))
+            {
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.filterMode = FilterMode.Bilinear;
+                cache = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                return cache;
+            }
+        }
+
+        Sprite res = Resources.Load<Sprite>(resName);
+        if (res != null)
+        {
+            cache = res;
+            return res;
+        }
+
+        Texture2D resTex = Resources.Load<Texture2D>(resName);
+        if (resTex != null)
+        {
+            cache = Sprite.Create(resTex, new Rect(0, 0, resTex.width, resTex.height), new Vector2(0.5f, 0.5f), 100f);
+            return cache;
+        }
+
+        return null;
+    }
 
     public static DailyOpsUI EnsureUI()
     {
@@ -193,72 +233,68 @@ public class DailyOpsUI : MonoBehaviour
         bool wasActive = gameObject.activeSelf;
         if (!wasActive) gameObject.SetActive(true);
 
-        // Arkaplan katmanı
+        // 1. Tam ekran 1:1 ops_background.jpg arka planı
         Image bg = GetComponent<Image>();
         if (bg == null) bg = gameObject.AddComponent<Image>();
-        bg.color = ColBgBackdrop;
+        Sprite bgSpr = LoadOpsSprite("ops_background.jpg", "ops_background", ref _cachedBgSprite);
+        if (bgSpr != null)
+        {
+            bg.sprite = bgSpr;
+            bg.type = Image.Type.Simple;
+            bg.preserveAspect = false;
+            bg.color = Color.white;
+        }
+        else
+        {
+            bg.color = new Color(0.03f, 0.06f, 0.11f, 0.96f);
+        }
         bg.raycastTarget = true;
 
-        // Üst Taktik Başlık Kutusu
-        GameObject headerObj = CreatePanelChild("HeaderBox", transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -12f), new Vector2(880f, 92f));
-        Image headerImg = headerObj.AddComponent<Image>();
-        headerImg.sprite = MainMenuManager.GetHudSprite("OpsHeader", ColTeal, ColCardGlass, hasLeftBar: true);
-        headerImg.type = Image.Type.Sliced;
-        headerImg.raycastTarget = false;
+        // 2. Üst Alt Başlık: GÜNLÜK ROTASYON YENİLENMESİ: 02sa 06dk | TÜM GÖREVLER GÜNCEL (y = 110..146 -> centerY = +412.0f)
+        GameObject subObj = CreatePanelChild("SubtitleBox", transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 412.0f), new Vector2(960f, 36f));
+        _subtitleText = CreateTMP("SubtitleText", subObj.transform, "", 21, new Color(0.68f, 0.78f, 0.88f, 1f), FontStyles.Normal, TextAlignmentOptions.Center);
+        StretchChild(_subtitleText.rectTransform, 0f, 0f, 0f, 0f);
 
-        TextMeshProUGUI titleTmp = CreateTMP("TitleText", headerObj.transform, "OPERASYON MERKEZİ // GÖREV & MADALYA", 30, ColTeal, FontStyles.Bold, TextAlignmentOptions.Center);
-        titleTmp.enableAutoSizing = true;
-        titleTmp.fontSizeMin = 24f;
-        titleTmp.fontSizeMax = 30f;
-        StretchChild(titleTmp.rectTransform, 20f, -20f, 36f, -2f);
-        MainMenuManager.SetOutlineSafe(titleTmp, 0.20f, new Color(0f, 0f, 0f, 0.9f));
-
-        _subtitleText = CreateTMP("SubtitleText", headerObj.transform, "", 19, new Color(0.86f, 0.94f, 1f, 1f), FontStyles.Bold, TextAlignmentOptions.Center);
-        _subtitleText.enableAutoSizing = true;
-        _subtitleText.fontSizeMin = 18f;
-        _subtitleText.fontSizeMax = 22f;
-        StretchChild(_subtitleText.rectTransform, 20f, -20f, 4f, -54f);
-        MainMenuManager.SetOutlineSafe(_subtitleText, 0.14f, Color.black);
-
-        // Sekme ve Hızlı Toplama Çubuğu
-        GameObject tabBar = CreatePanelChild("TabBar", transform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -114f), new Vector2(1420f, 58f));
-
-        _dailyTabBtn = CreateActionButton(
-            "DailyTabBtn", tabBar.transform,
-            new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0f), new Vector2(430f, 56f),
-            "[+] GÜNLÜK GÖREVLER", 20, ColTeal,
+        // 3. 3 Üst Sekme / Aksiyon Butonu (1920x1080 exact: y = 160..215 -> centerY = +352.5f, height = 55)
+        // [+] GÜNLÜK GÖREVLER (4): x = 258..698 -> centerX = -482.0f, width = 440
+        _dailyTabBtn = Create1To1TabButton(
+            "DailyTabBtn", transform,
+            new Vector2(-482.0f, 352.5f), new Vector2(440f, 55f),
+            "[+] GÜNLÜK GÖREVLER (4)", 22,
             out _dailyTabBg, out _dailyTabText,
             () => SwitchTab(OpsTab.DailyMissions)
         );
 
-        _medalsTabBtn = CreateActionButton(
-            "MedalsTabBtn", tabBar.transform,
-            new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(446f, 0f), new Vector2(430f, 56f),
-            "[#] PİLOT MADALYALARI", 20, ColMuted,
+        // [#] PİLOT MADALYALARI (9): x = 736..1186 -> centerX = +1.0f, width = 450
+        _medalsTabBtn = Create1To1TabButton(
+            "MedalsTabBtn", transform,
+            new Vector2(1.0f, 352.5f), new Vector2(450f, 55f),
+            "[#] PİLOT MADALYALARI (9)", 22,
             out _medalsTabBg, out _medalsTabText,
             () => SwitchTab(OpsTab.PilotMedals)
         );
 
-        _claimAllBtn = CreateActionButton(
-            "ClaimAllBtn", tabBar.transform,
-            new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0f, 0f), new Vector2(420f, 56f),
-            "[»] TÜM ÖDÜLLERİ AL", 20, ColGold,
+        // [—] BEKLEYEN ÖDÜL YOK: x = 1239..1662 -> centerX = +490.5f, width = 423
+        _claimAllBtn = Create1To1TabButton(
+            "ClaimAllBtn", transform,
+            new Vector2(490.5f, 352.5f), new Vector2(423f, 55f),
+            "[—] BEKLEYEN ÖDÜL YOK", 21,
             out _claimAllBg, out _claimAllText,
             OnClaimAllClicked
         );
 
-        // Ana Kaydırılabilir Görev/Madalya Alanı
+        // 4. Ana Görev / Madalya Çerçevesi (1920x1080 exact: x = 268..1652, y = 236..943 -> center = (0.0, -49.5), size = (1384, 707))
         GameObject scrollFrame = new GameObject("OpsScrollFrame", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
         scrollFrame.transform.SetParent(transform, false);
         RectTransform scrollFrameRt = scrollFrame.GetComponent<RectTransform>();
-        scrollFrameRt.anchorMin = new Vector2(0.5f, 0f);
-        scrollFrameRt.anchorMax = new Vector2(0.5f, 1f);
-        scrollFrameRt.offsetMin = new Vector2(-710f, 92f);
-        scrollFrameRt.offsetMax = new Vector2(710f, -180f);
+        scrollFrameRt.anchorMin = new Vector2(0.5f, 0.5f);
+        scrollFrameRt.anchorMax = new Vector2(0.5f, 0.5f);
+        scrollFrameRt.pivot = new Vector2(0.5f, 0.5f);
+        scrollFrameRt.anchoredPosition = new Vector2(0f, -49.5f);
+        scrollFrameRt.sizeDelta = new Vector2(1384f, 707f);
 
         Image frameBg = scrollFrame.GetComponent<Image>();
-        frameBg.sprite = MainMenuManager.GetHudSprite("OpsScrollFrame", new Color(0.18f, 0.85f, 0.92f, 0.45f), new Color(0.03f, 0.05f, 0.09f, 0.72f), hasLeftBar: false);
-        frameBg.type = Image.Type.Sliced;
+        frameBg.color = new Color(0f, 0f, 0f, 0.01f);
         frameBg.raycastTarget = true;
 
         GameObject viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
@@ -266,8 +302,8 @@ public class DailyOpsUI : MonoBehaviour
         RectTransform vpRt = viewport.GetComponent<RectTransform>();
         vpRt.anchorMin = Vector2.zero;
         vpRt.anchorMax = Vector2.one;
-        vpRt.offsetMin = new Vector2(12f, 12f);
-        vpRt.offsetMax = new Vector2(-22f, -12f);
+        vpRt.offsetMin = new Vector2(14f, 8f);
+        vpRt.offsetMax = new Vector2(-14f, -14f);
 
         GameObject content = new GameObject("Content", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
         content.transform.SetParent(viewport.transform, false);
@@ -279,8 +315,8 @@ public class DailyOpsUI : MonoBehaviour
         _contentRect.sizeDelta = new Vector2(0f, 0f);
 
         VerticalLayoutGroup vlg = content.GetComponent<VerticalLayoutGroup>();
-        vlg.spacing = 12f;
-        vlg.padding = new RectOffset(4, 4, 4, 10);
+        vlg.spacing = 11f;
+        vlg.padding = new RectOffset(0, 0, 0, 4);
         vlg.childAlignment = TextAnchor.UpperCenter;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
@@ -291,31 +327,6 @@ public class DailyOpsUI : MonoBehaviour
         csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        // Dikey Scrollbar
-        GameObject sbObj = new GameObject("Scrollbar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
-        sbObj.transform.SetParent(scrollFrame.transform, false);
-        RectTransform sbRt = sbObj.GetComponent<RectTransform>();
-        sbRt.anchorMin = new Vector2(1f, 0f);
-        sbRt.anchorMax = new Vector2(1f, 1f);
-        sbRt.pivot = new Vector2(1f, 0.5f);
-        sbRt.offsetMin = new Vector2(-14f, 12f);
-        sbRt.offsetMax = new Vector2(-6f, -12f);
-        sbObj.GetComponent<Image>().color = new Color(0.10f, 0.16f, 0.25f, 0.85f);
-
-        GameObject handleObj = new GameObject("Handle", typeof(RectTransform), typeof(Image));
-        handleObj.transform.SetParent(sbObj.transform, false);
-        RectTransform handleRt = handleObj.GetComponent<RectTransform>();
-        handleRt.anchorMin = Vector2.zero;
-        handleRt.anchorMax = Vector2.one;
-        handleRt.sizeDelta = Vector2.zero;
-        Image handleImg = handleObj.GetComponent<Image>();
-        handleImg.color = new Color(0.18f, 0.85f, 0.92f, 0.78f);
-
-        Scrollbar scrollbar = sbObj.GetComponent<Scrollbar>();
-        scrollbar.direction = Scrollbar.Direction.BottomToTop;
-        scrollbar.targetGraphic = handleImg;
-        scrollbar.handleRect = handleRt;
-
         _scrollRect = scrollFrame.GetComponent<ScrollRect>();
         _scrollRect.content = _contentRect;
         _scrollRect.viewport = vpRt;
@@ -323,17 +334,15 @@ public class DailyOpsUI : MonoBehaviour
         _scrollRect.vertical = true;
         _scrollRect.movementType = ScrollRect.MovementType.Clamped;
         _scrollRect.scrollSensitivity = 36f;
-        _scrollRect.verticalScrollbar = scrollbar;
-        _scrollRect.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
 
-        // Alt Ödül Bildirim Satırı
+        // 5. Alt Ödül Bildirim Satırı
         GameObject toastObj = new GameObject("StatusToast", typeof(RectTransform));
         toastObj.transform.SetParent(transform, false);
         RectTransform toastRt = toastObj.GetComponent<RectTransform>();
-        toastRt.anchorMin = new Vector2(0.5f, 0f);
-        toastRt.anchorMax = new Vector2(0.5f, 0f);
-        toastRt.pivot = new Vector2(0.5f, 0f);
-        toastRt.anchoredPosition = new Vector2(0f, 30f);
+        toastRt.anchorMin = new Vector2(0.5f, 0.5f);
+        toastRt.anchorMax = new Vector2(0.5f, 0.5f);
+        toastRt.pivot = new Vector2(0.5f, 0.5f);
+        toastRt.anchoredPosition = new Vector2(0f, -458.0f);
         toastRt.sizeDelta = new Vector2(880f, 44f);
 
         _statusToastText = toastObj.AddComponent<TextMeshProUGUI>();
@@ -344,22 +353,16 @@ public class DailyOpsUI : MonoBehaviour
         _statusToastText.color = ColEmerald;
         _statusToastText.raycastTarget = false;
         _statusToastText.text = "";
-        MainMenuManager.SetOutlineSafe(_statusToastText, 0.16f, Color.black);
 
-        // Sol Alt Standart Geri Dön Tuşu
-        GameObject backObj = new GameObject("BackFromOpsBtn", typeof(RectTransform), typeof(Image), typeof(Button));
-        backObj.transform.SetParent(transform, false);
-        _backButton = backObj.GetComponent<Button>();
-
-        GameObject backLabelObj = new GameObject("Text", typeof(RectTransform));
-        backLabelObj.transform.SetParent(backObj.transform, false);
-        MainMenuManager.MakeFullScreenRect(backLabelObj.GetComponent<RectTransform>());
-        TextMeshProUGUI backTmp = backLabelObj.AddComponent<TextMeshProUGUI>();
-        backTmp.text = "« GERİ DÖN";
-        backTmp.font = MainMenuManager.GetTacticalFont();
-        backTmp.raycastTarget = false;
-
-        MainMenuManager.FormatBottomLeftBackBtn(_backButton, CloseOpsPanel);
+        // 6. Sol Alt << GERİ DÖN Tuşu (1920x1080 exact: x = 54..294, y = 962..1034 -> center = (-786.0, -458.0), size = (240, 72))
+        HangarUI.FormatPixelExactButton(
+            "BackFromOpsBtn",
+            transform,
+            new Vector2(-786.0f, -458.0f),
+            new Vector2(240.0f, 72.0f),
+            new Color(0.25f, 0.65f, 1.0f, 0.18f),
+            new Color(0.20f, 0.55f, 0.95f, 0.35f),
+            CloseOpsPanel);
 
         if (!wasActive) gameObject.SetActive(false);
     }
@@ -390,48 +393,48 @@ public class DailyOpsUI : MonoBehaviour
         if (_subtitleText != null)
         {
             string readyTag = totalClaimable > 0
-                ? $"  |  {totalClaimable} ÖDÜL TOPLANMAYA HAZIR"
+                ? $"  |  <color=#FACC15>{totalClaimable} ÖDÜL TOPLANMAYA HAZIR</color>"
                 : "  |  TÜM GÖREVLER GÜNCEL";
-            _subtitleText.text = $"GÜNLÜK ROTASYON YENİLENMESİ: {resetIn}{readyTag}";
+            _subtitleText.text = $"GÜNLÜK ROTASYON YENİLENMESİ: <color=#FFFFFF>{resetIn}</color>{readyTag}";
         }
 
-        // Sekme stilleri
         bool dailySelected = _activeTab == OpsTab.DailyMissions;
-        StyleTabButton(
+        Style1To1TabButton(
             _dailyTabBg, _dailyTabText,
             selected: dailySelected,
             badgeCount: dailyClaimable,
             baseLabel: "[+] GÜNLÜK GÖREVLER (4)"
         );
-        StyleTabButton(
+        Style1To1TabButton(
             _medalsTabBg, _medalsTabText,
             selected: !dailySelected,
             badgeCount: medalClaimable,
             baseLabel: "[#] PİLOT MADALYALARI (9)"
         );
 
-        // Tümünü Al butonu
         if (_claimAllBtn != null && _claimAllBg != null && _claimAllText != null)
         {
             bool anyClaimable = totalClaimable > 0;
             _claimAllBtn.interactable = anyClaimable;
-            Color accent = anyClaimable ? ColGold : ColMuted;
-            Color glass = anyClaimable ? new Color(0.15f, 0.11f, 0.02f, 0.94f) : new Color(0.05f, 0.08f, 0.13f, 0.80f);
-            _claimAllBg.sprite = MainMenuManager.GetHudSprite("ClaimAllBtn_" + anyClaimable, accent, glass, hasLeftBar: true);
-            _claimAllText.color = anyClaimable ? ColGold : ColMuted;
+            Sprite tabActiveSpr = LoadOpsSprite("ops_tab_active.png", "ops_tab_active", ref _cachedTabActiveSprite);
+            Sprite tabInactiveSpr = LoadOpsSprite("ops_tab_inactive.png", "ops_tab_inactive", ref _cachedTabInactiveSprite);
+            _claimAllBg.sprite = anyClaimable ? tabActiveSpr : tabInactiveSpr;
+            _claimAllBg.color = Color.white;
+            _claimAllText.color = anyClaimable ? new Color(1f, 0.84f, 0.25f) : new Color(0.62f, 0.70f, 0.78f, 1f);
             _claimAllText.text = anyClaimable
                 ? $"[»] TÜM ÖDÜLLERİ AL ({totalClaimable})"
                 : "[—] BEKLEYEN ÖDÜL YOK";
         }
     }
 
-    private static void StyleTabButton(Image bg, TextMeshProUGUI label, bool selected, int badgeCount, string baseLabel)
+    private static void Style1To1TabButton(Image bg, TextMeshProUGUI label, bool selected, int badgeCount, string baseLabel)
     {
         if (bg == null || label == null) return;
-        Color border = selected ? ColTeal : (badgeCount > 0 ? ColGold : new Color(0.32f, 0.44f, 0.58f, 0.85f));
-        Color glass = selected ? new Color(0.08f, 0.19f, 0.28f, 0.95f) : new Color(0.05f, 0.09f, 0.16f, 0.86f);
-        bg.sprite = MainMenuManager.GetHudSprite($"OpsTab_{selected}_{badgeCount > 0}", border, glass, hasLeftBar: true);
-        label.color = selected ? Color.white : (badgeCount > 0 ? ColGold : new Color(0.75f, 0.83f, 0.92f, 1f));
+        Sprite activeSpr = LoadOpsSprite("ops_tab_active.png", "ops_tab_active", ref _cachedTabActiveSprite);
+        Sprite inactiveSpr = LoadOpsSprite("ops_tab_inactive.png", "ops_tab_inactive", ref _cachedTabInactiveSprite);
+        bg.sprite = selected ? activeSpr : inactiveSpr;
+        bg.color = Color.white;
+        label.color = selected ? Color.white : (badgeCount > 0 ? new Color(1f, 0.84f, 0.25f) : new Color(0.65f, 0.73f, 0.82f, 1f));
         label.text = badgeCount > 0 ? $"{baseLabel} [+{badgeCount}]" : baseLabel;
     }
 
@@ -460,10 +463,10 @@ public class DailyOpsUI : MonoBehaviour
                 DailyOpsManager.DailyMissionState m = missions[i];
                 if (m == null) continue;
 
-                Color cardAccent = m.CanClaim ? ColGold : (m.claimed ? ColEmerald : ColTeal);
-                Color cardGlass = m.CanClaim ? ColCardReadyBg : ColCardGlass;
+                bool isDoneOrClaimable = m.claimed || m.CanClaim;
+                Color cardAccent = m.claimed ? ColEmerald : (m.CanClaim ? new Color(1f, 0.84f, 0.25f) : ColTeal);
 
-                CardViewRefs refs = CreateOpsCardView($"MissionCard_{i}", 182f, cardAccent, cardGlass);
+                CardViewRefs refs = CreateOpsCardView($"MissionCard_{i}", 162f, isDoneOrClaimable);
                 refs.tagText.text = $"{m.template.tag}  •  GÖREV {i + 1}/4";
                 refs.tagText.color = cardAccent;
                 refs.titleText.text = m.template.title;
@@ -473,7 +476,7 @@ public class DailyOpsUI : MonoBehaviour
                     refs.progressFill, refs.progressText,
                     m.ProgressRatio,
                     m.claimed ? "TAMAMLANDI — ÖDÜL ALINDI" : $"{m.ClampedProgress} / {m.template.targetCount}",
-                    cardAccent
+                    m.claimed ? new Color(0.24f, 0.88f, 0.52f, 1f) : new Color(0.18f, 0.86f, 0.96f, 1f)
                 );
 
                 refs.rewardText.text = "ÖDÜL: " + FormatRewardText(
@@ -500,10 +503,10 @@ public class DailyOpsUI : MonoBehaviour
             for (int i = 0; i < medals.Count; i++)
             {
                 DailyOpsManager.PilotMedalState medal = medals[i];
-                Color cardAccent = medal.CanClaim ? ColGold : (medal.IsMaxed ? ColEmerald : ColTeal);
-                Color cardGlass = medal.CanClaim ? ColCardReadyBg : ColCardGlass;
+                bool isDoneOrClaimable = medal.IsMaxed || medal.CanClaim;
+                Color cardAccent = medal.IsMaxed ? ColEmerald : (medal.CanClaim ? new Color(1f, 0.84f, 0.25f) : ColTeal);
 
-                CardViewRefs refs = CreateOpsCardView($"MedalCard_{medal.def.id}", 178f, cardAccent, cardGlass);
+                CardViewRefs refs = CreateOpsCardView($"MedalCard_{medal.def.id}", 162f, isDoneOrClaimable);
 
                 string tierBadge = medal.IsMaxed
                     ? "KADEME III/III [TAMAMLANDI]"
@@ -518,7 +521,7 @@ public class DailyOpsUI : MonoBehaviour
                     refs.progressFill, refs.progressText,
                     medal.ProgressRatio,
                     medal.IsMaxed ? $"AZAMİ SEVİYE ({medal.currentStat})" : $"{medal.ClampedProgress} / {medal.ActiveTier.target}",
-                    cardAccent
+                    medal.IsMaxed ? new Color(0.24f, 0.88f, 0.52f, 1f) : new Color(0.18f, 0.86f, 0.96f, 1f)
                 );
 
                 DailyOpsManager.MedalTierReward tierReward = medal.ActiveTier;
@@ -536,7 +539,7 @@ public class DailyOpsUI : MonoBehaviour
                     canClaim: medal.CanClaim,
                     isCompletedAndClaimed: medal.IsMaxed,
                     claimLabel: $"[»] {DailyOpsManager.GetTierRoman(medal.ActiveTierIndex)}. KADEME AL",
-                    doneLabel: "TAMAMLANDI",
+                    doneLabel: "ALINDI",
                     progressLabel: $"%{Mathf.RoundToInt(medal.ProgressRatio * 100f)}",
                     onClick: () => OnClaimMedalClicked(capturedId, capturedTitle)
                 );
@@ -547,7 +550,7 @@ public class DailyOpsUI : MonoBehaviour
         Canvas.ForceUpdateCanvases();
     }
 
-    private CardViewRefs CreateOpsCardView(string name, float height, Color accentColor, Color glassColor)
+    private CardViewRefs CreateOpsCardView(string name, float height, bool useEmeraldFrame)
     {
         GameObject card = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(LayoutElement));
         card.transform.SetParent(_contentRect, false);
@@ -559,30 +562,31 @@ public class DailyOpsUI : MonoBehaviour
         le.preferredHeight = height;
 
         Image cardBg = card.GetComponent<Image>();
-        cardBg.sprite = MainMenuManager.GetHudSprite($"OpsCard_{accentColor.GetHashCode()}_{glassColor.GetHashCode()}", accentColor, glassColor, hasLeftBar: true);
-        cardBg.type = Image.Type.Sliced;
+        Sprite cyanSpr = LoadOpsSprite("ops_card_cyan.png", "ops_card_cyan", ref _cachedCardCyanSprite);
+        Sprite emeraldSpr = LoadOpsSprite("ops_card_emerald.png", "ops_card_emerald", ref _cachedCardEmeraldSprite);
+        cardBg.sprite = useEmeraldFrame ? emeraldSpr : cyanSpr;
+        cardBg.type = Image.Type.Simple;
+        cardBg.preserveAspect = false;
+        cardBg.color = Color.white;
         cardBg.raycastTarget = false;
 
         _spawnedCards.Add(card);
 
-        // Sol Taraf: Etiket, Başlık, Açıklama, İlerleme Çubuğu, Ödül Metni
-        TextMeshProUGUI tagTmp = CreateTMP("Tag", card.transform, "", 18, accentColor, FontStyles.Bold, TextAlignmentOptions.Left);
-        SetTopLeftRect(tagTmp.rectTransform, 28f, -8f, 1020f, 30f);
-        MainMenuManager.SetOutlineSafe(tagTmp, 0.14f, Color.black);
+        // Sol Taraf: Etiket, Başlık, Açıklama, İlerleme Çubuğu, Ödül Metni (1:1 referans koordinatları)
+        TextMeshProUGUI tagTmp = CreateTMP("Tag", card.transform, "", 17, ColTeal, FontStyles.Normal, TextAlignmentOptions.Left);
+        SetTopLeftRect(tagTmp.rectTransform, 22f, -7f, 1000f, 24f);
 
-        TextMeshProUGUI titleTmp = CreateTMP("Title", card.transform, "", 26, Color.white, FontStyles.Bold, TextAlignmentOptions.Left);
-        SetTopLeftRect(titleTmp.rectTransform, 28f, -38f, 1020f, 40f);
-        MainMenuManager.SetOutlineSafe(titleTmp, 0.20f, Color.black);
+        TextMeshProUGUI titleTmp = CreateTMP("Title", card.transform, "", 27, Color.white, FontStyles.Bold, TextAlignmentOptions.Left);
+        SetTopLeftRect(titleTmp.rectTransform, 22f, -31f, 1000f, 34f);
 
-        TextMeshProUGUI descTmp = CreateTMP("Desc", card.transform, "", 20, new Color(0.84f, 0.91f, 0.98f, 1f), FontStyles.Bold, TextAlignmentOptions.Left);
-        SetTopLeftRect(descTmp.rectTransform, 28f, -78f, 1020f, 32f);
-        MainMenuManager.SetOutlineSafe(descTmp, 0.14f, Color.black);
+        TextMeshProUGUI descTmp = CreateTMP("Desc", card.transform, "", 19, new Color(0.82f, 0.88f, 0.94f, 1f), FontStyles.Normal, TextAlignmentOptions.Left);
+        SetTopLeftRect(descTmp.rectTransform, 22f, -66f, 1000f, 26f);
 
-        // İlerleme Çubuğu
+        // İlerleme Çubuğu (1920x1080 exact: x_rel = 22..708 -> width = 686, y_rel = -96, height = 25)
         GameObject trackObj = new GameObject("ProgressTrack", typeof(RectTransform), typeof(Image));
         trackObj.transform.SetParent(card.transform, false);
         RectTransform trackRt = trackObj.GetComponent<RectTransform>();
-        SetTopLeftRect(trackRt, 28f, -112f, 690f, 30f);
+        SetTopLeftRect(trackRt, 22f, -96f, 686f, 25f);
         Image trackImg = trackObj.GetComponent<Image>();
         trackImg.color = ColTrack;
         trackImg.raycastTarget = false;
@@ -593,33 +597,35 @@ public class DailyOpsUI : MonoBehaviour
         fillRt.anchorMin = new Vector2(0f, 0f);
         fillRt.anchorMax = new Vector2(0f, 1f);
         fillRt.pivot = new Vector2(0f, 0.5f);
-        fillRt.offsetMin = new Vector2(2f, 2f);
-        fillRt.offsetMax = new Vector2(-2f, -2f);
+        fillRt.offsetMin = Vector2.zero;
+        fillRt.offsetMax = Vector2.zero;
         Image fillImg = fillObj.GetComponent<Image>();
-        fillImg.color = accentColor;
+        fillImg.color = ColTeal;
         fillImg.raycastTarget = false;
 
-        TextMeshProUGUI progTmp = CreateTMP("ProgressLabel", trackObj.transform, "", 17, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
+        TextMeshProUGUI progTmp = CreateTMP("ProgressLabel", trackObj.transform, "", 16, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
         MainMenuManager.MakeFullScreenRect(progTmp.rectTransform);
-        MainMenuManager.SetOutlineSafe(progTmp, 0.16f, Color.black);
 
         // Ödül Metni
-        TextMeshProUGUI rewardTmp = CreateTMP("RewardText", card.transform, "", 19, ColGold, FontStyles.Bold, TextAlignmentOptions.Left);
-        SetTopLeftRect(rewardTmp.rectTransform, 28f, -145f, 1020f, 32f);
-        MainMenuManager.SetOutlineSafe(rewardTmp, 0.14f, Color.black);
+        TextMeshProUGUI rewardTmp = CreateTMP("RewardText", card.transform, "", 18, ColGold, FontStyles.Bold, TextAlignmentOptions.Left);
+        SetTopLeftRect(rewardTmp.rectTransform, 22f, -126f, 1020f, 26f);
 
-        // Sağ Taraf: Ödül Toplama Butonu
-        Button actionBtn = CreateActionButton(
-            "ActionBtn", card.transform,
-            new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(-22f, 0f), new Vector2(290f, 64f),
-            "", 20, accentColor,
-            out Image actionBg, out TextMeshProUGUI actionTmp,
-            null
-        );
+        // Sağ Taraf: Ödül Toplama / Yüzde Butonu (width = 264, height = 58, rightOffset = -20)
+        GameObject btnObj = new GameObject("ActionBtn", typeof(RectTransform), typeof(Image), typeof(Button));
+        btnObj.transform.SetParent(card.transform, false);
+        SetAnchoredBox(btnObj.GetComponent<RectTransform>(), 1f, 1f, 0.5f, 0.5f, new Vector2(1f, 0.5f), new Vector2(-20f, 0f), new Vector2(264f, 58f));
+
+        Image actionBg = btnObj.GetComponent<Image>();
+        Button actionBtn = btnObj.GetComponent<Button>();
+        actionBtn.targetGraphic = actionBg;
+
+        TextMeshProUGUI actionTmp = CreateTMP("Label", btnObj.transform, "", 22, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
+        StretchChild(actionTmp.rectTransform, 8f, -8f, 2f, -2f);
 
         return new CardViewRefs
         {
             root = card,
+            cardBg = cardBg,
             tagText = tagTmp,
             titleText = titleTmp,
             descText = descTmp,
@@ -638,8 +644,8 @@ public class DailyOpsUI : MonoBehaviour
         {
             float clamped = Mathf.Clamp01(ratio);
             fillRt.anchorMax = new Vector2(clamped, 1f);
-            fillRt.offsetMin = new Vector2(2f, 2f);
-            fillRt.offsetMax = new Vector2(clamped > 0.01f ? -2f : 0f, -2f);
+            fillRt.offsetMin = Vector2.zero;
+            fillRt.offsetMax = Vector2.zero;
             Image img = fillRt.GetComponent<Image>();
             if (img != null) img.color = fillColor;
         }
@@ -656,27 +662,32 @@ public class DailyOpsUI : MonoBehaviour
         UnityAction onClick)
     {
         refs.actionButton.onClick.RemoveAllListeners();
+        Sprite slateSpr = LoadOpsSprite("ops_btn_slate.png", "ops_btn_slate", ref _cachedBtnSlateSprite);
+        Sprite emeraldSpr = LoadOpsSprite("ops_btn_emerald.png", "ops_btn_emerald", ref _cachedBtnEmeraldSprite);
 
         if (canClaim)
         {
             refs.actionButton.interactable = true;
-            refs.actionBtnBg.sprite = MainMenuManager.GetHudSprite("CardAct_Claim", ColGold, new Color(0.20f, 0.14f, 0.02f, 0.96f), hasLeftBar: true);
-            refs.actionBtnText.color = ColGold;
+            refs.actionBtnBg.sprite = emeraldSpr;
+            refs.actionBtnBg.color = Color.white;
+            refs.actionBtnText.color = new Color(1f, 0.88f, 0.28f, 1f);
             refs.actionBtnText.text = claimLabel;
             if (onClick != null) refs.actionButton.onClick.AddListener(onClick);
         }
         else if (isCompletedAndClaimed)
         {
             refs.actionButton.interactable = false;
-            refs.actionBtnBg.sprite = MainMenuManager.GetHudSprite("CardAct_Done", ColEmerald, new Color(0.04f, 0.14f, 0.09f, 0.85f), hasLeftBar: true);
-            refs.actionBtnText.color = ColEmerald;
+            refs.actionBtnBg.sprite = emeraldSpr;
+            refs.actionBtnBg.color = Color.white;
+            refs.actionBtnText.color = new Color(0.28f, 0.92f, 0.56f, 1f);
             refs.actionBtnText.text = doneLabel;
         }
         else
         {
             refs.actionButton.interactable = false;
-            refs.actionBtnBg.sprite = MainMenuManager.GetHudSprite("CardAct_Prog", ColMuted, new Color(0.06f, 0.09f, 0.15f, 0.85f), hasLeftBar: true);
-            refs.actionBtnText.color = new Color(0.75f, 0.84f, 0.94f, 1f);
+            refs.actionBtnBg.sprite = slateSpr;
+            refs.actionBtnBg.color = Color.white;
+            refs.actionBtnText.color = new Color(0.86f, 0.91f, 0.96f, 1f);
             refs.actionBtnText.text = progressLabel;
         }
     }
@@ -769,7 +780,7 @@ public class DailyOpsUI : MonoBehaviour
         tmp.font = MainMenuManager.GetTacticalFont();
         tmp.fontSize = size;
         tmp.fontStyle = style;
-        tmp.characterSpacing = 1.2f;
+        tmp.characterSpacing = 0.8f;
         tmp.color = color;
         tmp.alignment = align;
         tmp.text = text;
@@ -780,40 +791,30 @@ public class DailyOpsUI : MonoBehaviour
         return tmp;
     }
 
-    private static Button CreateActionButton(
+    private static Button Create1To1TabButton(
         string name, Transform parent,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 size,
-        string label, int fontSize, Color accentColor,
+        Vector2 centerPos1080, Vector2 size1080,
+        string label, int fontSize,
         out Image bgImg, out TextMeshProUGUI labelTmp,
         UnityAction onClick)
     {
         GameObject obj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
         obj.transform.SetParent(parent, false);
-        SetAnchoredBox(obj.GetComponent<RectTransform>(), anchorMin.x, anchorMax.x, anchorMin.y, anchorMax.y, pivot, anchoredPos, size);
+        SetAnchoredBox(obj.GetComponent<RectTransform>(), 0.5f, 0.5f, 0.5f, 0.5f, new Vector2(0.5f, 0.5f), centerPos1080, size1080);
 
         bgImg = obj.GetComponent<Image>();
-        bgImg.sprite = MainMenuManager.GetHudSprite($"OpsBtn_{name}", accentColor, new Color(0.06f, 0.11f, 0.19f, 0.92f), hasLeftBar: true);
-        bgImg.type = Image.Type.Sliced;
+        bgImg.sprite = LoadOpsSprite("ops_tab_inactive.png", "ops_tab_inactive", ref _cachedTabInactiveSprite);
+        bgImg.type = Image.Type.Simple;
+        bgImg.preserveAspect = false;
         bgImg.color = Color.white;
         bgImg.raycastTarget = true;
 
         Button btn = obj.GetComponent<Button>();
-        btn.transition = Selectable.Transition.ColorTint;
-        ColorBlock cb = btn.colors;
-        cb.normalColor = Color.white;
-        cb.highlightedColor = new Color(1.12f, 1.12f, 1.12f, 1f);
-        cb.pressedColor = new Color(0.80f, 0.85f, 0.90f, 1f);
-        cb.disabledColor = new Color(0.85f, 0.85f, 0.85f, 0.85f);
-        btn.colors = cb;
-
+        btn.targetGraphic = bgImg;
         if (onClick != null) btn.onClick.AddListener(onClick);
 
-        labelTmp = CreateTMP("Label", obj.transform, label, fontSize, accentColor, FontStyles.Bold, TextAlignmentOptions.Center);
-        labelTmp.enableAutoSizing = true;
-        labelTmp.fontSizeMin = Mathf.Max(15, fontSize - 3);
-        labelTmp.fontSizeMax = fontSize + 1;
-        StretchChild(labelTmp.rectTransform, 10f, -10f, 4f, -4f);
-        MainMenuManager.SetOutlineSafe(labelTmp, 0.16f, Color.black);
+        labelTmp = CreateTMP("Label", obj.transform, label, fontSize, Color.white, FontStyles.Bold, TextAlignmentOptions.Center);
+        StretchChild(labelTmp.rectTransform, 10f, -10f, 2f, -2f);
 
         return btn;
     }
