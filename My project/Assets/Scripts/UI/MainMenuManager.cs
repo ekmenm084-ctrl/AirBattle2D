@@ -110,6 +110,51 @@ public class MainMenuManager : MonoBehaviour
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(20, 20, 20, 20));
     }
 
+    private static readonly Dictionary<string, Sprite> _roundedBoxCache = new Dictionary<string, Sprite>();
+
+    public static Sprite GetRoundedBoxSprite(string key, Color fillColor, Color borderColor, int cornerRadius = 12, int borderWidth = 2)
+    {
+        if (!string.IsNullOrEmpty(key) && _roundedBoxCache.TryGetValue(key, out var cached) && cached != null)
+            return cached;
+
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+        Color clear = new Color(0, 0, 0, 0);
+
+        float r = cornerRadius;
+        float bw = borderWidth;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float cx = (x < r) ? r : (x > size - 1 - r ? size - 1 - r : x);
+                float cy = (y < r) ? r : (y > size - 1 - r ? size - 1 - r : y);
+                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(cx, cy));
+
+                if (dist > r)
+                {
+                    tex.SetPixel(x, y, clear);
+                }
+                else if (dist > r - bw || x < bw || x >= size - bw || y < bw || y >= size - bw)
+                {
+                    tex.SetPixel(x, y, borderColor);
+                }
+                else
+                {
+                    tex.SetPixel(x, y, fillColor);
+                }
+            }
+        }
+        tex.Apply();
+        int slice = Mathf.Clamp(cornerRadius + 4, 8, 24);
+        Sprite sp = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(slice, slice, slice, slice));
+        if (!string.IsNullOrEmpty(key)) _roundedBoxCache[key] = sp;
+        return sp;
+    }
+
     [Header("Paneller")]
     public GameObject mainPanel;        // Ana Menü
     public GameObject modesPanel;       // Mod Seçimi
@@ -141,6 +186,11 @@ public class MainMenuManager : MonoBehaviour
     private Button _modesDiffNormalBtn;
     private Button _modesDiffHardBtn;
     private TextMeshProUGUI _briefingTMP;
+    private TextMeshProUGUI _modesCardTitleTMP;
+    private TextMeshProUGUI _modesCardRecordTMP;
+    private TextMeshProUGUI _modesCardDescTMP;
+    private Button _quitFromModesButton;
+    private Button _missionsFromModesButton;
 
     [Header("Ayarlar Paneli (Rütbeler)")]
     public Button easyButton;           // Acemi Pilot
@@ -163,7 +213,16 @@ public class MainMenuManager : MonoBehaviour
     private Button _modesLaunchCombatBtn;
     private Button _quickDiffButton;
     private Button _dailyOpsButton;
+    private GameObject _dailyOpsBadgeObj;
+    private TextMeshProUGUI _dailyOpsBadgeTMP;
+    private TextMeshProUGUI _dailyOpsRewardTextTMP;
     private Button _menuControlSchemeButton;
+
+    private void OnDestroy()
+    {
+        if (DailyOpsManager.Instance != null)
+            DailyOpsManager.Instance.OnDailyOpsChanged -= RefreshDailyOpsButtonVisual;
+    }
 
     public static void MakeFullScreenRect(RectTransform rt)
     {
@@ -858,15 +917,13 @@ public class MainMenuManager : MonoBehaviour
         }
         FormatPixelExactButton(settingsButton, new Vector2(-472.2f, -238.4f), new Vector2(487.4f, 97.8f), new Color(0.50f, 0.60f, 0.72f, 0.16f), new Color(0.50f, 0.60f, 0.72f, 0.35f), OpenSettingsPanel);
 
-        // 5. OYUN MODLARI (Taktiksel Operasyon ve Oyun Modları Menüsü)
+        // 5. MODLAR (AYARLAR butonunun hemen altında, arka plan görselindeki MODLAR kartına piksel piksel oturan şeffaf etkileşimli buton)
         Transform mModesBtn = mainPanel?.transform.Find("ModesButton") ?? mainPanel?.transform.Find("ModesButon");
         GameObject mModesObj = mModesBtn != null ? mModesBtn.gameObject : new GameObject("ModesButton", typeof(RectTransform));
         mModesObj.transform.SetParent(mainPanel.transform, false);
         mModesObj.SetActive(true);
         modesButton = mModesObj.GetComponent<Button>() ?? mModesObj.AddComponent<Button>();
-        FormatBtn(modesButton, -358.0f, "<b>OYUN MODLARI</b>\n<size=17><color=#79B2D2>HİKAYE • SONSUZ • BOSS RUSH • 2P</color></size>", new Color(0f, 0.85f, 1f), 487.4f, 85.0f, posX: -472.2f, hudSpriteName: "hud_btn_cyan");
-        modesButton.onClick.RemoveAllListeners();
-        modesButton.onClick.AddListener(OpenModesPanel);
+        FormatPixelExactButton(modesButton, new Vector2(-472.2f, -360.0f), new Vector2(487.4f, 97.8f), new Color(0f, 0.85f, 1f, 0.16f), new Color(0f, 0.85f, 1f, 0.35f), OpenModesPanel);
 
         // 5. Profil Tetikleyici Buton (Sol Üst Köşe - Pilot Kimlik Kartı & Hizmet Belgesi Modalı)
         Transform profBtn = mainPanel?.transform.Find("ProfileClickTrigger");
@@ -1179,11 +1236,100 @@ public class MainMenuManager : MonoBehaviour
         Button lbTabBtn = lbTabObj.GetComponent<Button>() ?? lbTabObj.AddComponent<Button>();
         FormatPixelExactButton(lbTabBtn, new Vector2(850.0f, -421.0f), new Vector2(184.0f, 56.0f), new Color(0f, 0.88f, 1f, 0.18f), new Color(0f, 0.88f, 1f, 0.38f), () => OpenLeaderboardPanel());
         lbTabObj.transform.SetAsLastSibling();
+
+        // Canlı kırmızı bildirim rozeti (altın madalya simgesinin sağ üstü: 1920x1080 -> (380.5, -450.5), 30x30)
+        Transform existingBadge = mainPanel.transform.Find("DailyOpsDynamicBadge");
+        _dailyOpsBadgeObj = existingBadge != null ? existingBadge.gameObject : new GameObject("DailyOpsDynamicBadge", typeof(RectTransform));
+        _dailyOpsBadgeObj.transform.SetParent(mainPanel.transform, false);
+        HangarUI.SetNormalizedRect1080p(_dailyOpsBadgeObj.GetComponent<RectTransform>(), new Vector2(380.5f, -450.5f), new Vector2(30f, 30f));
+
+        Image badgeImg = _dailyOpsBadgeObj.GetComponent<Image>() ?? _dailyOpsBadgeObj.AddComponent<Image>();
+        badgeImg.sprite = GetRoundedBoxSprite("daily_ops_red_badge", new Color(0.82f, 0.16f, 0.22f, 1f), new Color(1f, 0.38f, 0.42f, 0.92f), cornerRadius: 30, borderWidth: 1);
+        badgeImg.type = Image.Type.Sliced;
+        badgeImg.color = Color.white;
+        badgeImg.raycastTarget = false;
+
+        Transform badgeTxtChild = _dailyOpsBadgeObj.transform.Find("CountText");
+        GameObject badgeTxtObj = badgeTxtChild != null ? badgeTxtChild.gameObject : new GameObject("CountText", typeof(RectTransform));
+        badgeTxtObj.transform.SetParent(_dailyOpsBadgeObj.transform, false);
+        RectTransform btRt = badgeTxtObj.GetComponent<RectTransform>() ?? badgeTxtObj.AddComponent<RectTransform>();
+        btRt.anchorMin = Vector2.zero;
+        btRt.anchorMax = Vector2.one;
+        btRt.offsetMin = Vector2.zero;
+        btRt.offsetMax = Vector2.zero;
+
+        _dailyOpsBadgeTMP = badgeTxtObj.GetComponent<TextMeshProUGUI>() ?? badgeTxtObj.AddComponent<TextMeshProUGUI>();
+        _dailyOpsBadgeTMP.font = GetTacticalFont();
+        _dailyOpsBadgeTMP.fontSize = 17f;
+        _dailyOpsBadgeTMP.fontStyle = FontStyles.Bold;
+        _dailyOpsBadgeTMP.alignment = TextAlignmentOptions.Center;
+        _dailyOpsBadgeTMP.color = Color.white;
+        _dailyOpsBadgeTMP.raycastTarget = false;
+
+        // Dinamik "X YENİ ÖDÜL" alt yazısı (GÖREVLER & MADALYALAR'ın hemen sağ altı: (617, -499), 220x24)
+        Transform existingRewardTxt = mainPanel.transform.Find("DailyOpsDynamicRewardText");
+        GameObject rewardTxtObj = existingRewardTxt != null ? existingRewardTxt.gameObject : new GameObject("DailyOpsDynamicRewardText", typeof(RectTransform));
+        rewardTxtObj.transform.SetParent(mainPanel.transform, false);
+        HangarUI.SetNormalizedRect1080p(rewardTxtObj.GetComponent<RectTransform>(), new Vector2(617f, -499.0f), new Vector2(220f, 24f));
+
+        _dailyOpsRewardTextTMP = rewardTxtObj.GetComponent<TextMeshProUGUI>() ?? rewardTxtObj.AddComponent<TextMeshProUGUI>();
+        _dailyOpsRewardTextTMP.font = GetTacticalFont();
+        _dailyOpsRewardTextTMP.fontSize = 16f;
+        _dailyOpsRewardTextTMP.characterSpacing = 1.2f;
+        _dailyOpsRewardTextTMP.fontStyle = FontStyles.Bold;
+        _dailyOpsRewardTextTMP.alignment = TextAlignmentOptions.MidlineRight;
+        _dailyOpsRewardTextTMP.color = new Color(0.75f, 0.82f, 0.88f, 0.95f);
+        _dailyOpsRewardTextTMP.raycastTarget = false;
+
+        try
+        {
+            var opsMgr = DailyOpsManager.EnsureInstance();
+            if (opsMgr != null)
+            {
+                opsMgr.OnDailyOpsChanged -= RefreshDailyOpsButtonVisual;
+                opsMgr.OnDailyOpsChanged += RefreshDailyOpsButtonVisual;
+            }
+        }
+        catch { }
+
+        RefreshDailyOpsButtonVisual();
     }
 
     private void RefreshDailyOpsButtonVisual()
     {
-        // Arka plan görselinin kendi üzerinde yüksek çözünürlüklü 8 YENİ ÖDÜL ve rozetler doğrudan yer almaktadır
+        int claimable = 0;
+        try { claimable = DailyOpsManager.EnsureInstance()?.GetTotalClaimableCount() ?? 0; } catch { }
+
+        if (_dailyOpsBadgeObj != null)
+        {
+            _dailyOpsBadgeObj.SetActive(claimable > 0);
+            if (claimable > 0)
+            {
+                _dailyOpsBadgeObj.transform.SetAsLastSibling();
+                if (_dailyOpsBadgeTMP != null) _dailyOpsBadgeTMP.text = claimable.ToString();
+            }
+        }
+
+        if (_dailyOpsRewardTextTMP != null)
+        {
+            _dailyOpsRewardTextTMP.gameObject.SetActive(claimable > 0);
+            if (claimable > 0)
+            {
+                _dailyOpsRewardTextTMP.transform.SetAsLastSibling();
+                _dailyOpsRewardTextTMP.text = $"{claimable} YENİ ÖDÜL";
+            }
+        }
+
+        if (_missionsFromModesButton != null)
+        {
+            TextMeshProUGUI mTmp = _missionsFromModesButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (mTmp != null)
+            {
+                mTmp.text = claimable > 0
+                    ? $"<b>GÖREVLER <color=#FF3B30>({claimable})</color></b>"
+                    : "<b>GÖREVLER</b>";
+            }
+        }
     }
 
     public bool IsAnyMenuPanelOpen()
@@ -1202,45 +1348,41 @@ public class MainMenuManager : MonoBehaviour
         GameObject titleObj = existing != null ? existing.gameObject : new GameObject("ModesHeaderTitle", typeof(RectTransform));
         titleObj.transform.SetParent(modesPanel.transform, false);
 
-        RectTransform rt = titleObj.GetComponent<RectTransform>();
+        RectTransform rt = titleObj.GetComponent<RectTransform>() ?? titleObj.AddComponent<RectTransform>();
         if (rt != null)
         {
             rt.anchorMin = new Vector2(0.5f, 1f);
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -22f);
-            rt.sizeDelta = new Vector2(880f, 74f);
+            rt.anchoredPosition = new Vector2(0f, -28f);
+            rt.sizeDelta = new Vector2(700f, 60f);
         }
 
         Image bgImg = titleObj.GetComponent<Image>() ?? titleObj.AddComponent<Image>();
-        bgImg.sprite = GetHudSprite("hud_header_visor", new Color(0f, 0.90f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.88f), hasLeftBar: false);
-        bgImg.type = Image.Type.Sliced;
-        bgImg.color = Color.white;
+        bgImg.sprite = null;
+        bgImg.color = new Color(0, 0, 0, 0);
         bgImg.raycastTarget = false;
 
         Transform textChild = titleObj.transform.Find("TitleText");
         GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("TitleText", typeof(RectTransform));
         textObj.transform.SetParent(titleObj.transform, false);
-        RectTransform tRt = textObj.GetComponent<RectTransform>();
-        if (tRt != null)
-        {
-            tRt.anchorMin = Vector2.zero;
-            tRt.anchorMax = Vector2.one;
-            tRt.offsetMin = new Vector2(10f, 4f);
-            tRt.offsetMax = new Vector2(-10f, -4f);
-        }
+        RectTransform tRt = textObj.GetComponent<RectTransform>() ?? textObj.AddComponent<RectTransform>();
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
 
         TextMeshProUGUI tmp = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
         tmp.font = GetTacticalFont();
-        tmp.text = "<b><color=#00E5FF>HAVA HAREKÂTI</color> VE GÖREV SEFERLERİ</b>\n<size=75%><color=#94A3B8>Taktik senaryo operasyonları veya sınırsız it dalaşı seçin</color></size>";
-        tmp.fontSize = 26f;
-        tmp.characterSpacing = 2.4f;
+        tmp.text = "<b>AIR BATTLE</b>";
+        tmp.fontSize = 46f;
+        tmp.characterSpacing = 3.0f;
         tmp.fontStyle = FontStyles.Bold;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.white;
         tmp.extraPadding = true;
         tmp.raycastTarget = false;
-        SetOutlineSafe(tmp, 0.10f, new Color(0.02f, 0.04f, 0.08f, 0.95f));
+        SetOutlineSafe(tmp, 0.12f, new Color(0.01f, 0.02f, 0.04f, 0.95f));
         titleObj.transform.SetAsFirstSibling();
     }
 
@@ -1336,26 +1478,16 @@ public class MainMenuManager : MonoBehaviour
         {
             modesPanel.SetActive(true);
             modesPanel.transform.SetAsLastSibling();
-            Image mImg = modesPanel.GetComponent<Image>();
+            MakeFullScreenRect(modesPanel.GetComponent<RectTransform>());
+            Image mImg = modesPanel.GetComponent<Image>() ?? modesPanel.AddComponent<Image>();
             if (mImg != null)
             {
-                mImg.sprite = GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.85f), new Color(0.02f, 0.05f, 0.10f, 0.90f), false);
-                mImg.type = Image.Type.Sliced;
-                mImg.color = Color.white;
+                mImg.sprite = null;
+                mImg.color = new Color(0.03f, 0.06f, 0.10f, 0.90f);
+                mImg.raycastTarget = true;
             }
             SetupModesHeader();
-            if (_campaign1Button == null || _campaign2Button == null || _campaign3Button == null
-                || _endlessButton == null || _bossRushButton == null || _bulletHellButton == null
-                || _timeAttackButton == null || _hardcoreButton == null || _modesDiffEasyBtn == null
-                || _briefingTMP == null || _modesLeaderboardButton == null || backFromModesButton == null)
-            {
-                SetupCampaignSelectionUI();
-            }
-            if (backFromModesButton != null)
-            {
-                FormatBottomLeftBackBtn(backFromModesButton, OpenMainPanel);
-                backFromModesButton.transform.SetAsLastSibling();
-            }
+            SetupCampaignSelectionUI();
         }
         if (_titleObject != null) _titleObject.SetActive(false);
 
@@ -1616,88 +1748,157 @@ public class MainMenuManager : MonoBehaviour
     {
         if (modesPanel == null) return;
 
-        // 1. Kampanya 1 (Operasyon Kara Şafak)
-        if (_campaign1Button == null)
+        // Sahnedeki tüm eski/kalıntı buton ve metinleri (SoloButon, OnlineButon, varsayılan beyaz Button, SelectedModeText vb.) kesin olarak gizle
+        Transform keepBack = backFromModesButton != null ? backFromModesButton.transform : null;
+        for (int i = 0; i < modesPanel.transform.childCount; i++)
         {
-            if (soloButton != null)
+            Transform child = modesPanel.transform.GetChild(i);
+            if (child == null) continue;
+            string cname = child.name;
+            if (cname != "ModesHeaderTitle"
+                && cname != "ModesLeftColumn"
+                && cname != "ModesDetailCard"
+                && cname != "BackFromModesButton"
+                && cname != "QuitFromModesButton"
+                && cname != "MissionsFromModesButton"
+                && child != keepBack)
             {
-                _campaign1Button = soloButton;
-            }
-            else
-            {
-                Transform existingSolo = modesPanel.transform.Find("SoloButon") ?? modesPanel.transform.Find("SoloButton");
-                if (existingSolo != null) _campaign1Button = existingSolo.GetComponent<Button>();
-                if (_campaign1Button == null)
-                    _campaign1Button = CreateOrFindModesButton("SoloButton", 160f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 580f, 52f, 0f, "hud_btn_emerald");
-                soloButton = _campaign1Button;
+                child.gameObject.SetActive(false);
             }
         }
-        _campaign1Button.gameObject.SetActive(true);
-        FormatBtn(_campaign1Button, 160f, "BÖLÜM 1: OPERASYON KARA ŞAFAK", new Color(0.12f, 0.85f, 0.45f), 580f, 52f, 0f, "hud_btn_emerald");
-        _campaign1Button.onClick.RemoveAllListeners();
-        _campaign1Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.OperationBlackDawn));
+        if (selectedModeTMP != null) selectedModeTMP.gameObject.SetActive(false);
 
-        // 2. Kampanya 2: Proje Kimeras
-        _campaign2Button = CreateOrFindModesButton("Campaign2Btn", 104f, "BÖLÜM 2: PROJE KİMERAS", new Color(0.28f, 0.62f, 1.0f), 580f, 52f, 0f, "hud_btn_blue");
-        _campaign2Button.onClick.RemoveAllListeners();
-        _campaign2Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.ProjectChimera));
+        // ==========================================
+        // 1. SOL KOLON (HİKAYE BÖLÜMLERİ & ÖZEL MODLAR)
+        // ==========================================
+        Transform leftCol = modesPanel.transform.Find("ModesLeftColumn");
+        GameObject leftColObj = leftCol != null ? leftCol.gameObject : new GameObject("ModesLeftColumn", typeof(RectTransform));
+        leftColObj.transform.SetParent(modesPanel.transform, false);
+        leftColObj.SetActive(true);
 
-        // 3. Kampanya 3: Gökyüzü Paralı Askeri
-        _campaign3Button = CreateOrFindModesButton("Campaign3Btn", 48f, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", new Color(1.0f, 0.80f, 0.22f), 580f, 52f, 0f, "hud_btn_amber");
-        _campaign3Button.onClick.RemoveAllListeners();
-        _campaign3Button.onClick.AddListener(() => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
+        RectTransform lRt = leftColObj.GetComponent<RectTransform>() ?? leftColObj.AddComponent<RectTransform>();
+        lRt.anchorMin = new Vector2(0.5f, 0.5f);
+        lRt.anchorMax = new Vector2(0.5f, 0.5f);
+        lRt.pivot = new Vector2(0.5f, 0.5f);
+        lRt.anchoredPosition = new Vector2(-340f, 15f);
+        lRt.sizeDelta = new Vector2(1080f, 760f);
 
-        // 4. Sonsuz İt Dalaşı (Endless Survival Mode)
-        _endlessButton = CreateOrFindModesButton("EndlessModeBtn", -8f, "[SONSUZ] İT DALAŞI", new Color(0f, 0.90f, 1f), 285f, 48f, posX: -145f, spriteName: "hud_btn_cyan");
-        _endlessButton.onClick.RemoveAllListeners();
-        _endlessButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Endless));
+        // Başlık 1: HİKAYE BÖLÜMLERİ
+        CreateModesSectionHeader(leftColObj.transform, "StorySectionHeader", new Vector2(0f, 340f), "HİKAYE BÖLÜMLERİ");
 
-        // 5. Boss Rush (4 Boss Avı)
-        _bossRushButton = CreateOrFindModesButton("BossRushBtn", -8f, "[BOSS RUSH] 4 AS", new Color(0.95f, 0.25f, 0.25f), 285f, 48f, posX: 145f, spriteName: "hud_btn_red");
-        _bossRushButton.onClick.RemoveAllListeners();
-        _bossRushButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BossRush));
+        // 3 Bölüm Kartı
+        _campaign1Button = CreateOrSetupModeCard(leftColObj.transform, "Campaign1Btn", new Vector2(0f, 285f), new Vector2(1080f, 60f),
+            "01   |   OPERASYON KARA ŞAFAK", isLeftAligned: true,
+            () => SetCampaign(StoryCampaignManager.CampaignType.OperationBlackDawn));
+        soloButton = _campaign1Button;
 
-        // 6. Mermi Cehennemi (Bullet Hell)
-        _bulletHellButton = CreateOrFindModesButton("BulletHellBtn", -60f, "[CEHENNEM] MERMİ FIRTINASI", new Color(0.95f, 0.20f, 0.50f), 285f, 48f, posX: -145f, spriteName: "hud_btn_red");
-        _bulletHellButton.onClick.RemoveAllListeners();
-        _bulletHellButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.BulletHell));
+        _campaign2Button = CreateOrSetupModeCard(leftColObj.transform, "Campaign2Btn", new Vector2(0f, 215f), new Vector2(1080f, 60f),
+            "02   |   PROJE KİMERAS", isLeftAligned: true,
+            () => SetCampaign(StoryCampaignManager.CampaignType.ProjectChimera));
 
-        // 7. Zaman Taarruzu (Time Attack)
-        _timeAttackButton = CreateOrFindModesButton("TimeAttackBtn", -60f, "[HIZ] ZAMAN TAARRUZU", new Color(1.0f, 0.75f, 0.20f), 285f, 48f, posX: 145f, spriteName: "hud_btn_amber");
-        _timeAttackButton.onClick.RemoveAllListeners();
-        _timeAttackButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.TimeAttack));
+        _campaign3Button = CreateOrSetupModeCard(leftColObj.transform, "Campaign3Btn", new Vector2(0f, 145f), new Vector2(1080f, 60f),
+            "03   |   GÖKYÜZÜ PARALI ASKERİ", isLeftAligned: true,
+            () => SetCampaign(StoryCampaignManager.CampaignType.SkyMercenary));
 
-        // 8. Hardcore Modu (Tek Can, 200 HP, Her Uçak Giderek Güçlenen Boss)
-        _hardcoreButton = CreateOrFindModesButton("HardcoreModeBtn", -112f, "[!] [HARDCORE] 1 CAN BOSS", new Color(1.0f, 0.15f, 0.15f), 285f, 48f, posX: -145f, spriteName: "hud_btn_red");
-        _hardcoreButton.onClick.RemoveAllListeners();
-        _hardcoreButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Hardcore));
+        // Başlık 2: ÖZEL MODLAR
+        CreateModesSectionHeader(leftColObj.transform, "SpecialSectionHeader", new Vector2(0f, 80f), "ÖZEL MODLAR");
 
-        // 9. Online 2 Oyunculu Düello
-        if (onlineButton == null)
-        {
-            Transform existingOnline = modesPanel.transform.Find("OnlineButon") ?? modesPanel.transform.Find("OnlineButton");
-            if (existingOnline != null) onlineButton = existingOnline.GetComponent<Button>();
-            if (onlineButton == null)
-                onlineButton = CreateOrFindModesButton("OnlineButton", -112f, "2 OYUNCULU İT DALAŞI", new Color(0.40f, 0.35f, 0.75f), 285f, 48f, posX: 145f, spriteName: "hud_btn_blue");
-        }
-        if (onlineButton != null)
-        {
-            onlineButton.gameObject.SetActive(true);
-            FormatBtn(onlineButton, -112f, "2 OYUNCULU İT DALAŞI", new Color(0.40f, 0.35f, 0.75f), 285f, 48f, posX: 145f, hudSpriteName: "hud_btn_blue");
-            onlineButton.onClick.RemoveAllListeners();
-            onlineButton.onClick.AddListener(() => SetMode(GameSettings.GameMode.Online));
-        }
+        // 2x3 Grid (6 Özel Mod Kartı)
+        // Satır 1
+        _endlessButton = CreateOrSetupModeCard(leftColObj.transform, "EndlessModeBtn", new Vector2(-276f, 20f), new Vector2(528f, 64f),
+            "SONSUZ İT DALAŞI", isLeftAligned: false,
+            () => SetMode(GameSettings.GameMode.Endless));
 
-        // 10. Modlar Panelinde Doğrudan Zorluk Seçim Butonları
-        SetupModesDifficultyRow();
+        _bossRushButton = CreateOrSetupModeCard(leftColObj.transform, "BossRushBtn", new Vector2(276f, 20f), new Vector2(528f, 64f),
+            "BOSS RUSH: 4 AS", isLeftAligned: false,
+            () => SetMode(GameSettings.GameMode.BossRush));
 
-        // 11. Taktik Sefer Brifing Kartı
-        SetupCampaignBriefingBox();
+        // Satır 2
+        _bulletHellButton = CreateOrSetupModeCard(leftColObj.transform, "BulletHellBtn", new Vector2(-276f, -56f), new Vector2(528f, 64f),
+            "MERMİ FIRTINASI", isLeftAligned: false,
+            () => SetMode(GameSettings.GameMode.BulletHell));
 
-        // 12. Geri Dön Butonu
+        _timeAttackButton = CreateOrSetupModeCard(leftColObj.transform, "TimeAttackBtn", new Vector2(276f, -56f), new Vector2(528f, 64f),
+            "ZAMAN TAARRUZU", isLeftAligned: false,
+            () => SetMode(GameSettings.GameMode.TimeAttack));
+
+        // Satır 3
+        _hardcoreButton = CreateOrSetupModeCard(leftColObj.transform, "HardcoreModeBtn", new Vector2(-276f, -132f), new Vector2(528f, 64f),
+            "HARDCORE: 1 CAN BOSS", isLeftAligned: false,
+            () => SetMode(GameSettings.GameMode.Hardcore));
+
+        onlineButton = CreateOrSetupModeCard(leftColObj.transform, "OnlineButton", new Vector2(276f, -132f), new Vector2(528f, 64f),
+            "2 OYUNCULU İT DALAŞI", isLeftAligned: false,
+            () => SetMode(GameSettings.GameMode.Online));
+
+        // ==========================================
+        // 2. SAĞ DETAY & HAREKÂT BAŞLAT KARTI
+        // ==========================================
+        Transform cardTrans = modesPanel.transform.Find("ModesDetailCard");
+        GameObject cardObj = cardTrans != null ? cardTrans.gameObject : new GameObject("ModesDetailCard", typeof(RectTransform));
+        cardObj.transform.SetParent(modesPanel.transform, false);
+        cardObj.SetActive(true);
+
+        RectTransform cRt = cardObj.GetComponent<RectTransform>() ?? cardObj.AddComponent<RectTransform>();
+        cRt.anchorMin = new Vector2(0.5f, 0.5f);
+        cRt.anchorMax = new Vector2(0.5f, 0.5f);
+        cRt.pivot = new Vector2(0.5f, 0.5f);
+        cRt.anchoredPosition = new Vector2(575f, 75f);
+        cRt.sizeDelta = new Vector2(610f, 750f);
+
+        Image cardBg = cardObj.GetComponent<Image>() ?? cardObj.AddComponent<Image>();
+        cardBg.sprite = GetRoundedBoxSprite("modes_card_bg", new Color(0.05f, 0.09f, 0.13f, 0.96f), new Color(0.14f, 0.22f, 0.30f, 0.95f), cornerRadius: 16, borderWidth: 2);
+        cardBg.type = Image.Type.Sliced;
+        cardBg.color = Color.white;
+
+        // Üst Başlık: SEÇİLİ MOD
+        CreateCardSubLabel(cardObj.transform, "CardHeaderLabel", new Vector2(0f, 325f), new Vector2(530f, 24f), "SEÇİLİ MOD", 15f);
+
+        // Mod Başlığı (Large bold white)
+        _modesCardTitleTMP = CreateCardDynamicText(cardObj.transform, "CardTitleText", new Vector2(0f, 275f), new Vector2(530f, 50f), "SONSUZ İT DALAŞI", 30f, FontStyles.Bold, Color.white, TextAlignmentOptions.MidlineLeft);
+
+        // Rekor Rozeti (Pill)
+        Transform pillTrans = cardObj.transform.Find("CardRecordPill");
+        GameObject pillObj = pillTrans != null ? pillTrans.gameObject : new GameObject("CardRecordPill", typeof(RectTransform));
+        pillObj.transform.SetParent(cardObj.transform, false);
+        pillObj.SetActive(true);
+
+        RectTransform pRt = pillObj.GetComponent<RectTransform>() ?? pillObj.AddComponent<RectTransform>();
+        pRt.anchorMin = new Vector2(0.5f, 0.5f);
+        pRt.anchorMax = new Vector2(0.5f, 0.5f);
+        pRt.pivot = new Vector2(0.5f, 0.5f);
+        pRt.anchoredPosition = new Vector2(-95f, 215f);
+        pRt.sizeDelta = new Vector2(340f, 36f);
+
+        Image pillBg = pillObj.GetComponent<Image>() ?? pillObj.AddComponent<Image>();
+        pillBg.sprite = GetRoundedBoxSprite("modes_pill_bg", new Color(0.10f, 0.16f, 0.23f, 0.95f), new Color(0.16f, 0.26f, 0.36f, 0.90f), cornerRadius: 14, borderWidth: 1);
+        pillBg.type = Image.Type.Sliced;
+        pillBg.color = Color.white;
+
+        _modesCardRecordTMP = CreateCardDynamicText(pillObj.transform, "RecordPillText", Vector2.zero, new Vector2(320f, 32f), "En Yüksek Rekor: Dalga 10", 16f, FontStyles.Bold, new Color(0.62f, 0.76f, 0.88f), TextAlignmentOptions.Center);
+
+        // Açıklama Metni (Multi-line)
+        _modesCardDescTMP = CreateCardDynamicText(cardObj.transform, "CardDescText", new Vector2(0f, 110f), new Vector2(530f, 130f), "Düşman filoları durmaksızın gelir!\nHer 5 dalgada bir Boss savaşı başlar.", 19f, FontStyles.Normal, new Color(0.56f, 0.66f, 0.76f), TextAlignmentOptions.TopLeft);
+        _modesCardDescTMP.lineSpacing = 1.25f;
+        _briefingTMP = _modesCardDescTMP;
+
+        // Başlık: ZORLUK
+        CreateCardSubLabel(cardObj.transform, "CardDiffLabel", new Vector2(0f, -25f), new Vector2(530f, 24f), "ZORLUK", 15f);
+
+        // Zorluk Butonları (KOLAY, NORMAL, ZOR)
+        _modesDiffEasyBtn = CreateOrSetupDiffButton(cardObj.transform, "ModesDiffEasyBtn", new Vector2(-180f, -75f), new Vector2(170f, 50f), "KOLAY", () => SetDifficulty(GameSettings.Difficulty.Kolay));
+        _modesDiffNormalBtn = CreateOrSetupDiffButton(cardObj.transform, "ModesDiffNormalBtn", new Vector2(0f, -75f), new Vector2(170f, 50f), "NORMAL", () => SetDifficulty(GameSettings.Difficulty.Normal));
+        _modesDiffHardBtn = CreateOrSetupDiffButton(cardObj.transform, "ModesDiffHardBtn", new Vector2(180f, -75f), new Vector2(170f, 50f), "ZOR", () => SetDifficulty(GameSettings.Difficulty.Zor));
+
+        // HAREKÂTI BAŞLAT Butonu
+        _modesLaunchCombatBtn = CreateOrSetupLaunchButton(cardObj.transform, "ModesLaunchCombatBtn", new Vector2(0f, -185f), new Vector2(530f, 72f), "HAREKÂTI BAŞLAT", OnPlayClicked);
+
+        // ==========================================
+        // 3. ALT BAR (GERİ DÖN, OYUNDAN ÇIK, GÖREVLER)
+        // ==========================================
         if (backFromModesButton == null)
         {
-            Transform existingBack = modesPanel.transform.Find("BackFromModesButon") ?? modesPanel.transform.Find("BackFromModesButton") ?? modesPanel.transform.Find("BackButton");
+            Transform existingBack = modesPanel.transform.Find("BackFromModesButton") ?? modesPanel.transform.Find("BackFromModesButon");
             if (existingBack != null) backFromModesButton = existingBack.GetComponent<Button>();
             if (backFromModesButton == null)
             {
@@ -1706,174 +1907,349 @@ public class MainMenuManager : MonoBehaviour
                 backFromModesButton = bObj.AddComponent<Button>();
             }
         }
-        if (backFromModesButton != null)
+        backFromModesButton.gameObject.SetActive(true);
+        FormatBottomBarButton(backFromModesButton, new Vector2(-780f, -485f), new Vector2(240f, 52f), "« GERİ DÖN", OpenMainPanel);
+
+        if (_quitFromModesButton == null)
         {
-            backFromModesButton.gameObject.SetActive(true);
-            FormatBottomLeftBackBtn(backFromModesButton, OpenMainPanel);
-            RectTransform bRt = backFromModesButton.GetComponent<RectTransform>();
-            if (bRt != null)
+            Transform existingQuit = modesPanel.transform.Find("QuitFromModesButton");
+            if (existingQuit != null) _quitFromModesButton = existingQuit.GetComponent<Button>();
+            if (_quitFromModesButton == null)
             {
-                bRt.anchorMin = new Vector2(0f, 0f);
-                bRt.anchorMax = new Vector2(0f, 0f);
-                bRt.pivot = new Vector2(0f, 0f);
-                bRt.anchoredPosition = new Vector2(50f, 25f);
-                bRt.sizeDelta = new Vector2(280f, 52f);
+                GameObject qObj = new GameObject("QuitFromModesButton", typeof(RectTransform));
+                qObj.transform.SetParent(modesPanel.transform, false);
+                _quitFromModesButton = qObj.AddComponent<Button>();
             }
         }
-
-        // 13. Modlar Paneli Rekor Tablosu Butonu (Sağ Alt Köşe)
-        _modesLeaderboardButton = CreateOrFindModesButton("ModesLeaderboardBtn", 25f, "[#] REKOR TABLOSU", new Color(1.0f, 0.80f, 0.22f), 280f, 52f, posX: 0f, spriteName: "hud_btn_amber");
-        if (_modesLeaderboardButton != null)
+        _quitFromModesButton.gameObject.SetActive(true);
+        FormatBottomBarButton(_quitFromModesButton, new Vector2(-510f, -485f), new Vector2(240f, 52f), "OYUNDAN ÇIK", () =>
         {
-            RectTransform lbRt = _modesLeaderboardButton.GetComponent<RectTransform>();
-            if (lbRt != null)
+            #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+            #else
+            Application.Quit();
+            #endif
+        });
+
+        if (_missionsFromModesButton == null)
+        {
+            Transform existingMissions = modesPanel.transform.Find("MissionsFromModesButton");
+            if (existingMissions != null) _missionsFromModesButton = existingMissions.GetComponent<Button>();
+            if (_missionsFromModesButton == null)
             {
-                lbRt.anchorMin = new Vector2(1f, 0f);
-                lbRt.anchorMax = new Vector2(1f, 0f);
-                lbRt.pivot = new Vector2(1f, 0f);
-                lbRt.anchoredPosition = new Vector2(-50f, 25f);
-                lbRt.sizeDelta = new Vector2(280f, 52f);
+                GameObject mObj = new GameObject("MissionsFromModesButton", typeof(RectTransform));
+                mObj.transform.SetParent(modesPanel.transform, false);
+                _missionsFromModesButton = mObj.AddComponent<Button>();
             }
-            _modesLeaderboardButton.onClick.RemoveAllListeners();
-            _modesLeaderboardButton.onClick.AddListener(() =>
+        }
+        _missionsFromModesButton.gameObject.SetActive(true);
+        int claimableOps = 0;
+        try { claimableOps = DailyOpsManager.EnsureInstance()?.GetTotalClaimableCount() ?? 0; } catch { }
+        string missionsLabel = claimableOps > 0 ? $"GÖREVLER <color=#FF3B30>({claimableOps})</color>" : "GÖREVLER";
+        FormatBottomBarButton(_missionsFromModesButton, new Vector2(760f, -485f), new Vector2(240f, 52f), missionsLabel, OpenDailyOpsPanel);
+    }
+
+    private void CreateModesSectionHeader(Transform parent, string name, Vector2 pos, string title)
+    {
+        Transform existing = parent.Find(name);
+        GameObject obj = existing != null ? existing.gameObject : new GameObject(name, typeof(RectTransform));
+        obj.transform.SetParent(parent, false);
+
+        RectTransform rt = obj.GetComponent<RectTransform>() ?? obj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(1080f, 28f);
+
+        TextMeshProUGUI tmp = obj.GetComponent<TextMeshProUGUI>() ?? obj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = title;
+        tmp.fontSize = 17f;
+        tmp.characterSpacing = 1.4f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        tmp.color = new Color(0.44f, 0.54f, 0.62f);
+        tmp.raycastTarget = false;
+    }
+
+    private void CreateCardSubLabel(Transform parent, string name, Vector2 pos, Vector2 size, string text, float fontSize)
+    {
+        Transform existing = parent.Find(name);
+        GameObject obj = existing != null ? existing.gameObject : new GameObject(name, typeof(RectTransform));
+        obj.transform.SetParent(parent, false);
+
+        RectTransform rt = obj.GetComponent<RectTransform>() ?? obj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        TextMeshProUGUI tmp = obj.GetComponent<TextMeshProUGUI>() ?? obj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = text;
+        tmp.fontSize = fontSize;
+        tmp.characterSpacing = 1.2f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.MidlineLeft;
+        tmp.color = new Color(0.44f, 0.54f, 0.62f);
+        tmp.raycastTarget = false;
+    }
+
+    private TextMeshProUGUI CreateCardDynamicText(Transform parent, string name, Vector2 pos, Vector2 size, string text, float fontSize, FontStyles style, Color color, TextAlignmentOptions alignment)
+    {
+        Transform existing = parent.Find(name);
+        GameObject obj = existing != null ? existing.gameObject : new GameObject(name, typeof(RectTransform));
+        obj.transform.SetParent(parent, false);
+
+        RectTransform rt = obj.GetComponent<RectTransform>() ?? obj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        TextMeshProUGUI tmp = obj.GetComponent<TextMeshProUGUI>() ?? obj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = text;
+        tmp.fontSize = fontSize;
+        tmp.characterSpacing = 1.0f;
+        tmp.fontStyle = style;
+        tmp.alignment = alignment;
+        tmp.color = color;
+        tmp.raycastTarget = false;
+        tmp.extraPadding = true;
+        return tmp;
+    }
+
+    private Button CreateOrSetupModeCard(Transform parent, string objName, Vector2 pos, Vector2 size, string text, bool isLeftAligned, UnityEngine.Events.UnityAction onClick)
+    {
+        Transform existing = parent.Find(objName);
+        GameObject btnObj = existing != null ? existing.gameObject : new GameObject(objName, typeof(RectTransform));
+        btnObj.transform.SetParent(parent, false);
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>() ?? btnObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        Image img = btnObj.GetComponent<Image>() ?? btnObj.AddComponent<Image>();
+        img.sprite = GetRoundedBoxSprite("modes_card_unselected", new Color(0.06f, 0.10f, 0.15f, 0.88f), new Color(0.16f, 0.25f, 0.33f, 0.90f), 10, 1);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+        img.raycastTarget = true;
+
+        Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        ColorBlock cb = btn.colors;
+        cb.normalColor = Color.white;
+        cb.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+        cb.pressedColor = new Color(0.8f, 0.9f, 1f, 1f);
+        cb.selectedColor = Color.white;
+        cb.fadeDuration = 0.06f;
+        btn.colors = cb;
+
+        Transform tChild = btnObj.transform.Find("Text");
+        GameObject tObj = tChild != null ? tChild.gameObject : new GameObject("Text", typeof(RectTransform));
+        tObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform trt = tObj.GetComponent<RectTransform>() ?? tObj.AddComponent<RectTransform>();
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = isLeftAligned ? new Vector2(28f, 0f) : Vector2.zero;
+        trt.offsetMax = isLeftAligned ? new Vector2(-28f, 0f) : Vector2.zero;
+
+        TextMeshProUGUI tmp = tObj.GetComponent<TextMeshProUGUI>() ?? tObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = text;
+        tmp.fontSize = 21f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = isLeftAligned ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Center;
+        tmp.color = new Color(0.82f, 0.88f, 0.96f, 0.90f);
+        tmp.raycastTarget = false;
+
+        if (onClick != null)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
             {
-                LeaderboardManager.BoardMode targetBoard = GameSettings.SelectedMode switch
-                {
-                    GameSettings.GameMode.Hardcore => LeaderboardManager.BoardMode.Hardcore,
-                    GameSettings.GameMode.TimeAttack => LeaderboardManager.BoardMode.TimeAttack,
-                    GameSettings.GameMode.BulletHell => LeaderboardManager.BoardMode.BulletHell,
-                    GameSettings.GameMode.BossRush => LeaderboardManager.BoardMode.BossRush,
-                    _ => LeaderboardManager.BoardMode.Endless
-                };
-                OpenLeaderboardPanel(targetBoard);
+                onClick();
+                AudioManager.Instance?.PlayButtonClick();
             });
         }
-
-        // 14. Modlar Paneli Doğrudan Savaşa Başlama Butonu (Orta Alt)
-        _modesLaunchCombatBtn = CreateOrFindModesButton("ModesLaunchCombatBtn", 25f, "» HAREKÂTI BAŞLAT", new Color(0f, 0.95f, 0.65f), 440f, 56f, posX: 0f, spriteName: "hud_btn_cyan");
-        if (_modesLaunchCombatBtn != null)
-        {
-            RectTransform lcRt = _modesLaunchCombatBtn.GetComponent<RectTransform>();
-            if (lcRt != null)
-            {
-                lcRt.anchorMin = new Vector2(0.5f, 0f);
-                lcRt.anchorMax = new Vector2(0.5f, 0f);
-                lcRt.pivot = new Vector2(0.5f, 0f);
-                lcRt.anchoredPosition = new Vector2(0f, 25f);
-                lcRt.sizeDelta = new Vector2(440f, 56f);
-            }
-            _modesLaunchCombatBtn.onClick.RemoveAllListeners();
-            _modesLaunchCombatBtn.onClick.AddListener(OnPlayClicked);
-            _modesLaunchCombatBtn.transform.SetAsLastSibling();
-        }
-    }
-
-    private void SetupModesDifficultyRow()
-    {
-        _modesDiffEasyBtn = CreateOrFindModesButton("ModesDiffEasyBtn", -164f, "KOLAY", new Color(0.18f, 0.85f, 0.45f), 180f, 42f, posX: -190f, spriteName: "hud_btn_emerald");
-        _modesDiffEasyBtn.onClick.RemoveAllListeners();
-        _modesDiffEasyBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Kolay));
-
-        _modesDiffNormalBtn = CreateOrFindModesButton("ModesDiffNormalBtn", -164f, "NORMAL", new Color(1.0f, 0.80f, 0.22f), 180f, 42f, posX: 0f, spriteName: "hud_btn_amber");
-        _modesDiffNormalBtn.onClick.RemoveAllListeners();
-        _modesDiffNormalBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Normal));
-
-        _modesDiffHardBtn = CreateOrFindModesButton("ModesDiffHardBtn", -164f, "ZOR", new Color(0.95f, 0.25f, 0.25f), 180f, 42f, posX: 190f, spriteName: "hud_btn_red");
-        _modesDiffHardBtn.onClick.RemoveAllListeners();
-        _modesDiffHardBtn.onClick.AddListener(() => SetDifficulty(GameSettings.Difficulty.Zor));
-    }
-
-    private Button CreateOrFindModesButton(string objName, float posY, string text, Color color, float width, float height, float posX = 0f, string spriteName = null)
-    {
-        Transform existing = modesPanel.transform.Find(objName);
-        GameObject btnObj = existing != null ? existing.gameObject : null;
-
-        if (btnObj == null)
-        {
-            btnObj = new GameObject(objName, typeof(RectTransform));
-            btnObj.transform.SetParent(modesPanel.transform, false);
-
-            btnObj.AddComponent<Image>();
-            btnObj.AddComponent<Button>();
-
-            GameObject textObj = new GameObject("Text", typeof(RectTransform));
-            textObj.transform.SetParent(btnObj.transform, false);
-            RectTransform textRt = textObj.GetComponent<RectTransform>();
-            textRt.anchorMin = Vector2.zero;
-            textRt.anchorMax = Vector2.one;
-            textRt.offsetMin = Vector2.zero;
-            textRt.offsetMax = Vector2.zero;
-            textObj.AddComponent<TextMeshProUGUI>();
-        }
-
-        btnObj.SetActive(true);
-        RectTransform rt = btnObj.GetComponent<RectTransform>();
-        if (rt != null)
-        {
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-        }
-
-        Button btn = btnObj.GetComponent<Button>();
-        FormatBtn(btn, posY, text, color, width, height, posX, spriteName);
         return btn;
     }
 
-    private void SetupCampaignBriefingBox()
+    private Button CreateOrSetupDiffButton(Transform parent, string objName, Vector2 pos, Vector2 size, string text, UnityEngine.Events.UnityAction onClick)
     {
-        Transform existing = modesPanel.transform.Find("CampaignBriefingBox");
-        GameObject boxObj = existing != null ? existing.gameObject : new GameObject("CampaignBriefingBox", typeof(RectTransform));
-        boxObj.transform.SetParent(modesPanel.transform, false);
+        Transform existing = parent.Find(objName);
+        GameObject btnObj = existing != null ? existing.gameObject : new GameObject(objName, typeof(RectTransform));
+        btnObj.transform.SetParent(parent, false);
 
-        RectTransform rt = boxObj.GetComponent<RectTransform>();
-        if (rt != null)
+        RectTransform rt = btnObj.GetComponent<RectTransform>() ?? btnObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        Image img = btnObj.GetComponent<Image>() ?? btnObj.AddComponent<Image>();
+        img.sprite = GetRoundedBoxSprite("modes_diff_inactive", new Color(0.07f, 0.12f, 0.18f, 0.90f), new Color(0.15f, 0.24f, 0.33f, 0.85f), 8, 1);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+        img.raycastTarget = true;
+
+        Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        Transform tChild = btnObj.transform.Find("Text");
+        GameObject tObj = tChild != null ? tChild.gameObject : new GameObject("Text", typeof(RectTransform));
+        tObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform trt = tObj.GetComponent<RectTransform>() ?? tObj.AddComponent<RectTransform>();
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = Vector2.zero;
+        trt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = tObj.GetComponent<TextMeshProUGUI>() ?? tObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = text;
+        tmp.fontSize = 18f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = new Color(0.68f, 0.78f, 0.88f, 0.90f);
+        tmp.raycastTarget = false;
+
+        if (onClick != null)
         {
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0f, -230f);
-            rt.sizeDelta = new Vector2(580f, 75f);
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                onClick();
+                AudioManager.Instance?.PlayButtonClick();
+            });
+        }
+        return btn;
+    }
+
+    private Button CreateOrSetupLaunchButton(Transform parent, string objName, Vector2 pos, Vector2 size, string text, UnityEngine.Events.UnityAction onClick)
+    {
+        Transform existing = parent.Find(objName);
+        GameObject btnObj = existing != null ? existing.gameObject : new GameObject(objName, typeof(RectTransform));
+        btnObj.transform.SetParent(parent, false);
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>() ?? btnObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        Image img = btnObj.GetComponent<Image>() ?? btnObj.AddComponent<Image>();
+        img.sprite = GetRoundedBoxSprite("modes_launch_btn", new Color(0.29f, 0.88f, 0.96f, 1.0f), new Color(0.45f, 0.95f, 1.00f, 1.0f), 10, 1);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+        img.raycastTarget = true;
+
+        Button btn = btnObj.GetComponent<Button>() ?? btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        Transform tChild = btnObj.transform.Find("Text");
+        GameObject tObj = tChild != null ? tChild.gameObject : new GameObject("Text", typeof(RectTransform));
+        tObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform trt = tObj.GetComponent<RectTransform>() ?? tObj.AddComponent<RectTransform>();
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = Vector2.zero;
+        trt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = tObj.GetComponent<TextMeshProUGUI>() ?? tObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = $"<b>{text}</b>";
+        tmp.fontSize = 24f;
+        tmp.characterSpacing = 1.6f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = new Color(0.04f, 0.08f, 0.12f, 1f);
+        tmp.raycastTarget = false;
+
+        if (onClick != null)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                onClick();
+                AudioManager.Instance?.PlayButtonClick();
+            });
+        }
+        return btn;
+    }
+
+    private void FormatBottomBarButton(Button btn, Vector2 pos, Vector2 size, string text, UnityEngine.Events.UnityAction onClick)
+    {
+        if (btn == null) return;
+        RectTransform rt = btn.GetComponent<RectTransform>() ?? btn.gameObject.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = size;
+
+        Image img = btn.GetComponent<Image>() ?? btn.gameObject.AddComponent<Image>();
+        img.sprite = GetRoundedBoxSprite("modes_bottom_btn", new Color(0.06f, 0.10f, 0.15f, 0.88f), new Color(0.16f, 0.25f, 0.33f, 0.90f), 10, 1);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+        img.raycastTarget = true;
+        btn.targetGraphic = img;
+
+        // Sahnedeki varsayılan "Text (TMP)" veya eski "Button" metin çocuklarını tamamen gizle
+        for (int i = 0; i < btn.transform.childCount; i++)
+        {
+            Transform child = btn.transform.GetChild(i);
+            if (child != null && child.name != "Text")
+                child.gameObject.SetActive(false);
         }
 
-        Image bg = boxObj.GetComponent<Image>() ?? boxObj.AddComponent<Image>();
-        bg.sprite = GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.85f), new Color(0.03f, 0.07f, 0.12f, 0.94f), false);
-        bg.type = Image.Type.Sliced;
-        bg.color = Color.white;
-        bg.raycastTarget = false;
+        Transform tChild = btn.transform.Find("Text");
+        GameObject tObj = tChild != null ? tChild.gameObject : new GameObject("Text", typeof(RectTransform));
+        tObj.transform.SetParent(btn.transform, false);
+        tObj.SetActive(true);
 
-        Outline outline = boxObj.GetComponent<Outline>();
-        if (outline != null) Destroy(outline);
+        // Eski UnityEngine.UI.Text bileşeni varsa kaldır
+        var legacyText = tObj.GetComponent<UnityEngine.UI.Text>();
+        if (legacyText != null) Destroy(legacyText);
 
-        Transform textChild = boxObj.transform.Find("BriefingText");
-        GameObject textObj = textChild != null ? textChild.gameObject : new GameObject("BriefingText", typeof(RectTransform));
-        textObj.transform.SetParent(boxObj.transform, false);
+        RectTransform trt = tObj.GetComponent<RectTransform>() ?? tObj.AddComponent<RectTransform>();
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = Vector2.zero;
+        trt.offsetMax = Vector2.zero;
 
-        RectTransform textRt = textObj.GetComponent<RectTransform>();
-        if (textRt != null)
+        TextMeshProUGUI tmp = tObj.GetComponent<TextMeshProUGUI>() ?? tObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.text = $"<b>{text}</b>";
+        tmp.fontSize = 20f;
+        tmp.characterSpacing = 1.2f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = new Color(0.85f, 0.90f, 0.96f, 0.95f);
+        tmp.raycastTarget = false;
+
+        if (onClick != null)
         {
-            textRt.anchorMin = Vector2.zero;
-            textRt.anchorMax = Vector2.one;
-            textRt.offsetMin = new Vector2(16f, 6f);
-            textRt.offsetMax = new Vector2(-16f, -6f);
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                onClick();
+                AudioManager.Instance?.PlayButtonClick();
+            });
         }
-
-        _briefingTMP = textObj.GetComponent<TextMeshProUGUI>() ?? textObj.AddComponent<TextMeshProUGUI>();
-        _briefingTMP.font = GetTacticalFont();
-        _briefingTMP.enableAutoSizing = true;
-        _briefingTMP.fontSizeMin = 16f;
-        _briefingTMP.fontSizeMax = 24f;
-        _briefingTMP.fontSize = 23f;
-        _briefingTMP.fontStyle = FontStyles.Bold;
-        _briefingTMP.characterSpacing = 1.8f;
-        _briefingTMP.alignment = TextAlignmentOptions.Center;
-        _briefingTMP.color = Color.white;
-        _briefingTMP.lineSpacing = 2.5f;
-        _briefingTMP.textWrappingMode = TextWrappingModes.Normal;
-        _briefingTMP.overflowMode = TextOverflowModes.Truncate;
-        _briefingTMP.extraPadding = true;
-        SetOutlineSafe(_briefingTMP, 0.12f, Color.black);
-        _briefingTMP.raycastTarget = false;
     }
 
     public void SetCampaign(StoryCampaignManager.CampaignType campaign)
@@ -2037,12 +2413,12 @@ public class MainMenuManager : MonoBehaviour
         UpdateDifficultyButtonVisual(normalButton, "YÜZBAŞI (Normal)", new Color(0.70f, 0.55f, 0.15f), diff == GameSettings.Difficulty.Normal);
         UpdateDifficultyButtonVisual(hardButton, "AS PİLOT (Zor)", new Color(0.75f, 0.20f, 0.20f), diff == GameSettings.Difficulty.Zor);
 
-        // 2. Modlar Panelindeki Zorluk Seçim Butonları
-        UpdateDifficultyButtonVisual(_modesDiffEasyBtn, "KOLAY", new Color(0.18f, 0.55f, 0.34f), diff == GameSettings.Difficulty.Kolay);
-        UpdateDifficultyButtonVisual(_modesDiffNormalBtn, "NORMAL", new Color(0.70f, 0.55f, 0.15f), diff == GameSettings.Difficulty.Normal);
-        UpdateDifficultyButtonVisual(_modesDiffHardBtn, "ZOR", new Color(0.75f, 0.20f, 0.20f), diff == GameSettings.Difficulty.Zor);
+        // 2. Modlar Panelindeki Zorluk Seçim Butonları (Sağ Detay Kartı)
+        UpdateCardDiffButtonVisual(_modesDiffEasyBtn, "KOLAY", diff == GameSettings.Difficulty.Kolay, new Color(0.12f, 0.45f, 0.25f, 1f));
+        UpdateCardDiffButtonVisual(_modesDiffNormalBtn, "NORMAL", diff == GameSettings.Difficulty.Normal, new Color(0.55f, 0.40f, 0.10f, 1f));
+        UpdateCardDiffButtonVisual(_modesDiffHardBtn, "ZOR", diff == GameSettings.Difficulty.Zor, new Color(0.55f, 0.12f, 0.18f, 1f));
 
-        // 3. Modlar Panelindeki Mod Butonlarının Seçim Vurgusu
+        // 3. Modlar Panelindeki 9 Mod Kartının Seçim Vurgusu (Neon Cyan Çerçeve)
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         bool isEndless = (GameSettings.SelectedMode == GameSettings.GameMode.Endless);
         bool isBossRush = (GameSettings.SelectedMode == GameSettings.GameMode.BossRush);
@@ -2052,18 +2428,89 @@ public class MainMenuManager : MonoBehaviour
         bool isSolo = (GameSettings.SelectedMode == GameSettings.GameMode.Solo);
         var activeCamp = StoryCampaignManager.CurrentCampaign;
 
-        UpdateModeButtonVisual(_campaign1Button, "BÖLÜM 1: OPERASYON KARA ŞAFAK", "hud_btn_emerald", new Color(0.12f, 0.85f, 0.45f), isSolo && activeCamp == StoryCampaignManager.CampaignType.OperationBlackDawn);
-        UpdateModeButtonVisual(_campaign2Button, "BÖLÜM 2: PROJE KİMERAS", "hud_btn_blue", new Color(0.28f, 0.62f, 1.0f), isSolo && activeCamp == StoryCampaignManager.CampaignType.ProjectChimera);
-        UpdateModeButtonVisual(_campaign3Button, "BÖLÜM 3: GÖKYÜZÜ PARALI ASKERİ", "hud_btn_amber", new Color(1.0f, 0.80f, 0.22f), isSolo && activeCamp == StoryCampaignManager.CampaignType.SkyMercenary);
-        UpdateModeButtonVisual(_endlessButton, "[SONSUZ] İT DALAŞI", "hud_btn_cyan", new Color(0f, 0.90f, 1f), isEndless);
-        UpdateModeButtonVisual(_bossRushButton, "[BOSS RUSH] 4 AS", "hud_btn_red", new Color(0.95f, 0.25f, 0.25f), isBossRush);
-        UpdateModeButtonVisual(_bulletHellButton, "[CEHENNEM] MERMİ FIRTINASI", "hud_btn_red", new Color(0.95f, 0.20f, 0.50f), isBulletHell);
-        UpdateModeButtonVisual(_timeAttackButton, "[HIZ] ZAMAN TAARRUZU", "hud_btn_amber", new Color(1.0f, 0.75f, 0.20f), isTimeAttack);
-        UpdateModeButtonVisual(_hardcoreButton, "[!] [HARDCORE] 1 CAN BOSS", "hud_btn_red", new Color(1.0f, 0.15f, 0.15f), isHardcore);
-        UpdateModeButtonVisual(onlineButton, "2 OYUNCULU İT DALAŞI", "hud_btn_blue", new Color(0.40f, 0.35f, 0.75f), isOnline);
+        UpdateModeCardVisual(_campaign1Button, isSolo && activeCamp == StoryCampaignManager.CampaignType.OperationBlackDawn, "01   |   OPERASYON KARA ŞAFAK", isLeftAligned: true);
+        UpdateModeCardVisual(_campaign2Button, isSolo && activeCamp == StoryCampaignManager.CampaignType.ProjectChimera, "02   |   PROJE KİMERAS", isLeftAligned: true);
+        UpdateModeCardVisual(_campaign3Button, isSolo && activeCamp == StoryCampaignManager.CampaignType.SkyMercenary, "03   |   GÖKYÜZÜ PARALI ASKERİ", isLeftAligned: true);
+        UpdateModeCardVisual(_endlessButton, isEndless, "SONSUZ İT DALAŞI", isLeftAligned: false);
+        UpdateModeCardVisual(_bossRushButton, isBossRush, "BOSS RUSH: 4 AS", isLeftAligned: false);
+        UpdateModeCardVisual(_bulletHellButton, isBulletHell, "MERMİ FIRTINASI", isLeftAligned: false);
+        UpdateModeCardVisual(_timeAttackButton, isTimeAttack, "ZAMAN TAARRUZU", isLeftAligned: false);
+        UpdateModeCardVisual(_hardcoreButton, isHardcore, "HARDCORE: 1 CAN BOSS", isLeftAligned: false);
+        UpdateModeCardVisual(onlineButton, isOnline, "2 OYUNCULU İT DALAŞI", isLeftAligned: false);
 
-        // 4. Modlar Paneli Brifing Metni
-        UpdateBriefingText();
+        // 4. Sağ Detay Kartı Dinamik Başlık, Rekor Rozeti ve Brifing Açıklaması
+        string cardTitle = "";
+        string cardRecord = "";
+        string cardDesc = "";
+
+        if (isSolo)
+        {
+            switch (activeCamp)
+            {
+                case StoryCampaignManager.CampaignType.OperationBlackDawn:
+                    cardTitle = "OPERASYON KARA ŞAFAK";
+                    cardRecord = "Bölüm 1 • 20 Dalga & 4 Boss";
+                    cardDesc = "Vatan hava sahasını işgal eden düşman filolarına karşı şafak taarruzu. Müttefik üslerini savun ve düşman komuta zeplinini düşür!";
+                    break;
+                case StoryCampaignManager.CampaignType.ProjectChimera:
+                    cardTitle = "PROJE KİMERAS";
+                    cardRecord = "Bölüm 2 • 20 Dalga & 4 Boss";
+                    cardDesc = "Yapay zeka kontrollü otonom avcı filoları isyan etti! Siber harp sinyallerini kır ve deneysel prototip jetleri düşür.";
+                    break;
+                case StoryCampaignManager.CampaignType.SkyMercenary:
+                    cardTitle = "GÖKYÜZÜ PARALI ASKERİ";
+                    cardRecord = "Bölüm 3 • 20 Dalga & 4 Boss";
+                    cardDesc = "Hava korsanları ticaret koridorlarını ele geçirdi. Ağır silahlı korsan aslarını avla ve gökyüzü ödüllerini topla!";
+                    break;
+            }
+        }
+        else if (isEndless)
+        {
+            int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 1);
+            cardTitle = "SONSUZ İT DALAŞI";
+            cardRecord = $"En Yüksek Rekor: Dalga {bestWave}";
+            cardDesc = "Düşman filoları durmaksızın gelir!\nHer 5 dalgada bir Boss savaşı başlar.";
+        }
+        else if (isBossRush)
+        {
+            cardTitle = "BOSS RUSH: 4 AS";
+            cardRecord = "Özel Ödül: +1500 Altın";
+            cardDesc = "Sıradan uçaklar yok! En güçlü 4 as düşman ardı ardına saldırır. Uçuş manevralarını ve silahlarını en üst düzeye çıkar!";
+        }
+        else if (isBulletHell)
+        {
+            float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
+            int m = (int)(bestTime / 60);
+            int s = (int)(bestTime % 60);
+            cardTitle = "MERMİ FIRTINASI";
+            cardRecord = $"En İyi Süre: {m:00}:{s:00}";
+            cardDesc = "Spiral mermi fırtınaları, lazer tuzakları ve aşırı cehennem salvosu! Ne kadar dayanabilirsin?";
+        }
+        else if (isTimeAttack)
+        {
+            int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
+            cardTitle = "ZAMAN TAARRUZU";
+            cardRecord = $"En Çok Av: {bestKills} Uçak";
+            cardDesc = "60 saniyeyle başla! Her uçak +4 sn, Bosslar +8 sn ekler! Durmaksızın avlan!";
+        }
+        else if (isHardcore)
+        {
+            int bestHc = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
+            cardTitle = "HARDCORE: 1 CAN BOSS";
+            cardRecord = $"Rekor: {bestHc} Boss Avı";
+            cardDesc = "Sadece 1 Can Hakkı! Uçağın 200 HP takviyeli gövdeye sahip. Karşına çıkan her uçak giderek güçlenen bir Boss!";
+        }
+        else if (isOnline)
+        {
+            cardTitle = "2 OYUNCULU İT DALAŞI";
+            cardRecord = "Yerel Çok Oyunculu Düello";
+            cardDesc = "Aynı cihazda iki pilot karşı karşıya!\n1. Pilot alt ekranda, 2. Pilot 180° ters üst ekranda manevra yapar.";
+        }
+
+        if (_modesCardTitleTMP != null) _modesCardTitleTMP.text = cardTitle;
+        if (_modesCardRecordTMP != null) _modesCardRecordTMP.text = cardRecord;
+        if (_modesCardDescTMP != null) _modesCardDescTMP.text = cardDesc;
+        if (_briefingTMP != null && _briefingTMP != _modesCardDescTMP) _briefingTMP.text = cardDesc;
 
         // 5. Ana Menü Hızlı Zorluk Değiştirme Butonu
         if (_quickDiffButton != null)
@@ -2127,6 +2574,52 @@ public class MainMenuManager : MonoBehaviour
                 cImg.type = Image.Type.Simple;
                 cImg.color = Color.white;
             }
+        }
+    }
+
+    private void UpdateModeCardVisual(Button btn, bool isSelected, string text, bool isLeftAligned)
+    {
+        if (btn == null) return;
+        Image img = btn.GetComponent<Image>();
+        if (img != null)
+        {
+            img.sprite = isSelected
+                ? GetRoundedBoxSprite("modes_card_selected", new Color(0.07f, 0.15f, 0.22f, 0.96f), new Color(0.00f, 0.90f, 1.00f, 1.00f), 10, 2)
+                : GetRoundedBoxSprite("modes_card_unselected", new Color(0.06f, 0.10f, 0.15f, 0.88f), new Color(0.16f, 0.25f, 0.33f, 0.90f), 10, 1);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp != null)
+        {
+            tmp.text = text;
+            tmp.font = GetTacticalFont();
+            tmp.alignment = isLeftAligned ? TextAlignmentOptions.MidlineLeft : TextAlignmentOptions.Center;
+            tmp.color = isSelected ? Color.white : new Color(0.68f, 0.78f, 0.88f, 0.85f);
+            tmp.characterSpacing = isSelected ? 1.2f : 0.6f;
+        }
+    }
+
+    private void UpdateCardDiffButtonVisual(Button btn, string label, bool isSelected, Color activeColor)
+    {
+        if (btn == null) return;
+        Image img = btn.GetComponent<Image>();
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
+        if (img != null)
+        {
+            string key = isSelected ? $"diff_act_{activeColor.r:F2}_{activeColor.g:F2}_{activeColor.b:F2}" : "modes_diff_inactive";
+            img.sprite = isSelected
+                ? GetRoundedBoxSprite(key, activeColor, new Color(Mathf.Min(1f, activeColor.r * 1.3f), Mathf.Min(1f, activeColor.g * 1.3f), Mathf.Min(1f, activeColor.b * 1.3f), 1f), 8, 1)
+                : GetRoundedBoxSprite("modes_diff_inactive", new Color(0.07f, 0.12f, 0.18f, 0.90f), new Color(0.15f, 0.24f, 0.33f, 0.85f), 8, 1);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+        if (tmp != null)
+        {
+            tmp.text = label;
+            tmp.color = isSelected ? Color.white : new Color(0.55f, 0.65f, 0.75f, 0.85f);
+            tmp.fontStyle = isSelected ? FontStyles.Bold : FontStyles.Normal;
         }
     }
 

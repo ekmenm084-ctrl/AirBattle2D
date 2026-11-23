@@ -196,17 +196,67 @@ public class LeaderboardManager : MonoBehaviour
         };
     }
 
+    [Serializable]
+    private class SubmitScoreRpcPayload
+    {
+        public string p_username;
+        public string p_mode;
+        public int p_score;
+        public float p_time_seconds;
+        public string p_formatted_score;
+        public string p_rank_title;
+        public string p_extra_info;
+    }
+
+    private static string GetAuthenticatedLeaderboardName()
+    {
+        if (PilotAuthManager.IsAuthenticatedInSession && !string.IsNullOrEmpty(PilotAuthManager.LastLoggedInUsername))
+            return ProfileManager.CleanProfileName(PilotAuthManager.LastLoggedInUsername);
+        return PlayerCallsign;
+    }
+
     /// <summary>
-    /// Mod bitiminde skoru yerel PlayerPrefs'e kaydeder ve yeni bir rekor ise Supabase'e gönderir.
+    /// Mod bitiminde skoru yerel PlayerPrefs'e kaydeder ve oyuncunun en yüksek rekorunu Supabase skor tablosuna aktarır.
     /// </summary>
     public void SubmitScore(BoardMode mode, int score, float timeSeconds = 0f, string extra = "")
     {
-        bool isNewRecord = UpdateLocalRecord(mode, score, timeSeconds);
+        UpdateLocalRecord(mode, score, timeSeconds);
 
-        if (isNewRecord || IsSupabaseConfigured)
+        // Her zaman oyuncunun en iyi rekorunu gönder (düşük bir maç skoru asla yüksek rekoru ezmesin)
+        int bestScore = Mathf.Max(score, GetLocalRecordScore(mode));
+        float bestTime = mode == BoardMode.BulletHell
+            ? Mathf.Max(timeSeconds, ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f))
+            : timeSeconds;
+
+        if (bestScore <= 0 && bestTime <= 0f) return;
+
+        if (IsSupabaseConfigured)
         {
-            StartCoroutine(UploadScoreToSupabaseRoutine(mode, score, timeSeconds, extra));
+            StartCoroutine(UploadScoreToSupabaseRoutine(mode, bestScore, bestTime, extra));
         }
+    }
+
+    /// <summary>
+    /// Giriş yapan oyuncunun cihazdaki tüm mod rekorlarını Supabase skor tablosuyla senkronize eder.
+    /// </summary>
+    public void SyncAllLocalRecordsToSupabase()
+    {
+        if (!IsSupabaseConfigured) return;
+
+        int endlessBest = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
+        if (endlessBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.Endless, endlessBest, 0f, "SONSUZ"));
+
+        int timeAttackBest = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
+        if (timeAttackBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.TimeAttack, timeAttackBest, 0f, ""));
+
+        float bulletHellBest = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
+        if (bulletHellBest > 1f) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.BulletHell, Mathf.RoundToInt(bulletHellBest), bulletHellBest, ""));
+
+        int bossRushBest = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
+        if (bossRushBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.BossRush, bossRushBest, 0f, "BOSS"));
+
+        int hardcoreBest = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
+        if (hardcoreBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.Hardcore, hardcoreBest, 0f, "HARDCORE"));
     }
 
     private bool UpdateLocalRecord(BoardMode mode, int score, float timeSeconds)
@@ -284,20 +334,69 @@ public class LeaderboardManager : MonoBehaviour
     {
         if (!IsSupabaseConfigured) yield break;
 
-        string endpoint = $"{supabaseUrl}/rest/v1/leaderboard";
+        string activePlayer = GetAuthenticatedLeaderboardName();
         string modeKey = GetModeKey(mode);
         string rankTitle = GetPilotRankByScore(mode, score);
         string formatted = FormatScoreText(mode, score, timeSeconds);
 
+        // 1. Öncelik: Sunucu tarafında rekor korumalı ve hesap bağlantılı submit_pilot_score RPC'si
+        string rpcEndpoint = $"{supabaseUrl}/rest/v1/rpc/submit_pilot_score";
+        SubmitScoreRpcPayload rpcPayload = new SubmitScoreRpcPayload
+        {
+            p_username = activePlayer,
+            p_mode = modeKey,
+            p_score = score,
+            p_time_seconds = timeSeconds,
+            p_formatted_score = formatted,
+            p_rank_title = rankTitle,
+            p_extra_info = extra ?? ""
+        };
+
+        bool useFallbackTableUpsert = false;
+        using (UnityWebRequest rpcReq = new UnityWebRequest(rpcEndpoint, "POST"))
+        {
+            byte[] rpcRaw = Encoding.UTF8.GetBytes(JsonUtility.ToJson(rpcPayload));
+            rpcReq.uploadHandler = new UploadHandlerRaw(rpcRaw);
+            rpcReq.downloadHandler = new DownloadHandlerBuffer();
+            rpcReq.timeout = 8;
+
+            rpcReq.SetRequestHeader("apikey", supabaseAnonKey);
+            rpcReq.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
+            rpcReq.SetRequestHeader("Content-Type", "application/json");
+
+            yield return rpcReq.SendWebRequest();
+
+            if (rpcReq.result == UnityWebRequest.Result.Success)
+            {
+                Debug.Log($"[LeaderboardManager] Supabase rekoru başarıyla kaydedildi (RPC): {activePlayer} [{modeKey}] - {formatted}");
+                LeaderboardUI.Instance?.RefreshScores();
+                yield break;
+            }
+            else if (rpcReq.responseCode == 404)
+            {
+                // RPC henüz SQL Editor'de çalıştırılmamışsa doğrudan tablo UPSERT yedeğine geç
+                useFallbackTableUpsert = true;
+            }
+            else
+            {
+                Debug.LogWarning($"[LeaderboardManager] RPC skor yükleme hatası ({rpcReq.responseCode}): {rpcReq.error}");
+                yield break;
+            }
+        }
+
+        if (!useFallbackTableUpsert) yield break;
+
+        // 2. Yedek: Doğrudan leaderboard tablosuna on_conflict=player_name,mode ile UPSERT
+        string endpoint = $"{supabaseUrl}/rest/v1/leaderboard?on_conflict=player_name,mode";
         SupabaseScoreRecord record = new SupabaseScoreRecord
         {
-            player_name = PlayerCallsign,
+            player_name = activePlayer,
             mode = modeKey,
             score = score,
             time_seconds = timeSeconds,
             formatted_score = formatted,
             rank_title = rankTitle,
-            extra_info = extra
+            extra_info = extra ?? ""
         };
 
         string jsonBody = JsonUtility.ToJson(record);
@@ -307,18 +406,19 @@ public class LeaderboardManager : MonoBehaviour
             byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
             req.uploadHandler = new UploadHandlerRaw(bodyRaw);
             req.downloadHandler = new DownloadHandlerBuffer();
-            req.timeout = 5;
+            req.timeout = 8;
 
             req.SetRequestHeader("apikey", supabaseAnonKey);
             req.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
             req.SetRequestHeader("Content-Type", "application/json");
-            req.SetRequestHeader("Prefer", "resolution=merge-duplicates"); // UPSERT: player_name ve mode çakışırsa güncelle!
+            req.SetRequestHeader("Prefer", "resolution=merge-duplicates");
 
             yield return req.SendWebRequest();
 
             if (req.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log($"[LeaderboardManager] Supabase skoru başarıyla yüklendi: {PlayerCallsign} - {formatted}");
+                Debug.Log($"[LeaderboardManager] Supabase skoru başarıyla yüklendi: {activePlayer} - {formatted}");
+                LeaderboardUI.Instance?.RefreshScores();
             }
             else
             {
