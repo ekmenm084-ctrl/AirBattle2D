@@ -815,7 +815,6 @@ public class MainMenuManager : MonoBehaviour
         if (oldLb != null) oldLb.gameObject.SetActive(false);
         Transform oldDiff = mainPanel?.transform.Find("QuickDiffButton");
         if (oldDiff != null) oldDiff.gameObject.SetActive(false);
-        if (modesButton != null) modesButton.gameObject.SetActive(false);
 
         // 1. OYNA (Görsel üzerindeki OYNA kartının üzerine piksel piksel oturan şeffaf etkileşimli buton)
         if (playButton == null && mainPanel != null)
@@ -858,6 +857,16 @@ public class MainMenuManager : MonoBehaviour
             settingsButton = sObj.AddComponent<Button>();
         }
         FormatPixelExactButton(settingsButton, new Vector2(-472.2f, -238.4f), new Vector2(487.4f, 97.8f), new Color(0.50f, 0.60f, 0.72f, 0.16f), new Color(0.50f, 0.60f, 0.72f, 0.35f), OpenSettingsPanel);
+
+        // 5. OYUN MODLARI (Taktiksel Operasyon ve Oyun Modları Menüsü)
+        Transform mModesBtn = mainPanel?.transform.Find("ModesButton") ?? mainPanel?.transform.Find("ModesButon");
+        GameObject mModesObj = mModesBtn != null ? mModesBtn.gameObject : new GameObject("ModesButton", typeof(RectTransform));
+        mModesObj.transform.SetParent(mainPanel.transform, false);
+        mModesObj.SetActive(true);
+        modesButton = mModesObj.GetComponent<Button>() ?? mModesObj.AddComponent<Button>();
+        FormatBtn(modesButton, -358.0f, "<b>OYUN MODLARI</b>\n<size=17><color=#79B2D2>HİKAYE • SONSUZ • BOSS RUSH • 2P</color></size>", new Color(0f, 0.85f, 1f), 487.4f, 85.0f, posX: -472.2f, hudSpriteName: "hud_btn_cyan");
+        modesButton.onClick.RemoveAllListeners();
+        modesButton.onClick.AddListener(OpenModesPanel);
 
         // 5. Profil Tetikleyici Buton (Sol Üst Köşe - Pilot Kimlik Kartı & Hizmet Belgesi Modalı)
         Transform profBtn = mainPanel?.transform.Find("ProfileClickTrigger");
