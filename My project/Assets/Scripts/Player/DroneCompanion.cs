@@ -119,14 +119,6 @@ public class DroneCompanion : MonoBehaviour
             _                         => 1100f
         };
 
-        string resName = System.IO.Path.GetFileNameWithoutExtension(fileName);
-        Sprite resSpr = Resources.Load<Sprite>(resName);
-        if (resSpr != null)
-        {
-            _droneSpriteCache[type] = resSpr;
-            return resSpr;
-        }
-
         string fullPath = System.IO.Path.Combine(Application.dataPath, "Sprites", fileName);
         if (System.IO.File.Exists(fullPath))
         {
@@ -147,6 +139,14 @@ public class DroneCompanion : MonoBehaviour
             {
                 Debug.LogWarning("[DroneCompanion] Gerçek drone görseli yüklenirken hata: " + ex.Message);
             }
+        }
+
+        string resName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+        Sprite resSpr = Resources.Load<Sprite>(resName);
+        if (resSpr != null)
+        {
+            _droneSpriteCache[type] = resSpr;
+            return resSpr;
         }
 
         // 2. Dosya bulunamazsa yedek usulü oluştur
@@ -345,7 +345,7 @@ public class DroneCompanion : MonoBehaviour
 
         Color flameColor = droneType switch
         {
-            DroneType.MK1_Scout       => new Color(0.2f, 0.95f, 0.4f, 0.9f),
+            DroneType.MK1_Scout       => new Color(0.18f, 0.88f, 1f, 0.92f),
             DroneType.MK2_Interceptor => new Color(0.1f, 0.85f, 1f, 0.9f),
             DroneType.MK3_Striker     => new Color(0.95f, 0.25f, 0.2f, 0.9f),
             DroneType.MK4_Missile     => new Color(1f, 0.55f, 0.12f, 0.9f),
@@ -681,7 +681,7 @@ public class DroneCompanion : MonoBehaviour
 
         SpriteRenderer bSr = bolt.AddComponent<SpriteRenderer>();
         bSr.sprite = GetDroneBulletSprite();
-        bSr.color = new Color(0.7f, 1f, 0.7f);
+        bSr.color = new Color(0.35f, 0.92f, 1f);
         bSr.sortingOrder = 7;
         bolt.transform.localScale = Vector3.one * 0.85f;
 
