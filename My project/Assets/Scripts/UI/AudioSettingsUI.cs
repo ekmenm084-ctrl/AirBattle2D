@@ -282,14 +282,14 @@ public class AudioSettingsUI : MonoBehaviour
         // 2. Mermi / Efekt Sesi Satırı: [-]  Slider  [+]
         _sfxSlider = CreateVolumeRow("MERMI VE PATLAMA", 76.5f, 140.0f, isMusic: false, out _sfxValTMP);
 
-        // 3. Uçuş Kontrol Tipi Butonu (1920x1080 exact: x = 739..1564, y = 533..603 -> center = (191.5, -28.0), size = (825, 70))
+        // 3. Uçuş Kontrol Tipi Butonu (Tam ortalanmış: centerX = 2.0f, y = -28.0f)
         GameObject ctrlBtnObj = new GameObject("ControlSchemeButton", typeof(RectTransform));
         ctrlBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform ctrlRt = ctrlBtnObj.GetComponent<RectTransform>();
         ctrlRt.anchorMin = new Vector2(0.5f, 0.5f);
         ctrlRt.anchorMax = new Vector2(0.5f, 0.5f);
         ctrlRt.pivot = new Vector2(0.5f, 0.5f);
-        ctrlRt.anchoredPosition = new Vector2(191.5f, -28.0f);
+        ctrlRt.anchoredPosition = new Vector2(2.0f, -28.0f);
         ctrlRt.sizeDelta = new Vector2(825f, 70f);
 
         _controlBtnBg = ctrlBtnObj.AddComponent<Image>();
@@ -324,14 +324,14 @@ public class AudioSettingsUI : MonoBehaviour
         _controlBtnTMP.extraPadding = true;
         _controlBtnTMP.raycastTarget = false;
 
-        // 4. Mute Butonu (1920x1080 exact: x = 814..1485, y = 646..718 -> center = (189.5, -142.0), size = (671, 72))
+        // 4. Mute Butonu (Tam ortalanmış: centerX = 0f, y = -142.0f)
         GameObject muteBtnObj = new GameObject("MuteButton", typeof(RectTransform));
         muteBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform muteRt = muteBtnObj.GetComponent<RectTransform>();
         muteRt.anchorMin = new Vector2(0.5f, 0.5f);
         muteRt.anchorMax = new Vector2(0.5f, 0.5f);
         muteRt.pivot = new Vector2(0.5f, 0.5f);
-        muteRt.anchoredPosition = new Vector2(189.5f, -142.0f);
+        muteRt.anchoredPosition = new Vector2(0f, -142.0f);
         muteRt.sizeDelta = new Vector2(671f, 72f);
 
         Image muteBg = muteBtnObj.AddComponent<Image>();
@@ -364,23 +364,23 @@ public class AudioSettingsUI : MonoBehaviour
         _muteBtnTMP.extraPadding = true;
         _muteBtnTMP.raycastTarget = false;
 
-        // 5. DEVAM ET BUTONU (1920x1080 exact: x = 814..1485, y = 756..828 -> center = (189.5, -252.0), size = (671, 72))
+        // 5. DEVAM ET BUTONU (Tam ortalanmış: centerX = 0f, y = -252.0f)
         GameObject resumeBtnObj = new GameObject("ResumeButton", typeof(RectTransform));
         resumeBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         Image resumeBg = resumeBtnObj.AddComponent<Image>();
         Button resumeBtn = resumeBtnObj.AddComponent<Button>();
         resumeBtn.targetGraphic = resumeBg;
         resumeBtn.onClick.AddListener(ResumeGame);
-        FormatPausePixelExactButton(resumeBtnObj, new Vector2(189.5f, -252.0f), new Vector2(671f, 72f));
+        FormatPausePixelExactButton(resumeBtnObj, new Vector2(0f, -252.0f), new Vector2(671f, 72f));
 
-        // 6. ANA SAYFAYA DÖN BUTONU (1920x1080 exact: x = 814..1485, y = 864..936 -> center = (189.5, -360.0), size = (671, 72))
+        // 6. ANA SAYFAYA DÖN BUTONU (Tam ortalanmış: centerX = 0f, y = -360.0f)
         GameObject homeBtnObj = new GameObject("HomeButton", typeof(RectTransform));
         homeBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         Image homeBg = homeBtnObj.AddComponent<Image>();
         Button homeBtn = homeBtnObj.AddComponent<Button>();
         homeBtn.targetGraphic = homeBg;
         homeBtn.onClick.AddListener(ReturnToHome);
-        FormatPausePixelExactButton(homeBtnObj, new Vector2(189.5f, -360.0f), new Vector2(671f, 72f));
+        FormatPausePixelExactButton(homeBtnObj, new Vector2(0f, -360.0f), new Vector2(671f, 72f));
 
         settingsPanelObj.SetActive(false);
     }
@@ -417,14 +417,14 @@ public class AudioSettingsUI : MonoBehaviour
 
     private Slider CreateVolumeRow(string label, float barCenterY1080, float valCenterY1080, bool isMusic, out TextMeshProUGUI valueTMP)
     {
-        // Yüzde Metni (%53 / %51) - 1920x1080 exact: x = 1435..1545 -> centerX = +530.0f
+        // Yüzde Metni (%53 / %51) - Tam ortalanmış: centerX = 340.5f
         GameObject valObj = new GameObject(label + "_ValText", typeof(RectTransform));
         valObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform valRt = valObj.GetComponent<RectTransform>();
         valRt.anchorMin = new Vector2(0.5f, 0.5f);
         valRt.anchorMax = new Vector2(0.5f, 0.5f);
         valRt.pivot = new Vector2(0.5f, 0.5f);
-        valRt.anchoredPosition = new Vector2(530.0f, valCenterY1080);
+        valRt.anchoredPosition = new Vector2(340.5f, valCenterY1080);
         valRt.sizeDelta = new Vector2(120f, 50f);
 
         valueTMP = valObj.AddComponent<TextMeshProUGUI>();
@@ -435,30 +435,30 @@ public class AudioSettingsUI : MonoBehaviour
         valueTMP.color = Color.white;
         valueTMP.alignment = TextAlignmentOptions.Center;
 
-        // [-] Butonu (1920x1080 exact: x = 756..812 -> centerX = -176.0f)
+        // [-] Butonu (Tam ortalanmış: centerX = -365.5f)
         GameObject minusBtnObj = new GameObject(label + "_MinusBtn", typeof(RectTransform));
         minusBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         Image minusBg = minusBtnObj.AddComponent<Image>();
         Button minusBtn = minusBtnObj.AddComponent<Button>();
         minusBtn.targetGraphic = minusBg;
-        FormatPausePixelExactButton(minusBtnObj, new Vector2(-176.0f, barCenterY1080), new Vector2(64f, 60f));
+        FormatPausePixelExactButton(minusBtnObj, new Vector2(-365.5f, barCenterY1080), new Vector2(64f, 60f));
 
-        // [+] Butonu (1920x1080 exact: x = 1475..1531 -> centerX = +543.0f)
+        // [+] Butonu (Tam ortalanmış: centerX = +353.5f)
         GameObject plusBtnObj = new GameObject(label + "_PlusBtn", typeof(RectTransform));
         plusBtnObj.transform.SetParent(settingsPanelObj.transform, false);
         Image plusBg = plusBtnObj.AddComponent<Image>();
         Button plusBtn = plusBtnObj.AddComponent<Button>();
         plusBtn.targetGraphic = plusBg;
-        FormatPausePixelExactButton(plusBtnObj, new Vector2(543.0f, barCenterY1080), new Vector2(64f, 60f));
+        FormatPausePixelExactButton(plusBtnObj, new Vector2(353.5f, barCenterY1080), new Vector2(64f, 60f));
 
-        // Ortadaki Kaydırıcı (Slider: x = 894..1392 -> centerX = +183.0f, width = 498, height = 41)
+        // Ortadaki Kaydırıcı (Slider: Tam ortalanmış: centerX = -7.0f)
         GameObject sliderObj = new GameObject(label + "_Slider", typeof(RectTransform));
         sliderObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform sRt = sliderObj.GetComponent<RectTransform>();
         sRt.anchorMin = new Vector2(0.5f, 0.5f);
         sRt.anchorMax = new Vector2(0.5f, 0.5f);
         sRt.pivot = new Vector2(0.5f, 0.5f);
-        sRt.anchoredPosition = new Vector2(183.0f, barCenterY1080);
+        sRt.anchoredPosition = new Vector2(-7.0f, barCenterY1080);
         sRt.sizeDelta = new Vector2(498f, 41f);
 
         Slider slider = sliderObj.AddComponent<Slider>();
