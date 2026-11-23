@@ -28,6 +28,8 @@ public class AudioSettingsUI : MonoBehaviour
     private Image _controlBtnBg;
 
     private bool _isPaused = false;
+    public bool IsPaused => _isPaused;
+    public static bool IsGamePaused => (Instance != null && Instance._isPaused);
 
     private void Awake()
     {
@@ -576,6 +578,8 @@ public class AudioSettingsUI : MonoBehaviour
         {
             UpdateUIValues();
         }
+
+        TouchArrowControls.Instance?.UpdateVisibility();
     }
 
     public void ResumeGame()

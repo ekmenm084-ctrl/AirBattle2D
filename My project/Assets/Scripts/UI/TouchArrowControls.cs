@@ -151,9 +151,13 @@ public class TouchArrowControls : MonoBehaviour
                           (InventoryUI.Instance != null && InventoryUI.Instance.gameObject.activeInHierarchy) ||
                           (DailyOpsUI.Instance != null && DailyOpsUI.Instance.gameObject.activeInHierarchy);
 
+        bool isPaused = AudioSettingsUI.IsGamePaused ||
+                        (AudioSettingsUI.Instance != null && AudioSettingsUI.Instance.settingsPanelObj != null && AudioSettingsUI.Instance.settingsPanelObj.activeInHierarchy) ||
+                        (Time.timeScale <= 0.001f);
+
         bool isArrows = (GameSettings.SelectedControl == GameSettings.ControlType.Arrows);
-        bool shouldShowArrows = isArrows && !isMenuOpen;
-        bool shouldShowJoystick = (!isArrows) && !isMenuOpen;
+        bool shouldShowArrows = isArrows && !isMenuOpen && !isPaused;
+        bool shouldShowJoystick = (!isArrows) && !isMenuOpen && !isPaused;
 
         if (_rootContainer != null)
         {
@@ -244,7 +248,7 @@ public class TouchArrowControls : MonoBehaviour
                 new Vector2(245f, 105f), "btn_arrow_right", isLeft: false);
         }
 
-        _rootContainer.transform.SetAsLastSibling();
+        UpdateVisibility();
     }
 
     private GameObject CreateArrowButton(Transform parent, string name, Vector2 pos, string spriteResName, bool isLeft)
