@@ -36,6 +36,7 @@ public class AudioManager : MonoBehaviour
     private AudioClip _grazeClip;
     private AudioClip _comboTierClip;
     private AudioClip _thunderClip;
+    private AudioClip _buttonClickClip;
 
     private void Awake()
     {
@@ -165,12 +166,12 @@ public class AudioManager : MonoBehaviour
 
         float targetPitch = type switch
         {
-            HangarManager.AircraftType.A10TankBuster => Random.Range(0.72f, 0.82f),
-            HangarManager.AircraftType.F22Raptor     => Random.Range(1.18f, 1.28f),
-            HangarManager.AircraftType.Su57Felon     => Random.Range(0.85f, 0.95f),
-            HangarManager.AircraftType.F35Lightning  => Random.Range(1.08f, 1.18f),
-            HangarManager.AircraftType.KaanApex      => Random.Range(1.02f, 1.12f),
-            _                                        => Random.Range(0.95f, 1.05f)
+            HangarManager.AircraftType.A10TankBuster => Random.Range(0.64f, 0.72f),
+            HangarManager.AircraftType.F22Raptor     => Random.Range(0.92f, 1.00f),
+            HangarManager.AircraftType.Su57Felon     => Random.Range(0.74f, 0.82f),
+            HangarManager.AircraftType.F35Lightning  => Random.Range(0.86f, 0.94f),
+            HangarManager.AircraftType.KaanApex      => Random.Range(0.80f, 0.88f),
+            _                                        => Random.Range(0.82f, 0.90f)
         };
 
         float vol = sfxVolume * (type == HangarManager.AircraftType.A10TankBuster ? 1.05f : (isSalvo ? 0.95f : 0.85f));
@@ -253,24 +254,24 @@ public class AudioManager : MonoBehaviour
 
     public void PlayGraze(int comboCount = 1)
     {
-        float pitchStep = Mathf.Clamp(1.0f + (comboCount * 0.02f), 1.0f, 1.35f);
-        PlaySynthEffect(ref _grazeClip, pitchStep - 0.03f, pitchStep + 0.03f, 0.48f);
+        float pitchStep = Mathf.Clamp(0.85f + (comboCount * 0.015f), 0.85f, 1.08f);
+        PlaySynthEffect(ref _grazeClip, pitchStep - 0.02f, pitchStep + 0.02f, 0.48f);
     }
 
     public void PlayComboTierUp(float multiplier)
     {
-        float pitch = Mathf.Clamp(0.95f + (multiplier - 1f) * 0.12f, 0.95f, 1.28f);
-        PlaySynthEffect(ref _comboTierClip, pitch, pitch + 0.02f, 0.62f);
+        float pitch = Mathf.Clamp(0.85f + (multiplier - 1f) * 0.08f, 0.85f, 1.08f);
+        PlaySynthEffect(ref _comboTierClip, pitch, pitch + 0.02f, 0.65f);
     }
 
     public void PlayThunder()
     {
-        PlaySynthEffect(ref _thunderClip, 0.92f, 1.08f, 0.72f);
+        PlaySynthEffect(ref _thunderClip, 0.82f, 0.96f, 0.78f);
     }
 
     public void PlayButtonClick()
     {
-        PlaySynthEffect(ref _grazeClip, 1.35f, 1.45f, 0.40f);
+        PlaySynthEffect(ref _buttonClickClip, 0.94f, 1.04f, 0.55f);
     }
 
     private void PlaySynthEffect(ref AudioClip clipField, float minPitch, float maxPitch, float volumeScale)
@@ -287,81 +288,105 @@ public class AudioManager : MonoBehaviour
         if (_shieldHitClip != null) return;
 
         const int sr = 22050;
-        _shieldHitClip = BuildSynthClip("SynthShieldHit", sr, 0.14f, (t, n) =>
-        {
-            float freq = Mathf.Lerp(1150f, 420f, n);
-            float env = (1f - n) * (1f - n);
-            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
-        });
 
+        // 1. Tok Mekanik Kokpit Anahtarı Sesi (Buton Tıklaması - Kesinlikle tiz/cızırtısız)
+        _buttonClickClip = BuildSynthClip("SynthButtonClick", sr, 0.055f, (t, n) =>
+        {
+            float freq = Mathf.Lerp(175f, 58f, n);
+            float env = Mathf.Exp(-n * 7.5f) * (1f - Mathf.Exp(-n * 90f));
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.45f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.65f;
+        }, cutoffHz: 420f);
+
+        // 2. Ağır Zırh / Kalkan Darbe Sesi (Derin metalik bas vuruşu)
+        _shieldHitClip = BuildSynthClip("SynthShieldHit", sr, 0.16f, (t, n) =>
+        {
+            float freq = Mathf.Lerp(210f, 64f, n);
+            float env = (1f - n) * (1f - n);
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.4f * Mathf.Sin(3f * Mathf.PI * freq * t)) * env * 0.70f;
+        }, cutoffHz: 380f);
+
+        // 3. İkmal / Ganimet Toplama (Tok hidrolik kilit sesi)
         _lootPickupClip = BuildSynthClip("SynthLoot", sr, 0.16f, (t, n) =>
         {
-            float freq = n < 0.5f ? 660f : 990f;
+            float freq = n < 0.45f ? 146.83f : 220.0f; // D3 -> A3 derin bas aralığı
             float env = Mathf.Sin(Mathf.PI * n);
-            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.5f;
-        });
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.35f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.60f;
+        }, cutoffHz: 460f);
 
+        // 4. Sandık Anahtarı Toplama (Derin askeri akor kilidi)
         _keyPickupClip = BuildSynthClip("SynthKeyLoot", sr, 0.28f, (t, n) =>
         {
-            float freq = (n < 0.33f) ? 587f : (n < 0.66f ? 880f : 1175f);
-            float env = Mathf.Clamp01(1f - n * 0.8f);
-            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
-        });
+            float freq = (n < 0.33f) ? 130.81f : (n < 0.66f ? 164.81f : 196.00f); // C3 -> E3 -> G3 tok bas akor
+            float env = Mathf.Clamp01(1f - n * 0.75f);
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.4f * Mathf.Sin(2f * Mathf.PI * (freq * 0.5f) * t)) * env * 0.65f;
+        }, cutoffHz: 480f);
 
-        _warningAlarmClip = BuildSynthClip("SynthWarning", sr, 0.32f, (t, n) =>
+        // 5. Boss / Tehlike Alarmı (Kaba, sert denizaltı / savaş jeti bas kornası - 135Hz -> 92Hz)
+        _warningAlarmClip = BuildSynthClip("SynthWarning", sr, 0.42f, (t, n) =>
         {
             float half = (n < 0.5f) ? n * 2f : (n - 0.5f) * 2f;
-            float freq = Mathf.Lerp(520f, 840f, half);
+            float freq = Mathf.Lerp(148f, 96f, half);
             float env = Mathf.Sin(Mathf.PI * half);
-            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.35f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.45f;
-        });
+            float raw = Mathf.Sin(2f * Mathf.PI * freq * t) + 0.55f * Mathf.Sin(4f * Mathf.PI * freq * t) + 0.30f * Mathf.Sin(6f * Mathf.PI * freq * t);
+            return (float)System.Math.Tanh(raw * 1.6f) * env * 0.72f;
+        }, cutoffHz: 360f);
 
-        _missileLaunchClip = BuildSynthClip("SynthMissile", sr, 0.22f, (t, n) =>
+        // 6. Füze Ateşleme (Derin roket motoru ateşleme gümbürtüsü)
+        _missileLaunchClip = BuildSynthClip("SynthMissile", sr, 0.26f, (t, n) =>
         {
-            float freq = Mathf.Lerp(260f, 95f, n);
-            float noise = ((Mathf.Sin(t * 9876.5f) * 43758.54f) % 1f) * 2f - 1f;
-            float env = 1f - n;
-            return (Mathf.Sin(2f * Mathf.PI * freq * t) * 0.5f + noise * 0.35f) * env * 0.6f;
-        });
+            float freq = Mathf.Lerp(145f, 48f, n);
+            float rumble = Mathf.Sin(2f * Mathf.PI * freq * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * (freq * 1.45f) * t);
+            float env = Mathf.Pow(1f - n, 1.3f);
+            return (float)System.Math.Tanh(rumble * 1.8f) * env * 0.75f;
+        }, cutoffHz: 340f);
 
-        _synthExplosionClip = BuildSynthClip("SynthExplosion", sr, 0.34f, (t, n) =>
+        // 7. Patlama Sesi (Derin sub-bass şok dalgası)
+        _synthExplosionClip = BuildSynthClip("SynthExplosion", sr, 0.40f, (t, n) =>
         {
-            float noise = ((Mathf.Sin(t * 14231.7f) * 29876.1f) % 1f) * 2f - 1f;
-            float thump = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(110f, 38f, n) * t);
-            float env = Mathf.Pow(1f - n, 1.7f);
-            return (noise * 0.55f + thump * 0.65f) * env * 0.7f;
-        });
+            float thump = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(105f, 30f, n) * t);
+            float sub = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(65f, 24f, n) * t);
+            float env = Mathf.Pow(1f - n, 1.6f);
+            return (float)System.Math.Tanh((thump * 0.85f + sub * 0.75f) * 2.0f) * env * 0.82f;
+        }, cutoffHz: 280f);
 
-        _synthFanfareClip = BuildSynthClip("SynthFanfare", sr, 0.36f, (t, n) =>
+        // 8. Zafer / Ödül Sesi (Derin sinematik pirinç/bas güç akoru)
+        _synthFanfareClip = BuildSynthClip("SynthFanfare", sr, 0.44f, (t, n) =>
         {
-            float freq = (n < 0.33f) ? 523.25f : (n < 0.66f ? 659.25f : 783.99f);
-            float env = Mathf.Clamp01(1f - n * 0.75f);
-            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.55f;
-        });
-
-        _grazeClip = BuildSynthClip("SynthGraze", sr, 0.09f, (t, n) =>
-        {
-            float freq = Mathf.Lerp(1350f, 2250f, n);
-            float env = Mathf.Sin(Mathf.PI * n);
-            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.42f;
-        });
-
-        _comboTierClip = BuildSynthClip("SynthComboTier", sr, 0.20f, (t, n) =>
-        {
-            float freq = n < 0.48f ? 740f : 1108.73f;
+            float freq = (n < 0.30f) ? 110.0f : 146.83f; // A2 -> D3 ağır bas fanfar
             float env = Mathf.Clamp01(1f - n * 0.7f);
-            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.25f * Mathf.Sin(4f * Mathf.PI * freq * t)) * env * 0.45f;
-        });
+            float chord = Mathf.Sin(2f * Mathf.PI * freq * t)
+                        + 0.65f * Mathf.Sin(2f * Mathf.PI * (freq * 0.5f) * t)
+                        + 0.45f * Mathf.Sin(2f * Mathf.PI * (freq * 1.5f) * t);
+            return (float)System.Math.Tanh(chord * 1.3f) * env * 0.68f;
+        }, cutoffHz: 440f);
 
-        _thunderClip = BuildSynthClip("SynthThunder", sr, 0.42f, (t, n) =>
+        // 9. Mermi Sıyrılma / Graze (Tok rüzgar/türbin bas geçişi)
+        _grazeClip = BuildSynthClip("SynthGraze", sr, 0.10f, (t, n) =>
         {
-            float crack = Mathf.Exp(-n * 18f) * (((Mathf.Sin(t * 21345.1f) * 32145.7f) % 1f) * 2f - 1f);
-            float rumble = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(95f, 42f, n) * t) * (1f - n);
-            return (crack * 0.75f + rumble * 0.60f) * 0.8f;
-        });
+            float freq = Mathf.Lerp(180f, 110f, n);
+            float env = Mathf.Sin(Mathf.PI * n);
+            return Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.52f;
+        }, cutoffHz: 360f);
+
+        // 10. Kombo Kademe Yükselişi (Ağır türbin güçlenme sesi)
+        _comboTierClip = BuildSynthClip("SynthComboTier", sr, 0.22f, (t, n) =>
+        {
+            float freq = n < 0.45f ? 130.81f : 174.61f; // C3 -> F3
+            float env = Mathf.Clamp01(1f - n * 0.65f);
+            return (Mathf.Sin(2f * Mathf.PI * freq * t) + 0.5f * Mathf.Sin(2f * Mathf.PI * (freq * 0.5f) * t)) * env * 0.62f;
+        }, cutoffHz: 420f);
+
+        // 11. Gök Gürültüsü (Derin atmosferik sub-bass gürleme)
+        _thunderClip = BuildSynthClip("SynthThunder", sr, 0.50f, (t, n) =>
+        {
+            float rumble = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(82f, 28f, n) * t)
+                         + 0.6f * Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(54f, 22f, n) * t);
+            float env = Mathf.Pow(1f - n, 1.4f);
+            return (float)System.Math.Tanh(rumble * 1.7f) * env * 0.80f;
+        }, cutoffHz: 240f);
     }
 
-    private AudioClip BuildSynthClip(string clipName, int sampleRate, float duration, System.Func<float, float, float> sampleFunc)
+    private AudioClip BuildSynthClip(string clipName, int sampleRate, float duration, System.Func<float, float, float> sampleFunc, float cutoffHz = 450f)
     {
         int totalSamples = Mathf.Max(64, Mathf.RoundToInt(sampleRate * duration));
         float[] data = new float[totalSamples];
@@ -369,8 +394,25 @@ public class AudioManager : MonoBehaviour
         {
             float n = (float)i / totalSamples;
             float t = (float)i / sampleRate;
-            data[i] = Mathf.Clamp(sampleFunc(t, n), -0.95f, 0.95f);
+            // Yumuşak fade-in / fade-out zarfı ile tıklama/cızırtı artefaktlarını tamamen önle
+            float edgeFade = Mathf.Clamp01(i / 48f) * Mathf.Clamp01((totalSamples - 1 - i) / 96f);
+            data[i] = Mathf.Clamp(sampleFunc(t, n) * edgeFade, -0.92f, 0.92f);
         }
+
+        // 3 kademeli Low-Pass filtre ile tüm tiz cızırtıları sil, tok ve sert bas karakteri koru
+        float rc = 1.0f / (2.0f * Mathf.PI * Mathf.Max(80f, cutoffHz));
+        float dt = 1.0f / sampleRate;
+        float alpha = dt / (rc + dt);
+        for (int pass = 0; pass < 3; pass++)
+        {
+            float val = 0f;
+            for (int i = 0; i < totalSamples; i++)
+            {
+                val += alpha * (data[i] - val);
+                data[i] = val;
+            }
+        }
+
         AudioClip clip = AudioClip.Create(clipName, totalSamples, 1, sampleRate, false);
         clip.SetData(data, 0);
         return clip;

@@ -266,6 +266,7 @@ public class RadioChatterManager : MonoBehaviour
         {
             float targetVol = radioVolume * (AudioManager.Instance != null ? AudioManager.Instance.sfxVolume : 0.85f);
             _audioSource.volume = targetVol;
+            _audioSource.pitch = 0.88f; // Daha tok, kaba ve otoriter komutan ses tonu
             _audioSource.clip = tx.clip;
             _audioSource.Play();
         }
