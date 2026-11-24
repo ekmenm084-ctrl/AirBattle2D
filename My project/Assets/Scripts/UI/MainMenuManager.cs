@@ -1452,8 +1452,8 @@ public class MainMenuManager : MonoBehaviour
             _titleObject.SetActive(false); // Arka plan görselindeki orijinal krom AIR BATTLE ve nişangah doğrudan görünsün
         }
 
-        // Ana menüdeyken görsel üzerindeki orijinal pilot rütbesi ve altın barı net kalsın; alt sayfalarda dinamik çubuk açılır
-        PlayerProfileUI.Instance?.HideMenuStatusBar();
+        // Ana menüde de giriş yapan oyuncunun canlı Seviye, EXP Barı ve Altın rozetini büyük ve net olarak göster
+        PlayerProfileUI.EnsureUI()?.ShowMenuStatusBar(showGoldBadge: true);
 
         if (MilitaryStoreUI.Instance != null) MilitaryStoreUI.Instance.CloseDirectly();
         if (HangarUI.Instance != null) HangarUI.Instance.CloseDirectly();
