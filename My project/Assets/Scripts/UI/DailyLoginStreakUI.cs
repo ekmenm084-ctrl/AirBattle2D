@@ -189,7 +189,7 @@ public class DailyLoginStreakUI : MonoBehaviour
 
         if (_statusBannerTMP != null)
         {
-            _statusBannerTMP.text = $"<color=#2ECC71><b>[✓] {targetDay}. GÜN ÖDÜLÜ ENVANTERE EKLENDİ: {reward.title} ({reward.subtitle})!</b></color>";
+            _statusBannerTMP.text = $"<color=#2ECC71><b>[+] {targetDay}. GÜN ÖDÜLÜ ENVANTERE EKLENDİ: {reward.title} ({reward.subtitle})!</b></color>";
         }
     }
 
@@ -245,9 +245,9 @@ public class DailyLoginStreakUI : MonoBehaviour
             if (statusTMP != null)
             {
                 if (isClaimed)
-                    statusTMP.text = "<color=#2ECC71><b>[ ✓ ALINDI ]</b></color>";
+                    statusTMP.text = "<color=#2ECC71><b>[ ALINDI ]</b></color>";
                 else if (isTodayReady)
-                    statusTMP.text = "<color=#00E5FF><b>[ ★ BUGÜN HAZIR ]</b></color>";
+                    statusTMP.text = "<color=#00E5FF><b>[ BUGÜN HAZIR ]</b></color>";
                 else
                     statusTMP.text = $"<color=#64748B><b>[ {dayNum}. GÜN ]</b></color>";
             }
@@ -271,7 +271,7 @@ public class DailyLoginStreakUI : MonoBehaviour
             }
             else
             {
-                _claimBtnTMP.text = "<b>✓ BUGÜNÜN ÖDÜLÜ ALINDI (YARIN TEKRAR GEL)</b>";
+                _claimBtnTMP.text = "<b>BUGÜNÜN ÖDÜLÜ ALINDI (YARIN TEKRAR GEL)</b>";
                 _claimBtnTMP.color = new Color(0.75f, 0.85f, 0.92f, 0.9f);
                 if (cImg != null)
                 {
@@ -402,32 +402,56 @@ public class DailyLoginStreakUI : MonoBehaviour
         _cardBgs.Add(bg);
 
         // Üst Gün Başlığı
-        string dayHeader = isGrandFinale ? "★ 7. GÜN • BÜYÜK FİNAL ÖDÜLÜ ★" : $"{def.day}. GÜN İKMALİ";
+        string dayHeader = isGrandFinale ? "7. GÜN • BÜYÜK FİNAL ÖDÜLÜ" : $"{def.day}. GÜN İKMALİ";
         Color hdrCol = isGrandFinale ? new Color(1f, 0.85f, 0.25f) : new Color(0.58f, 0.72f, 0.84f);
-        CreateText(cardObj.transform, "DayHeader", $"<b>{dayHeader}</b>", new Vector2(0f, size.y * 0.5f - 26f), new Vector2(size.x - 20f, 26f), isGrandFinale ? 18f : 15f, hdrCol, TextAlignmentOptions.Center, 1.2f);
+        CreateText(cardObj.transform, "DayHeader", $"<b>{dayHeader}</b>", new Vector2(0f, size.y * 0.5f - 26f), new Vector2(size.x - 16f, 26f), isGrandFinale ? 17.5f : 15f, hdrCol, TextAlignmentOptions.Center, 1.0f);
 
-        // Orta Ödül Rozeti (Altın veya Sandık Anahtarı İkon Kutusu)
-        GameObject badgeObj = new GameObject("RewardBadge", typeof(RectTransform));
-        badgeObj.transform.SetParent(cardObj.transform, false);
-        RectTransform bRt = badgeObj.GetComponent<RectTransform>();
-        bRt.anchorMin = new Vector2(0.5f, 0.5f);
-        bRt.anchorMax = new Vector2(0.5f, 0.5f);
-        bRt.pivot = new Vector2(0.5f, 0.5f);
-        bRt.anchoredPosition = new Vector2(0f, isGrandFinale ? 28f : 14f);
-        bRt.sizeDelta = isGrandFinale ? new Vector2(160f, 110f) : new Vector2(110f, 52f);
+        // Orta Ödül Görseli / Rozeti (3D Sandık veya Altın Görseli + Etiket)
+        string rewardSpriteName = def.hasKey
+            ? (def.keyType == HangarManager.KeyType.Gold ? "crate_3d_2" : def.keyType == HangarManager.KeyType.Silver ? "crate_3d_1" : "crate_3d_0")
+            : "loot_gold";
+        Sprite iconSp = Resources.Load<Sprite>(rewardSpriteName);
 
-        Image bImg = badgeObj.AddComponent<Image>();
-        bImg.sprite = MainMenuManager.GetRoundedBoxSprite(
-            $"streak_badge_{def.day}",
-            new Color(def.accentColor.r * 0.18f, def.accentColor.g * 0.18f, def.accentColor.b * 0.18f, 0.95f),
-            def.accentColor,
-            10, 1);
-        bImg.type = Image.Type.Sliced;
+        if (iconSp != null)
+        {
+            GameObject iconObj = new GameObject("RewardSpriteIcon", typeof(RectTransform));
+            iconObj.transform.SetParent(cardObj.transform, false);
+            RectTransform iRt = iconObj.GetComponent<RectTransform>();
+            iRt.anchorMin = new Vector2(0.5f, 0.5f);
+            iRt.anchorMax = new Vector2(0.5f, 0.5f);
+            iRt.pivot = new Vector2(0.5f, 0.5f);
+            iRt.anchoredPosition = new Vector2(0f, isGrandFinale ? 36f : 16f);
+            iRt.sizeDelta = isGrandFinale ? new Vector2(150f, 150f) : new Vector2(68f, 68f);
 
-        string badgeSymbol = def.hasKey
-            ? (def.keyType == HangarManager.KeyType.Gold ? "★ ALTIN\nSANDIK" : def.keyType == HangarManager.KeyType.Silver ? "◆ GÜMÜŞ\nSANDIK" : "● BRONZ\nSANDIK")
-            : $"◈ +{def.gold:N0} G";
-        CreateText(badgeObj.transform, "BadgeSymbol", $"<b>{badgeSymbol}</b>", Vector2.zero, bRt.sizeDelta, isGrandFinale ? 24f : 16f, def.accentColor, TextAlignmentOptions.Center, 1.1f);
+            Image iImg = iconObj.AddComponent<Image>();
+            iImg.sprite = iconSp;
+            iImg.preserveAspect = true;
+            iImg.raycastTarget = false;
+        }
+        else
+        {
+            GameObject badgeObj = new GameObject("RewardBadge", typeof(RectTransform));
+            badgeObj.transform.SetParent(cardObj.transform, false);
+            RectTransform bRt = badgeObj.GetComponent<RectTransform>();
+            bRt.anchorMin = new Vector2(0.5f, 0.5f);
+            bRt.anchorMax = new Vector2(0.5f, 0.5f);
+            bRt.pivot = new Vector2(0.5f, 0.5f);
+            bRt.anchoredPosition = new Vector2(0f, isGrandFinale ? 28f : 14f);
+            bRt.sizeDelta = isGrandFinale ? new Vector2(170f, 96f) : new Vector2(124f, 48f);
+
+            Image bImg = badgeObj.AddComponent<Image>();
+            bImg.sprite = MainMenuManager.GetRoundedBoxSprite(
+                $"streak_badge_{def.day}",
+                new Color(def.accentColor.r * 0.18f, def.accentColor.g * 0.18f, def.accentColor.b * 0.18f, 0.95f),
+                def.accentColor,
+                10, 1);
+            bImg.type = Image.Type.Sliced;
+
+            string badgeSymbol = def.hasKey
+                ? (def.keyType == HangarManager.KeyType.Gold ? "ALTIN\nSANDIK" : def.keyType == HangarManager.KeyType.Silver ? "GÜMÜŞ\nSANDIK" : "BRONZ\nSANDIK")
+                : $"+{def.gold:N0} G";
+            CreateText(badgeObj.transform, "BadgeSymbol", $"<b>{badgeSymbol}</b>", Vector2.zero, bRt.sizeDelta, isGrandFinale ? 22f : 16f, def.accentColor, TextAlignmentOptions.Center, 1.1f);
+        }
 
         // Ödül Başlığı ve Alt Başlığı
         CreateText(cardObj.transform, "RewardTitle", $"<b>{def.title}</b>", new Vector2(0f, isGrandFinale ? -68f : -32f), new Vector2(size.x - 16f, 28f), isGrandFinale ? 24f : 18.5f, Color.white, TextAlignmentOptions.Center, 1.0f);
