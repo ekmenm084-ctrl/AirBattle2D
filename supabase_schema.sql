@@ -60,9 +60,16 @@ CREATE TABLE IF NOT EXISTS public.pilot_accounts (
     pilot_level INTEGER DEFAULT 1,
     pilot_exp INTEGER DEFAULT 0,
     gold INTEGER DEFAULT 250,
+    profile_data TEXT DEFAULT '',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     last_login_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Tablo daha önce oluşturulduysa yeni bulut kayıt kolonlarını ekle
+ALTER TABLE public.pilot_accounts
+ADD COLUMN IF NOT EXISTS profile_data TEXT DEFAULT '',
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_pilot_accounts_username_lower
 ON public.pilot_accounts (username_lower);
