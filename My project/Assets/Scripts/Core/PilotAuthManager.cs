@@ -301,6 +301,9 @@ public class PilotAuthManager : MonoBehaviour
         // 2. Mevcut tam durumu buluta yedekle ve skor tablosunu senkronize et
         PushCloudProfileNow();
         LeaderboardManager.EnsureInstance()?.SyncAllLocalRecordsToSupabase();
+
+        // 3. Bugünün 7 Günlük Giriş Ödülü henüz alınmadıysa takvimi otomatik aç
+        try { DailyLoginStreakUI.EnsureUI()?.CheckAndShowAutoPopupOnLogin(); } catch { }
     }
 
     /// <summary>

@@ -209,7 +209,8 @@ public static class ProfileManager
         "AirBattle_EndlessHighScore", "AirBattle_TimeAttackHighScore", "AirBattle_BossRushHighScore", "AirBattle_HardcoreHighScore", "AirBattle_CampaignHighScore",
         "DailyOps_SlotProg_0", "DailyOps_SlotProg_1", "DailyOps_SlotProg_2",
         "DailyOps_SlotClaimed_0", "DailyOps_SlotClaimed_1", "DailyOps_SlotClaimed_2",
-        "DailyOps_Stat_SwarmKills", "DailyOps_Stat_PerfectDodges", "DailyOps_Stat_OverdrivesUsed", "DailyOps_Stat_LootsCollected", "DailyOps_Stat_DailyCompleted"
+        "DailyOps_Stat_SwarmKills", "DailyOps_Stat_PerfectDodges", "DailyOps_Stat_OverdrivesUsed", "DailyOps_Stat_LootsCollected", "DailyOps_Stat_DailyCompleted",
+        "DailyLogin_StreakDay", "DailyLogin_TotalLogins"
     };
 
     private static readonly string[] KNOWN_FLOAT_KEYS = new string[]
@@ -219,7 +220,8 @@ public static class ProfileManager
 
     private static readonly string[] KNOWN_STR_KEYS = new string[]
     {
-        "DailyOps_ActiveDate", "DailyOps_SlotId_0", "DailyOps_SlotId_1", "DailyOps_SlotId_2"
+        "DailyOps_ActiveDate", "DailyOps_SlotId_0", "DailyOps_SlotId_1", "DailyOps_SlotId_2",
+        "DailyLogin_LastClaimDate"
     };
 
     private static void RegisterDynamicKey(string indexBaseKey, string baseKey)

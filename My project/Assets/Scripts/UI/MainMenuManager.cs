@@ -1237,6 +1237,16 @@ public class MainMenuManager : MonoBehaviour
         FormatPixelExactButton(lbTabBtn, new Vector2(850.0f, -421.0f), new Vector2(184.0f, 56.0f), new Color(0f, 0.88f, 1f, 0.18f), new Color(0f, 0.88f, 1f, 0.38f), () => OpenLeaderboardPanel());
         lbTabObj.transform.SetAsLastSibling();
 
+        // ETKİNLİKLER sekmesi butonu -> 7 Günlük Giriş Ödülü Takvimini açar (center = (668.0, -421.0), size = (115.0, 56.0))
+        Transform existingEvTab = mainPanel.transform.Find("EventsTabButton");
+        GameObject evTabObj = existingEvTab != null ? existingEvTab.gameObject : new GameObject("EventsTabButton", typeof(RectTransform));
+        evTabObj.transform.SetParent(mainPanel.transform, false);
+        evTabObj.SetActive(true);
+
+        Button evTabBtn = evTabObj.GetComponent<Button>() ?? evTabObj.AddComponent<Button>();
+        FormatPixelExactButton(evTabBtn, new Vector2(668.0f, -421.0f), new Vector2(115.0f, 56.0f), new Color(1f, 0.82f, 0.22f, 0.18f), new Color(1f, 0.82f, 0.22f, 0.38f), () => DailyLoginStreakUI.EnsureUI()?.OpenCalendarModal());
+        evTabObj.transform.SetAsLastSibling();
+
         // Canlı kırmızı bildirim rozeti (altın madalya simgesinin sağ üstü: 1920x1080 -> (380.5, -450.5), 30x30)
         Transform existingBadge = mainPanel.transform.Find("DailyOpsDynamicBadge");
         _dailyOpsBadgeObj = existingBadge != null ? existingBadge.gameObject : new GameObject("DailyOpsDynamicBadge", typeof(RectTransform));
@@ -1295,10 +1305,11 @@ public class MainMenuManager : MonoBehaviour
         RefreshDailyOpsButtonVisual();
     }
 
-    private void RefreshDailyOpsButtonVisual()
+    public void RefreshDailyOpsButtonVisual()
     {
         int claimable = 0;
         try { claimable = DailyOpsManager.EnsureInstance()?.GetTotalClaimableCount() ?? 0; } catch { }
+        try { if (DailyLoginStreakUI.CanClaimToday()) claimable += 1; } catch { }
 
         if (_dailyOpsBadgeObj != null)
         {
