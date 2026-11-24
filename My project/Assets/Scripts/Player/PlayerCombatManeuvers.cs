@@ -299,6 +299,51 @@ public class PlayerCombatManeuvers : MonoBehaviour
         if (ghost != null) Destroy(ghost);
     }
 
+    public HangarManager.AircraftType GetResolvedAircraftType()
+    {
+        if (_shooter != null) return _shooter.aircraftType;
+        if (HangarManager.Instance != null) return HangarManager.Instance.activeAircraft;
+        return HangarManager.AircraftType.F16Viper;
+    }
+
+    public static void GetUltimateTitleAndSubtitle(HangarManager.AircraftType type, out string title, out string subtitle, out Color themeColor)
+    {
+        switch (type)
+        {
+            case HangarManager.AircraftType.A10TankBuster:
+                title = "30MM CEHENNEM YAĞMURU & TİTANYUM ZIRH";
+                subtitle = "+45 HP ONARIM • +60 KALKAN • 5 NAMLU URANYUM FIRTINASI";
+                themeColor = new Color(1.0f, 0.65f, 0.15f);
+                break;
+            case HangarManager.AircraftType.F22Raptor:
+                title = "HAYALET PUSU & SÜPERSONİK FÜZE SALVOSU";
+                subtitle = "6.5SN TAM GÖRÜNMEZLİK (DOKUNULMAZLIK) • 4x AMRAAM FÜZESİ";
+                themeColor = new Color(0.72f, 0.42f, 1.0f);
+                break;
+            case HangarManager.AircraftType.Su57Felon:
+                title = "KOBRA PLAZMA FIRTINASI & VAMPİRİK SİFON";
+                subtitle = "+35 HP & +45 KALKAN • 6x GÜDÜMLÜ PLAZMA FÜZESİ • 4'LÜ PLAZMA";
+                themeColor = new Color(0.98f, 0.25f, 0.62f);
+                break;
+            case HangarManager.AircraftType.F35Lightning:
+                title = "360° DAS YILDIRIM AĞI & İYON KUBBESİ";
+                subtitle = "270 YILDIRIM HASARI • +85 KALKAN • 6x FÜZE & AKTİF LAZER KUBBESİ";
+                themeColor = new Color(0.15f, 0.95f, 0.60f);
+                break;
+            case HangarManager.AircraftType.KaanApex:
+                title = "MİLLİ GÖKBORA HÂKİMİYETİ (KAAN TF-X)";
+                subtitle = "360 KUANTUM ŞOKU • +60 HP & +120 KALKAN • 8x GÖKDOĞAN FÜZESİ";
+                themeColor = new Color(0.0f, 0.96f, 1.0f);
+                break;
+            case HangarManager.AircraftType.F16Viper:
+            default:
+                title = "ŞAHİN HÜCUMU (VIPER SALVO)";
+                subtitle = "EMP MERMİ TEMİZLİĞİ • 2x AMRAAM FÜZESİ • 3 NAMLU SERİ VULCAN";
+                themeColor = new Color(0.25f, 0.80f, 1.0f);
+                break;
+        }
+    }
+
     /// <summary>
     /// Düşmana mermi isabet ettiğinde, düşman öldüğünde veya sıyrılmada Ulti barına enerji ekler.
     /// </summary>
@@ -311,19 +356,20 @@ public class PlayerCombatManeuvers : MonoBehaviour
         bool wasReady = IsUltiReady;
         currentUlti = Mathf.Clamp(currentUlti + amount, 0f, maxUlti);
 
-        // %100'e ulaştığında görsel ve işitsel bildirim
+        // %100'e ulaştığında uçağa özel görsel ve işitsel bildirim
         if (!wasReady && IsUltiReady)
         {
             AudioManager.Instance?.PlayRewardFanfare();
             CameraShake.Shake(0.2f, 0.3f);
 
+            GetUltimateTitleAndSubtitle(GetResolvedAircraftType(), out string ultiTitle, out _, out Color ultiColor);
             var gameUI = FindObjectOfType<GameUI>();
-            gameUI?.ShowWaveAlert("[ULTİ] SÜPER YETENEK HAZIR! [E] / ULTİ BUTONU\n<color=#FFD54F>GÖKYÜZÜ HAKİMİYETİ İÇİN AKTİF ET!</color>", new Color(1f, 0.88f, 0.2f), 2.2f);
+            gameUI?.ShowWaveAlert($"[ULTİ HAZIR] {ultiTitle}\n<color=#FFD54F>[E] / ULTİ BUTONU İLE AKTİF ET!</color>", ultiColor, 2.3f);
         }
     }
 
     /// <summary>
-    /// Süper Yetenek / Ulti (Gökyüzü Hakimiyeti Overdrive) patlamasını tetikler.
+    /// Uçağa özel aktif Süper Yetenek / Ulti patlamasını tetikler.
     /// </summary>
     public bool TryActivateUltimate()
     {
@@ -338,85 +384,304 @@ public class PlayerCombatManeuvers : MonoBehaviour
         return true;
     }
 
-    private IEnumerator UltimateOverdriveRoutine()
+    private void ClearEnemyBullets(float radius, Color sparkColor)
     {
-        isOverdriveActive = true;
-        overdriveRemaining = overdriveDuration;
-        RadioChatterManager.Instance?.PlayOverdrive();
-
-        // ==============================================================
-        // 1. FAZ: EMP ŞOK DALGASI (TÜM EKRANDAKİ DÜŞMAN MERMİLERİNİ TEMİZLE)
-        // ==============================================================
         var bullets = FindObjectsOfType<Bullet>();
-        int clearedCount = 0;
+        Vector3 myPos = transform.position;
+        float rSq = radius * radius;
         foreach (var b in bullets)
         {
             if (b != null && b.owner != gameObject)
             {
-                VFXManager.SpawnHitSparks(b.transform.position, new Color(0.2f, 0.85f, 1f));
-                Destroy(b.gameObject);
-                clearedCount++;
+                if (radius <= 0f || (b.transform.position - myPos).sqrMagnitude <= rSq)
+                {
+                    VFXManager.SpawnHitSparks(b.transform.position, sparkColor);
+                    Destroy(b.gameObject);
+                }
             }
         }
+    }
 
-        // Tüm aktif düşman uçaklarına ve İHA sürü filolarına EMP şok hasarı (160 Hasar)
+    private void SpawnUltiMissileVolley(int count, float missileDamage, float totalSpreadDeg)
+    {
+        if (count <= 0) return;
+        AudioManager.Instance?.PlayGunfire();
+
+        for (int i = 0; i < count; i++)
+        {
+            float t = (count == 1) ? 0.5f : (float)i / (count - 1);
+            float angleDeg = Mathf.Lerp(-totalSpreadDeg * 0.5f, totalSpreadDeg * 0.5f, t);
+            float xOffset = Mathf.Lerp(-0.55f, 0.55f, t);
+
+            GameObject mObj = new GameObject($"UltiHomingMissile_{i}");
+            mObj.transform.position = transform.position + transform.right * xOffset + transform.up * 0.35f;
+            mObj.transform.rotation = transform.rotation * Quaternion.Euler(0f, 0f, angleDeg);
+
+            HomingMissile hm = mObj.AddComponent<HomingMissile>();
+            hm.owner = gameObject;
+            hm.damage = missileDamage;
+        }
+    }
+
+    private void GrantAircraftUltiSustainment(float healHull, float shieldAmount)
+    {
+        if (healHull > 0f && _health != null && !_health.IsDead)
+        {
+            _health.Heal(healHull);
+        }
+
+        if (shieldAmount > 0f && (_controller == null || _controller.isPlayer1))
+        {
+            PlayerUpgradeManager.Instance?.GrantShield(shieldAmount);
+        }
+    }
+
+    private IEnumerator UltimateOverdriveRoutine()
+    {
+        HangarManager.AircraftType planeType = GetResolvedAircraftType();
+        GetUltimateTitleAndSubtitle(planeType, out string ultiTitle, out string ultiSubtitle, out Color themeColor);
+
+        // Uçağa özel Ulti süresi, alan hasarı, iyileştirme/kalkan ve silah çarpanları
+        float customDuration = 6.0f;
+        float areaBlastDamage = 160f;
+        float duelBlastDamage = 30f;
+        float healHull = 0f;
+        float grantShield = 0f;
+        int initialMissiles = 0;
+        float missileDamage = 65f;
+        float missileSpread = 32f;
+
+        int targetBarrels = 4;
+        float targetFireRate = 0.085f;
+        float damageMultiplier = 1.65f;
+        float speedMultiplier = 1.45f;
+        float invulnerableDuration = 0f;
+        bool stealthShimmer = false;
+        bool periodicMissileWaves = false;
+        float pointDefenseInterval = 0f;
+        float pointDefenseRadius = 0f; // <=0 ise tam ekran, >0 ise kubbe yarıçapı
+        bool delayedSecondMissileWave = false;
+
+        switch (planeType)
+        {
+            case HangarManager.AircraftType.F16Viper:
+                customDuration = 5.5f;
+                areaBlastDamage = 150f;
+                duelBlastDamage = 26f;
+                initialMissiles = 2;
+                missileDamage = 65f;
+                missileSpread = 24f;
+                targetBarrels = 3;
+                targetFireRate = 0.09f;
+                damageMultiplier = 1.55f;
+                speedMultiplier = 1.40f;
+                break;
+
+            case HangarManager.AircraftType.A10TankBuster:
+                customDuration = 6.5f;
+                areaBlastDamage = 200f;
+                duelBlastDamage = 34f;
+                healHull = 45f;
+                grantShield = 60f;
+                targetBarrels = 5;
+                targetFireRate = 0.085f;
+                damageMultiplier = 2.10f;
+                speedMultiplier = 1.25f;
+                invulnerableDuration = 2.5f;
+                break;
+
+            case HangarManager.AircraftType.F22Raptor:
+                customDuration = 6.5f;
+                areaBlastDamage = 190f;
+                duelBlastDamage = 32f;
+                initialMissiles = 4;
+                missileDamage = 75f;
+                missileSpread = 42f;
+                targetBarrels = 4;
+                targetFireRate = 0.08f;
+                damageMultiplier = 1.80f;
+                speedMultiplier = 1.65f;
+                invulnerableDuration = 6.5f; // Süre boyunca tam Hayalet Pusu dokunulmazlığı!
+                stealthShimmer = true;
+                break;
+
+            case HangarManager.AircraftType.Su57Felon:
+                customDuration = 6.5f;
+                areaBlastDamage = 230f;
+                duelBlastDamage = 38f;
+                healHull = 35f;
+                grantShield = 45f;
+                initialMissiles = 2;
+                missileDamage = 80f;
+                missileSpread = 28f;
+                targetBarrels = 4;
+                targetFireRate = 0.075f;
+                damageMultiplier = 1.95f;
+                speedMultiplier = 1.50f;
+                periodicMissileWaves = true; // Aktif fazda 2 ek füze dalgası (toplam 6 plazma füzesi)
+                break;
+
+            case HangarManager.AircraftType.F35Lightning:
+                customDuration = 7.0f;
+                areaBlastDamage = 270f;
+                duelBlastDamage = 44f;
+                grantShield = 85f;
+                initialMissiles = 6;
+                missileDamage = 82f;
+                missileSpread = 65f;
+                targetBarrels = 5;
+                targetFireRate = 0.075f;
+                damageMultiplier = 2.05f;
+                speedMultiplier = 1.50f;
+                pointDefenseInterval = 0.25f;
+                pointDefenseRadius = 3.8f; // 360° DAS Yakın Hava Savunma Kubbesi
+                break;
+
+            case HangarManager.AircraftType.KaanApex:
+                customDuration = 7.5f;
+                areaBlastDamage = 360f;
+                duelBlastDamage = 55f;
+                healHull = 60f;
+                grantShield = 120f;
+                initialMissiles = 4;
+                missileDamage = 90f;
+                missileSpread = 52f;
+                delayedSecondMissileWave = true; // 1.2sn sonra +4 GÖKDOĞAN füzesi daha (toplam 8 füze)
+                targetBarrels = 5;
+                targetFireRate = 0.068f;
+                damageMultiplier = 2.35f;
+                speedMultiplier = 1.60f;
+                invulnerableDuration = 4.0f;
+                pointDefenseInterval = 0.30f;
+                pointDefenseRadius = 0f; // Tam ekran Kuantum Mermi Buharlaştırıcı
+                break;
+        }
+
+        isOverdriveActive = true;
+        overdriveDuration = customDuration;
+        overdriveRemaining = customDuration;
+        RadioChatterManager.Instance?.PlayOverdrive();
+
+        // ==============================================================
+        // 1. FAZ: UÇAĞA ÖZEL ANLIK ŞOK DALGASI, ONARIM/KALKAN & FÜZE SALVOSU
+        // ==============================================================
+        ClearEnemyBullets(0f, themeColor);
+
         var swarms = FindObjectsOfType<SwarmEnemy>();
         foreach (var s in swarms)
         {
             if (s != null)
             {
-                s.TakeDamage(160f, true, s.transform.position);
+                VFXManager.SpawnHitSparks(s.transform.position, themeColor);
+                s.TakeDamage(areaBlastDamage, true, s.transform.position);
             }
         }
 
         var planes = FindObjectsOfType<PlaneHealth>();
         bool isTwoPlayerDuel = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
-        float empPlaneDamage = isTwoPlayerDuel ? 30f : 160f;
+        float finalPlaneDamage = isTwoPlayerDuel ? duelBlastDamage : areaBlastDamage;
 
         foreach (var p in planes)
         {
             if (p != null && p.gameObject != gameObject)
             {
-                VFXManager.SpawnHitSparks(p.transform.position, Color.yellow);
-                p.TakeDamage(empPlaneDamage, true, p.transform.position);
+                VFXManager.SpawnHitSparks(p.transform.position, themeColor);
+                p.TakeDamage(finalPlaneDamage, true, p.transform.position);
             }
+        }
+
+        // Uçağa özel Zırh Onarımı & Enerji Kalkanı yüklemesi
+        GrantAircraftUltiSustainment(healHull, grantShield);
+
+        // Uçağa özel Güdümlü Füze Salvosu
+        if (initialMissiles > 0)
+        {
+            SpawnUltiMissileVolley(initialMissiles, missileDamage, missileSpread);
         }
 
         // Taktik Görsel & Ses Patlaması
         AudioManager.Instance?.PlayExplosion(isBoss: true);
-        CameraShake.Shake(0.65f, 1.8f);
+        CameraShake.Shake(0.65f, 1.85f);
 
-        // Sinematik Kısa Ağır Çekim Etkisi (0.28 saniye)
+        // Sinematik Kısa Ağır Çekim Etkisi (0.26 saniye)
         Time.timeScale = 0.35f;
-        yield return new WaitForSecondsRealtime(0.28f);
+        yield return new WaitForSecondsRealtime(0.26f);
         Time.timeScale = 1.0f;
         Time.fixedDeltaTime = 0.02f;
 
+        string hexColor = ColorUtility.ToHtmlStringRGB(themeColor);
         var gameUI = FindObjectOfType<GameUI>();
-        gameUI?.ShowWaveAlert("[GÖKYÜZÜ HAKİMİYETİ DEVREDE!]\n<color=#00E5FF>EMP TÜM MERMİLERİ SİLDİ!</color> • <color=#FFD54F>4'LÜ SÜPER PLAZMA AŞIRI YÜKLEMESİ</color>", new Color(0f, 0.95f, 1f), 2.8f);
+        gameUI?.ShowWaveAlert($"[{ultiTitle}]\n<color=#{hexColor}>{ultiSubtitle}</color>", themeColor, 2.9f);
 
         // ==============================================================
-        // 2. FAZ: 6 SANİYELİK HİPER AŞIRI YÜKLEME (HYPER OVERDRIVE)
+        // 2. FAZ: UÇAĞA ÖZEL AKTİF GÜÇLENDİRME FAZI
         // ==============================================================
         float originalMoveSpeed = _controller != null ? _controller.moveSpeed : 7f;
         int originalBullets = _shooter != null ? _shooter.bulletsPerShot : 1;
         float originalFireRate = _shooter != null ? _shooter.fireRate : 0.28f;
         float originalDamage = _shooter != null ? _shooter.bulletDamage : 20f;
+        Color originalSrColor = _sr != null ? _sr.color : Color.white;
 
-        if (_controller != null) _controller.moveSpeed *= 1.45f;
+        if (_controller != null) _controller.moveSpeed = originalMoveSpeed * speedMultiplier;
         if (_shooter != null)
         {
-            _shooter.bulletsPerShot = 4;
-            _shooter.fireRate = 0.085f; // Çok seri plazma ateşi
-            _shooter.bulletDamage = originalDamage * 1.6f;
+            _shooter.bulletsPerShot = Mathf.Max(originalBullets, targetBarrels);
+            _shooter.fireRate = Mathf.Min(originalFireRate, targetFireRate);
+            _shooter.bulletDamage = originalDamage * damageMultiplier;
         }
 
-        // Altın Plazma Aurası Oluştur
-        CreateOverdriveAura();
+        CreateOverdriveAura(themeColor);
+
+        float elapsed = 0f;
+        float nextMissileWaveTimer = 1.8f;
+        int extraMissileWavesLeft = periodicMissileWaves ? 2 : 0;
+        bool secondKaanWaveFired = false;
+        float pointDefenseTimer = pointDefenseInterval;
 
         while (overdriveRemaining > 0f)
         {
-            overdriveRemaining -= Time.deltaTime;
+            float dt = Time.deltaTime;
+            overdriveRemaining -= dt;
+            elapsed += dt;
+
+            // Dokunulmazlık (A-10 ilk 2.5sn, KAAN ilk 4.0sn, F-22 tüm 6.5sn)
+            if (_health != null && invulnerableDuration > 0f && !isDodging)
+            {
+                _health.isInvulnerable = (elapsed < invulnerableDuration);
+            }
+
+            // F-22 Raptor Hayalet Pusu yarı saydam kamuflaj dalgalanması
+            if (stealthShimmer && _sr != null)
+            {
+                float alpha = 0.42f + Mathf.Sin(Time.time * 16f) * 0.16f;
+                _sr.color = new Color(0.78f, 0.88f, 1.0f, alpha);
+            }
+
+            // Su-57 Felon periyodik Kobra Plazma Füzesi dalgaları
+            if (extraMissileWavesLeft > 0 && elapsed >= nextMissileWaveTimer)
+            {
+                extraMissileWavesLeft--;
+                nextMissileWaveTimer += 1.8f;
+                SpawnUltiMissileVolley(2, missileDamage, 30f);
+            }
+
+            // KAAN TF-X 2. GÖKDOĞAN füze dalgası (4 füze daha -> toplam 8 füze)
+            if (delayedSecondMissileWave && !secondKaanWaveFired && elapsed >= 1.2f)
+            {
+                secondKaanWaveFired = true;
+                SpawnUltiMissileVolley(4, missileDamage, 64f);
+            }
+
+            // F-35 DAS Lazer Kubbesi & KAAN Kuantum Mermi Buharlaştırıcı
+            if (pointDefenseInterval > 0f)
+            {
+                pointDefenseTimer -= dt;
+                if (pointDefenseTimer <= 0f)
+                {
+                    pointDefenseTimer = pointDefenseInterval;
+                    ClearEnemyBullets(pointDefenseRadius, themeColor);
+                }
+            }
 
             if (_overdriveAuraObj != null)
             {
@@ -437,6 +702,14 @@ public class PlayerCombatManeuvers : MonoBehaviour
             _shooter.fireRate = originalFireRate;
             _shooter.bulletDamage = originalDamage;
         }
+        if (_health != null && !isDodging)
+        {
+            _health.isInvulnerable = false;
+        }
+        if (_sr != null && stealthShimmer)
+        {
+            _sr.color = originalSrColor;
+        }
 
         DestroyOverdriveAura();
 
@@ -445,7 +718,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
         _overdriveCoroutine = null;
     }
 
-    private void CreateOverdriveAura()
+    private void CreateOverdriveAura(Color auraColor)
     {
         if (_overdriveAuraObj != null) Destroy(_overdriveAuraObj);
 
@@ -457,7 +730,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
         if (_sr != null && _sr.sprite != null)
         {
             sr.sprite = _sr.sprite;
-            sr.color = new Color(1f, 0.85f, 0.1f, 0.55f);
+            sr.color = new Color(auraColor.r, auraColor.g, auraColor.b, 0.58f);
             sr.sortingLayerID = _sr.sortingLayerID;
             sr.sortingOrder = _sr.sortingOrder - 1;
         }

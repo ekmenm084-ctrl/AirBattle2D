@@ -1875,7 +1875,7 @@ public class HangarUI : MonoBehaviour
                     speedText = "7.6 Mach (Çift TF34 Ağır Taarruz İtkisi)",
                     weaponText = "30mm GAU-8 Avenger (32 DMG x 1 Namlu • 0.25sn)",
                     ammoText = "Ağır Uranyum Kor-Şarapnel & %10 Kritik Darbe",
-                    perkText = "TİTANYUM KÜVET ZIRH: Alınan tüm hasarı %8 azaltır ve kor mermileri düşmanı sarsar.",
+                    perkText = "ÖZEL ULTİ [30MM CEHENNEM YAĞMURU]: +45 HP Zırh Onarımı, +60 Titanyum Kalkan, 2.5sn Dokunulmazlık ve 5 Namlu Uranyum Fırtınası!",
                     accentColor = new Color(0.25f, 0.65f, 0.40f)
                 };
             case HangarManager.AircraftType.F22Raptor:
@@ -1888,7 +1888,7 @@ public class HangarUI : MonoBehaviour
                     speedText = "9.0 Mach (Süperseyir 2D Vektör İtki)",
                     weaponText = "Çift M61A2 Süpersonik Vulcan (24 x 2 = 48 DMG • 0.22sn)",
                     ammoText = "Mach Şok Dalgalı Buz Mavisi İz & %16 Kritik Darbe",
-                    perkText = "SÜPERSEYİR & HAYALET KALKAN: +25 HP kalkan, çift namlu ateşi ve %25 daha hızlı kaçış.",
+                    perkText = "ÖZEL ULTİ [HAYALET PUSU]: 6.5sn Tam Görünmezlik & Dokunulmazlık, 4x Süpersonik AMRAAM Füzesi ve +%65 Süperseyir Hızı!",
                     accentColor = new Color(0.60f, 0.35f, 0.75f)
                 };
             case HangarManager.AircraftType.Su57Felon:
@@ -1901,7 +1901,7 @@ public class HangarUI : MonoBehaviour
                     speedText = "10.3 Mach (3D Süper-Vektör İtki)",
                     weaponText = "Çift 30mm GSh-30-1 Plazma (33 x 2 = 66 DMG • 0.19sn)",
                     ammoText = "Yakut-Mor Plazma Kor & %22 Yüksek Kritik Darbe",
-                    perkText = "3D VEKTÖR & KRİTİK PLAZMA: +45 HP Kalkan, çift plazma salvosu, %22 kritik ve +%25 hızlı Ulti.",
+                    perkText = "ÖZEL ULTİ [KOBRA PLAZMA FIRTINASI]: Vampirik Sifon (+35 HP & +45 Kalkan), 3 Dalgada 6x Plazma Füzesi ve +%25 Hızlı Ulti!",
                     accentColor = new Color(0.15f, 0.75f, 0.85f)
                 };
             case HangarManager.AircraftType.F35Lightning:
@@ -1914,7 +1914,7 @@ public class HangarUI : MonoBehaviour
                     speedText = "11.4 Mach (Gelişmiş F135 İyon İtkisi)",
                     weaponText = "Üçlü 25mm GAU-22/A (29 x 3 = 87 DMG • 0.17sn)",
                     ammoText = "3'lü Siber Zümrüt & Altın İyon Salvosu (%28 Kritik)",
-                    perkText = "360° DAS & ENERJİ KALKANI: Savaşa +70 HP kalkanla başlar, 3'lü yaylım ateşi ve %30 hızlı füze.",
+                    perkText = "ÖZEL ULTİ [360° DAS YILDIRIM AĞI]: 270 Yıldırım Hasarı, +85 Kalkan, 6x Güdümlü Füze ve Mermileri Buharlaştıran Lazer Kubbesi!",
                     accentColor = new Color(1.0f, 0.65f, 0.15f)
                 };
             case HangarManager.AircraftType.KaanApex:
@@ -1927,7 +1927,7 @@ public class HangarUI : MonoBehaviour
                     speedText = "12.6 Mach (Milli Adaptif Zirve Süpersonik İtki)",
                     weaponText = "Üçlü Milli Kinetik Batarya (38 x 3 = 114 DMG • 0.14sn)",
                     ammoText = "3'lü Turkuaz & Altın Zirve Plazma Salvosu (%35 Kritik)",
-                    perkText = "MİLLİ HAVA HÂKİMİYETİ: +110 HP Kuantum Kalkan, %35 Kritik, +%45 Hızlı Ulti ve Zirve Salvo!",
+                    perkText = "ÖZEL ULTİ [MİLLİ GÖKBORA HÂKİMİYETİ]: 360 Kuantum Şoku, +60 HP & +120 Kalkan, 8x GÖKDOĞAN Füzesi, 4sn Dokunulmazlık & Tam Ekran Mermi Silici!",
                     accentColor = new Color(0.95f, 0.20f, 0.25f)
                 };
             case HangarManager.AircraftType.F16Viper:
@@ -1941,7 +1941,7 @@ public class HangarUI : MonoBehaviour
                     speedText = "6.5 Mach (Standart Başlangıç İtkisi)",
                     weaponText = "Tekli 20mm M61A1 Vulcan (18 DMG x 1 Namlu • 0.30sn)",
                     ammoText = "Standart İzli Mermi (%5 Başlangıç Kritik Şansı)",
-                    perkText = "TEMEL EĞİTİM & DEVRİYE JETİ: 1. seviye başlangıç uçağı; üst kademe uçaklara göre en temel özelliklere sahiptir.",
+                    perkText = "ÖZEL ULTİ [ŞAHİN HÜCUMU]: 150 EMP Şok Dalgası, 2x Güdümlü AMRAAM Füzesi ve 5.5sn 3 Namlu Seri Vulcan Taarruzu!",
                     accentColor = new Color(0.25f, 0.55f, 0.85f)
                 };
         }
