@@ -127,7 +127,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Lütfen geçerli bir kullanıcı adı girin!');
     END IF;
 
-    SELECT id, username, password_hash, pilot_level, gold
+    SELECT id, username, password_hash, pilot_level, gold, COALESCE(profile_data, '') AS profile_data
     INTO v_acc
     FROM public.pilot_accounts
     WHERE username_lower = v_lower;
@@ -149,7 +149,8 @@ BEGIN
         'id', v_acc.id::text,
         'username', v_acc.username,
         'pilot_level', v_acc.pilot_level,
-        'gold', v_acc.gold
+        'gold', v_acc.gold,
+        'profile_data', v_acc.profile_data
     );
 END;
 $$;
@@ -157,6 +158,86 @@ $$;
 -- 9. Anonim ve Giriş Yapmış İstemcilere RPC Çalıştırma İzni
 GRANT EXECUTE ON FUNCTION public.register_pilot(TEXT, TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.login_pilot(TEXT, TEXT) TO anon, authenticated;
+
+-- ====================================================================
+-- 9B. TAM BULUT KAYIT SENKRONİZASYONU (HANGAR, ALTIN, SEVİYE, ENVANTER)
+-- ====================================================================
+ALTER TABLE public.pilot_accounts
+ADD COLUMN IF NOT EXISTS profile_data TEXT DEFAULT '',
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
+-- Oyuncunun tüm profil, hangar, altın, İHA, parça ve görev verilerini buluta kaydeden RPC
+CREATE OR REPLACE FUNCTION public.save_pilot_cloud_data(
+    p_username TEXT,
+    p_pilot_level INTEGER,
+    p_pilot_exp INTEGER,
+    p_gold INTEGER,
+    p_profile_data TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    v_lower TEXT;
+BEGIN
+    v_lower := lower(trim(COALESCE(p_username, '')));
+    IF length(v_lower) < 1 THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Geçersiz kullanıcı adı');
+    END IF;
+
+    UPDATE public.pilot_accounts
+    SET pilot_level  = GREATEST(COALESCE(pilot_level, 1), COALESCE(p_pilot_level, 1)),
+        pilot_exp    = COALESCE(p_pilot_exp, pilot_exp, 0),
+        gold         = COALESCE(p_gold, gold, 250),
+        profile_data = COALESCE(p_profile_data, profile_data, ''),
+        updated_at   = NOW()
+    WHERE username_lower = v_lower;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Hesap bulunamadı');
+    END IF;
+
+    RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- Oyuncunun buluttaki tam profil verisini çeken RPC
+CREATE OR REPLACE FUNCTION public.load_pilot_cloud_data(p_username TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, extensions
+AS $$
+DECLARE
+    v_lower TEXT;
+    v_acc RECORD;
+BEGIN
+    v_lower := lower(trim(COALESCE(p_username, '')));
+    SELECT username, pilot_level, pilot_exp, gold, COALESCE(profile_data, '') AS profile_data
+    INTO v_acc
+    FROM public.pilot_accounts
+    WHERE username_lower = v_lower
+    LIMIT 1;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Hesap bulunamadı');
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'username', v_acc.username,
+        'pilot_level', v_acc.pilot_level,
+        'pilot_exp', v_acc.pilot_exp,
+        'gold', v_acc.gold,
+        'profile_data', v_acc.profile_data
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.save_pilot_cloud_data(TEXT, INTEGER, INTEGER, INTEGER, TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.load_pilot_cloud_data(TEXT) TO anon, authenticated;
 
 -- ====================================================================
 -- 10. KAYITLI KULLANICI REKORLARINI SKOR TABLOSUNA GÜVENLİ AKTARMA

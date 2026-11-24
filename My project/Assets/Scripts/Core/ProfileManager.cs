@@ -173,6 +173,73 @@ public static class ProfileManager
     // PROFİLE ÖZEL PLAYERPREFS YARDIMCILARI
     // ==========================================
 
+    private const string CLOUD_IDX_INT = "_CloudIdx_I";
+    private const string CLOUD_IDX_FLOAT = "_CloudIdx_F";
+    private const string CLOUD_IDX_STR = "_CloudIdx_S";
+    private static bool _isImportingCloud = false;
+
+    [Serializable]
+    public class CloudIntEntry { public string k; public int v; }
+    [Serializable]
+    public class CloudFloatEntry { public string k; public float v; }
+    [Serializable]
+    public class CloudStringEntry { public string k; public string v; }
+
+    [Serializable]
+    public class CloudProfileSnapshot
+    {
+        public int version = 1;
+        public long updatedUnix;
+        public List<CloudIntEntry> ints = new List<CloudIntEntry>();
+        public List<CloudFloatEntry> floats = new List<CloudFloatEntry>();
+        public List<CloudStringEntry> strings = new List<CloudStringEntry>();
+    }
+
+    private static readonly string[] KNOWN_INT_KEYS = new string[]
+    {
+        "AirBattle_Pilot_Level", "AirBattle_Pilot_Exp",
+        "AirBattle_Total_Kills", "AirBattle_Total_Bosses", "AirBattle_Total_Waves",
+        "AirBattle_Gold", "AirBattle_ActivePlane", "AirBattle_ActiveAircraft",
+        "AirBattle_Unlocked_A10", "AirBattle_Unlocked_F22", "AirBattle_Unlocked_Su57", "AirBattle_Unlocked_F35", "AirBattle_Unlocked_Kaan",
+        "AirBattle_Unl_A10", "AirBattle_Unl_F22", "AirBattle_Unl_SU57", "AirBattle_Unl_F35", "AirBattle_Unl_KAAN",
+        "AirBattle_Lvl_Armor", "AirBattle_Lvl_Damage", "AirBattle_Lvl_Speed", "AirBattle_Lvl_Crit",
+        "AirBattle_Key_Bronze", "AirBattle_Key_Silver", "AirBattle_Key_Gold",
+        "AirBattle_SingleUse_SuperPlanes", "AirBattle_Chip_Bonus_Dmg", "AirBattle_Chip_Bonus_Hp", "AirBattle_Total_Crates",
+        "AirBattle_Drone_Left", "AirBattle_Drone_Right", "AirBattle_Drone_Priority_V3",
+        "AirBattle_EndlessHighScore", "AirBattle_TimeAttackHighScore", "AirBattle_BossRushHighScore", "AirBattle_HardcoreHighScore", "AirBattle_CampaignHighScore",
+        "DailyOps_SlotProg_0", "DailyOps_SlotProg_1", "DailyOps_SlotProg_2",
+        "DailyOps_SlotClaimed_0", "DailyOps_SlotClaimed_1", "DailyOps_SlotClaimed_2",
+        "DailyOps_Stat_SwarmKills", "DailyOps_Stat_PerfectDodges", "DailyOps_Stat_OverdrivesUsed", "DailyOps_Stat_LootsCollected", "DailyOps_Stat_DailyCompleted"
+    };
+
+    private static readonly string[] KNOWN_FLOAT_KEYS = new string[]
+    {
+        "AirBattle_BulletHellBestTime"
+    };
+
+    private static readonly string[] KNOWN_STR_KEYS = new string[]
+    {
+        "DailyOps_ActiveDate", "DailyOps_SlotId_0", "DailyOps_SlotId_1", "DailyOps_SlotId_2"
+    };
+
+    private static void RegisterDynamicKey(string indexBaseKey, string baseKey)
+    {
+        if (string.IsNullOrEmpty(baseKey) || baseKey.StartsWith("_CloudIdx_")) return;
+        string idxFullKey = GetPrefKey(indexBaseKey);
+        string raw = PlayerPrefs.GetString(idxFullKey, "");
+        if (string.IsNullOrEmpty(raw))
+        {
+            PlayerPrefs.SetString(idxFullKey, baseKey);
+            return;
+        }
+        string[] parts = raw.Split('|');
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (parts[i] == baseKey) return;
+        }
+        PlayerPrefs.SetString(idxFullKey, raw + "|" + baseKey);
+    }
+
     public static int GetInt(string baseKey, int defaultValue = 0)
     {
         return PlayerPrefs.GetInt(GetPrefKey(baseKey), defaultValue);
@@ -181,6 +248,8 @@ public static class ProfileManager
     public static void SetInt(string baseKey, int value)
     {
         PlayerPrefs.SetInt(GetPrefKey(baseKey), value);
+        RegisterDynamicKey(CLOUD_IDX_INT, baseKey);
+        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
     }
 
     public static float GetFloat(string baseKey, float defaultValue = 0f)
@@ -191,6 +260,8 @@ public static class ProfileManager
     public static void SetFloat(string baseKey, float value)
     {
         PlayerPrefs.SetFloat(GetPrefKey(baseKey), value);
+        RegisterDynamicKey(CLOUD_IDX_FLOAT, baseKey);
+        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
     }
 
     public static string GetString(string baseKey, string defaultValue = "")
@@ -201,6 +272,8 @@ public static class ProfileManager
     public static void SetString(string baseKey, string value)
     {
         PlayerPrefs.SetString(GetPrefKey(baseKey), value);
+        RegisterDynamicKey(CLOUD_IDX_STR, baseKey);
+        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
     }
 
     public static bool HasKey(string baseKey)
@@ -216,6 +289,204 @@ public static class ProfileManager
     public static void Save()
     {
         PlayerPrefs.Save();
+        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
+    }
+
+    /// <summary>
+    /// Aktif pilotun tüm ilerlemesini (Seviye, EXP, Altın, Uçaklar, İHA'lar, Parçalar, Sandık Anahtarları, Görevler ve Rekorlar)
+    /// tek bir JSON paketine dönüştürür.
+    /// </summary>
+    public static string ExportCloudSnapshotJson()
+    {
+        try
+        {
+            HangarManager.Instance?.SaveHangarData();
+            PlayerProfileManager.Instance?.SaveProfile();
+        }
+        catch { }
+
+        CloudProfileSnapshot snap = new CloudProfileSnapshot
+        {
+            version = 1,
+            updatedUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+        };
+
+        HashSet<string> intKeys = new HashSet<string>(KNOWN_INT_KEYS);
+        HashSet<string> floatKeys = new HashSet<string>(KNOWN_FLOAT_KEYS);
+        HashSet<string> strKeys = new HashSet<string>(KNOWN_STR_KEYS);
+
+        // İHA / Dron anahtarlarını ekle (0..12)
+        for (int i = 0; i <= 12; i++)
+        {
+            intKeys.Add("AirBattle_Drone_Unl_" + i);
+            intKeys.Add("AirBattle_Drone_Deaths_" + i);
+            floatKeys.Add("AirBattle_Drone_HP_" + i);
+        }
+
+        // Uçak kuşanılmış parça slotlarını ekle (0..10 uçak x 0..6 kategori)
+        for (int p = 0; p <= 10; p++)
+        {
+            for (int c = 0; c <= 6; c++)
+            {
+                strKeys.Add($"AirBattle_Equipped_{p}_{c}");
+            }
+        }
+
+        // Dinamik kaydedilmiş tüm anahtarları indekslerden topla (Parçalar, Madalyalar vb.)
+        AddIndexedKeys(CLOUD_IDX_INT, intKeys);
+        AddIndexedKeys(CLOUD_IDX_FLOAT, floatKeys);
+        AddIndexedKeys(CLOUD_IDX_STR, strKeys);
+
+        foreach (string k in intKeys)
+        {
+            if (HasKey(k))
+                snap.ints.Add(new CloudIntEntry { k = k, v = GetInt(k, 0) });
+        }
+
+        foreach (string k in floatKeys)
+        {
+            if (HasKey(k))
+                snap.floats.Add(new CloudFloatEntry { k = k, v = GetFloat(k, 0f) });
+        }
+
+        foreach (string k in strKeys)
+        {
+            if (HasKey(k))
+                snap.strings.Add(new CloudStringEntry { k = k, v = GetString(k, "") });
+        }
+
+        return JsonUtility.ToJson(snap);
+    }
+
+    private static void AddIndexedKeys(string indexBaseKey, HashSet<string> targetSet)
+    {
+        string raw = PlayerPrefs.GetString(GetPrefKey(indexBaseKey), "");
+        if (string.IsNullOrEmpty(raw)) return;
+        string[] parts = raw.Split('|');
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (!string.IsNullOrEmpty(parts[i]))
+                targetSet.Add(parts[i]);
+        }
+    }
+
+    /// <summary>
+    /// Buluttan gelen JSON profil paketini aktif pilota güvenli birleştirme (merge) ile uygular ve tüm oyun sistemlerini tazeler.
+    /// </summary>
+    public static bool ImportCloudSnapshotJson(string json)
+    {
+        if (string.IsNullOrEmpty(json) || !json.Contains("\"ints\"")) return false;
+
+        CloudProfileSnapshot snap = null;
+        try
+        {
+            snap = JsonUtility.FromJson<CloudProfileSnapshot>(json);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[ProfileManager] Bulut verisi ayrıştırılamadı: {ex.Message}");
+            return false;
+        }
+
+        if (snap == null) return false;
+
+        _isImportingCloud = true;
+        try
+        {
+            if (snap.ints != null)
+            {
+                foreach (var entry in snap.ints)
+                {
+                    if (string.IsNullOrEmpty(entry.k)) continue;
+                    if (IsMonotonicMaxKey(entry.k) && HasKey(entry.k))
+                    {
+                        int localVal = GetInt(entry.k, 0);
+                        SetInt(entry.k, Mathf.Max(localVal, entry.v));
+                    }
+                    else
+                    {
+                        SetInt(entry.k, entry.v);
+                    }
+                }
+            }
+
+            if (snap.floats != null)
+            {
+                foreach (var entry in snap.floats)
+                {
+                    if (string.IsNullOrEmpty(entry.k)) continue;
+                    if (IsMonotonicMaxKey(entry.k) && HasKey(entry.k))
+                    {
+                        float localVal = GetFloat(entry.k, 0f);
+                        SetFloat(entry.k, Mathf.Max(localVal, entry.v));
+                    }
+                    else
+                    {
+                        SetFloat(entry.k, entry.v);
+                    }
+                }
+            }
+
+            if (snap.strings != null)
+            {
+                foreach (var entry in snap.strings)
+                {
+                    if (string.IsNullOrEmpty(entry.k)) continue;
+                    if (!string.IsNullOrEmpty(entry.v) || !HasKey(entry.k))
+                    {
+                        SetString(entry.k, entry.v ?? "");
+                    }
+                }
+            }
+
+            PlayerPrefs.Save();
+        }
+        finally
+        {
+            _isImportingCloud = false;
+        }
+
+        // Tüm oyun yöneticilerini ve UI panellerini yeni bulut verisiyle tazele
+        ReloadActiveProfileManagersAndUI();
+        return true;
+    }
+
+    private static bool IsMonotonicMaxKey(string k)
+    {
+        return k.Contains("HighScore")
+            || k.Contains("BestTime")
+            || k.Contains("Unlocked_")
+            || k.Contains("_Unl_")
+            || k.Contains("MedalTier_")
+            || k.Contains("Total_")
+            || k == "AirBattle_Pilot_Level";
+    }
+
+    public static void ReloadActiveProfileManagersAndUI()
+    {
+        try
+        {
+            PlayerProfileManager.EnsureInstance()?.LoadProfile();
+            HangarManager.EnsureInstance()?.LoadHangarData();
+            MilitaryStoreManager.Instance?.NotifyStoreDataChanged();
+            DailyOpsManager.EnsureInstance()?.LoadOrRefreshDailyRotation();
+            LeaderboardManager.EnsureInstance()?.SyncPlayerCampaignHistory();
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"[ProfileManager] Yöneticiler tazelenirken uyarı: {ex.Message}");
+        }
+
+        try
+        {
+            PlayerProfileUI.Instance?.RefreshBadgeVisuals();
+            HangarUI.Instance?.RefreshAllVisuals();
+            MilitaryStoreUI.Instance?.RefreshAllVisuals();
+            LeaderboardUI.Instance?.RefreshScores();
+            DailyOpsUI.Instance?.RefreshAll();
+            TouchArrowControls.Instance?.UpdateVisibility();
+        }
+        catch { }
     }
 
     // ==========================================
