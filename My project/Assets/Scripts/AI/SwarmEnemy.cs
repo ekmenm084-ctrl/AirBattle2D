@@ -82,7 +82,7 @@ public class SwarmEnemy : MonoBehaviour
         _baseX = transform.position.x;
         _kamikazePhase = 0;
 
-        float scale = 0.72f;
+        float scale = 0.86f;
         float hpMul = 1f;
         Color defaultTint = new Color(1f, 0.35f, 0.35f, 1f);
 
@@ -92,7 +92,7 @@ public class SwarmEnemy : MonoBehaviour
                 canShoot = false;
                 _shotsRemaining = 0;
                 hpMul = 0.85f;
-                scale = 0.68f;
+                scale = 0.81f;
                 defaultTint = new Color(1f, 0.45f, 0.12f, 1f);
                 break;
 
@@ -100,7 +100,7 @@ public class SwarmEnemy : MonoBehaviour
                 canShoot = true;
                 _shotsRemaining = 2;
                 hpMul = 2.15f;
-                scale = 0.94f;
+                scale = 1.12f;
                 bulletDamage = 12f;
                 defaultTint = new Color(0.28f, 0.78f, 1f, 1f);
                 break;
@@ -109,7 +109,7 @@ public class SwarmEnemy : MonoBehaviour
                 canShoot = true;
                 _shotsRemaining = 2;
                 hpMul = 1.55f;
-                scale = 0.88f;
+                scale = 1.05f;
                 moveSpeed *= 0.72f;
                 bulletDamage = 18f;
                 bulletSpeed = 5.6f;

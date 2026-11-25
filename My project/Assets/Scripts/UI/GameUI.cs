@@ -525,8 +525,8 @@ public class GameUI : MonoBehaviour
         rt.anchorMin = new Vector2(1f, 1f);
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-66f, -14f);
-        rt.sizeDelta = new Vector2(185f, 34f);
+        rt.anchoredPosition = new Vector2(-108f, -18f);
+        rt.sizeDelta = new Vector2(227f, 42f);
 
         Image bg = EnsureComponent<Image>(_goldHUDObj);
         bg.color = new Color(0.06f, 0.09f, 0.15f, 0.90f);
@@ -544,7 +544,7 @@ public class GameUI : MonoBehaviour
 
         _goldHUDTMP = EnsureComponent<TextMeshProUGUI>(textObj);
 
-        _goldHUDTMP.fontSize = 20f;
+        _goldHUDTMP.fontSize = 24f;
         _goldHUDTMP.fontStyle = FontStyles.Bold;
         _goldHUDTMP.alignment = TextAlignmentOptions.Center;
         _goldHUDTMP.color = new Color(1f, 0.88f, 0.25f);
@@ -566,8 +566,8 @@ public class GameUI : MonoBehaviour
                 rt.anchorMin = new Vector2(1f, 1f);
                 rt.anchorMax = new Vector2(1f, 1f);
                 rt.pivot = new Vector2(1f, 1f);
-                rt.anchoredPosition = new Vector2(-66f, -14f);
-                rt.sizeDelta = new Vector2(185f, 34f);
+                rt.anchoredPosition = new Vector2(-108f, -18f);
+                rt.sizeDelta = new Vector2(227f, 42f);
             }
         }
 

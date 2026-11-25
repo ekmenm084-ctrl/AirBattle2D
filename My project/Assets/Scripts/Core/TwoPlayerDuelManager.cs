@@ -134,8 +134,8 @@ public class TwoPlayerDuelManager : MonoBehaviour
         if (maneuvers == null)
             maneuvers = ph.gameObject.AddComponent<PlayerCombatManeuvers>();
 
-        // 4. Başlangıç pozisyonları, ideal çevik ölçek ve renk tonları
-        ph.transform.localScale = new Vector3(0.72f, 0.72f, 1f);
+        // 4. Başlangıç pozisyonları, bir kademe büyütülmüş ideal ölçek ve renk tonları
+        ph.transform.localScale = new Vector3(0.86f, 0.86f, 1f);
         if (isPlayer1)
         {
             ph.transform.position = new Vector3(0f, -3.8f, 0f);

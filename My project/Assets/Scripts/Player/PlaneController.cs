@@ -36,7 +36,7 @@ public class PlaneController : MonoBehaviour
         _rb.gravityScale = 0f;
         _rb.linearDamping = 2f;
         _rb.constraints = RigidbodyConstraints2D.FreezePositionY | RigidbodyConstraints2D.FreezeRotation;
-        transform.localScale = new Vector3(0.72f, 0.72f, 1f);
+        transform.localScale = new Vector3(0.86f, 0.86f, 1f);
     }
 
     private void Start()
@@ -53,8 +53,8 @@ public class PlaneController : MonoBehaviour
         {
             float vertExtent = Camera.main.orthographicSize;
             float horzExtent = vertExtent * (float)Screen.width / Screen.height;
-            minX = -horzExtent + 0.8f;
-            maxX = horzExtent - 0.8f;
+            minX = -horzExtent + 0.92f;
+            maxX = horzExtent - 0.92f;
         }
 
         if (isPlayer1)

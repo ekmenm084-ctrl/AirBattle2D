@@ -1573,8 +1573,8 @@ public class HangarManager : MonoBehaviour
             MissileLauncherButton.Instance.cooldownDuration = baseStats.missileCooldown;
         }
 
-        // Uçak ölçeğini tablet ekranı ve it dalaşı için ideal çevik boyuta ayarla
-        pc.transform.localScale = new Vector3(0.72f, 0.72f, 1f);
+        // Uçak ölçeğini savaş alanı için bir kademe büyütülmüş ideal boyuta ayarla
+        pc.transform.localScale = new Vector3(0.86f, 0.86f, 1f);
 
         if (sr != null)
         {

@@ -64,8 +64,8 @@ public class DroneCompanion : MonoBehaviour
 
         if (currentHealth <= 0f) currentHealth = maxHealth;
 
-        // Sol kanat (-1.18f, -0.16f), Sağ kanat (+1.18f, -0.16f) - Uçak 0.72 ölçeğiyle kusursuz kanat mesafesi
-        _offset = new Vector3(isLeftWing ? -1.18f : 1.18f, -0.16f, 0f);
+        // Sol kanat (-1.34f, -0.16f), Sağ kanat (+1.34f, -0.16f) - Uçak 0.86 ölçeğiyle kusursuz kanat mesafesi
+        _offset = new Vector3(isLeftWing ? -1.34f : 1.34f, -0.16f, 0f);
 
         CreateProceduralDroneVisual();
         CreateThrusterVisual();

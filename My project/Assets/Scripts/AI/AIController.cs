@@ -258,12 +258,12 @@ public class AIController : MonoBehaviour
 
         float baseModelScale = currentModel switch
         {
-            EnemyJetModel.MiG29_Fulcrum   => 0.72f,
-            EnemyJetModel.Su35_Flanker    => 0.80f,
-            EnemyJetModel.Tu22_Bomber     => 0.94f,
-            EnemyJetModel.S37_Berkut      => 0.76f,
-            EnemyJetModel.J20_Dreadnought => 1.15f,
-            _                             => 0.75f
+            EnemyJetModel.MiG29_Fulcrum   => 0.86f,
+            EnemyJetModel.Su35_Flanker    => 0.95f,
+            EnemyJetModel.Tu22_Bomber     => 1.12f,
+            EnemyJetModel.S37_Berkut      => 0.91f,
+            EnemyJetModel.J20_Dreadnought => 1.34f,
+            _                             => 0.90f
         };
         transform.localScale = Vector3.one * (isBoss ? baseModelScale * 1.32f : baseModelScale);
 

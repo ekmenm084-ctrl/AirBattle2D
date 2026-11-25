@@ -155,13 +155,13 @@ public class AudioSettingsUI : MonoBehaviour
 
         soundButtonObj.SetActive(true);
 
-        // İkon boyutunu ve konumunu en köşeye şık ve kompakt olarak ayarla
+        // İkon boyutunu bir kademe büyüt ve sağ üst köşeden biraz daha sola kaydır
         RectTransform rt = soundButtonObj.GetComponent<RectTransform>();
         rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
         rt.anchorMax = new Vector2(1f, 1f);
         rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-12f, -12f);
-        rt.sizeDelta = new Vector2(44f, 44f);
+        rt.anchoredPosition = new Vector2(-42f, -12f);
+        rt.sizeDelta = new Vector2(54f, 54f);
 
         Image btnBg = soundButtonObj.GetComponent<Image>();
         if (btnBg == null) btnBg = soundButtonObj.AddComponent<Image>();

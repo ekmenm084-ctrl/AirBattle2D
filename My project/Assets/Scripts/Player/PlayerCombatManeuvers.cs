@@ -188,6 +188,8 @@ public class PlayerCombatManeuvers : MonoBehaviour
         bool hadNearMiss = false;
 
         Quaternion baseRot = transform.rotation;
+        if (transform.localScale.x > 0.5f)
+            _originalScale = new Vector3(transform.localScale.y, transform.localScale.y, transform.localScale.z);
         Vector3 baseScale = _originalScale;
 
         while (elapsed < dodgeDuration)
