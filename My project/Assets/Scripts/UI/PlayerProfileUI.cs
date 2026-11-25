@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -32,9 +34,15 @@ public class PlayerProfileUI : MonoBehaviour
 
     // Detaylı Askeri Pilot Dosyası (Modal)
     private GameObject _dossierModal;
+    private RectTransform _dossierCardRt;
     private TextMeshProUGUI _dossierStatsTMP;
     private TextMeshProUGUI _dossierRankTMP;
     private TextMeshProUGUI _dossierPerksTMP;
+
+    private static readonly CultureInfo TrCulture = CultureInfo.GetCultureInfo("tr-TR");
+    private static Sprite _cachedJetHeaderSprite;
+    private static Sprite _cachedInnerChamferFrameSprite;
+    private static readonly Dictionary<string, Sprite> _dossierSpriteCache = new Dictionary<string, Sprite>();
 
     private void Awake()
     {
@@ -596,13 +604,15 @@ public class PlayerProfileUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Detaylı Askeri Pilot Kimlik Kartı & Hizmet Belgesi Penceresi
+    /// Detaylı Pilot Hizmet Belgesi Penceresi (1:1 Modern Taktik Kart Tasarımı)
     /// </summary>
     public void OpenDossierModal()
     {
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
+
+        AudioManager.Instance?.PlayButtonClick();
 
         if (_dossierModal == null)
         {
@@ -622,96 +632,161 @@ public class PlayerProfileUI : MonoBehaviour
 
     private void BuildDossierModal(Transform parent)
     {
+        // 1. Tam Ekran Kök Konteyner ve Arka Plan Karartma Katmanı (Dışarı tıklanınca kapatır, kart içine tıklanınca kapanmaz)
         _dossierModal = new GameObject("PilotDossierModal", typeof(RectTransform));
         _dossierModal.transform.SetParent(parent, false);
+        RectTransform modalRt = _dossierModal.GetComponent<RectTransform>();
+        MainMenuManager.MakeFullScreenRect(modalRt);
 
-        RectTransform mRt = _dossierModal.GetComponent<RectTransform>();
-        mRt.anchorMin = new Vector2(0.5f, 0.5f);
-        mRt.anchorMax = new Vector2(0.5f, 0.5f);
-        mRt.pivot = new Vector2(0.5f, 0.5f);
-        mRt.anchoredPosition = Vector2.zero;
-        mRt.sizeDelta = new Vector2(880f, 680f);
+        GameObject dimmerObj = new GameObject("BackdropDimmer", typeof(RectTransform));
+        dimmerObj.transform.SetParent(_dossierModal.transform, false);
+        MainMenuManager.MakeFullScreenRect(dimmerObj.GetComponent<RectTransform>());
 
-        Image bg = _dossierModal.AddComponent<Image>();
-        bg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.03f, 0.06f, 0.12f, 0.96f), false);
-        bg.type = Image.Type.Sliced;
-        bg.color = Color.white;
+        Image dimmerImg = dimmerObj.AddComponent<Image>();
+        dimmerImg.color = new Color(0.03f, 0.05f, 0.09f, 0.68f);
+        dimmerImg.raycastTarget = true;
 
-        // Üst Başlık Visor Plate
-        GameObject visorObj = new GameObject("HeaderVisor", typeof(RectTransform));
-        visorObj.transform.SetParent(_dossierModal.transform, false);
-        RectTransform vRt = visorObj.GetComponent<RectTransform>();
-        vRt.anchorMin = new Vector2(0f, 1f);
-        vRt.anchorMax = new Vector2(1f, 1f);
-        vRt.pivot = new Vector2(0.5f, 1f);
-        vRt.anchoredPosition = new Vector2(0f, -14f);
-        vRt.sizeDelta = new Vector2(840f, 52f);
+        Button backdropCloseBtn = dimmerObj.AddComponent<Button>();
+        backdropCloseBtn.transition = Selectable.Transition.None;
+        backdropCloseBtn.onClick.AddListener(() =>
+        {
+            AudioManager.Instance?.PlayButtonClick();
+            CloseDossierModal();
+        });
 
-        Image vImg = visorObj.AddComponent<Image>();
-        vImg.sprite = MainMenuManager.GetHudSprite("hud_header_visor", new Color(0f, 0.85f, 1f, 0.9f), new Color(0.04f, 0.10f, 0.18f, 1f), true);
-        vImg.type = Image.Type.Sliced;
-        vImg.color = Color.white;
+        // 2. Ana Taktik Kart Gövdesi (900 x 696)
+        GameObject cardObj = new GameObject("DossierCard", typeof(RectTransform));
+        cardObj.transform.SetParent(_dossierModal.transform, false);
+        _dossierCardRt = cardObj.GetComponent<RectTransform>();
+        _dossierCardRt.anchorMin = new Vector2(0.5f, 0.5f);
+        _dossierCardRt.anchorMax = new Vector2(0.5f, 0.5f);
+        _dossierCardRt.pivot = new Vector2(0.5f, 0.5f);
+        _dossierCardRt.anchoredPosition = Vector2.zero;
+        _dossierCardRt.sizeDelta = new Vector2(900f, 696f);
 
-        GameObject tObj = new GameObject("Title", typeof(RectTransform));
-        tObj.transform.SetParent(visorObj.transform, false);
-        RectTransform tRt = tObj.GetComponent<RectTransform>();
-        tRt.anchorMin = Vector2.zero;
-        tRt.anchorMax = Vector2.one;
-        tRt.offsetMin = Vector2.zero;
-        tRt.offsetMax = Vector2.zero;
+        Image cardBg = cardObj.AddComponent<Image>();
+        cardBg.sprite = GetRoundedPanelSprite(
+            "dossier_outer_card",
+            new Color(0.067f, 0.094f, 0.129f, 0.985f),   // #111821 koyu arduvaz-lacivert gövde
+            new Color(0.294f, 0.482f, 0.624f, 0.92f),    // #4B7B9F ince çelik-mavi dış çerçeve
+            radius: 18f,
+            borderThickness: 2.0f
+        );
+        cardBg.type = Image.Type.Sliced;
+        cardBg.color = Color.white;
+        cardBg.raycastTarget = true;
 
-        TextMeshProUGUI tTMP = tObj.AddComponent<TextMeshProUGUI>();
+        // Alt köşelerde ince 45° pahlı (chamfered) iç dekoratif çerçeve çizgisi
+        GameObject innerFrameObj = new GameObject("InnerChamferAccent", typeof(RectTransform));
+        innerFrameObj.transform.SetParent(cardObj.transform, false);
+        RectTransform ifRt = innerFrameObj.GetComponent<RectTransform>();
+        ifRt.anchorMin = Vector2.zero;
+        ifRt.anchorMax = Vector2.one;
+        ifRt.offsetMin = new Vector2(7f, 7f);
+        ifRt.offsetMax = new Vector2(-7f, -7f);
+
+        Image ifImg = innerFrameObj.AddComponent<Image>();
+        ifImg.sprite = GetInnerBottomChamferFrameSprite();
+        ifImg.type = Image.Type.Sliced;
+        ifImg.color = new Color(0.32f, 0.48f, 0.62f, 0.38f);
+        ifImg.raycastTarget = false;
+
+        // 3. Üst Başlık Satırı: [Jet Silüeti İkonu] PİLOT HİZMET BELGESİ
+        GameObject headerRow = new GameObject("HeaderRow", typeof(RectTransform));
+        headerRow.transform.SetParent(cardObj.transform, false);
+        RectTransform hrRt = headerRow.GetComponent<RectTransform>();
+        hrRt.anchorMin = new Vector2(0.5f, 1f);
+        hrRt.anchorMax = new Vector2(0.5f, 1f);
+        hrRt.pivot = new Vector2(0.5f, 1f);
+        hrRt.anchoredPosition = new Vector2(0f, -24f);
+        hrRt.sizeDelta = new Vector2(420f, 38f);
+
+        GameObject jetIconObj = new GameObject("JetIcon", typeof(RectTransform));
+        jetIconObj.transform.SetParent(headerRow.transform, false);
+        RectTransform jiRt = jetIconObj.GetComponent<RectTransform>();
+        jiRt.anchorMin = new Vector2(0.5f, 0.5f);
+        jiRt.anchorMax = new Vector2(0.5f, 0.5f);
+        jiRt.pivot = new Vector2(0.5f, 0.5f);
+        jiRt.anchoredPosition = new Vector2(-163f, 1f);
+        jiRt.sizeDelta = new Vector2(28f, 28f);
+
+        Image jiImg = jetIconObj.AddComponent<Image>();
+        jiImg.sprite = GetFighterJetHeaderSprite();
+        jiImg.color = new Color(0.55f, 0.65f, 0.76f, 0.95f); // #8CA6C2 çelik gri-mavi jet ikonu
+        jiImg.raycastTarget = false;
+
+        GameObject titleObj = new GameObject("TitleText", typeof(RectTransform));
+        titleObj.transform.SetParent(headerRow.transform, false);
+        RectTransform tRt = titleObj.GetComponent<RectTransform>();
+        tRt.anchorMin = new Vector2(0.5f, 0.5f);
+        tRt.anchorMax = new Vector2(0.5f, 0.5f);
+        tRt.pivot = new Vector2(0f, 0.5f);
+        tRt.anchoredPosition = new Vector2(-137f, 0f);
+        tRt.sizeDelta = new Vector2(340f, 36f);
+
+        TextMeshProUGUI tTMP = titleObj.AddComponent<TextMeshProUGUI>();
         tTMP.font = MainMenuManager.GetTacticalFont();
-        tTMP.text = "DEFCON // HAVA KUVVETLERİ ASKERİ PİLOT HİZMET BELGESİ";
-        tTMP.fontSize = 20f;
-        tTMP.fontStyle = FontStyles.Bold;
+        tTMP.text = "PİLOT HİZMET BELGESİ";
+        tTMP.fontSize = 23.5f;
+        tTMP.fontStyle = FontStyles.Normal;
         tTMP.characterSpacing = 2.0f;
-        tTMP.alignment = TextAlignmentOptions.Center;
-        tTMP.color = Color.white;
+        tTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        tTMP.color = new Color(0.86f, 0.90f, 0.95f, 1f);
+        tTMP.raycastTarget = false;
 
-        // Rütbe ve Seviye Alanı
+        // 4. Pilot & Rütbe Üst Bilgi Kutusu (824 x 114)
+        Color innerBoxFill = new Color(0.114f, 0.149f, 0.192f, 0.98f);   // #1D2631 mat koyu arduvaz
+        Color innerBoxBorder = new Color(0.176f, 0.224f, 0.282f, 0.80f); // #2D3948 ince iç kenarlık
+        Sprite innerBoxSprite = GetRoundedPanelSprite("dossier_inner_box", innerBoxFill, innerBoxBorder, radius: 12f, borderThickness: 1.2f);
+
         GameObject rObj = new GameObject("RankArea", typeof(RectTransform));
-        rObj.transform.SetParent(_dossierModal.transform, false);
+        rObj.transform.SetParent(cardObj.transform, false);
         RectTransform rRt = rObj.GetComponent<RectTransform>();
-        rRt.anchorMin = new Vector2(0.04f, 0.73f);
-        rRt.anchorMax = new Vector2(0.96f, 0.89f);
-        rRt.offsetMin = Vector2.zero;
-        rRt.offsetMax = Vector2.zero;
+        rRt.anchorMin = new Vector2(0.5f, 1f);
+        rRt.anchorMax = new Vector2(0.5f, 1f);
+        rRt.pivot = new Vector2(0.5f, 1f);
+        rRt.anchoredPosition = new Vector2(0f, -78f);
+        rRt.sizeDelta = new Vector2(824f, 114f);
 
         Image rBg = rObj.AddComponent<Image>();
-        rBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(1f, 0.85f, 0.2f, 0.85f), new Color(0.05f, 0.10f, 0.16f, 0.95f), false);
+        rBg.sprite = innerBoxSprite;
         rBg.type = Image.Type.Sliced;
         rBg.color = Color.white;
+        rBg.raycastTarget = false;
 
         GameObject rTxtObj = new GameObject("Text", typeof(RectTransform));
         rTxtObj.transform.SetParent(rObj.transform, false);
         RectTransform rtRt = rTxtObj.GetComponent<RectTransform>();
         rtRt.anchorMin = Vector2.zero;
         rtRt.anchorMax = Vector2.one;
-        rtRt.offsetMin = Vector2.zero;
-        rtRt.offsetMax = Vector2.zero;
+        rtRt.offsetMin = new Vector2(20f, 8f);
+        rtRt.offsetMax = new Vector2(-20f, -8f);
 
         _dossierRankTMP = rTxtObj.AddComponent<TextMeshProUGUI>();
         _dossierRankTMP.font = MainMenuManager.GetTacticalFont();
-        _dossierRankTMP.fontSize = 21f;
+        _dossierRankTMP.fontSize = 25.5f;
         _dossierRankTMP.fontStyle = FontStyles.Bold;
-        _dossierRankTMP.characterSpacing = 1.6f;
+        _dossierRankTMP.characterSpacing = 1.0f;
+        _dossierRankTMP.lineSpacing = 8f;
         _dossierRankTMP.alignment = TextAlignmentOptions.Center;
         _dossierRankTMP.color = Color.white;
+        _dossierRankTMP.raycastTarget = false;
 
-        // Savaş İstatistikleri Kutusu (Sol)
+        // 5. Sol İstatistik Kartı: SAVAŞ KAYITLARI (398 x 350)
         GameObject sObj = new GameObject("StatsBox", typeof(RectTransform));
-        sObj.transform.SetParent(_dossierModal.transform, false);
+        sObj.transform.SetParent(cardObj.transform, false);
         RectTransform sRt = sObj.GetComponent<RectTransform>();
-        sRt.anchorMin = new Vector2(0.04f, 0.20f);
-        sRt.anchorMax = new Vector2(0.485f, 0.70f);
-        sRt.offsetMin = Vector2.zero;
-        sRt.offsetMax = Vector2.zero;
+        sRt.anchorMin = new Vector2(0.5f, 1f);
+        sRt.anchorMax = new Vector2(0.5f, 1f);
+        sRt.pivot = new Vector2(0.5f, 1f);
+        sRt.anchoredPosition = new Vector2(-213f, -218f);
+        sRt.sizeDelta = new Vector2(398f, 350f);
 
         Image sBg = sObj.AddComponent<Image>();
-        sBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.7f), new Color(0.03f, 0.07f, 0.12f, 0.92f), false);
+        sBg.sprite = innerBoxSprite;
         sBg.type = Image.Type.Sliced;
         sBg.color = Color.white;
+        sBg.raycastTarget = false;
 
         GameObject sTxtObj = new GameObject("Text", typeof(RectTransform));
         sTxtObj.transform.SetParent(sObj.transform, false);
@@ -723,26 +798,29 @@ public class PlayerProfileUI : MonoBehaviour
 
         _dossierStatsTMP = sTxtObj.AddComponent<TextMeshProUGUI>();
         _dossierStatsTMP.font = MainMenuManager.GetTacticalFont();
-        _dossierStatsTMP.fontSize = 20f;
-        _dossierStatsTMP.characterSpacing = 1.3f;
-        _dossierStatsTMP.lineSpacing = 6f;
-        _dossierStatsTMP.alignment = TextAlignmentOptions.MidlineLeft;
-        _dossierStatsTMP.margin = new Vector4(20f, 15f, 15f, 15f);
-        _dossierStatsTMP.color = new Color(0.88f, 0.94f, 1f);
+        _dossierStatsTMP.fontSize = 20.5f;
+        _dossierStatsTMP.characterSpacing = 0.8f;
+        _dossierStatsTMP.lineSpacing = 10f;
+        _dossierStatsTMP.alignment = TextAlignmentOptions.TopLeft;
+        _dossierStatsTMP.margin = new Vector4(34f, 68f, 22f, 24f);
+        _dossierStatsTMP.color = new Color(0.84f, 0.89f, 0.94f, 1f);
+        _dossierStatsTMP.raycastTarget = false;
 
-        // İHA ve Seviye Bonusları Kutusu (Sağ)
+        // 6. Sağ Bonus Kartı: KADEME BONUSLARI (398 x 350)
         GameObject pObj = new GameObject("PerksBox", typeof(RectTransform));
-        pObj.transform.SetParent(_dossierModal.transform, false);
+        pObj.transform.SetParent(cardObj.transform, false);
         RectTransform pRt = pObj.GetComponent<RectTransform>();
-        pRt.anchorMin = new Vector2(0.515f, 0.20f);
-        pRt.anchorMax = new Vector2(0.96f, 0.70f);
-        pRt.offsetMin = Vector2.zero;
-        pRt.offsetMax = Vector2.zero;
+        pRt.anchorMin = new Vector2(0.5f, 1f);
+        pRt.anchorMax = new Vector2(0.5f, 1f);
+        pRt.pivot = new Vector2(0.5f, 1f);
+        pRt.anchoredPosition = new Vector2(213f, -218f);
+        pRt.sizeDelta = new Vector2(398f, 350f);
 
         Image pBg = pObj.AddComponent<Image>();
-        pBg.sprite = MainMenuManager.GetHudSprite("hud_panel_frame", new Color(0f, 0.85f, 1f, 0.7f), new Color(0.03f, 0.07f, 0.12f, 0.92f), false);
+        pBg.sprite = innerBoxSprite;
         pBg.type = Image.Type.Sliced;
         pBg.color = Color.white;
+        pBg.raycastTarget = false;
 
         GameObject pTxtObj = new GameObject("Text", typeof(RectTransform));
         pTxtObj.transform.SetParent(pObj.transform, false);
@@ -754,133 +832,137 @@ public class PlayerProfileUI : MonoBehaviour
 
         _dossierPerksTMP = pTxtObj.AddComponent<TextMeshProUGUI>();
         _dossierPerksTMP.font = MainMenuManager.GetTacticalFont();
-        _dossierPerksTMP.fontSize = 20f;
-        _dossierPerksTMP.characterSpacing = 1.3f;
-        _dossierPerksTMP.lineSpacing = 5f;
-        _dossierPerksTMP.alignment = TextAlignmentOptions.MidlineLeft;
-        _dossierPerksTMP.margin = new Vector4(20f, 15f, 15f, 15f);
-        _dossierPerksTMP.color = new Color(0.88f, 0.94f, 1f);
+        _dossierPerksTMP.fontSize = 20.5f;
+        _dossierPerksTMP.characterSpacing = 0.8f;
+        _dossierPerksTMP.lineSpacing = 10f;
+        _dossierPerksTMP.alignment = TextAlignmentOptions.TopLeft;
+        _dossierPerksTMP.margin = new Vector4(34f, 68f, 22f, 24f);
+        _dossierPerksTMP.color = new Color(0.84f, 0.89f, 0.94f, 1f);
+        _dossierPerksTMP.raycastTarget = false;
 
-        // 1. Profil Değiştir Butonu (Sol)
-        GameObject switchProfObj = new GameObject("SwitchProfileBtn", typeof(RectTransform));
-        switchProfObj.transform.SetParent(_dossierModal.transform, false);
-        RectTransform enRt = switchProfObj.GetComponent<RectTransform>();
-        enRt.anchorMin = new Vector2(0.04f, 0.04f);
-        enRt.anchorMax = new Vector2(0.39f, 0.14f);
-        enRt.offsetMin = Vector2.zero;
-        enRt.offsetMax = Vector2.zero;
-
-        Image enImg = switchProfObj.AddComponent<Image>();
-        enImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), true);
-        enImg.type = Image.Type.Sliced;
-        enImg.color = Color.white;
-
-        Button enBtn = switchProfObj.AddComponent<Button>();
-        enBtn.onClick.AddListener(() =>
-        {
-            AudioManager.Instance?.PlayButtonClick();
-            CloseDossierModal();
-            PilotLoginUI.EnsureUI()?.OpenProfileSwitchModal(() =>
+        // 7. Alt Taktik Pahlı (Chamfered) Üçlü Buton Grubu (824px genişlik hizalı: 312 + 24 + 252 + 24 + 212)
+        CreateDossierChamferButton(
+            cardObj.transform,
+            "SwitchProfileBtn",
+            "PROFİL DEĞİŞTİR",
+            new Vector2(-256f, -598f),
+            new Vector2(312f, 62f),
+            fillColor: new Color(0.118f, 0.176f, 0.239f, 1f),      // #1E2D3D çelik mavi-gri iç dolgu
+            borderColor: new Color(0.306f, 0.482f, 0.620f, 0.96f), // #4E7B9E mavi çerçeve
+            innerLineColor: new Color(0.20f, 0.31f, 0.41f, 0.65f),
+            textColor: new Color(0.79f, 0.86f, 0.92f, 1f),         // #C9DBE8
+            onClick: () =>
             {
-                RefreshBadgeVisuals();
-                UpdateDossierContent();
-            });
-        });
+                AudioManager.Instance?.PlayButtonClick();
+                CloseDossierModal();
+                PilotLoginUI.EnsureUI()?.OpenProfileSwitchModal(() =>
+                {
+                    RefreshBadgeVisuals();
+                    UpdateDossierContent();
+                });
+            }
+        );
 
-        GameObject enTxtObj = new GameObject("Text", typeof(RectTransform));
-        enTxtObj.transform.SetParent(switchProfObj.transform, false);
-        RectTransform entRt = enTxtObj.GetComponent<RectTransform>();
-        entRt.anchorMin = Vector2.zero;
-        entRt.anchorMax = Vector2.one;
-        entRt.offsetMin = Vector2.zero;
-        entRt.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI enTMP = enTxtObj.AddComponent<TextMeshProUGUI>();
-        enTMP.font = MainMenuManager.GetTacticalFont();
-        enTMP.text = "PROFİL DEĞİŞTİR";
-        enTMP.fontSize = 18.5f;
-        enTMP.fontStyle = FontStyles.Bold;
-        enTMP.characterSpacing = 1.4f;
-        enTMP.alignment = TextAlignmentOptions.Center;
-        enTMP.color = Color.white;
-
-        // 2. Oturumu / Profili Kapat Butonu (Orta)
-        GameObject logoutObj = new GameObject("LogoutProfileBtn", typeof(RectTransform));
-        logoutObj.transform.SetParent(_dossierModal.transform, false);
-        RectTransform loRt = logoutObj.GetComponent<RectTransform>();
-        loRt.anchorMin = new Vector2(0.41f, 0.04f);
-        loRt.anchorMax = new Vector2(0.69f, 0.14f);
-        loRt.offsetMin = Vector2.zero;
-        loRt.offsetMax = Vector2.zero;
-
-        Image loImg = logoutObj.AddComponent<Image>();
-        loImg.sprite = MainMenuManager.GetHudSprite("hud_btn_logout_amber", new Color(1f, 0.55f, 0.18f, 1f), new Color(0.24f, 0.10f, 0.04f, 1f), true);
-        loImg.type = Image.Type.Sliced;
-        loImg.color = Color.white;
-
-        Button loBtn = logoutObj.AddComponent<Button>();
-        loBtn.onClick.AddListener(() =>
-        {
-            AudioManager.Instance?.PlayButtonClick();
-            PilotAuthManager.EnsureInstance().Logout();
-            CloseDossierModal();
-            PilotLoginUI.EnsureUI()?.OpenLoginModal(() =>
+        CreateDossierChamferButton(
+            cardObj.transform,
+            "LogoutProfileBtn",
+            "ÇIKIŞ YAP",
+            new Vector2(50f, -598f),
+            new Vector2(252f, 62f),
+            fillColor: new Color(0.353f, 0.243f, 0.200f, 1f),      // #5A3E33 sıcak bronz-bakır iç dolgu
+            borderColor: new Color(0.675f, 0.471f, 0.341f, 0.96f), // #AC7857 kehribar-bakır çerçeve
+            innerLineColor: new Color(0.47f, 0.33f, 0.26f, 0.65f),
+            textColor: new Color(0.93f, 0.80f, 0.62f, 1f),         // #EDCC9E
+            onClick: () =>
             {
-                RefreshBadgeVisuals();
-                UpdateDossierContent();
-            }, isMandatoryFirstTime: true);
-        });
+                AudioManager.Instance?.PlayButtonClick();
+                PilotAuthManager.EnsureInstance().Logout();
+                CloseDossierModal();
+                PilotLoginUI.EnsureUI()?.OpenLoginModal(() =>
+                {
+                    RefreshBadgeVisuals();
+                    UpdateDossierContent();
+                }, isMandatoryFirstTime: true);
+            }
+        );
 
-        GameObject loTxtObj = new GameObject("Text", typeof(RectTransform));
-        loTxtObj.transform.SetParent(logoutObj.transform, false);
-        RectTransform lotRt = loTxtObj.GetComponent<RectTransform>();
-        lotRt.anchorMin = Vector2.zero;
-        lotRt.anchorMax = Vector2.one;
-        lotRt.offsetMin = Vector2.zero;
-        lotRt.offsetMax = Vector2.zero;
+        CreateDossierChamferButton(
+            cardObj.transform,
+            "CloseBtn",
+            "KAPAT",
+            new Vector2(306f, -598f),
+            new Vector2(212f, 62f),
+            fillColor: new Color(0.141f, 0.075f, 0.094f, 1f),      // #241318 koyu bordo-antrasit iç dolgu
+            borderColor: new Color(0.573f, 0.176f, 0.208f, 0.96f), // #922D35 kırmızı çerçeve
+            innerLineColor: new Color(0.34f, 0.12f, 0.15f, 0.65f),
+            textColor: new Color(0.89f, 0.33f, 0.36f, 1f),         // #E3545C
+            onClick: () =>
+            {
+                AudioManager.Instance?.PlayButtonClick();
+                CloseDossierModal();
+            }
+        );
+    }
 
-        TextMeshProUGUI loTMP = loTxtObj.AddComponent<TextMeshProUGUI>();
-        loTMP.font = MainMenuManager.GetTacticalFont();
-        loTMP.text = "ÇIKIŞ YAP";
-        loTMP.fontSize = 18f;
-        loTMP.fontStyle = FontStyles.Bold;
-        loTMP.characterSpacing = 1.4f;
-        loTMP.alignment = TextAlignmentOptions.Center;
-        loTMP.color = new Color(1f, 0.92f, 0.80f, 1f);
+    private Button CreateDossierChamferButton(
+        Transform parent,
+        string name,
+        string label,
+        Vector2 topAnchoredPos,
+        Vector2 size,
+        Color fillColor,
+        Color borderColor,
+        Color innerLineColor,
+        Color textColor,
+        UnityEngine.Events.UnityAction onClick)
+    {
+        GameObject btnObj = new GameObject(name, typeof(RectTransform));
+        btnObj.transform.SetParent(parent, false);
 
-        // 3. Kapat Butonu (Sağ)
-        GameObject closeObj = new GameObject("CloseBtn", typeof(RectTransform));
-        closeObj.transform.SetParent(_dossierModal.transform, false);
-        RectTransform cRt = closeObj.GetComponent<RectTransform>();
-        cRt.anchorMin = new Vector2(0.71f, 0.04f);
-        cRt.anchorMax = new Vector2(0.96f, 0.14f);
-        cRt.offsetMin = Vector2.zero;
-        cRt.offsetMax = Vector2.zero;
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = topAnchoredPos;
+        rt.sizeDelta = size;
 
-        Image cImg = closeObj.AddComponent<Image>();
-        cImg.sprite = MainMenuManager.GetHudSprite("hud_btn_red", new Color(1f, 0.35f, 0.35f, 1f), new Color(0.24f, 0.05f, 0.05f, 1f), true);
-        cImg.type = Image.Type.Sliced;
-        cImg.color = Color.white;
+        Image img = btnObj.AddComponent<Image>();
+        img.sprite = GetChamferButtonSprite($"dossier_chamfer_{name}", fillColor, borderColor, innerLineColor);
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
 
-        Button cBtn = closeObj.AddComponent<Button>();
-        cBtn.onClick.AddListener(CloseDossierModal);
+        Button btn = btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+        ColorBlock cb = btn.colors;
+        cb.normalColor = Color.white;
+        cb.highlightedColor = new Color(1.12f, 1.12f, 1.12f, 1f);
+        cb.pressedColor = new Color(0.86f, 0.86f, 0.86f, 1f);
+        cb.selectedColor = Color.white;
+        cb.fadeDuration = 0.08f;
+        btn.colors = cb;
 
-        GameObject cTxtObj = new GameObject("Text", typeof(RectTransform));
-        cTxtObj.transform.SetParent(closeObj.transform, false);
-        RectTransform ctRt = cTxtObj.GetComponent<RectTransform>();
-        ctRt.anchorMin = Vector2.zero;
-        ctRt.anchorMax = Vector2.one;
-        ctRt.offsetMin = Vector2.zero;
-        ctRt.offsetMax = Vector2.zero;
+        if (onClick != null)
+            btn.onClick.AddListener(onClick);
 
-        TextMeshProUGUI ctTMP = cTxtObj.AddComponent<TextMeshProUGUI>();
-        ctTMP.font = MainMenuManager.GetTacticalFont();
-        ctTMP.text = "[<<] KAPAT";
-        ctTMP.fontSize = 18f;
-        ctTMP.fontStyle = FontStyles.Bold;
-        ctTMP.characterSpacing = 1.6f;
-        ctTMP.alignment = TextAlignmentOptions.Center;
-        ctTMP.color = Color.white;
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        txtObj.transform.SetParent(btnObj.transform, false);
+        RectTransform tRt = txtObj.GetComponent<RectTransform>();
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
+        tmp.text = label;
+        tmp.fontSize = 19.5f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.characterSpacing = 1.4f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = textColor;
+        tmp.raycastTarget = false;
+
+        return btn;
     }
 
     private void UpdateDossierContent()
@@ -890,30 +972,288 @@ public class PlayerProfileUI : MonoBehaviour
 
         if (_dossierRankTMP != null)
         {
-            Color c = PlayerProfileManager.GetRankColor(pm.level);
             string callsign = LeaderboardManager.PlayerCallsign;
-            _dossierRankTMP.text = $"<b>PİLOT ÇAĞRI KODU:</b> <color=#00E5FF><b>[{callsign}]</b></color>   |   <b>RÜTBE:</b> <color=#{ColorUtility.ToHtmlStringRGB(c)}>{pm.RankTitle}</color>\n<size=75%><color=#8AB4F8>KADEME SEVİYESİ: {pm.level} | TOPLAM EXP: {pm.currentExp} / {pm.ExpForNextLevel}</color></size>";
+            Color rankCol = PlayerProfileManager.GetRankColor(pm.level);
+            // Başlangıç rütbelerinde (gri/beyaz tonlarda) referans tasarımdaki sıcak altın-kehribar (#DEB053) tonunu kullan
+            float sat;
+            Color.RGBToHSV(rankCol, out _, out sat, out _);
+            string rankHex = sat < 0.25f ? "DEB053" : ColorUtility.ToHtmlStringRGB(rankCol);
+
+            _dossierRankTMP.text =
+                $"<color=#F1F5F9>PİLOT:</color> <color=#4FD1C5>[{callsign}]</color>   <color=#94A3B8>|</color>   <color=#F1F5F9>RÜTBE:</color> <color=#{rankHex}>{pm.RankTitle}</color>\n" +
+                $"<size=72%><color=#8B9BB0>SEVİYE: {pm.level}   |   EXP: {pm.currentExp.ToString("N0", TrCulture)} / {pm.ExpForNextLevel.ToString("N0", TrCulture)}</color></size>";
         }
 
         if (_dossierStatsTMP != null)
         {
-            _dossierStatsTMP.text = "<b>SAVAŞ KAYITLARI:</b>\n\n" +
-                                    $"• İmha Edilen Uçak: <color=#F1C40F>{pm.totalKills:N0}</color>\n" +
-                                    $"• Düşürülen Bosslar: <color=#E74C3C>{pm.totalBosses:N0}</color>\n" +
-                                    $"• Geçilen Toplam Dalga: <color=#00E5FF>{pm.totalWavesCleared:N0}</color>\n" +
-                                    $"• Kasa Altını: <color=#F1C40F>{HangarManager.EnsureInstance()?.gold:N0} G</color>";
+            int gold = HangarManager.EnsureInstance() != null
+                ? HangarManager.Instance.gold
+                : ProfileManager.GetInt("AirBattle_Gold", 250);
+
+            _dossierStatsTMP.text =
+                "<size=104%><color=#CFD9E6>SAVAŞ KAYITLARI</color></size>\n" +
+                $"<size=45%>\n</size>" +
+                $"• İmha Edilen: <color=#E5B546>{pm.totalKills.ToString("N0", TrCulture)}</color>\n" +
+                $"• Düşürülen Boss: <color=#E05858>{pm.totalBosses.ToString("N0", TrCulture)}</color>\n" +
+                $"• Toplam Dalga: <color=#38BDF8>{pm.totalWavesCleared.ToString("N0", TrCulture)}</color>\n" +
+                $"• Kasa Altını: <color=#E5B546>{gold.ToString("N0", TrCulture)} G</color>";
         }
 
         if (_dossierPerksTMP != null)
         {
             float dmgBonus = (pm.GetDroneDamageMultiplier() - 1f) * 100f;
             float spdBonus = (pm.GetDroneFireRateMultiplier() - 1f) * 100f;
+            int levelReward = pm.level * 100;
 
-            _dossierPerksTMP.text = "<b>İHA & DRON KADEME BONUSLARI:</b>\n\n" +
-                                    $"• Dron Saldırı Gücü: <color=#00E5FF>+%{dmgBonus:F0} Hasar</color>\n" +
-                                    $"• Dron Atış Hızı: <color=#00E5FF>+%{spdBonus:F0} Hız</color>\n" +
-                                    $"• Seviye Başı Ödül: <color=#F1C40F>+{pm.level * 100}G Altın</color>\n" +
-                                    "<size=75%><color=#8AB4F8>Daha fazla uçak vurdukça profil seviyeniz ve dron bonuslarınız artar!</color></size>";
+            _dossierPerksTMP.text =
+                "<size=104%><color=#CFD9E6>KADEME BONUSLARI</color></size>\n" +
+                $"<size=45%>\n</size>" +
+                $"• Saldırı Gücü: <color=#4FD1C5>+%{dmgBonus:F0}</color>\n" +
+                $"• Atış Hızı: <color=#4FD1C5>+%{spdBonus:F0}</color>\n" +
+                $"• Seviye Ödülü: <color=#E5B546>+{levelReward.ToString("N0", TrCulture)}G</color>";
         }
+    }
+
+    // =========================================================================
+    // PROSEDÜREL YÜKSEK KESKİNLİKLİ (ANTI-ALIASED) KART, İKON VE BUTON ÜRETİCİLERİ
+    // =========================================================================
+
+    private static Sprite GetRoundedPanelSprite(string key, Color fill, Color border, float radius, float borderThickness)
+    {
+        if (_dossierSpriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            return cached;
+
+        int size = 96;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        float half = size * 0.5f;
+        Vector2 halfExt = new Vector2(half - 1.5f, half - 1.5f);
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 p = new Vector2(x + 0.5f - half, y + 0.5f - half);
+                Vector2 q = new Vector2(Mathf.Abs(p.x), Mathf.Abs(p.y)) - (halfExt - new Vector2(radius, radius));
+                float sdf = Vector2.Max(q, Vector2.zero).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius;
+
+                if (sdf > 0.8f)
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                    continue;
+                }
+
+                float outerAlpha = Mathf.Clamp01(0.65f - sdf);
+                float borderBlend = Mathf.Clamp01(sdf + borderThickness + 0.5f);
+                Color col = Color.Lerp(fill, border, borderBlend);
+                col.a *= outerAlpha;
+                tex.SetPixel(x, y, col);
+            }
+        }
+
+        tex.Apply();
+        int slice = Mathf.CeilToInt(radius + borderThickness + 4f);
+        Sprite sp = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(slice, slice, slice, slice));
+        _dossierSpriteCache[key] = sp;
+        return sp;
+    }
+
+    private static Sprite GetChamferButtonSprite(string key, Color fill, Color outerBorder, Color innerBorder)
+    {
+        if (_dossierSpriteCache.TryGetValue(key, out Sprite cached) && cached != null)
+            return cached;
+
+        int w = 96;
+        int h = 64;
+        Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        float hw = w * 0.5f - 1.5f;
+        float hh = h * 0.5f - 1.5f;
+        float cut = 11.5f; // 45 derece taktik pahlı (octagonal) köşe kesimi
+
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                float ax = Mathf.Abs(x + 0.5f - w * 0.5f);
+                float ay = Mathf.Abs(y + 0.5f - h * 0.5f);
+
+                float dRight = ax - hw;
+                float dTop = ay - hh;
+                float dDiag = (ax + ay - (hw + hh - cut)) * 0.70710678f;
+                float sdf = Mathf.Max(Mathf.Max(dRight, dTop), dDiag);
+
+                if (sdf > 0.8f)
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                    continue;
+                }
+
+                float outerAlpha = Mathf.Clamp01(0.65f - sdf);
+                Color col = fill;
+
+                // İnce iç vurgu çizgisi (sdf ~ -3.8)
+                float innerDist = Mathf.Abs(sdf + 3.8f);
+                if (innerDist < 1.0f)
+                {
+                    col = Color.Lerp(col, innerBorder, (1.0f - innerDist) * 0.85f);
+                }
+
+                // Ana dış pahlı çerçeve (sdf ~ -1.8 .. 0)
+                float borderBlend = Mathf.Clamp01(sdf + 2.0f);
+                col = Color.Lerp(col, outerBorder, borderBlend);
+                col.a *= outerAlpha;
+                tex.SetPixel(x, y, col);
+            }
+        }
+
+        tex.Apply();
+        Sprite sp = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(20, 20, 20, 20));
+        _dossierSpriteCache[key] = sp;
+        return sp;
+    }
+
+    private static Sprite GetInnerBottomChamferFrameSprite()
+    {
+        if (_cachedInnerChamferFrameSprite != null) return _cachedInnerChamferFrameSprite;
+
+        int s = 96;
+        Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        float half = s * 0.5f - 1.5f;
+        float topRadius = 13f;
+        float bottomCut = 15f;
+
+        for (int y = 0; y < s; y++)
+        {
+            for (int x = 0; x < s; x++)
+            {
+                float px = x + 0.5f - s * 0.5f;
+                float py = y + 0.5f - s * 0.5f;
+                float ax = Mathf.Abs(px);
+
+                float sdf;
+                if (py >= 0f)
+                {
+                    Vector2 q = new Vector2(ax, py) - new Vector2(half - topRadius, half - topRadius);
+                    sdf = Vector2.Max(q, Vector2.zero).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - topRadius;
+                }
+                else
+                {
+                    float ay = -py;
+                    float dSide = ax - half;
+                    float dBot = ay - half;
+                    float dDiag = (ax + ay - (half + half - bottomCut)) * 0.70710678f;
+                    sdf = Mathf.Max(Mathf.Max(dSide, dBot), dDiag);
+                }
+
+                float lineDist = Mathf.Abs(sdf + 0.8f);
+                if (lineDist <= 1.15f)
+                {
+                    // Alt yarıda daha belirgin, üst yarıda zarif sönümlü ince çerçeve
+                    float vertFade = Mathf.Lerp(1.0f, 0.35f, Mathf.Clamp01((y / (float)s)));
+                    float a = Mathf.Clamp01((1.15f - lineDist) * 1.2f) * vertFade;
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+                else
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+            }
+        }
+
+        tex.Apply();
+        _cachedInnerChamferFrameSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(24, 24, 24, 24));
+        return _cachedInnerChamferFrameSprite;
+    }
+
+    private static Sprite GetFighterJetHeaderSprite()
+    {
+        if (_cachedJetHeaderSprite != null) return _cachedJetHeaderSprite;
+
+        int s = 64;
+        Texture2D tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        // 4x4 alt-piksel süper örnekleme (vektör kalitesinde pürüzsüz savaş uçağı silüeti)
+        for (int y = 0; y < s; y++)
+        {
+            for (int x = 0; x < s; x++)
+            {
+                int hits = 0;
+                for (int sy = 0; sy < 4; sy++)
+                {
+                    float py = (y + (sy + 0.5f) * 0.25f) / s; // 0..1 (alt -> üst)
+                    for (int sx = 0; sx < 4; sx++)
+                    {
+                        float px = Mathf.Abs(((x + (sx + 0.5f) * 0.25f) / s) - 0.5f) * 2f; // 0 (merkez) .. 1 (kenar)
+                        if (IsInsideJetSilhouette(px, py))
+                            hits++;
+                    }
+                }
+
+                if (hits > 0)
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, hits / 16f));
+                else
+                    tex.SetPixel(x, y, Color.clear);
+            }
+        }
+
+        tex.Apply();
+        _cachedJetHeaderSprite = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f);
+        return _cachedJetHeaderSprite;
+    }
+
+    private static bool IsInsideJetSilhouette(float ax, float y)
+    {
+        // Burun konisi ve ana gövde (y: 0.14 .. 0.90)
+        if (y >= 0.14f && y <= 0.90f)
+        {
+            float bodyHalfW;
+            if (y > 0.62f)
+            {
+                float t = (0.90f - y) / 0.28f; // 0 (burun ucu) -> 1 (kokpit tabanı)
+                bodyHalfW = Mathf.Pow(t, 1.35f) * 0.135f;
+            }
+            else if (y >= 0.24f)
+            {
+                bodyHalfW = 0.135f;
+            }
+            else
+            {
+                // Çift motor egzoz çıkışı girintisi
+                bodyHalfW = 0.125f;
+                if (y < 0.19f && ax < 0.035f) return false;
+            }
+
+            if (ax <= bodyHalfW) return true;
+        }
+
+        // Ana süpürmeli delta kanatlar (y: 0.28 .. 0.62)
+        if (y >= 0.28f && y <= 0.62f)
+        {
+            float leadMaxX = Mathf.Lerp(0.68f, 0.11f, Mathf.Clamp01((y - 0.30f) / 0.32f));
+            float trailMinY = Mathf.Lerp(0.35f, 0.28f, Mathf.Clamp01(ax / 0.68f));
+            if (y >= trailMinY && ax <= leadMaxX)
+                return true;
+        }
+
+        // Arka çift kuyruk kanatçıkları (stabilizatörler, y: 0.13 .. 0.30)
+        if (y >= 0.13f && y <= 0.30f)
+        {
+            float tailMaxX = Mathf.Lerp(0.34f, 0.12f, Mathf.Clamp01((y - 0.15f) / 0.15f));
+            float tailMinY = Mathf.Lerp(0.18f, 0.13f, Mathf.Clamp01(ax / 0.34f));
+            if (y >= tailMinY && ax <= tailMaxX && ax >= 0.045f)
+                return true;
+        }
+
+        return false;
     }
 }
