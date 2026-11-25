@@ -11,7 +11,7 @@ using UnityEngine.EventSystems;
 /// - Pusula azimut çentikleri, radar halkaları ve taktik kanatçık yön okları.
 /// - Dokunulduğunda parlayan ve büyüyen dokunsal (tactile) tepki.
 /// </summary>
-public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IPointerCancelHandler
+public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [Header("Joystick Parçaları")]
     public RectTransform background;  // Dış taban çemberi
@@ -368,12 +368,10 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
         ResetJoystickState();
     }
 
-    public void OnPointerCancel(PointerEventData eventData)
+    private void OnApplicationFocus(bool hasFocus)
     {
-        if (_activePointerId != int.MinValue && eventData.pointerId != _activePointerId)
-            return;
-
-        ResetJoystickState();
+        if (!hasFocus)
+            ResetJoystickState();
     }
 
     private void ResetJoystickState()

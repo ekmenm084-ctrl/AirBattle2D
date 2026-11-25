@@ -564,7 +564,7 @@ public class TouchArrowControls : MonoBehaviour
 /// - Boşluksuz sol/sağ algılama, parmağı kaldırmadan yön değiştirme (slide roll-over)
 /// - Parmak buton dışına kaysa dahi bırakana kadar kontrolü koparmama garantisi.
 /// </summary>
-public class ArrowExpandedTouchPad : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IPointerCancelHandler
+public class ArrowExpandedTouchPad : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     private TouchArrowControls _owner;
     private RectTransform _zoneRt;
@@ -584,6 +584,15 @@ public class ArrowExpandedTouchPad : MonoBehaviour, IPointerDownHandler, IDragHa
         _owner?.SetTouchPadState(false, false, playClick: false);
     }
 
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            _activePointers.Clear();
+            _owner?.SetTouchPadState(false, false, playClick: false);
+        }
+    }
+
     public void OnPointerDown(PointerEventData eventData)
     {
         UpdatePointer(eventData, playClick: true);
@@ -598,14 +607,6 @@ public class ArrowExpandedTouchPad : MonoBehaviour, IPointerDownHandler, IDragHa
     }
 
     public void OnPointerUp(PointerEventData eventData)
-    {
-        if (_activePointers.Remove(eventData.pointerId))
-        {
-            SyncState(playClick: false);
-        }
-    }
-
-    public void OnPointerCancel(PointerEventData eventData)
     {
         if (_activePointers.Remove(eventData.pointerId))
         {
