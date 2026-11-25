@@ -405,6 +405,12 @@ public class TwoPlayerInputRouter : MonoBehaviour
         if (existing != null)
         {
             _p2ArrowsRoot = existing.gameObject;
+            RectTransform exRt = _p2ArrowsRoot.GetComponent<RectTransform>();
+            if (exRt != null) exRt.sizeDelta = new Vector2(342f, 150f);
+            Transform bL = _p2ArrowsRoot.transform.Find("P2_BtnScreenLeft");
+            if (bL != null) bL.GetComponent<RectTransform>().anchoredPosition = new Vector2(-262f, -72f);
+            Transform bR = _p2ArrowsRoot.transform.Find("P2_BtnScreenRight");
+            if (bR != null) bR.GetComponent<RectTransform>().anchoredPosition = new Vector2(-76f, -72f);
             return;
         }
 
@@ -415,15 +421,15 @@ public class TwoPlayerInputRouter : MonoBehaviour
         rootRt.anchorMax = new Vector2(1f, 1f);
         rootRt.pivot = new Vector2(1f, 1f);
         rootRt.anchoredPosition = new Vector2(-18f, -18f);
-        rootRt.sizeDelta = new Vector2(320f, 150f);
+        rootRt.sizeDelta = new Vector2(342f, 150f);
 
         Sprite sprL = Resources.Load<Sprite>("btn_arrow_left");
         Sprite sprR = Resources.Load<Sprite>("btn_arrow_right");
 
         // Ekranın soluna (merkeze doğru: -X) götüren ok butonu
-        CreateP2ArrowButton(_p2ArrowsRoot.transform, "P2_BtnScreenLeft", new Vector2(-240f, -72f), sprL, dirX: -1f);
+        CreateP2ArrowButton(_p2ArrowsRoot.transform, "P2_BtnScreenLeft", new Vector2(-262f, -72f), sprL, dirX: -1f);
         // Ekranın sağına (sağ kenara doğru: +X) götüren ok butonu
-        CreateP2ArrowButton(_p2ArrowsRoot.transform, "P2_BtnScreenRight", new Vector2(-78f, -72f), sprR, dirX: 1f);
+        CreateP2ArrowButton(_p2ArrowsRoot.transform, "P2_BtnScreenRight", new Vector2(-76f, -72f), sprR, dirX: 1f);
 
         _p2ArrowsRoot.SetActive(GameSettings.SelectedControl == GameSettings.ControlType.Arrows);
     }

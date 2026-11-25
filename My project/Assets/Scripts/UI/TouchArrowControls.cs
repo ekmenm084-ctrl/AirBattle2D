@@ -161,7 +161,7 @@ public class TouchArrowControls : MonoBehaviour
                 if (leftButtonObj != null)
                 {
                     RectTransform lRt = leftButtonObj.GetComponent<RectTransform>();
-                    float cX = rootX + (lRt != null ? lRt.anchoredPosition.x : 96f);
+                    float cX = rootX + (lRt != null ? lRt.anchoredPosition.x : 94f);
                     float halfW = (lRt != null ? lRt.sizeDelta.x : 184f) * 0.5f;
                     float gap = 0f;
                     if (planeMinX > cX + halfW) gap = planeMinX - (cX + halfW);
@@ -172,7 +172,7 @@ public class TouchArrowControls : MonoBehaviour
                 if (rightButtonObj != null)
                 {
                     RectTransform rrRt = rightButtonObj.GetComponent<RectTransform>();
-                    float cX = rootX + (rrRt != null ? rrRt.anchoredPosition.x : 298f);
+                    float cX = rootX + (rrRt != null ? rrRt.anchoredPosition.x : 330f);
                     float halfW = (rrRt != null ? rrRt.sizeDelta.x : 184f) * 0.5f;
                     float gap = 0f;
                     if (planeMinX > cX + halfW) gap = planeMinX - (cX + halfW);
@@ -295,15 +295,15 @@ public class TouchArrowControls : MonoBehaviour
 
         bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
         Vector2 btnSize = portraitDuel ? new Vector2(148f, 136f) : new Vector2(184f, 168f);
-        Vector2 leftPos = portraitDuel ? new Vector2(78f, 72f) : new Vector2(96f, 88f);
-        Vector2 rightPos = portraitDuel ? new Vector2(240f, 72f) : new Vector2(298f, 88f);
+        Vector2 leftPos = portraitDuel ? new Vector2(76f, 72f) : new Vector2(94f, 88f);
+        Vector2 rightPos = portraitDuel ? new Vector2(262f, 72f) : new Vector2(330f, 88f);
 
         RectTransform rRt = _rootContainer.GetComponent<RectTransform>() ?? _rootContainer.AddComponent<RectTransform>();
         rRt.anchorMin = new Vector2(0f, 0f);
         rRt.anchorMax = new Vector2(0f, 0f);
         rRt.pivot = new Vector2(0f, 0f);
         rRt.anchoredPosition = portraitDuel ? new Vector2(18f, 18f) : new Vector2(28f, 22f);
-        rRt.sizeDelta = portraitDuel ? new Vector2(320f, 150f) : new Vector2(396f, 184f);
+        rRt.sizeDelta = portraitDuel ? new Vector2(342f, 150f) : new Vector2(430f, 184f);
 
         // 1. SOL OK BUTONU (◀)
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
@@ -391,7 +391,7 @@ public class TouchArrowControls : MonoBehaviour
         zRt.anchorMax = new Vector2(0f, 0f);
         zRt.pivot = new Vector2(0f, 0f);
         zRt.anchoredPosition = portraitDuel ? new Vector2(-18f, -18f) : new Vector2(-28f, -22f);
-        zRt.sizeDelta = portraitDuel ? new Vector2(390f, 260f) : new Vector2(540f, 320f);
+        zRt.sizeDelta = portraitDuel ? new Vector2(412f, 260f) : new Vector2(572f, 320f);
 
         Image zImg = zoneObj.GetComponent<Image>() ?? zoneObj.AddComponent<Image>();
         zImg.sprite = null;
@@ -399,7 +399,7 @@ public class TouchArrowControls : MonoBehaviour
         zImg.raycastTarget = true;
 
         ArrowExpandedTouchPad pad = zoneObj.GetComponent<ArrowExpandedTouchPad>() ?? zoneObj.AddComponent<ArrowExpandedTouchPad>();
-        pad.Bind(this, zRt, splitLocalX: portraitDuel ? 177f : 225f);
+        pad.Bind(this, zRt, splitLocalX: portraitDuel ? 187f : 240f);
     }
 
     internal void SetTouchPadState(bool leftPressed, bool rightPressed, bool playClick)
