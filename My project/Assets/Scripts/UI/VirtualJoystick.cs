@@ -182,32 +182,32 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
         TryLoadCustomSprites();
         EnsureCanvasGroup();
 
+        bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
+
         if (background != null)
         {
             if (autoPosition)
             {
                 if (isPlayer1)
                 {
-                    // P1: Sol Alt Köşe (182, 180) - 2 kademe büyütülmüş ergonomik yerleşim
                     background.anchorMin = new Vector2(0f, 0f);
                     background.anchorMax = new Vector2(0f, 0f);
                     background.pivot = new Vector2(0.5f, 0.5f);
-                    background.anchoredPosition = new Vector2(182f, 180f);
+                    background.anchoredPosition = portraitDuel ? new Vector2(148f, 148f) : new Vector2(182f, 180f);
                     background.localEulerAngles = Vector3.zero;
                 }
                 else
                 {
-                    // P2: Sağ Üst Köşe (-182, -210), Karşı oyuncu için 180° ters açılı
                     background.anchorMin = new Vector2(1f, 1f);
                     background.anchorMax = new Vector2(1f, 1f);
                     background.pivot = new Vector2(0.5f, 0.5f);
-                    background.anchoredPosition = new Vector2(-182f, -210f);
+                    background.anchoredPosition = portraitDuel ? new Vector2(-148f, -148f) : new Vector2(-182f, -210f);
                     background.localEulerAngles = new Vector3(0f, 0f, 180f);
                 }
             }
 
-            background.sizeDelta = new Vector2(330f, 330f);
-            _radius = 150f;
+            background.sizeDelta = portraitDuel ? new Vector2(246f, 246f) : new Vector2(330f, 330f);
+            _radius = portraitDuel ? 112f : 150f;
 
             // Genişletilmiş görünmez dokunma alanı (köşe boşlukları ve çevre taşmalarını eksiksiz yakalar: 490x450)
             EnsureExpandedTouchZone();
@@ -239,7 +239,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
         if (handle != null)
         {
-            handle.sizeDelta = new Vector2(138f, 138f);
+            handle.sizeDelta = portraitDuel ? new Vector2(104f, 104f) : new Vector2(138f, 138f);
             handle.anchoredPosition = Vector2.zero;
 
             _handleImage = handle.GetComponent<Image>();
@@ -309,13 +309,13 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             zoneObj.transform.SetAsFirstSibling();
         }
 
+        bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
         _touchZoneRt = zoneObj.GetComponent<RectTransform>();
         _touchZoneRt.anchorMin = new Vector2(0.5f, 0.5f);
         _touchZoneRt.anchorMax = new Vector2(0.5f, 0.5f);
         _touchZoneRt.pivot = new Vector2(0.5f, 0.5f);
-        // Sol alt köşeyi (0,0) tamamen içine alır ve sağa/yukarıya geniş dokunma payı bırakır (Toplam 500x460 px alan)
-        _touchZoneRt.anchoredPosition = new Vector2(68f, 50f);
-        _touchZoneRt.sizeDelta = new Vector2(500f, 460f);
+        _touchZoneRt.anchoredPosition = portraitDuel ? new Vector2(46f, 32f) : new Vector2(68f, 50f);
+        _touchZoneRt.sizeDelta = portraitDuel ? new Vector2(390f, 340f) : new Vector2(500f, 460f);
 
         Image zoneImg = zoneObj.GetComponent<Image>() ?? zoneObj.AddComponent<Image>();
         zoneImg.sprite = null;

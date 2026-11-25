@@ -293,14 +293,19 @@ public class TouchArrowControls : MonoBehaviour
             _rootContainer.transform.SetParent(canvas.transform, false);
         }
 
+        bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
+        Vector2 btnSize = portraitDuel ? new Vector2(148f, 136f) : new Vector2(184f, 168f);
+        Vector2 leftPos = portraitDuel ? new Vector2(78f, 72f) : new Vector2(96f, 88f);
+        Vector2 rightPos = portraitDuel ? new Vector2(240f, 72f) : new Vector2(298f, 88f);
+
         RectTransform rRt = _rootContainer.GetComponent<RectTransform>() ?? _rootContainer.AddComponent<RectTransform>();
-        rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe (Alt kenara yakın, uçağın üst gövdesini açık bırakan yerleşim)
+        rRt.anchorMin = new Vector2(0f, 0f);
         rRt.anchorMax = new Vector2(0f, 0f);
         rRt.pivot = new Vector2(0f, 0f);
-        rRt.anchoredPosition = new Vector2(28f, 22f);
-        rRt.sizeDelta = new Vector2(396f, 184f);
+        rRt.anchoredPosition = portraitDuel ? new Vector2(18f, 18f) : new Vector2(28f, 22f);
+        rRt.sizeDelta = portraitDuel ? new Vector2(320f, 150f) : new Vector2(396f, 184f);
 
-        // 1. SOL OK BUTONU (◀) - 2 kademe büyütülmüş boyut: 184x168
+        // 1. SOL OK BUTONU (◀)
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
         if (leftT != null)
         {
@@ -308,8 +313,8 @@ public class TouchArrowControls : MonoBehaviour
             RectTransform lrt = leftButtonObj.GetComponent<RectTransform>();
             if (lrt != null)
             {
-                lrt.anchoredPosition = new Vector2(96f, 88f);
-                lrt.sizeDelta = new Vector2(184f, 168f);
+                lrt.anchoredPosition = leftPos;
+                lrt.sizeDelta = btnSize;
             }
             Transform lbl = leftT.Find("Label");
             if (lbl != null) Destroy(lbl.gameObject);
@@ -317,10 +322,11 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
-                new Vector2(96f, 88f), "btn_arrow_left", isLeft: true);
+                leftPos, "btn_arrow_left", isLeft: true);
+            leftButtonObj.GetComponent<RectTransform>().sizeDelta = btnSize;
         }
 
-        // 2. SAĞ OK BUTONU (▶) - 2 kademe büyütülmüş boyut: 184x168
+        // 2. SAĞ OK BUTONU (▶)
         Transform rightT = _rootContainer.transform.Find("Btn_ArrowRight");
         if (rightT != null)
         {
@@ -328,8 +334,8 @@ public class TouchArrowControls : MonoBehaviour
             RectTransform rrt = rightButtonObj.GetComponent<RectTransform>();
             if (rrt != null)
             {
-                rrt.anchoredPosition = new Vector2(298f, 88f);
-                rrt.sizeDelta = new Vector2(184f, 168f);
+                rrt.anchoredPosition = rightPos;
+                rrt.sizeDelta = btnSize;
             }
             Transform lbl = rightT.Find("Label");
             if (lbl != null) Destroy(lbl.gameObject);
@@ -337,7 +343,8 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
-                new Vector2(298f, 88f), "btn_arrow_right", isLeft: false);
+                rightPos, "btn_arrow_right", isLeft: false);
+            rightButtonObj.GetComponent<RectTransform>().sizeDelta = btnSize;
         }
 
         if (leftButtonObj != null)
@@ -378,13 +385,13 @@ public class TouchArrowControls : MonoBehaviour
         }
         zoneObj.transform.SetAsLastSibling();
 
+        bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
         RectTransform zRt = zoneObj.GetComponent<RectTransform>();
         zRt.anchorMin = new Vector2(0f, 0f);
         zRt.anchorMax = new Vector2(0f, 0f);
         zRt.pivot = new Vector2(0f, 0f);
-        // _rootContainer (28, 22) konumunda olduğu için (-28, -22) tam olarak ekranın (0, 0) en sol-alt köşesinden başlar
-        zRt.anchoredPosition = new Vector2(-28f, -22f);
-        zRt.sizeDelta = new Vector2(540f, 320f);
+        zRt.anchoredPosition = portraitDuel ? new Vector2(-18f, -18f) : new Vector2(-28f, -22f);
+        zRt.sizeDelta = portraitDuel ? new Vector2(390f, 260f) : new Vector2(540f, 320f);
 
         Image zImg = zoneObj.GetComponent<Image>() ?? zoneObj.AddComponent<Image>();
         zImg.sprite = null;
@@ -392,8 +399,7 @@ public class TouchArrowControls : MonoBehaviour
         zImg.raycastTarget = true;
 
         ArrowExpandedTouchPad pad = zoneObj.GetComponent<ArrowExpandedTouchPad>() ?? zoneObj.AddComponent<ArrowExpandedTouchPad>();
-        // Sol buton merkezi Canvas X=124, Sağ buton merkezi Canvas X=326 -> Tam orta ayrım çizgisi = 225px
-        pad.Bind(this, zRt, splitLocalX: 225f);
+        pad.Bind(this, zRt, splitLocalX: portraitDuel ? 177f : 225f);
     }
 
     internal void SetTouchPadState(bool leftPressed, bool rightPressed, bool playClick)

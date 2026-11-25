@@ -49,12 +49,9 @@ public class PlaneController : MonoBehaviour
         else
             transform.rotation = Quaternion.Euler(0, 0, 180);
 
-        if (autoDetectLimits && Camera.main != null)
+        if (autoDetectLimits)
         {
-            float vertExtent = Camera.main.orthographicSize;
-            float horzExtent = vertExtent * (float)Screen.width / Screen.height;
-            minX = -horzExtent + 0.92f;
-            maxX = horzExtent - 0.92f;
+            UpdateScreenLimits();
         }
 
         if (isPlayer1)
@@ -90,8 +87,29 @@ public class PlaneController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (autoDetectLimits)
+        {
+            UpdateScreenLimits();
+        }
         ApplyMovement();
         ClampPosition();
+    }
+
+    public void SetFixedY(float newY)
+    {
+        fixedY = newY;
+        if (_rb != null)
+            _rb.position = new Vector2(_rb.position.x, fixedY);
+    }
+
+    public void UpdateScreenLimits()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        float vertExtent = cam.orthographicSize;
+        float horzExtent = vertExtent * ((float)Screen.width / Mathf.Max(1, Screen.height));
+        minX = -horzExtent + 0.92f;
+        maxX = horzExtent - 0.92f;
     }
 
     private void ReadInput()

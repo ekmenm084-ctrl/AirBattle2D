@@ -65,10 +65,131 @@ public class GameUI : MonoBehaviour
         TouchArrowControls.EnsureInstance()?.UpdateVisibility();
 
         UpdateHealthBars();
+        RefreshLayoutForCurrentOrientation();
 
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
         SetHUDVisibility(!isMenuOpen);
+    }
+
+    private bool _lastPortraitDuelLayout = false;
+
+    public void RefreshLayoutForCurrentOrientation()
+    {
+        bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
+        _lastPortraitDuelLayout = portraitDuel;
+
+        // 1. Can Barları Yerleşimi
+        if (plane1HealthBar != null)
+        {
+            RectTransform rt1 = plane1HealthBar.GetComponent<RectTransform>();
+            if (rt1 != null)
+            {
+                if (portraitDuel)
+                {
+                    // Dikey 2P: P1 alt kontrollerin hemen üstünde ortalı can barı
+                    rt1.anchorMin = new Vector2(0.5f, 0f);
+                    rt1.anchorMax = new Vector2(0.5f, 0f);
+                    rt1.pivot = new Vector2(0.5f, 0f);
+                    rt1.anchoredPosition = new Vector2(0f, 295f);
+                    rt1.sizeDelta = new Vector2(360f, 22f);
+                    rt1.localEulerAngles = Vector3.zero;
+                }
+                else
+                {
+                    rt1.anchorMin = new Vector2(0f, 1f);
+                    rt1.anchorMax = new Vector2(0f, 1f);
+                    rt1.pivot = new Vector2(0f, 1f);
+                    rt1.anchoredPosition = new Vector2(50f, -44f);
+                    rt1.sizeDelta = new Vector2(388f, 28f);
+                    rt1.localEulerAngles = Vector3.zero;
+                }
+            }
+        }
+
+        if (plane2HealthBar != null)
+        {
+            RectTransform rt2 = plane2HealthBar.GetComponent<RectTransform>();
+            if (rt2 != null)
+            {
+                if (portraitDuel)
+                {
+                    // Dikey 2P: P2 üst kontrollerin hemen altında 180° ters çevrilmiş simetrik can barı
+                    rt2.anchorMin = new Vector2(0.5f, 1f);
+                    rt2.anchorMax = new Vector2(0.5f, 1f);
+                    rt2.pivot = new Vector2(0.5f, 1f);
+                    rt2.anchoredPosition = new Vector2(0f, -295f);
+                    rt2.sizeDelta = new Vector2(360f, 22f);
+                    rt2.localEulerAngles = new Vector3(0f, 0f, 180f);
+                }
+                else
+                {
+                    rt2.anchorMin = new Vector2(0.5f, 1f);
+                    rt2.anchorMax = new Vector2(0.5f, 1f);
+                    rt2.pivot = new Vector2(0.5f, 1f);
+                    rt2.anchoredPosition = new Vector2(0f, -32f);
+                    rt2.sizeDelta = new Vector2(520f, 30f);
+                    rt2.localEulerAngles = Vector3.zero;
+                }
+            }
+        }
+
+        // 2. Ulti Barı Yerleşimi
+        if (_ultiBarObj != null)
+        {
+            RectTransform uBarRt = _ultiBarObj.GetComponent<RectTransform>();
+            if (uBarRt != null)
+            {
+                if (portraitDuel)
+                {
+                    uBarRt.anchorMin = new Vector2(0.5f, 0f);
+                    uBarRt.anchorMax = new Vector2(0.5f, 0f);
+                    uBarRt.pivot = new Vector2(0.5f, 0f);
+                    uBarRt.anchoredPosition = new Vector2(0f, 268f);
+                    uBarRt.sizeDelta = new Vector2(360f, 16f);
+                }
+                else
+                {
+                    uBarRt.anchorMin = new Vector2(0f, 1f);
+                    uBarRt.anchorMax = new Vector2(0f, 1f);
+                    uBarRt.pivot = new Vector2(0f, 1f);
+                    uBarRt.anchoredPosition = new Vector2(50f, -83f);
+                    uBarRt.sizeDelta = new Vector2(388f, 20f);
+                }
+            }
+        }
+
+        // 3. P1 Kaçış ve Ulti Butonları (1080p dikey genişlikte çakışmasız kompakt yerleşim)
+        if (_dodgeBtnObj != null)
+        {
+            RectTransform dRt = _dodgeBtnObj.GetComponent<RectTransform>();
+            if (dRt != null)
+            {
+                dRt.anchoredPosition = portraitDuel ? new Vector2(-320f, 72f) : new Vector2(-395f, 82f);
+                dRt.sizeDelta = portraitDuel ? new Vector2(134f, 92f) : new Vector2(154f, 106f);
+            }
+        }
+
+        if (_ultiBtnObj != null)
+        {
+            RectTransform uRt = _ultiBtnObj.GetComponent<RectTransform>();
+            if (uRt != null)
+            {
+                uRt.anchoredPosition = portraitDuel ? new Vector2(-132f, 286f) : new Vector2(-180f, 365f);
+                uRt.sizeDelta = portraitDuel ? new Vector2(96f, 96f) : new Vector2(126f, 126f);
+            }
+        }
+
+        // Diğer dokunmatik kontrolleri de yeni ekran yönüne senkronize et
+        FireButton.EnsureP1FireButton()?.ApplyMilitaryFireStyling();
+        if (_missileBtnObj != null)
+            _missileBtnObj.GetComponent<MissileLauncherButton>()?.RefreshLayout();
+        TouchArrowControls.Instance?.EnsureArrowUI();
+        var joysticks = FindObjectsOfType<VirtualJoystick>(true);
+        foreach (var j in joysticks)
+        {
+            if (j != null) j.ApplyProfessionalStyling();
+        }
     }
 
     private bool _isHUDHiddenByCinematic = false;
@@ -1296,9 +1417,18 @@ public class GameUI : MonoBehaviour
             _comboHUDObj.SetActive(false);
         }
 
-        if (_goldHUDObj != null && !_goldHUDObj.activeSelf)
+        bool isTwoPlayerMode = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
+        bool portraitDuelNow = MainMenuManager.IsPortraitDuelModeActive();
+        if (portraitDuelNow != _lastPortraitDuelLayout)
         {
-            _goldHUDObj.SetActive(true);
+            RefreshLayoutForCurrentOrientation();
+        }
+
+        if (_goldHUDObj != null)
+        {
+            bool showGold = !isTwoPlayerMode;
+            if (_goldHUDObj.activeSelf != showGold)
+                _goldHUDObj.SetActive(showGold);
         }
 
         if (_waveAlertObj != null && _waveAlertObj.activeSelf) _waveAlertObj.SetActive(false);

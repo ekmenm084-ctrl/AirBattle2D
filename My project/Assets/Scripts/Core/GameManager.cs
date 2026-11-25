@@ -62,15 +62,7 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
-
-        Screen.autorotateToPortrait = false;
-        Screen.autorotateToPortraitUpsideDown = false;
-        Screen.autorotateToLandscapeLeft = true;
-        Screen.autorotateToLandscapeRight = true;
-        if (Screen.orientation != ScreenOrientation.LandscapeLeft && Screen.orientation != ScreenOrientation.LandscapeRight)
-        {
-            Screen.orientation = ScreenOrientation.AutoRotation;
-        }
+        MainMenuManager.OptimizeCanvasForTablet();
     }
 
     private void Start()
@@ -132,6 +124,16 @@ public class GameManager : MonoBehaviour
             CurrentMode = GameMode.Hardcore;
         else
             CurrentMode = GameMode.SoloVsAI;
+
+        // 2 Kişilik VS Modunda ekranı Dikey (Portrait), diğer tüm modlarda Yatay (Landscape) çalıştır!
+        MainMenuManager.ApplyScreenOrientationAndCanvas(isOnline);
+
+        if (!isOnline && plane1Health != null)
+        {
+            var pc1 = plane1Health.GetComponent<PlaneController>();
+            if (pc1 != null) pc1.SetFixedY(-3.5f);
+            plane1Health.transform.position = new Vector3(plane1Health.transform.position.x, -3.5f, 0f);
+        }
 
         // Arka plan savaş müziğini ve ses ayar butonunu başlat
         AudioManager.EnsureInstance();
@@ -246,7 +248,9 @@ public class GameManager : MonoBehaviour
         }
 
         var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.RefreshLayoutForCurrentOrientation();
         gameUI?.UpdateHealthBars();
+        AudioSettingsUI.Instance?.RefreshPauseButtonPosition();
     }
 
     private void FindPlanesIfNull()
@@ -1397,7 +1401,9 @@ public class GameManager : MonoBehaviour
 
         TouchArrowControls.Instance?.UpdateVisibility();
         var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.RefreshLayoutForCurrentOrientation();
         gameUI?.UpdateHealthBars();
+        AudioSettingsUI.Instance?.RefreshPauseButtonPosition();
     }
 
     private string AppendComboSummary(string baseMessage)
@@ -1609,6 +1615,7 @@ public class GameManager : MonoBehaviour
     {
         SaveAndSubmitActiveScore(isFinal: true);
         MainMenuManager.AutoPlayOnSceneLoad = false;
+        MainMenuManager.ApplyScreenOrientationAndCanvas(portraitDuel: false);
         TwoPlayerDuelManager.Instance?.StopDuel();
         CleanUpBulletHellPlane();
         EnemyFormationManager.Instance?.StopDirector();

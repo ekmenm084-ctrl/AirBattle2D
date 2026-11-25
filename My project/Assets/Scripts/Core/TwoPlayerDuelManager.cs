@@ -134,11 +134,12 @@ public class TwoPlayerDuelManager : MonoBehaviour
         if (maneuvers == null)
             maneuvers = ph.gameObject.AddComponent<PlayerCombatManeuvers>();
 
-        // 4. Başlangıç pozisyonları, bir kademe büyütülmüş ideal ölçek ve renk tonları
+        // 4. Dikey (Portrait) 2 Kişilik VS başlangıç pozisyonları (kontrollerin önünde net görüş hattı: y = ±4.7f)
         ph.transform.localScale = new Vector3(0.86f, 0.86f, 1f);
         if (isPlayer1)
         {
-            ph.transform.position = new Vector3(0f, -3.8f, 0f);
+            ph.transform.position = new Vector3(0f, -4.7f, 0f);
+            if (pc != null) pc.SetFixedY(-4.7f);
             ph.transform.rotation = Quaternion.identity;
             if (sr != null) sr.color = Color.white;
             if (ps != null)
@@ -149,7 +150,8 @@ public class TwoPlayerDuelManager : MonoBehaviour
         }
         else
         {
-            ph.transform.position = new Vector3(0f, 3.8f, 0f);
+            ph.transform.position = new Vector3(0f, 4.7f, 0f);
+            if (pc != null) pc.SetFixedY(4.7f);
             ph.transform.rotation = Quaternion.Euler(0f, 0f, 180f);
             // P2 için kızıl/turuncu rakip yarış kamuflajı tonu ve Su-57 plazma mermisi
             if (sr != null)
@@ -172,14 +174,17 @@ public class TwoPlayerDuelManager : MonoBehaviour
         currentRound = roundNumber;
         isRoundTransitioning = false;
 
+        MainMenuManager.ApplyScreenOrientationAndCanvas(portraitDuel: true);
         CleanStrayObjects();
 
         FindPlanes();
 
-        // Uçakları yeniden konumlandır ve canlarını tazele
+        // Uçakları dikey düello koridorunda yeniden konumlandır ve canlarını tazele
         if (plane1Health != null)
         {
-            plane1Health.transform.position = new Vector3(0f, -3.8f, 0f);
+            plane1Health.transform.position = new Vector3(0f, -4.7f, 0f);
+            var pc1 = plane1Health.GetComponent<PlaneController>();
+            if (pc1 != null) pc1.SetFixedY(-4.7f);
             plane1Health.transform.rotation = Quaternion.identity;
             plane1Health.ResetHealth(plane1Health.maxHealth);
             plane1Health.TriggerInvulnerability(1.4f);
@@ -187,7 +192,9 @@ public class TwoPlayerDuelManager : MonoBehaviour
 
         if (plane2Health != null)
         {
-            plane2Health.transform.position = new Vector3(0f, 3.8f, 0f);
+            plane2Health.transform.position = new Vector3(0f, 4.7f, 0f);
+            var pc2 = plane2Health.GetComponent<PlaneController>();
+            if (pc2 != null) pc2.SetFixedY(4.7f);
             plane2Health.transform.rotation = Quaternion.Euler(0f, 0f, 180f);
             plane2Health.ResetHealth(plane2Health.maxHealth);
             plane2Health.TriggerInvulnerability(1.4f);
@@ -358,7 +365,7 @@ public class TwoPlayerDuelManager : MonoBehaviour
     private void SpawnNeutralAirdrop()
     {
         float spawnX = Random.Range(-2.2f, 2.2f);
-        Vector3 spawnPos = new Vector3(spawnX, 4.6f, 0f);
+        Vector3 spawnPos = new Vector3(spawnX, 3.4f, 0f);
 
         GameObject dropObj = new GameObject("DuelAirdropCrate");
         dropObj.transform.position = spawnPos;
@@ -401,14 +408,15 @@ public class TwoPlayerDuelManager : MonoBehaviour
             _duelScoreboardObj.transform.SetParent(canvas.transform, false);
 
             RectTransform rt = _duelScoreboardObj.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 1f);
-            rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -25f);
-            rt.sizeDelta = new Vector2(540f, 44f);
+            rt.anchorMin = new Vector2(0.5f, 0.5f); // Dikey VS ekranında tam orta ekvator çizgisi (iki oyuncunun da parmaklarından bağımsız)
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(-28f, 0f);
+            rt.sizeDelta = new Vector2(520f, 40f);
 
             Image bg = _duelScoreboardObj.AddComponent<Image>();
-            bg.color = new Color(0.04f, 0.08f, 0.14f, 0.90f);
+            bg.color = new Color(0.04f, 0.08f, 0.14f, 0.72f);
+            bg.raycastTarget = false;
 
             Outline outline = _duelScoreboardObj.AddComponent<Outline>();
             outline.effectColor = new Color(0.40f, 0.35f, 0.85f, 0.75f);

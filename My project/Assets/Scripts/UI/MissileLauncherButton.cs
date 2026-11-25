@@ -203,17 +203,24 @@ public class MissileLauncherButton : MonoBehaviour
         return null;
     }
 
+    public void RefreshLayout()
+    {
+        RectTransform rt = GetComponent<RectTransform>();
+        if (rt == null) return;
+        bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
+        rt.anchorMin = new Vector2(1f, 0f);
+        rt.anchorMax = new Vector2(1f, 0f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = portraitDuel ? new Vector2(-320f, 180f) : new Vector2(-395f, 205f);
+        rt.sizeDelta = portraitDuel ? new Vector2(134f, 96f) : new Vector2(154f, 110f);
+    }
+
     private void SetupUI()
     {
         RectTransform rt = GetComponent<RectTransform>();
         if (rt == null) return;
 
-        // 1:1 Referans yerleşim: Ateş butonunun sol üst çaprazında (-395, 205), roket ikonu + kare kutu (154 x 110)
-        rt.anchorMin = new Vector2(1f, 0f);
-        rt.anchorMax = new Vector2(1f, 0f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = new Vector2(-395f, 205f);
-        rt.sizeDelta = new Vector2(154f, 110f);
+        RefreshLayout();
 
         _bgImage = GetComponent<Image>();
         if (_bgImage == null) _bgImage = gameObject.AddComponent<Image>();

@@ -26,6 +26,9 @@ public class BackgroundScroller : MonoBehaviour
     private GameObject _layer2Obj;
 
     private float _spriteHeightWorld;
+    private int _lastScreenW;
+    private int _lastScreenH;
+    private float _lastOrthoSize;
     private Coroutine _lightningCoroutine;
 
     private void Start()
@@ -61,6 +64,10 @@ public class BackgroundScroller : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) return;
 
+        _lastScreenW = Screen.width;
+        _lastScreenH = Screen.height;
+        _lastOrthoSize = cam.orthographicSize;
+
         float camHeight = cam.orthographicSize * 2f;
         float camWidth = camHeight * ((float)Screen.width / Mathf.Max(1, Screen.height));
 
@@ -68,8 +75,8 @@ public class BackgroundScroller : MonoBehaviour
         float spriteH = _sr1.sprite.rect.height / _sr1.sprite.pixelsPerUnit;
 
         // Ekranı kenarlarda hiç boşluk bırakmadan güvenle kaplayacak ölçek
-        float scaleX = (camWidth / spriteW) * 1.10f;
-        float scaleY = (camHeight / spriteH) * 1.05f;
+        float scaleX = (camWidth / spriteW) * 1.12f;
+        float scaleY = (camHeight / spriteH) * 1.08f;
         float maxScale = Mathf.Max(scaleX, scaleY);
 
         transform.localScale = new Vector3(maxScale, maxScale, 1f);
@@ -79,11 +86,14 @@ public class BackgroundScroller : MonoBehaviour
         float overlap = 0.04f; // 2 piksellik kusursuz harmanlama örtüşmesi (alt-üst çizgi oluşumunu kesinlikle önler)
 
         // 2. İkinci Katman (Kardeş nesne olarak sahnede oluşturulur, ebeveyn hareketiyle çakışmaz)
-        _layer2Obj = new GameObject("GameBackground_CombatLayer2");
+        if (_layer2Obj == null)
+        {
+            _layer2Obj = new GameObject("GameBackground_CombatLayer2");
+            _sr2 = _layer2Obj.AddComponent<SpriteRenderer>();
+        }
         _layer2Obj.transform.localScale = new Vector3(maxScale, maxScale, 1f);
         _layer2Obj.transform.position = new Vector3(0f, _spriteHeightWorld - overlap, 2f);
 
-        _sr2 = _layer2Obj.AddComponent<SpriteRenderer>();
         _sr2.sprite = _sr1.sprite;
         _sr2.sharedMaterial = _sr1.sharedMaterial; // URP materyali kesinlikle kopyalanır!
         _sr2.sortingLayerID = _sr1.sortingLayerID;
@@ -93,6 +103,12 @@ public class BackgroundScroller : MonoBehaviour
 
     private void Update()
     {
+        Camera cam = Camera.main;
+        if (cam != null && (Screen.width != _lastScreenW || Screen.height != _lastScreenH || Mathf.Abs(cam.orthographicSize - _lastOrthoSize) > 0.05f))
+        {
+            SetupWorldScroller();
+        }
+
         if (_sr1 == null || _sr2 == null || _spriteHeightWorld <= 0.1f) return;
 
         float dt = Time.deltaTime;

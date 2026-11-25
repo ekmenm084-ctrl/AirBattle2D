@@ -78,6 +78,7 @@ public class AudioSettingsUI : MonoBehaviour
                 soundButtonObj.SetActive(shouldShow);
                 if (shouldShow)
                 {
+                    RefreshPauseButtonPosition();
                     soundButtonObj.transform.SetAsLastSibling();
                 }
             }
@@ -155,14 +156,7 @@ public class AudioSettingsUI : MonoBehaviour
         }
 
         soundButtonObj.SetActive(true);
-
-        // İkon boyutunu bir kademe büyüt ve sağ üst köşeden biraz daha sola kaydır
-        RectTransform rt = soundButtonObj.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(1f, 1f); // Sağ Üst Köşe
-        rt.anchorMax = new Vector2(1f, 1f);
-        rt.pivot = new Vector2(1f, 1f);
-        rt.anchoredPosition = new Vector2(-42f, -12f);
-        rt.sizeDelta = new Vector2(54f, 54f);
+        RefreshPauseButtonPosition();
 
         Image btnBg = soundButtonObj.GetComponent<Image>();
         if (btnBg == null) btnBg = soundButtonObj.AddComponent<Image>();
@@ -216,6 +210,32 @@ public class AudioSettingsUI : MonoBehaviour
             {
                 BuildPauseAndSettingsPanel();
             }
+        }
+    }
+
+    public void RefreshPauseButtonPosition()
+    {
+        if (soundButtonObj == null) return;
+        RectTransform rt = soundButtonObj.GetComponent<RectTransform>();
+        if (rt == null) return;
+
+        if (MainMenuManager.IsPortraitDuelModeActive())
+        {
+            // Dikey 2P VS modunda Pause ikonu sağ orta ekvatorda durur (P2'nin üst köşedeki eliyle çakışmaz)
+            rt.anchorMin = new Vector2(1f, 0.5f);
+            rt.anchorMax = new Vector2(1f, 0.5f);
+            rt.pivot = new Vector2(1f, 0.5f);
+            rt.anchoredPosition = new Vector2(-16f, 0f);
+            rt.sizeDelta = new Vector2(52f, 52f);
+        }
+        else
+        {
+            // Normal Yatay Mod: Sağ üst köşe
+            rt.anchorMin = new Vector2(1f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-42f, -12f);
+            rt.sizeDelta = new Vector2(54f, 54f);
         }
     }
 

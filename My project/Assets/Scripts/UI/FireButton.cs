@@ -158,24 +158,23 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
         if (autoPosition)
         {
+            bool portraitDuel = MainMenuManager.IsPortraitDuelModeActive();
             if (isPlayer1)
             {
-                // P1: Sağ Alt Köşe 1:1 referans yerleşimi (-180, 160), boyut (260, 260)
                 rt.anchorMin = new Vector2(1f, 0f);
                 rt.anchorMax = new Vector2(1f, 0f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = new Vector2(-180f, 160f);
-                rt.sizeDelta = new Vector2(260f, 260f);
+                rt.anchoredPosition = portraitDuel ? new Vector2(-132f, 128f) : new Vector2(-180f, 160f);
+                rt.sizeDelta = portraitDuel ? new Vector2(204f, 204f) : new Vector2(260f, 260f);
                 rt.localEulerAngles = Vector3.zero;
             }
             else
             {
-                // P2: Sol Üst Köşe (170, -155), Karşı oyuncu için 180° ters açılı
                 rt.anchorMin = new Vector2(0f, 1f);
                 rt.anchorMax = new Vector2(0f, 1f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
-                rt.anchoredPosition = new Vector2(170f, -155f);
-                rt.sizeDelta = new Vector2(180f, 180f);
+                rt.anchoredPosition = portraitDuel ? new Vector2(132f, -128f) : new Vector2(170f, -155f);
+                rt.sizeDelta = portraitDuel ? new Vector2(204f, 204f) : new Vector2(180f, 180f);
                 rt.localEulerAngles = new Vector3(0f, 0f, 180f);
             }
         }
