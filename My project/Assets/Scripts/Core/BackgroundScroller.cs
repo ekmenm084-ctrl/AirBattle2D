@@ -33,6 +33,8 @@ public class BackgroundScroller : MonoBehaviour
 
     private void Start()
     {
+        GameSettings.LoadSettings();
+        GameSettings.OnCockpitThemeChanged += HandleCockpitThemeChanged;
         SetupWorldScroller();
         if (enableLightning && gameObject.activeInHierarchy)
         {
@@ -42,6 +44,7 @@ public class BackgroundScroller : MonoBehaviour
 
     private void OnDestroy()
     {
+        GameSettings.OnCockpitThemeChanged -= HandleCockpitThemeChanged;
         if (_lightningCoroutine != null)
         {
             StopCoroutine(_lightningCoroutine);
@@ -53,13 +56,25 @@ public class BackgroundScroller : MonoBehaviour
         }
     }
 
+    private Color EffectiveNormalColor => normalColor * GameSettings.GetCockpitSkyTint();
+
+    private Color EffectiveLightningTint =>
+        GameSettings.SelectedCockpitTheme == GameSettings.CockpitTheme.CyberBlue
+            ? lightningTint
+            : GameSettings.GetCockpitLightningTint();
+
+    private void HandleCockpitThemeChanged(GameSettings.CockpitTheme _)
+    {
+        SetSpriteColors(EffectiveNormalColor);
+    }
+
     private void SetupWorldScroller()
     {
         // 1. Kök nesnedeki orijinal SpriteRenderer'ı al (Daima AKTİF tut, URP materyali bozulmasın)
         _sr1 = GetComponent<SpriteRenderer>();
         if (_sr1 == null || _sr1.sprite == null) return;
         _sr1.enabled = true;
-        _sr1.color = normalColor;
+        _sr1.color = EffectiveNormalColor;
 
         Camera cam = Camera.main;
         if (cam == null) return;
@@ -98,7 +113,7 @@ public class BackgroundScroller : MonoBehaviour
         _sr2.sharedMaterial = _sr1.sharedMaterial; // URP materyali kesinlikle kopyalanır!
         _sr2.sortingLayerID = _sr1.sortingLayerID;
         _sr2.sortingOrder = _sr1.sortingOrder;
-        _sr2.color = normalColor;
+        _sr2.color = EffectiveNormalColor;
     }
 
     private void Update()
@@ -164,34 +179,37 @@ public class BackgroundScroller : MonoBehaviour
     {
         if (_sr1 == null || _sr2 == null) yield break;
 
+        Color baseCol = EffectiveNormalColor;
+        Color flashCol = EffectiveLightningTint;
+
         // 1. Öncü Darbe (Pre-strike - yumuşatılmış yoğunluk)
-        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.20f));
+        SetSpriteColors(Color.Lerp(baseCol, flashCol, 0.20f));
         yield return new WaitForSeconds(0.04f);
-        SetSpriteColors(normalColor);
+        SetSpriteColors(baseCol);
         yield return new WaitForSeconds(0.06f);
 
         // 2. Ana Parlama (Bright Flash - göz yormayan hafif parlama)
-        SetSpriteColors(normalColor * 1.12f);
+        SetSpriteColors(baseCol * 1.12f);
         yield return new WaitForSeconds(0.07f);
 
         // 3. Art Parıltı Titremesi (Afterglow Flicker)
-        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.22f));
+        SetSpriteColors(Color.Lerp(baseCol, flashCol, 0.22f));
         yield return new WaitForSeconds(0.05f);
-        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.10f));
+        SetSpriteColors(Color.Lerp(baseCol, flashCol, 0.10f));
         yield return new WaitForSeconds(0.07f);
 
         // 4. Doğal Sönümlenme (Smooth Fade)
         float elapsed = 0f;
         float fadeDur = 0.25f;
-        Color startCol = _sr1 != null ? _sr1.color : normalColor;
+        Color startCol = _sr1 != null ? _sr1.color : baseCol;
         while (elapsed < fadeDur)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / fadeDur;
-            SetSpriteColors(Color.Lerp(startCol, normalColor, t));
+            SetSpriteColors(Color.Lerp(startCol, EffectiveNormalColor, t));
             yield return null;
         }
-        SetSpriteColors(normalColor);
+        SetSpriteColors(EffectiveNormalColor);
     }
 
     private void SetSpriteColors(Color col)

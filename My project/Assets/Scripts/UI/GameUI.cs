@@ -46,6 +46,9 @@ public class GameUI : MonoBehaviour
 
     private void Start()
     {
+        GameSettings.LoadSettings();
+        GameSettings.OnCockpitThemeChanged += HandleCockpitThemeChanged;
+
         MainMenuManager.OptimizeCanvasForTablet();
         FindPlanesIfNull();
 
@@ -64,12 +67,48 @@ public class GameUI : MonoBehaviour
         SetupCombatManeuverButtons();
         TouchArrowControls.EnsureInstance()?.UpdateVisibility();
 
+        ApplyCockpitThemeVisuals();
         UpdateHealthBars();
         RefreshLayoutForCurrentOrientation();
 
         MainMenuManager menu = FindObjectOfType<MainMenuManager>();
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy);
         SetHUDVisibility(!isMenuOpen);
+    }
+
+    private void OnDestroy()
+    {
+        GameSettings.OnCockpitThemeChanged -= HandleCockpitThemeChanged;
+    }
+
+    private void HandleCockpitThemeChanged(GameSettings.CockpitTheme _)
+    {
+        ApplyCockpitThemeVisuals();
+        UpdateHealthBars();
+    }
+
+    public void ApplyCockpitThemeVisuals()
+    {
+        if (_p1FillImage != null)
+            _p1FillImage.color = GameSettings.GetCockpitHpBarColor();
+
+        if (_ultiBarFillImg != null)
+            _ultiBarFillImg.color = GameSettings.GetCockpitUltiBarColor();
+
+        if (_waveBadgeObj != null)
+        {
+            Outline waveOut = _waveBadgeObj.GetComponent<Outline>();
+            if (waveOut != null) waveOut.effectColor = GameSettings.GetCockpitAccentBorderColor(0.60f);
+        }
+
+        if (_modeIntroOutline != null)
+            _modeIntroOutline.effectColor = GameSettings.GetCockpitAccentBorderColor(0.90f);
+
+        if (_comboOutline != null)
+            _comboOutline.effectColor = GameSettings.GetCockpitAccentBorderColor(0.70f);
+
+        if (_airspaceBannerOutline != null)
+            _airspaceBannerOutline.effectColor = GameSettings.GetCockpitAccentBorderColor(0.80f);
     }
 
     private bool _lastPortraitDuelLayout = false;
@@ -345,7 +384,7 @@ public class GameUI : MonoBehaviour
                             fillImg.sprite = barFillSpr;
                             fillImg.type = Image.Type.Simple;
                         }
-                        fillImg.color = new Color(0.03f, 0.82f, 0.93f, 1f); // #08D1EC 1:1 parlak cyan
+                        fillImg.color = GameSettings.GetCockpitHpBarColor();
                         _p1FillImage = fillImg;
 
                         // Sağ uçtaki 1:1 parlak beyaz dikey gösterge ucu (White Tip Cap)
@@ -452,7 +491,7 @@ public class GameUI : MonoBehaviour
         bg.color = new Color(0.06f, 0.09f, 0.14f, 0.85f);
 
         Outline outline = EnsureComponent<Outline>(badgeObj);
-        outline.effectColor = new Color(0f, 0.85f, 1f, 0.6f);
+        outline.effectColor = GameSettings.GetCockpitAccentBorderColor(0.6f);
         outline.effectDistance = new Vector2(2f, -2f);
 
         GameObject textObj = EnsureUIGameObject(badgeObj.transform, "Text");
@@ -961,7 +1000,7 @@ public class GameUI : MonoBehaviour
         _ultiBarFillImg.type = Image.Type.Filled;
         _ultiBarFillImg.fillMethod = Image.FillMethod.Horizontal;
         _ultiBarFillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
-        _ultiBarFillImg.color = new Color(0.49f, 0.95f, 1f, 1f); // #7EF2FF 1:1 buz mavisi
+        _ultiBarFillImg.color = GameSettings.GetCockpitUltiBarColor();
         _ultiBarFillImg.fillAmount = 0f;
 
         // Barın sağ altındaki 1:1 "ULTİ • SÜPER GÜÇ" başlığı
@@ -1226,7 +1265,7 @@ public class GameUI : MonoBehaviour
                 if (pcm.IsUltiReady)
                 {
                     float pulse = Mathf.PingPong(Time.time * 4f, 1f);
-                    _ultiBarFillImg.color = Color.Lerp(new Color(0.49f, 0.95f, 1f, 1f), new Color(1f, 0.88f, 0.35f, 1f), pulse);
+                    _ultiBarFillImg.color = Color.Lerp(GameSettings.GetCockpitUltiBarColor(), new Color(1f, 0.88f, 0.35f, 1f), pulse);
                     if (_ultiBarPctTMP != null)
                     {
                         _ultiBarPctTMP.text = "%100";
@@ -1235,7 +1274,7 @@ public class GameUI : MonoBehaviour
                 }
                 else
                 {
-                    _ultiBarFillImg.color = new Color(0.49f, 0.95f, 1f, 1f); // #7EF2FF 1:1 buz mavisi
+                    _ultiBarFillImg.color = GameSettings.GetCockpitUltiBarColor();
                     if (_ultiBarPctTMP != null)
                     {
                         _ultiBarPctTMP.text = $"%{(int)pcm.currentUlti}";
@@ -1462,14 +1501,15 @@ public class GameUI : MonoBehaviour
 
             if (_p1FillImage != null)
             {
+                Color baseHpCol = GameSettings.GetCockpitHpBarColor();
                 if (_targetP1Health < 0.3f)
                 {
                     float pulse = Mathf.PingPong(Time.time * 4f, 1f);
-                    _p1FillImage.color = Color.Lerp(new Color(0.95f, 0.25f, 0.25f, 1f), new Color(0.03f, 0.82f, 0.93f, 1f), pulse);
+                    _p1FillImage.color = Color.Lerp(new Color(0.95f, 0.25f, 0.25f, 1f), baseHpCol, pulse);
                 }
                 else
                 {
-                    _p1FillImage.color = new Color(0.03f, 0.82f, 0.93f, 1f); // #08D1EC 1:1 parlak cyan
+                    _p1FillImage.color = baseHpCol;
                 }
             }
         }

@@ -217,6 +217,9 @@ public class MainMenuManager : MonoBehaviour
     private TextMeshProUGUI _dailyOpsBadgeTMP;
     private TextMeshProUGUI _dailyOpsRewardTextTMP;
     private Button _menuControlSchemeButton;
+    private Button _cockpitThemeBlueBtn;
+    private Button _cockpitThemeGreenBtn;
+    private Button _cockpitThemeGoldBtn;
 
     private void OnDestroy()
     {
@@ -1937,10 +1940,153 @@ public class MainMenuManager : MonoBehaviour
         }
     }
 
+    private void SetupSettingsCockpitThemeSelector()
+    {
+        if (settingsPanel == null) return;
+
+        Transform existing = settingsPanel.transform.Find("MenuCockpitThemeBar");
+        GameObject barObj = existing != null ? existing.gameObject : null;
+
+        if (barObj == null)
+        {
+            barObj = new GameObject("MenuCockpitThemeBar", typeof(RectTransform));
+            barObj.transform.SetParent(settingsPanel.transform, false);
+
+            Image barBg = barObj.AddComponent<Image>();
+            barBg.sprite = GetHudSprite("settings_cockpit_bar_bg", new Color(0.20f, 0.36f, 0.48f, 0.92f), new Color(0.05f, 0.09f, 0.14f, 0.94f), false);
+            barBg.type = Image.Type.Sliced;
+            barBg.color = Color.white;
+
+            // Sol Başlık: KOKPİT TEMASI
+            GameObject lblObj = new GameObject("TitleLabel", typeof(RectTransform));
+            lblObj.transform.SetParent(barObj.transform, false);
+            RectTransform lRt = lblObj.GetComponent<RectTransform>();
+            lRt.anchorMin = new Vector2(0f, 0f);
+            lRt.anchorMax = new Vector2(0.30f, 1f);
+            lRt.offsetMin = new Vector2(22f, 4f);
+            lRt.offsetMax = new Vector2(-4f, -4f);
+
+            TextMeshProUGUI lTmp = lblObj.AddComponent<TextMeshProUGUI>();
+            lTmp.font = GetTacticalFont();
+            lTmp.text = "KOKPİT TEMASI";
+            lTmp.fontSize = 19.5f;
+            lTmp.fontStyle = FontStyles.Bold;
+            lTmp.characterSpacing = 1.3f;
+            lTmp.alignment = TextAlignmentOptions.MidlineLeft;
+            lTmp.color = new Color(0.55f, 0.88f, 0.98f, 1f);
+            lTmp.enableAutoSizing = true;
+            lTmp.fontSizeMin = 14f;
+            lTmp.fontSizeMax = 19.5f;
+            lTmp.raycastTarget = false;
+
+            _cockpitThemeBlueBtn  = CreateCockpitThemePillButton(barObj.transform, "ThemeBlueBtn",  0);
+            _cockpitThemeGreenBtn = CreateCockpitThemePillButton(barObj.transform, "ThemeGreenBtn", 1);
+            _cockpitThemeGoldBtn  = CreateCockpitThemePillButton(barObj.transform, "ThemeGoldBtn",  2);
+        }
+        else
+        {
+            Transform b0 = barObj.transform.Find("ThemeBlueBtn");
+            Transform b1 = barObj.transform.Find("ThemeGreenBtn");
+            Transform b2 = barObj.transform.Find("ThemeGoldBtn");
+            if (b0 != null) _cockpitThemeBlueBtn  = b0.GetComponent<Button>();
+            if (b1 != null) _cockpitThemeGreenBtn = b1.GetComponent<Button>();
+            if (b2 != null) _cockpitThemeGoldBtn  = b2.GetComponent<Button>();
+        }
+
+        // Alt orta boş bant: « GERİ DÖN (-684, -459, 316x70) ile hizalı ve merkez sütunla (x=0, w=854) birebir genişlikte
+        HangarUI.SetNormalizedRect1080p(barObj.GetComponent<RectTransform>(), new Vector2(0.0f, -459.0f), new Vector2(854.0f, 68.0f));
+
+        BindCockpitThemePill(_cockpitThemeBlueBtn,  GameSettings.CockpitTheme.CyberBlue);
+        BindCockpitThemePill(_cockpitThemeGreenBtn, GameSettings.CockpitTheme.RadarGreen);
+        BindCockpitThemePill(_cockpitThemeGoldBtn,  GameSettings.CockpitTheme.StealthGold);
+    }
+
+    private Button CreateCockpitThemePillButton(Transform parent, string objName, int index)
+    {
+        GameObject btnObj = new GameObject(objName, typeof(RectTransform));
+        btnObj.transform.SetParent(parent, false);
+
+        // Sağ %69'luk alanda 3 eşit taktik sekme
+        float startX = 0.305f + index * 0.228f;
+        float endX = startX + 0.218f;
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(startX, 0.14f);
+        rt.anchorMax = new Vector2(endX, 0.86f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        Image img = btnObj.AddComponent<Image>();
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+
+        Button btn = btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        txtObj.transform.SetParent(btnObj.transform, false);
+        RectTransform tRt = txtObj.GetComponent<RectTransform>();
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = new Vector2(6f, 2f);
+        tRt.offsetMax = new Vector2(-6f, -2f);
+
+        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = GetTacticalFont();
+        tmp.fontSize = 15.5f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.characterSpacing = 1.0f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.enableAutoSizing = true;
+        tmp.fontSizeMin = 11.5f;
+        tmp.fontSizeMax = 15.5f;
+        tmp.color = Color.white;
+        tmp.raycastTarget = false;
+
+        return btn;
+    }
+
+    private void BindCockpitThemePill(Button btn, GameSettings.CockpitTheme theme)
+    {
+        if (btn == null) return;
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(() =>
+        {
+            GameSettings.SetCockpitTheme(theme);
+            UpdateUIFeedback();
+            AudioManager.Instance?.PlayButtonClick();
+        });
+    }
+
+    private void UpdateCockpitThemePillVisual(Button btn, string label, Color accentBorder, Color activeGlass, string spriteKeyPrefix, bool isSelected)
+    {
+        if (btn == null) return;
+        Image img = btn.GetComponent<Image>();
+        if (img != null)
+        {
+            img.sprite = isSelected
+                ? GetHudSprite(spriteKeyPrefix + "_on", accentBorder, activeGlass, true)
+                : GetHudSprite(spriteKeyPrefix + "_off", new Color(0.22f, 0.33f, 0.44f, 0.80f), new Color(0.06f, 0.10f, 0.16f, 0.88f), false);
+            img.type = Image.Type.Sliced;
+            img.color = Color.white;
+        }
+
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp != null)
+        {
+            tmp.font = GetTacticalFont();
+            string hex = ColorUtility.ToHtmlStringRGB(accentBorder);
+            tmp.text = isSelected
+                ? $"<color=#{hex}>●</color> <b><color=#FFFFFF>{label}</color></b>"
+                : $"<color=#94A3B8>{label}</color>";
+        }
+    }
+
     private void SetupMenuSoundControls()
     {
         if (settingsPanel == null) return;
         SetupSettingsControlSchemeButton();
+        SetupSettingsCockpitThemeSelector();
         if (_soundControlsContainer != null) return;
 
         Transform existing = settingsPanel.transform.Find("MenuSoundControls");
@@ -2797,6 +2943,30 @@ public class MainMenuManager : MonoBehaviour
                 cImg.color = Color.white;
             }
         }
+
+        // 8. Ayarlar Panelindeki Kokpit Teması Seçici Sekmeleri
+        var activeTheme = GameSettings.SelectedCockpitTheme;
+        UpdateCockpitThemePillVisual(
+            _cockpitThemeBlueBtn,
+            "SİBER MAVİ",
+            new Color(0.00f, 0.90f, 1.00f, 1f),
+            new Color(0.05f, 0.22f, 0.32f, 0.96f),
+            "cockpit_pill_blue",
+            activeTheme == GameSettings.CockpitTheme.CyberBlue);
+        UpdateCockpitThemePillVisual(
+            _cockpitThemeGreenBtn,
+            "RADAR YEŞİLİ",
+            new Color(0.14f, 0.86f, 0.44f, 1f),
+            new Color(0.05f, 0.24f, 0.14f, 0.96f),
+            "cockpit_pill_green",
+            activeTheme == GameSettings.CockpitTheme.RadarGreen);
+        UpdateCockpitThemePillVisual(
+            _cockpitThemeGoldBtn,
+            "ALTIN KARBON",
+            new Color(0.96f, 0.66f, 0.14f, 1f),
+            new Color(0.26f, 0.18f, 0.05f, 0.96f),
+            "cockpit_pill_gold",
+            activeTheme == GameSettings.CockpitTheme.StealthGold);
     }
 
     private void UpdateModeCardVisual(Button btn, bool isSelected, string text, bool isLeftAligned)

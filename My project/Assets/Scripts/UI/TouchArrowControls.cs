@@ -32,6 +32,7 @@ public class TouchArrowControls : MonoBehaviour
     private CanvasGroup _rightCanvasGroup;
     private PlaneController _p1Plane;
     private RectTransform _canvasRt;
+    private static readonly Dictionary<string, Sprite> _themedArrowSpriteCache = new Dictionary<string, Sprite>();
 
     private void Awake()
     {
@@ -44,12 +45,33 @@ public class TouchArrowControls : MonoBehaviour
 
         GameSettings.LoadSettings();
         GameSettings.OnControlSchemeChanged += HandleControlSchemeChanged;
+        GameSettings.OnCockpitThemeChanged += HandleCockpitThemeChanged;
     }
 
     private void OnDestroy()
     {
         GameSettings.OnControlSchemeChanged -= HandleControlSchemeChanged;
+        GameSettings.OnCockpitThemeChanged -= HandleCockpitThemeChanged;
         if (Instance == this) Instance = null;
+    }
+
+    private void HandleCockpitThemeChanged(GameSettings.CockpitTheme _)
+    {
+        RefreshArrowSpritesForTheme();
+    }
+
+    public void RefreshArrowSpritesForTheme()
+    {
+        if (leftButtonObj != null)
+        {
+            Image lImg = leftButtonObj.GetComponent<Image>();
+            if (lImg != null) lImg.sprite = GetArrowSprite("btn_arrow_left", true);
+        }
+        if (rightButtonObj != null)
+        {
+            Image rImg = rightButtonObj.GetComponent<Image>();
+            if (rImg != null) rImg.sprite = GetArrowSprite("btn_arrow_right", false);
+        }
     }
 
     private void Start()
@@ -456,14 +478,27 @@ public class TouchArrowControls : MonoBehaviour
 
     /// <summary>
     /// Model 1 Cyber Cyan 256x256 taktik ok görselini Resources, Asset veya Runtime Fallback ile yükler.
+    /// Varsayılan Siber Mavi temada orijinal sprite %100 dokunulmadan döner; diğer kokpit temalarında önbellekli tonlanır.
     /// </summary>
     private Sprite GetArrowSprite(string resName, bool isLeft)
     {
-        // 1. Resources üzerinden yükleme dene
-        Sprite spr = Resources.Load<Sprite>(resName);
-        if (spr != null) return spr;
+        var theme = GameSettings.SelectedCockpitTheme;
+        string cacheKey = $"{resName}_{(int)theme}";
+        if (_themedArrowSpriteCache.TryGetValue(cacheKey, out var cached) && cached != null)
+            return cached;
 
-        // 2. Doğrudan dosya yolundan Texture2D yükleme (Unity editor veya runtime güvenliği için)
+        if (theme == GameSettings.CockpitTheme.CyberBlue)
+        {
+            // 1. Resources üzerinden yükleme dene (Orijinal 1:1 sprite)
+            Sprite spr = Resources.Load<Sprite>(resName);
+            if (spr != null)
+            {
+                _themedArrowSpriteCache[cacheKey] = spr;
+                return spr;
+            }
+        }
+
+        // 2. Doğrudan dosya yolundan okunabilir Texture2D yükleme
         try
         {
             string[] candidatePaths = {
@@ -479,15 +514,74 @@ public class TouchArrowControls : MonoBehaviour
                     Texture2D tex = new Texture2D(256, 256, TextureFormat.RGBA32, false);
                     if (tex.LoadImage(bytes))
                     {
-                        return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                        if (theme != GameSettings.CockpitTheme.CyberBlue)
+                        {
+                            ApplyCockpitThemeToCyanTexture(tex, theme);
+                        }
+                        Sprite built = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+                        _themedArrowSpriteCache[cacheKey] = built;
+                        return built;
                     }
                 }
             }
         }
         catch { }
 
+        if (theme != GameSettings.CockpitTheme.CyberBlue)
+        {
+            Sprite procThemed = GenerateProceduralArrowSprite(isLeft);
+            if (procThemed != null && procThemed.texture != null)
+            {
+                ApplyCockpitThemeToCyanTexture(procThemed.texture, theme);
+            }
+            _themedArrowSpriteCache[cacheKey] = procThemed;
+            return procThemed;
+        }
+
+        Sprite fallbackRes = Resources.Load<Sprite>(resName);
+        if (fallbackRes != null)
+        {
+            _themedArrowSpriteCache[cacheKey] = fallbackRes;
+            return fallbackRes;
+        }
+
         // 3. Runtime Yüksek Kaliteli Cyber Cyan Neon Ok Fallback Çizimi
-        return GenerateProceduralArrowSprite(isLeft);
+        Sprite fallbackProc = GenerateProceduralArrowSprite(isLeft);
+        _themedArrowSpriteCache[cacheKey] = fallbackProc;
+        return fallbackProc;
+    }
+
+    private static void ApplyCockpitThemeToCyanTexture(Texture2D tex, GameSettings.CockpitTheme theme)
+    {
+        if (tex == null || theme == GameSettings.CockpitTheme.CyberBlue) return;
+        Color[] pixels = tex.GetPixels();
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            Color p = pixels[i];
+            if (p.a <= 0.004f) continue;
+
+            float cyanEnergy = Mathf.Max(p.g, p.b);
+            float whiteHighlight = p.r; // Beyaz parlama kanalı korunur
+
+            if (theme == GameSettings.CockpitTheme.RadarGreen)
+            {
+                pixels[i] = new Color(
+                    Mathf.Clamp01(whiteHighlight * 0.75f + cyanEnergy * 0.14f),
+                    Mathf.Clamp01(cyanEnergy * 0.96f + whiteHighlight * 0.20f),
+                    Mathf.Clamp01(whiteHighlight * 0.65f + cyanEnergy * 0.42f),
+                    p.a);
+            }
+            else if (theme == GameSettings.CockpitTheme.StealthGold)
+            {
+                pixels[i] = new Color(
+                    Mathf.Clamp01(cyanEnergy * 0.98f + whiteHighlight * 0.20f),
+                    Mathf.Clamp01(cyanEnergy * 0.68f + whiteHighlight * 0.30f),
+                    Mathf.Clamp01(whiteHighlight * 0.65f + cyanEnergy * 0.14f),
+                    p.a);
+            }
+        }
+        tex.SetPixels(pixels);
+        tex.Apply();
     }
 
     /// <summary>

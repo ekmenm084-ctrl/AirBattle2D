@@ -69,6 +69,9 @@ public class PlayerProfileUI : MonoBehaviour
 
     private void Start()
     {
+        GameSettings.LoadSettings();
+        GameSettings.OnCockpitThemeChanged += HandleCockpitThemeChanged;
+
         PlayerProfileManager pm = PlayerProfileManager.EnsureInstance();
         pm.OnLevelUp += HandleLevelUp;
         pm.OnExpAdded += HandleExpAdded;
@@ -79,11 +82,18 @@ public class PlayerProfileUI : MonoBehaviour
     {
         if (Instance == this) Instance = null;
 
+        GameSettings.OnCockpitThemeChanged -= HandleCockpitThemeChanged;
+
         if (PlayerProfileManager.Instance != null)
         {
             PlayerProfileManager.Instance.OnLevelUp -= HandleLevelUp;
             PlayerProfileManager.Instance.OnExpAdded -= HandleExpAdded;
         }
+    }
+
+    private void HandleCockpitThemeChanged(GameSettings.CockpitTheme _)
+    {
+        RefreshBadgeVisuals();
     }
 
     private void HandleLevelUp(int newLevel, int goldReward)
@@ -549,7 +559,26 @@ public class PlayerProfileUI : MonoBehaviour
         }
 
         if (_expBarFill != null)
+        {
             _expBarFill.fillAmount = pm.ExpProgress;
+            _expBarFill.color = GameSettings.SelectedCockpitTheme == GameSettings.CockpitTheme.CyberBlue
+                ? new Color(0.04f, 0.72f, 0.96f, 0.96f)
+                : GameSettings.GetCockpitHpBarColor();
+        }
+
+        if (_badgeRoot != null)
+        {
+            Image badgeBg = _badgeRoot.GetComponent<Image>();
+            if (badgeBg != null)
+            {
+                var theme = GameSettings.SelectedCockpitTheme;
+                string cardKey = theme == GameSettings.CockpitTheme.CyberBlue
+                    ? "profile_badge_card"
+                    : $"profile_badge_card_{(int)theme}";
+                Color borderCol = GameSettings.GetCockpitAccentBorderColor(0.85f);
+                badgeBg.sprite = MainMenuManager.GetRoundedBoxSprite(cardKey, new Color(0.04f, 0.08f, 0.14f, 0.96f), borderCol, 12, 2);
+            }
+        }
 
         if (_expBarTMP != null)
         {
