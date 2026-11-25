@@ -185,15 +185,23 @@ public class TouchArrowControls : MonoBehaviour
         if (leftButtonObj != null)
         {
             if (_leftCanvasGroup == null)
-                _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>() ?? leftButtonObj.AddComponent<CanvasGroup>();
-            _leftCanvasGroup.alpha = Mathf.Lerp(_leftCanvasGroup.alpha, leftTargetAlpha, Time.unscaledDeltaTime * 14f);
+            {
+                _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>();
+                if (_leftCanvasGroup == null) _leftCanvasGroup = leftButtonObj.AddComponent<CanvasGroup>();
+            }
+            if (_leftCanvasGroup != null)
+                _leftCanvasGroup.alpha = Mathf.Lerp(_leftCanvasGroup.alpha, leftTargetAlpha, Time.unscaledDeltaTime * 14f);
         }
 
         if (rightButtonObj != null)
         {
             if (_rightCanvasGroup == null)
-                _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>() ?? rightButtonObj.AddComponent<CanvasGroup>();
-            _rightCanvasGroup.alpha = Mathf.Lerp(_rightCanvasGroup.alpha, rightTargetAlpha, Time.unscaledDeltaTime * 14f);
+            {
+                _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>();
+                if (_rightCanvasGroup == null) _rightCanvasGroup = rightButtonObj.AddComponent<CanvasGroup>();
+            }
+            if (_rightCanvasGroup != null)
+                _rightCanvasGroup.alpha = Mathf.Lerp(_rightCanvasGroup.alpha, rightTargetAlpha, Time.unscaledDeltaTime * 14f);
         }
     }
 
@@ -349,7 +357,8 @@ public class TouchArrowControls : MonoBehaviour
 
         if (leftButtonObj != null)
         {
-            _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>() ?? leftButtonObj.AddComponent<CanvasGroup>();
+            _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>();
+            if (_leftCanvasGroup == null) _leftCanvasGroup = leftButtonObj.AddComponent<CanvasGroup>();
             Image lImg = leftButtonObj.GetComponent<Image>();
             if (lImg != null) lImg.raycastTarget = false;
             EventTrigger oldTrig = leftButtonObj.GetComponent<EventTrigger>();
@@ -357,7 +366,8 @@ public class TouchArrowControls : MonoBehaviour
         }
         if (rightButtonObj != null)
         {
-            _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>() ?? rightButtonObj.AddComponent<CanvasGroup>();
+            _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>();
+            if (_rightCanvasGroup == null) _rightCanvasGroup = rightButtonObj.AddComponent<CanvasGroup>();
             Image rImg = rightButtonObj.GetComponent<Image>();
             if (rImg != null) rImg.raycastTarget = false;
             EventTrigger oldTrig = rightButtonObj.GetComponent<EventTrigger>();

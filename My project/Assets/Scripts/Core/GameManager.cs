@@ -975,7 +975,7 @@ public class GameManager : MonoBehaviour
         PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        ReloadGameSceneSafe();
     }
 
     /// <summary>
@@ -1594,38 +1594,64 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void RestartGame()
+    public static void ReloadGameSceneSafe()
     {
-        SaveAndSubmitActiveScore(isFinal: true);
-        MainMenuManager.OpenHangarOnSceneLoad = false;
-        MainMenuManager.AutoPlayOnSceneLoad = true;
-        TwoPlayerDuelManager.Instance?.StopDuel();
-        CleanUpBulletHellPlane();
-        EnemyFormationManager.Instance?.StopDirector();
-        AirspaceHazardDirector.Instance?.StopDirector();
-        DroneManager.EnsureInstance()?.ClearDrones();
-        RadioChatterManager.Instance?.ResetMatchState();
-        PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
         Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
+        Scene active = SceneManager.GetActiveScene();
+        if (active.buildIndex >= 0)
+        {
+            SceneManager.LoadScene(active.buildIndex);
+            return;
+        }
+
+        // Unity Editor'de yedek sahneden ('Temp/__Backupscenes/0.backup', buildIndex = -1) çalışırken Build Settings'teki 0. sahneyi yükle
+        if (SceneManager.sceneCountInBuildSettings > 0)
+        {
+            SceneManager.LoadScene(0);
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(active.name) && !active.name.EndsWith(".backup"))
+        {
+            SceneManager.LoadScene(active.name);
+            return;
+        }
+
+        SceneManager.LoadScene("SampleScene");
+    }
+
+    public void RestartGame()
+    {
+        try { SaveAndSubmitActiveScore(isFinal: true); } catch { }
+        MainMenuManager.OpenHangarOnSceneLoad = false;
+        MainMenuManager.AutoPlayOnSceneLoad = true;
+        try { TwoPlayerDuelManager.Instance?.StopDuel(); } catch { }
+        try { CleanUpBulletHellPlane(); } catch { }
+        try { EnemyFormationManager.Instance?.StopDirector(); } catch { }
+        try { AirspaceHazardDirector.Instance?.StopDirector(); } catch { }
+        try { DroneManager.EnsureInstance()?.ClearDrones(); } catch { }
+        try { RadioChatterManager.Instance?.ResetMatchState(); } catch { }
+        try { PlayerProfileUI.Instance?.SetHUDBadgeActive(false); } catch { }
+        CameraShake.StopAllAndReset();
+        ReloadGameSceneSafe();
     }
 
     public void GoToMainMenu()
     {
-        SaveAndSubmitActiveScore(isFinal: true);
+        try { SaveAndSubmitActiveScore(isFinal: true); } catch { }
         MainMenuManager.AutoPlayOnSceneLoad = false;
-        MainMenuManager.ApplyScreenOrientationAndCanvas(portraitDuel: false);
-        TwoPlayerDuelManager.Instance?.StopDuel();
-        CleanUpBulletHellPlane();
-        EnemyFormationManager.Instance?.StopDirector();
-        AirspaceHazardDirector.Instance?.StopDirector();
-        DroneManager.EnsureInstance()?.ClearDrones();
-        RadioChatterManager.Instance?.ResetMatchState();
-        PlayerProfileUI.Instance?.SetHUDBadgeActive(false);
-        Time.timeScale = 1f;
-        Time.fixedDeltaTime = 0.02f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        try { MainMenuManager.ApplyScreenOrientationAndCanvas(portraitDuel: false); } catch { }
+        try { TwoPlayerDuelManager.Instance?.StopDuel(); } catch { }
+        try { CleanUpBulletHellPlane(); } catch { }
+        try { EnemyFormationManager.Instance?.StopDirector(); } catch { }
+        try { AirspaceHazardDirector.Instance?.StopDirector(); } catch { }
+        try { DroneManager.EnsureInstance()?.ClearDrones(); } catch { }
+        try { RadioChatterManager.Instance?.ResetMatchState(); } catch { }
+        try { PlayerProfileUI.Instance?.SetHUDBadgeActive(false); } catch { }
+        CameraShake.StopAllAndReset();
+        ReloadGameSceneSafe();
     }
 
     private void OnDisable()

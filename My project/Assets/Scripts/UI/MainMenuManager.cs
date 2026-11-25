@@ -1549,6 +1549,13 @@ public class MainMenuManager : MonoBehaviour
 
     public bool IsAnyMenuPanelOpen()
     {
+        if (HangarUI.Instance != null && HangarUI.Instance.gameObject.activeInHierarchy) return true;
+        if (MilitaryStoreUI.Instance != null && MilitaryStoreUI.Instance.gameObject.activeInHierarchy) return true;
+        if (CratesUI.Instance != null && CratesUI.Instance.gameObject.activeInHierarchy) return true;
+        if (InventoryUI.Instance != null && InventoryUI.Instance.gameObject.activeInHierarchy) return true;
+        if (LeaderboardUI.Instance != null && LeaderboardUI.Instance.gameObject.activeInHierarchy) return true;
+        if (DailyOpsUI.Instance != null && DailyOpsUI.Instance.gameObject.activeInHierarchy) return true;
+
         if (!gameObject.activeInHierarchy) return false;
         if (mainPanel != null && mainPanel.activeInHierarchy) return true;
         if (modesPanel != null && modesPanel.activeInHierarchy) return true;

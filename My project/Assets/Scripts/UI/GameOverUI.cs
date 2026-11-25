@@ -372,7 +372,14 @@ public class GameOverUI : MonoBehaviour
         if (_isReviving) return;
         AudioManager.Instance?.PlayButtonClick();
         Hide();
-        GameManager.Instance?.RestartGame();
+        if (GameManager.Instance != null)
+            GameManager.Instance.RestartGame();
+        else
+        {
+            MainMenuManager.OpenHangarOnSceneLoad = false;
+            MainMenuManager.AutoPlayOnSceneLoad = true;
+            GameManager.ReloadGameSceneSafe();
+        }
     }
 
     private void OnHangarClicked()
@@ -381,7 +388,11 @@ public class GameOverUI : MonoBehaviour
         AudioManager.Instance?.PlayButtonClick();
         Hide();
         MainMenuManager.OpenHangarOnSceneLoad = true;
-        GameManager.Instance?.GoToMainMenu();
+        MainMenuManager.AutoPlayOnSceneLoad = false;
+        if (GameManager.Instance != null)
+            GameManager.Instance.GoToMainMenu();
+        else
+            GameManager.ReloadGameSceneSafe();
     }
 
     // =========================================================================
