@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
@@ -7,7 +8,8 @@ using UnityEngine.Networking;
 
 /// <summary>
 /// Supabase PostgreSQL (RPC + bcrypt) + Çevrimdışı Yerel Yedekli Pilot Kimlik Doğrulama Yöneticisi.
-/// - Her oyun açılışında IsAuthenticatedInSession = false olarak başlar (kullanıcı adı & şifre girişi zorunlu).
+/// - Cihazı tanır: Oyuncu daha önce giriş yapmışsa ve oturumu kapatmadıysa (Logout yapmadıysa),
+///   oyun açılışında son aktif kullanıcı profilinden otomatik olarak devam eder.
 /// - Kayıt ve Giriş işlemlerini Supabase /rest/v1/rpc/register_pilot ve /rest/v1/rpc/login_pilot üzerinden yürütür.
 /// - İnternet bağlantısı yoksa veya Supabase yapılandırılmamışsa cihaz içi tuzlanmış SHA-256 doğrulama ile yedekli çalışır.
 /// </summary>
@@ -16,23 +18,29 @@ public class PilotAuthManager : MonoBehaviour
     public static PilotAuthManager Instance { get; private set; }
 
     /// <summary>
-    /// Bu oyun oturumunda kullanıcı adı ve şifre ile doğrulama yapıldı mı?
-    /// Her oyun açılışında false başlar; savaş sonrası ana menüye dönerken tekrar sormaz.
+    /// Aktif cihaz/oyun oturumunda kimliği doğrulanmış bir profil açık mı?
+    /// Cihazda kayıtlı aktif oturum varsa açılışta otomatik true olur; Çıkış Yap (Logout) denirse false olur.
     /// </summary>
     public static bool IsAuthenticatedInSession { get; private set; } = false;
 
+    private const string PREF_LAST_AUTH_USER = "AirBattle_LastAuthUser";
+    private const string PREF_EXPLICIT_LOGOUT = "AirBattle_ExplicitLogout";
+    private const string PREF_BOUND_DEVICE_HASH = "AirBattle_BoundDeviceHash";
+    private const string PREF_REMEMBERED_PROFILES = "AirBattle_DeviceRememberedProfiles";
+
     public static string LastLoggedInUsername
     {
-        get => PlayerPrefs.GetString("AirBattle_LastAuthUser", "");
+        get => PlayerPrefs.GetString(PREF_LAST_AUTH_USER, "");
         private set
         {
-            PlayerPrefs.SetString("AirBattle_LastAuthUser", value ?? "");
+            PlayerPrefs.SetString(PREF_LAST_AUTH_USER, value ?? "");
             PlayerPrefs.Save();
         }
     }
 
     private const string LOCAL_HASH_PREFIX = "AirBattle_LocalAuthHash_";
     private const string LOCAL_SALT = "AB2D_TACTICAL_SALT_V1_";
+    private const string DEVICE_BIND_SALT = "AB2D_DEVICE_SESSION_V1_";
 
     [Serializable]
     private class AuthRpcPayload
@@ -70,9 +78,16 @@ public class PilotAuthManager : MonoBehaviour
         public string p_username;
     }
 
+    [Serializable]
+    private class CloudTimestampProbe
+    {
+        public long updatedUnix;
+    }
+
     private bool _cloudSyncPending = false;
     private float _nextCloudSyncUnscaledTime = 0f;
     private bool _isUploadingCloud = false;
+    private bool _startupDailyRewardChecked = false;
 
     private void Awake()
     {
@@ -80,6 +95,7 @@ public class PilotAuthManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            TryRestoreSavedDeviceSession(triggerUiAndPopup: false);
         }
         else if (Instance != this)
         {
@@ -101,9 +117,216 @@ public class PilotAuthManager : MonoBehaviour
         return Instance;
     }
 
+    private static string GetCurrentDeviceFingerprint()
+    {
+        string devId = SystemInfo.deviceUniqueIdentifier;
+        if (string.IsNullOrEmpty(devId) || devId == SystemInfo.unsupportedIdentifier)
+        {
+            devId = SystemInfo.deviceModel + "|" + SystemInfo.deviceName + "|" + SystemInfo.operatingSystem;
+        }
+        return ComputeSha256(DEVICE_BIND_SALT + devId);
+    }
+
+    private static void BindSessionToCurrentDevice(string cleanUser)
+    {
+        PlayerPrefs.SetString(PREF_BOUND_DEVICE_HASH, GetCurrentDeviceFingerprint());
+        PlayerPrefs.SetInt(PREF_EXPLICIT_LOGOUT, 0);
+        RememberProfileOnDevice(cleanUser);
+        PlayerPrefs.Save();
+    }
+
+    public static List<string> GetRememberedDeviceProfiles()
+    {
+        string raw = PlayerPrefs.GetString(PREF_REMEMBERED_PROFILES, "");
+        List<string> result = new List<string>();
+        if (!string.IsNullOrEmpty(raw))
+        {
+            string[] parts = raw.Split(',');
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string clean = ProfileManager.CleanProfileName(parts[i]);
+                if (!string.IsNullOrEmpty(clean) && clean.Length >= 3 &&
+                    !result.Exists(x => x.Equals(clean, StringComparison.OrdinalIgnoreCase)))
+                {
+                    result.Add(clean);
+                }
+            }
+        }
+
+        string last = LastLoggedInUsername;
+        if (!string.IsNullOrEmpty(last))
+        {
+            string cleanLast = ProfileManager.CleanProfileName(last);
+            if (cleanLast.Length >= 3 && !result.Exists(x => x.Equals(cleanLast, StringComparison.OrdinalIgnoreCase)))
+            {
+                result.Insert(0, cleanLast);
+            }
+        }
+        return result;
+    }
+
+    private static void RememberProfileOnDevice(string cleanUser)
+    {
+        if (string.IsNullOrEmpty(cleanUser)) return;
+        string clean = ProfileManager.CleanProfileName(cleanUser);
+        if (clean.Length < 3) return;
+
+        List<string> list = GetRememberedDeviceProfiles();
+        list.RemoveAll(x => x.Equals(clean, StringComparison.OrdinalIgnoreCase));
+        list.Insert(0, clean);
+        if (list.Count > 6)
+            list.RemoveRange(6, list.Count - 6);
+
+        PlayerPrefs.SetString(PREF_REMEMBERED_PROFILES, string.Join(",", list));
+    }
+
+    /// <summary>
+    /// Oyun açıldığında cihazı ve önceki oturumu kontrol eder.
+    /// Kullanıcı daha önce giriş yapmış ve "Çıkış Yap" dememişse en sonki profilinden otomatik devam eder.
+    /// </summary>
+    public bool TryRestoreSavedDeviceSession(bool triggerUiAndPopup = true)
+    {
+        if (PlayerPrefs.GetInt(PREF_EXPLICIT_LOGOUT, 0) == 1)
+        {
+            IsAuthenticatedInSession = false;
+            return false;
+        }
+
+        string savedUser = LastLoggedInUsername;
+        if (string.IsNullOrEmpty(savedUser))
+        {
+            // Eski sürümden geçiş uyumluluğu: daha önce yerel şifre hash'i oluşturulmuş aktif profil varsa tanı
+            string activeCandidate = PlayerPrefs.GetString("AirBattle_ActiveProfile", "");
+            if (!string.IsNullOrEmpty(activeCandidate))
+            {
+                string cleanCandidate = ProfileManager.CleanProfileName(activeCandidate);
+                string localHash = PlayerPrefs.GetString(LOCAL_HASH_PREFIX + cleanCandidate.ToLowerInvariant(), "");
+                if (!string.IsNullOrEmpty(localHash))
+                {
+                    savedUser = cleanCandidate;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(savedUser))
+        {
+            IsAuthenticatedInSession = false;
+            return false;
+        }
+
+        string cleanUser = ProfileManager.CleanProfileName(savedUser);
+        if (cleanUser.Length < 3)
+        {
+            IsAuthenticatedInSession = false;
+            return false;
+        }
+
+        string storedDeviceHash = PlayerPrefs.GetString(PREF_BOUND_DEVICE_HASH, "");
+        string currentDeviceHash = GetCurrentDeviceFingerprint();
+        if (!string.IsNullOrEmpty(storedDeviceHash) && !string.Equals(storedDeviceHash, currentDeviceHash, StringComparison.Ordinal))
+        {
+            // Farklı bir cihazdan kopyalanmış kayıt tespit edildi -> güvenlik için şifre iste
+            IsAuthenticatedInSession = false;
+            return false;
+        }
+
+        bool wasAlreadyRestored = IsAuthenticatedInSession &&
+                                  string.Equals(ProfileManager.ActiveProfile, cleanUser, StringComparison.OrdinalIgnoreCase);
+
+        IsAuthenticatedInSession = true;
+        LastLoggedInUsername = cleanUser;
+        BindSessionToCurrentDevice(cleanUser);
+
+        if (!string.Equals(ProfileManager.ActiveProfile, cleanUser, StringComparison.OrdinalIgnoreCase))
+        {
+            ProfileManager.SwitchProfile(cleanUser);
+        }
+        else if (!wasAlreadyRestored)
+        {
+            ProfileManager.ReloadActiveProfileManagersAndUI();
+        }
+
+        if (!wasAlreadyRestored && gameObject.activeInHierarchy)
+        {
+            StartCoroutine(SyncRestoredSessionCoroutine(cleanUser));
+            LeaderboardManager.EnsureInstance()?.SyncAllLocalRecordsToSupabase();
+        }
+
+        if (triggerUiAndPopup)
+        {
+            PlayerProfileUI.Instance?.RefreshBadgeVisuals();
+            if (!_startupDailyRewardChecked)
+            {
+                _startupDailyRewardChecked = true;
+                try { DailyLoginStreakUI.EnsureUI()?.CheckAndShowAutoPopupOnLogin(); } catch { }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Aynı cihazda daha önce doğrulanmış kayıtlı profiller arasında tek tıkla hızlı geçiş yapar.
+    /// </summary>
+    public void SwitchToRememberedDeviceProfile(string targetUsername, Action<bool, string> onComplete = null)
+    {
+        string cleanUser = ProfileManager.CleanProfileName(targetUsername);
+        var remembered = GetRememberedDeviceProfiles();
+        if (!remembered.Exists(x => x.Equals(cleanUser, StringComparison.OrdinalIgnoreCase)))
+        {
+            onComplete?.Invoke(false, "Bu profil cihazda kayıtlı değil, lütfen şifrenizle giriş yapın.");
+            return;
+        }
+
+        // Önce mevcut profilin son durumunu diske ve buluta kaydet
+        if (IsAuthenticatedInSession && !string.IsNullOrEmpty(LastLoggedInUsername))
+        {
+            try
+            {
+                HangarManager.Instance?.SaveHangarData();
+                PlayerProfileManager.Instance?.SaveProfile();
+                PlayerPrefs.Save();
+            }
+            catch { }
+        }
+
+        IsAuthenticatedInSession = true;
+        LastLoggedInUsername = cleanUser;
+        BindSessionToCurrentDevice(cleanUser);
+
+        ProfileManager.SwitchProfile(cleanUser);
+        ProfileManager.ReloadActiveProfileManagersAndUI();
+
+        if (gameObject.activeInHierarchy)
+        {
+            StartCoroutine(SyncRestoredSessionCoroutine(cleanUser));
+            LeaderboardManager.EnsureInstance()?.SyncAllLocalRecordsToSupabase();
+        }
+
+        try { DailyLoginStreakUI.EnsureUI()?.CheckAndShowAutoPopupOnLogin(); } catch { }
+
+        onComplete?.Invoke(true, $"Aktif profil değiştirildi: {cleanUser}");
+    }
+
     public void Logout()
     {
+        if (_cloudSyncPending)
+        {
+            _cloudSyncPending = false;
+            PushCloudProfileNow();
+        }
+
+        try
+        {
+            HangarManager.Instance?.SaveHangarData();
+            PlayerProfileManager.Instance?.SaveProfile();
+        }
+        catch { }
+
         IsAuthenticatedInSession = false;
+        _startupDailyRewardChecked = false;
+        PlayerPrefs.SetInt(PREF_EXPLICIT_LOGOUT, 1);
+        PlayerPrefs.Save();
     }
 
     public void Login(string username, string password, Action<bool, string> onComplete)
@@ -277,14 +500,22 @@ public class PilotAuthManager : MonoBehaviour
     private void CompleteAuthenticatedLogin(string cleanUser, string cloudProfileJson, int cloudLevel, int cloudGold)
     {
         IsAuthenticatedInSession = true;
+        _startupDailyRewardChecked = true;
         LastLoggedInUsername = cleanUser;
+        BindSessionToCurrentDevice(cleanUser);
         ProfileManager.SwitchProfile(cleanUser);
+        ProfileManager.ReloadActiveProfileManagersAndUI();
 
-        // 1. Giriş yanıtında bulut profil paketi geldiyse hemen uygula
+        // 1. Giriş yanıtında bulut profil paketi geldiyse yerel zaman damgasıyla karşılaştırarak güvenle uygula
         bool imported = false;
         if (!string.IsNullOrEmpty(cloudProfileJson))
         {
-            imported = ProfileManager.ImportCloudSnapshotJson(cloudProfileJson);
+            long localTs = ProfileManager.GetLocalUpdatedTimestamp();
+            long cloudTs = ExtractCloudTimestamp(cloudProfileJson);
+            if (cloudTs >= localTs || !ProfileManager.HasKey("AirBattle_Pilot_Level"))
+            {
+                imported = ProfileManager.ImportCloudSnapshotJson(cloudProfileJson);
+            }
         }
 
         // Eğer henüz tam JSON paketi yoksa ama bulutta seviye/altın kayıtlıysa onları senkronize et
@@ -304,6 +535,68 @@ public class PilotAuthManager : MonoBehaviour
 
         // 3. Bugünün 7 Günlük Giriş Ödülü henüz alınmadıysa takvimi otomatik aç
         try { DailyLoginStreakUI.EnsureUI()?.CheckAndShowAutoPopupOnLogin(); } catch { }
+    }
+
+    private static long ExtractCloudTimestamp(string cloudJson)
+    {
+        if (string.IsNullOrEmpty(cloudJson)) return 0L;
+        try
+        {
+            var probe = JsonUtility.FromJson<CloudTimestampProbe>(cloudJson);
+            return probe != null ? probe.updatedUnix : 0L;
+        }
+        catch
+        {
+            return 0L;
+        }
+    }
+
+    private IEnumerator SyncRestoredSessionCoroutine(string username)
+    {
+        var lb = LeaderboardManager.EnsureInstance();
+        if (lb == null || !lb.IsSupabaseConfigured) yield break;
+
+        string endpoint = lb.supabaseUrl.TrimEnd('/') + "/rest/v1/rpc/load_pilot_cloud_data";
+        LoadCloudRpcPayload payload = new LoadCloudRpcPayload { p_username = username };
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(JsonUtility.ToJson(payload));
+
+        using (UnityWebRequest req = new UnityWebRequest(endpoint, "POST"))
+        {
+            req.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
+            req.SetRequestHeader("apikey", lb.supabaseAnonKey);
+            req.SetRequestHeader("Authorization", "Bearer " + lb.supabaseAnonKey);
+            req.timeout = 8;
+
+            yield return req.SendWebRequest();
+
+            if (req.result == UnityWebRequest.Result.Success &&
+                IsAuthenticatedInSession &&
+                string.Equals(ProfileManager.ActiveProfile, username, StringComparison.OrdinalIgnoreCase))
+            {
+                string responseText = req.downloadHandler != null ? req.downloadHandler.text : "";
+                AuthRpcResponse res = null;
+                try { res = JsonUtility.FromJson<AuthRpcResponse>(responseText); } catch { }
+
+                if (res != null && res.success && !string.IsNullOrEmpty(res.profile_data))
+                {
+                    long localTs = ProfileManager.GetLocalUpdatedTimestamp();
+                    long cloudTs = ExtractCloudTimestamp(res.profile_data);
+                    if (cloudTs > localTs || !ProfileManager.HasKey("AirBattle_Pilot_Level"))
+                    {
+                        ProfileManager.ImportCloudSnapshotJson(res.profile_data);
+                        yield break;
+                    }
+                }
+            }
+        }
+
+        // Yerel veri daha güncelse veya bulut paketi henüz boşsa son yerel durumu buluta yükle
+        if (IsAuthenticatedInSession && string.Equals(ProfileManager.ActiveProfile, username, StringComparison.OrdinalIgnoreCase))
+        {
+            PushCloudProfileNow();
+        }
     }
 
     /// <summary>

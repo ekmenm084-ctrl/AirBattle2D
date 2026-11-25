@@ -251,7 +251,11 @@ public static class ProfileManager
     {
         PlayerPrefs.SetInt(GetPrefKey(baseKey), value);
         RegisterDynamicKey(CLOUD_IDX_INT, baseKey);
-        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
+        if (!_isImportingCloud)
+        {
+            TouchLocalUpdatedTimestamp();
+            PilotAuthManager.NotifyLocalProfileDirty();
+        }
     }
 
     public static float GetFloat(string baseKey, float defaultValue = 0f)
@@ -263,7 +267,11 @@ public static class ProfileManager
     {
         PlayerPrefs.SetFloat(GetPrefKey(baseKey), value);
         RegisterDynamicKey(CLOUD_IDX_FLOAT, baseKey);
-        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
+        if (!_isImportingCloud)
+        {
+            TouchLocalUpdatedTimestamp();
+            PilotAuthManager.NotifyLocalProfileDirty();
+        }
     }
 
     public static string GetString(string baseKey, string defaultValue = "")
@@ -275,7 +283,22 @@ public static class ProfileManager
     {
         PlayerPrefs.SetString(GetPrefKey(baseKey), value);
         RegisterDynamicKey(CLOUD_IDX_STR, baseKey);
-        if (!_isImportingCloud) PilotAuthManager.NotifyLocalProfileDirty();
+        if (!_isImportingCloud)
+        {
+            TouchLocalUpdatedTimestamp();
+            PilotAuthManager.NotifyLocalProfileDirty();
+        }
+    }
+
+    public static long GetLocalUpdatedTimestamp()
+    {
+        string raw = PlayerPrefs.GetString(GetPrefKey("_LocalUpdatedUnix"), "0");
+        return long.TryParse(raw, out long ts) ? ts : 0L;
+    }
+
+    private static void TouchLocalUpdatedTimestamp()
+    {
+        PlayerPrefs.SetString(GetPrefKey("_LocalUpdatedUnix"), DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
     }
 
     public static bool HasKey(string baseKey)

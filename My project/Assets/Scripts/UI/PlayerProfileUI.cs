@@ -246,7 +246,7 @@ public class PlayerProfileUI : MonoBehaviour
         rRt.anchorMax = new Vector2(0f, 1f);
         rRt.pivot = new Vector2(0f, 1f);
         rRt.anchoredPosition = new Vector2(104f, -8f);
-        rRt.sizeDelta = new Vector2(374f, 28f);
+        rRt.sizeDelta = new Vector2(280f, 28f);
 
         _rankTitleTMP = rObj.AddComponent<TextMeshProUGUI>();
         _rankTitleTMP.font = MainMenuManager.GetTacticalFont();
@@ -257,8 +257,42 @@ public class PlayerProfileUI : MonoBehaviour
         _rankTitleTMP.color = Color.white;
         _rankTitleTMP.raycastTarget = false;
         _rankTitleTMP.enableAutoSizing = true;
-        _rankTitleTMP.fontSizeMin = 15f;
-        _rankTitleTMP.fontSizeMax = 20f;
+        _rankTitleTMP.fontSizeMin = 13.5f;
+        _rankTitleTMP.fontSizeMax = 19.5f;
+
+        // Sağ Üst Mini "PROFİL" Etiketi (Tıklanabilir profil/değiştirme ipucu)
+        GameObject switchHintObj = new GameObject("SwitchHintTag", typeof(RectTransform));
+        switchHintObj.transform.SetParent(_badgeRoot.transform, false);
+        RectTransform shRt = switchHintObj.GetComponent<RectTransform>();
+        shRt.anchorMin = new Vector2(1f, 1f);
+        shRt.anchorMax = new Vector2(1f, 1f);
+        shRt.pivot = new Vector2(1f, 1f);
+        shRt.anchoredPosition = new Vector2(-12f, -9f);
+        shRt.sizeDelta = new Vector2(88f, 24f);
+
+        Image shBg = switchHintObj.AddComponent<Image>();
+        shBg.sprite = MainMenuManager.GetRoundedBoxSprite("profile_switch_hint_pill", new Color(0.06f, 0.16f, 0.25f, 0.95f), new Color(0f, 0.85f, 1f, 0.85f), 6, 1);
+        shBg.type = Image.Type.Sliced;
+        shBg.color = Color.white;
+        shBg.raycastTarget = false;
+
+        GameObject shTxtObj = new GameObject("Text", typeof(RectTransform));
+        shTxtObj.transform.SetParent(switchHintObj.transform, false);
+        RectTransform shtRt = shTxtObj.GetComponent<RectTransform>();
+        shtRt.anchorMin = Vector2.zero;
+        shtRt.anchorMax = Vector2.one;
+        shtRt.offsetMin = Vector2.zero;
+        shtRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI shTMP = shTxtObj.AddComponent<TextMeshProUGUI>();
+        shTMP.font = MainMenuManager.GetTacticalFont();
+        shTMP.text = "PROFİL";
+        shTMP.fontSize = 12f;
+        shTMP.fontStyle = FontStyles.Bold;
+        shTMP.characterSpacing = 1.2f;
+        shTMP.alignment = TextAlignmentOptions.Center;
+        shTMP.color = new Color(0.55f, 0.94f, 1f, 1f);
+        shTMP.raycastTarget = false;
 
         // EXP Bar Çerçevesi (Alt Satır - Geniş ve Yüksek Okunaklı Bar)
         GameObject barBgObj = new GameObject("ExpBarBg", typeof(RectTransform));
@@ -727,32 +761,34 @@ public class PlayerProfileUI : MonoBehaviour
         _dossierPerksTMP.margin = new Vector4(20f, 15f, 15f, 15f);
         _dossierPerksTMP.color = new Color(0.88f, 0.94f, 1f);
 
-        // Çağrı Kodunu Değiştir Butonu
-        GameObject editNameObj = new GameObject("EditNameBtn", typeof(RectTransform));
-        editNameObj.transform.SetParent(_dossierModal.transform, false);
-        RectTransform enRt = editNameObj.GetComponent<RectTransform>();
-        enRt.anchorMin = new Vector2(0.12f, 0.04f);
-        enRt.anchorMax = new Vector2(0.48f, 0.14f);
+        // 1. Profil Değiştir Butonu (Sol)
+        GameObject switchProfObj = new GameObject("SwitchProfileBtn", typeof(RectTransform));
+        switchProfObj.transform.SetParent(_dossierModal.transform, false);
+        RectTransform enRt = switchProfObj.GetComponent<RectTransform>();
+        enRt.anchorMin = new Vector2(0.04f, 0.04f);
+        enRt.anchorMax = new Vector2(0.39f, 0.14f);
         enRt.offsetMin = Vector2.zero;
         enRt.offsetMax = Vector2.zero;
 
-        Image enImg = editNameObj.AddComponent<Image>();
+        Image enImg = switchProfObj.AddComponent<Image>();
         enImg.sprite = MainMenuManager.GetHudSprite("hud_btn_cyan", new Color(0f, 0.85f, 1f, 1f), new Color(0.04f, 0.12f, 0.20f, 1f), true);
         enImg.type = Image.Type.Sliced;
         enImg.color = Color.white;
 
-        Button enBtn = editNameObj.AddComponent<Button>();
+        Button enBtn = switchProfObj.AddComponent<Button>();
         enBtn.onClick.AddListener(() =>
         {
-            PilotLoginUI.EnsureUI()?.OpenLoginModal(() =>
+            AudioManager.Instance?.PlayButtonClick();
+            CloseDossierModal();
+            PilotLoginUI.EnsureUI()?.OpenProfileSwitchModal(() =>
             {
-                UpdateDossierContent();
                 RefreshBadgeVisuals();
+                UpdateDossierContent();
             });
         });
 
         GameObject enTxtObj = new GameObject("Text", typeof(RectTransform));
-        enTxtObj.transform.SetParent(editNameObj.transform, false);
+        enTxtObj.transform.SetParent(switchProfObj.transform, false);
         RectTransform entRt = enTxtObj.GetComponent<RectTransform>();
         entRt.anchorMin = Vector2.zero;
         entRt.anchorMax = Vector2.one;
@@ -761,19 +797,63 @@ public class PlayerProfileUI : MonoBehaviour
 
         TextMeshProUGUI enTMP = enTxtObj.AddComponent<TextMeshProUGUI>();
         enTMP.font = MainMenuManager.GetTacticalFont();
-        enTMP.text = "ÇAĞRI KODUNU DEĞİŞTİR";
-        enTMP.fontSize = 19f;
+        enTMP.text = "PROFİL DEĞİŞTİR";
+        enTMP.fontSize = 18.5f;
         enTMP.fontStyle = FontStyles.Bold;
         enTMP.characterSpacing = 1.4f;
         enTMP.alignment = TextAlignmentOptions.Center;
         enTMP.color = Color.white;
 
-        // Kapat Butonu
+        // 2. Oturumu / Profili Kapat Butonu (Orta)
+        GameObject logoutObj = new GameObject("LogoutProfileBtn", typeof(RectTransform));
+        logoutObj.transform.SetParent(_dossierModal.transform, false);
+        RectTransform loRt = logoutObj.GetComponent<RectTransform>();
+        loRt.anchorMin = new Vector2(0.41f, 0.04f);
+        loRt.anchorMax = new Vector2(0.69f, 0.14f);
+        loRt.offsetMin = Vector2.zero;
+        loRt.offsetMax = Vector2.zero;
+
+        Image loImg = logoutObj.AddComponent<Image>();
+        loImg.sprite = MainMenuManager.GetHudSprite("hud_btn_logout_amber", new Color(1f, 0.55f, 0.18f, 1f), new Color(0.24f, 0.10f, 0.04f, 1f), true);
+        loImg.type = Image.Type.Sliced;
+        loImg.color = Color.white;
+
+        Button loBtn = logoutObj.AddComponent<Button>();
+        loBtn.onClick.AddListener(() =>
+        {
+            AudioManager.Instance?.PlayButtonClick();
+            PilotAuthManager.EnsureInstance().Logout();
+            CloseDossierModal();
+            PilotLoginUI.EnsureUI()?.OpenLoginModal(() =>
+            {
+                RefreshBadgeVisuals();
+                UpdateDossierContent();
+            }, isMandatoryFirstTime: true);
+        });
+
+        GameObject loTxtObj = new GameObject("Text", typeof(RectTransform));
+        loTxtObj.transform.SetParent(logoutObj.transform, false);
+        RectTransform lotRt = loTxtObj.GetComponent<RectTransform>();
+        lotRt.anchorMin = Vector2.zero;
+        lotRt.anchorMax = Vector2.one;
+        lotRt.offsetMin = Vector2.zero;
+        lotRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI loTMP = loTxtObj.AddComponent<TextMeshProUGUI>();
+        loTMP.font = MainMenuManager.GetTacticalFont();
+        loTMP.text = "ÇIKIŞ YAP";
+        loTMP.fontSize = 18f;
+        loTMP.fontStyle = FontStyles.Bold;
+        loTMP.characterSpacing = 1.4f;
+        loTMP.alignment = TextAlignmentOptions.Center;
+        loTMP.color = new Color(1f, 0.92f, 0.80f, 1f);
+
+        // 3. Kapat Butonu (Sağ)
         GameObject closeObj = new GameObject("CloseBtn", typeof(RectTransform));
         closeObj.transform.SetParent(_dossierModal.transform, false);
         RectTransform cRt = closeObj.GetComponent<RectTransform>();
-        cRt.anchorMin = new Vector2(0.52f, 0.04f);
-        cRt.anchorMax = new Vector2(0.88f, 0.14f);
+        cRt.anchorMin = new Vector2(0.71f, 0.04f);
+        cRt.anchorMax = new Vector2(0.96f, 0.14f);
         cRt.offsetMin = Vector2.zero;
         cRt.offsetMax = Vector2.zero;
 

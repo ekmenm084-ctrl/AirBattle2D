@@ -1,15 +1,16 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 
 /// <summary>
-/// Supabase Veritabanı Destekli Pilot Kullanıcı Adı & Şifre Giriş / Kayıt Ekranı:
-/// - Her oyun açılışında zorunlu olarak açılır (PilotAuthManager.IsAuthenticatedInSession == false).
-/// - Kullanıcılar [ GİRİŞ YAP ] veya [ KAYIT OL ] sekmeleriyle kullanıcı adı ve şifre kullanarak giriş yapar.
-/// - Şifreler gizli (Password) olarak girilir ve Supabase PostgreSQL (pgcrypto/bcrypt) üzerinde doğrulanır.
-/// - Giriş yapan pilotun kendi bağımsız Seviye, Altın, Hangar, İHA ve Rekor profili anında yüklenir.
+/// Supabase Veritabanı + Cihaz Tanıma Destekli Pilot Giriş / Kayıt / Profil Değiştirme Ekranı:
+/// - Cihazda açık bırakılmış bir profil varsa oyun açılışında tekrar şifre sormaz, son profilden devam eder.
+/// - Yalnızca ilk kurulumda veya kullanıcı "Çıkış Yap" dediğinde açılışta zorunlu giriş ekranı gösterilir.
+/// - Sol üstteki Profil rozetinden "PROFİL DEĞİŞTİR" seçildiğinde cihazdaki diğer profillere tek tıkla
+///   geçilebilir veya farklı/yeni bir kullanıcı hesabına giriş yapılabilir.
 /// </summary>
 public class PilotLoginUI : MonoBehaviour
 {
@@ -17,6 +18,10 @@ public class PilotLoginUI : MonoBehaviour
 
     private GameObject _modalRoot;
     private RectTransform _cardRt;
+    private TextMeshProUGUI _subHeaderTMP;
+
+    private GameObject _quickSwitchGroup;
+    private Transform _quickSwitchButtonsRoot;
 
     private Button _loginTabBtn;
     private Button _registerTabBtn;
@@ -46,6 +51,8 @@ public class PilotLoginUI : MonoBehaviour
 
     private Action _onSaveCallback;
     private bool _isMandatory = false;
+    private bool _isProfileSwitchMode = false;
+    private bool _hasQuickProfilesVisible = false;
     private bool _isRegisterMode = false;
     private bool _isBusy = false;
 
@@ -136,24 +143,36 @@ public class PilotLoginUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Her oyun açılışında çağrılır: oturumda henüz şifreyle giriş yapılmadıysa zorunlu giriş ekranını açar.
+    /// Oyun açılışında çağrılır: cihazda daha önce giriş yapılmış ve çıkış yapılmamış bir profil varsa
+    /// otomatik olarak o profilden devam eder; yoksa giriş/kayıt ekranını açar.
     /// </summary>
     public void CheckFirstTimeLogin()
     {
-        PilotAuthManager.EnsureInstance();
+        var auth = PilotAuthManager.EnsureInstance();
+        if (auth != null && auth.TryRestoreSavedDeviceSession(triggerUiAndPopup: true))
+        {
+            return;
+        }
+
         if (!PilotAuthManager.IsAuthenticatedInSession)
         {
-            OpenLoginModal(null, isMandatoryFirstTime: true);
+            OpenLoginModal(null, isMandatoryFirstTime: true, isProfileSwitchMode: false);
         }
     }
 
-    public void OpenLoginModal(Action onSaved = null, bool isMandatoryFirstTime = false)
+    public void OpenProfileSwitchModal(Action onSaved = null)
+    {
+        OpenLoginModal(onSaved, isMandatoryFirstTime: false, isProfileSwitchMode: true);
+    }
+
+    public void OpenLoginModal(Action onSaved = null, bool isMandatoryFirstTime = false, bool isProfileSwitchMode = false)
     {
         EnsureEventSystem();
         PilotAuthManager.EnsureInstance();
 
         _onSaveCallback = onSaved;
         _isMandatory = isMandatoryFirstTime;
+        _isProfileSwitchMode = isProfileSwitchMode && !isMandatoryFirstTime;
         _isBusy = false;
         _showPassword = false;
 
@@ -165,19 +184,28 @@ public class PilotLoginUI : MonoBehaviour
             _modalRoot.transform.SetAsLastSibling();
         }
 
+        if (_subHeaderTMP != null)
+        {
+            _subHeaderTMP.text = _isProfileSwitchMode
+                ? $"AKTİF PROFİL: [{ProfileManager.ActiveProfile}]  •  PROFİL DEĞİŞTİR"
+                : "PİLOT KİMLİK DOĞRULAMA SİSTEMİ";
+        }
+
         // Zorunlu açılış girişinde Kapat ve Çıkış butonları gizlenir
         if (_cancelButton != null)
             _cancelButton.gameObject.SetActive(!_isMandatory);
         if (_logoutButton != null)
             _logoutButton.gameObject.SetActive(!_isMandatory && PilotAuthManager.IsAuthenticatedInSession);
 
-        // Daha önce kayıtlı bir kullanıcı adı varsa Giriş sekmesini, yoksa Kayıt sekmesini aç
+        RebuildQuickSwitchButtons();
+
         string lastUser = PilotAuthManager.LastLoggedInUsername;
         SetAuthMode(isRegister: false);
 
         if (_usernameInput != null)
         {
-            _usernameInput.text = !string.IsNullOrEmpty(lastUser) ? lastUser : "";
+            // Profil değiştirme modunda yeni kullanıcı adını doğrudan yazabilmesi için kutuyu boş bırak
+            _usernameInput.text = _isProfileSwitchMode ? "" : (!string.IsNullOrEmpty(lastUser) ? lastUser : "");
         }
         if (_passwordInput != null) _passwordInput.text = "";
         if (_confirmPasswordInput != null) _confirmPasswordInput.text = "";
@@ -192,6 +220,87 @@ public class PilotLoginUI : MonoBehaviour
         {
             _passwordInput.ActivateInputField();
         }
+    }
+
+    private void RebuildQuickSwitchButtons()
+    {
+        _hasQuickProfilesVisible = false;
+        if (_quickSwitchGroup == null || _quickSwitchButtonsRoot == null) return;
+
+        for (int i = _quickSwitchButtonsRoot.childCount - 1; i >= 0; i--)
+        {
+            Destroy(_quickSwitchButtonsRoot.GetChild(i).gameObject);
+        }
+
+        if (_isMandatory)
+        {
+            _quickSwitchGroup.SetActive(false);
+            return;
+        }
+
+        List<string> remembered = PilotAuthManager.GetRememberedDeviceProfiles();
+        string currentActive = ProfileManager.ActiveProfile;
+        List<string> switchTargets = new List<string>();
+        for (int i = 0; i < remembered.Count; i++)
+        {
+            if (!remembered[i].Equals(currentActive, StringComparison.OrdinalIgnoreCase))
+            {
+                switchTargets.Add(remembered[i]);
+                if (switchTargets.Count >= 3) break;
+            }
+        }
+
+        if (switchTargets.Count == 0)
+        {
+            _quickSwitchGroup.SetActive(false);
+            return;
+        }
+
+        _hasQuickProfilesVisible = true;
+        _quickSwitchGroup.SetActive(true);
+
+        int count = switchTargets.Count;
+        float spacing = 12f;
+        float btnWidth = Mathf.Min(168f, (526f - spacing * (count - 1)) / count);
+        float totalW = count * btnWidth + (count - 1) * spacing;
+        float startX = -totalW * 0.5f + btnWidth * 0.5f;
+
+        for (int i = 0; i < count; i++)
+        {
+            string targetUser = switchTargets[i];
+            float xPos = startX + i * (btnWidth + spacing);
+            CreateActionButton(
+                _quickSwitchButtonsRoot,
+                $"QuickProfileBtn_{i}",
+                $"<b>» {targetUser}</b>",
+                new Vector2(xPos, 0f),
+                new Vector2(btnWidth, 38f),
+                new Color(0.06f, 0.17f, 0.26f, 1f),
+                new Color(0f, 0.88f, 1f, 0.95f),
+                new Color(0.75f, 0.96f, 1f, 1f),
+                15f,
+                () => OnQuickProfileSelected(targetUser)
+            );
+        }
+    }
+
+    private void OnQuickProfileSelected(string targetUser)
+    {
+        if (_isBusy) return;
+        PilotAuthManager.EnsureInstance().SwitchToRememberedDeviceProfile(targetUser, (ok, msg) =>
+        {
+            if (!ok)
+            {
+                SetValidationError(msg);
+                return;
+            }
+
+            _isMandatory = false;
+            CloseModal();
+            PlayerProfileUI.Instance?.RefreshBadgeVisuals();
+            _onSaveCallback?.Invoke();
+            _onSaveCallback = null;
+        });
     }
 
     public void CloseModal()
@@ -213,11 +322,12 @@ public class PilotLoginUI : MonoBehaviour
         UpdateTabVisual(_registerTabBtn, _isRegisterMode);
 
         // Kart yüksekliği ve aksiyon buton metni
+        float extraQuickH = _hasQuickProfilesVisible ? 76f : 0f;
         if (_cardRt != null)
-            _cardRt.sizeDelta = new Vector2(620f, _isRegisterMode ? 650f : 560f);
+            _cardRt.sizeDelta = new Vector2(620f, (_isRegisterMode ? 650f : 560f) + extraQuickH);
 
         if (_submitBtnTMP != null)
-            _submitBtnTMP.text = _isRegisterMode ? "<b>HESAP OLUŞTUR VE GİRİŞ YAP</b>" : "<b>GİRİŞ YAP</b>";
+            _submitBtnTMP.text = _isRegisterMode ? "<b>HESAP OLUŞTUR VE GİRİŞ YAP</b>" : (_isProfileSwitchMode ? "<b>PROFİLE GEÇİŞ YAP</b>" : "<b>GİRİŞ YAP</b>");
 
         if (_submitButton != null)
         {
@@ -232,17 +342,39 @@ public class PilotLoginUI : MonoBehaviour
 
         if (_validationTMP != null)
         {
-            _validationTMP.text = _isRegisterMode
-                ? "<color=#8FA8BD>Yeni pilot hesabı oluşturun (Kullanıcı adı: 3-14, Şifre: min 4 karakter).</color>"
-                : "<color=#8FA8BD>Devam etmek için pilot kullanıcı adınızı ve şifrenizi girin.</color>";
+            if (_isRegisterMode)
+                _validationTMP.text = "<color=#8FA8BD>Yeni pilot hesabı oluşturun (Kullanıcı adı: 3-14, Şifre: min 4 karakter).</color>";
+            else if (_isProfileSwitchMode)
+                _validationTMP.text = "<color=#8FA8BD>Geçmek istediğiniz farklı profilin kullanıcı adı ve şifresini girin.</color>";
+            else
+                _validationTMP.text = "<color=#8FA8BD>Devam etmek için pilot kullanıcı adınızı ve şifrenizi girin.</color>";
         }
 
         RepositionBottomElements();
     }
 
+    private static void SetTopAnchoredY(Component comp, float x, float y)
+    {
+        if (comp == null) return;
+        RectTransform rt = comp.GetComponent<RectTransform>();
+        if (rt != null) rt.anchoredPosition = new Vector2(x, y);
+    }
+
     private void RepositionBottomElements()
     {
-        float yVal = _isRegisterMode ? -425f : -335f;
+        float offset = _hasQuickProfilesVisible ? -76f : 0f;
+
+        SetTopAnchoredY(_loginTabBtn, -135f, -110f + offset);
+        SetTopAnchoredY(_registerTabBtn, 135f, -110f + offset);
+        SetTopAnchoredY(_userLabelTMP, 0f, -172f + offset);
+        SetTopAnchoredY(_usernameInput, 0f, -196f + offset);
+        SetTopAnchoredY(_passLabelTMP, 0f, -258f + offset);
+        SetTopAnchoredY(_passwordInput, -48f, -282f + offset);
+        SetTopAnchoredY(_togglePwdVisBtn, 219f, -282f + offset);
+        if (_confirmPasswordGroup != null)
+            SetTopAnchoredY(_confirmPasswordGroup.transform, 0f, -344f + offset);
+
+        float yVal = (_isRegisterMode ? -425f : -335f) + offset;
         if (_validationTMP != null)
         {
             RectTransform vRt = _validationTMP.GetComponent<RectTransform>();
@@ -324,7 +456,30 @@ public class PilotLoginUI : MonoBehaviour
 
         // Üst Başlık: AIR BATTLE
         CreateLabel(boxObj.transform, "BrandTitle", "<b>AIR BATTLE</b>", new Vector2(0f, -26f), new Vector2(540f, 44f), 34f, Color.white, TextAlignmentOptions.Center, 3.0f);
-        CreateLabel(boxObj.transform, "SubHeader", "PİLOT KİMLİK DOĞRULAMA SİSTEMİ", new Vector2(0f, -72f), new Vector2(540f, 22f), 14f, new Color(0f, 0.85f, 1f), TextAlignmentOptions.Center, 2.0f);
+        _subHeaderTMP = CreateLabel(boxObj.transform, "SubHeader", "PİLOT KİMLİK DOĞRULAMA SİSTEMİ", new Vector2(0f, -72f), new Vector2(560f, 22f), 14f, new Color(0f, 0.85f, 1f), TextAlignmentOptions.Center, 1.6f);
+
+        // Cihazda kayıtlı diğer profillere tek tıkla geçiş barı (Yalnızca Profil Değiştir modunda diğer profil varsa açılır)
+        _quickSwitchGroup = new GameObject("QuickSwitchGroup", typeof(RectTransform));
+        _quickSwitchGroup.transform.SetParent(boxObj.transform, false);
+        RectTransform qsRt = _quickSwitchGroup.GetComponent<RectTransform>();
+        qsRt.anchorMin = new Vector2(0.5f, 1f);
+        qsRt.anchorMax = new Vector2(0.5f, 1f);
+        qsRt.pivot = new Vector2(0.5f, 1f);
+        qsRt.anchoredPosition = new Vector2(0f, -100f);
+        qsRt.sizeDelta = new Vector2(526f, 66f);
+
+        CreateLabel(_quickSwitchGroup.transform, "QuickSwitchLabel", "CİHAZDAKİ KAYITLI PROFİLLER (TEK TIKLA GEÇ):", new Vector2(0f, 0f), new Vector2(526f, 20f), 12.5f, new Color(0.56f, 0.80f, 0.94f), TextAlignmentOptions.MidlineLeft, 1.2f);
+
+        GameObject qsBtnsObj = new GameObject("ButtonsRoot", typeof(RectTransform));
+        qsBtnsObj.transform.SetParent(_quickSwitchGroup.transform, false);
+        RectTransform qsbRt = qsBtnsObj.GetComponent<RectTransform>();
+        qsbRt.anchorMin = new Vector2(0.5f, 1f);
+        qsbRt.anchorMax = new Vector2(0.5f, 1f);
+        qsbRt.pivot = new Vector2(0.5f, 1f);
+        qsbRt.anchoredPosition = new Vector2(0f, -24f);
+        qsbRt.sizeDelta = new Vector2(526f, 40f);
+        _quickSwitchButtonsRoot = qsBtnsObj.transform;
+        _quickSwitchGroup.SetActive(false);
 
         // 3. Sekme Butonları: [ GİRİŞ YAP ] | [ KAYIT OL ]
         _loginTabBtn = CreateActionButton(boxObj.transform, "TabLoginBtn", "<b>GİRİŞ YAP</b>", new Vector2(-135f, -110f), new Vector2(256f, 46f),
@@ -634,7 +789,7 @@ public class PilotLoginUI : MonoBehaviour
     private void OnLogoutClicked()
     {
         PilotAuthManager.EnsureInstance().Logout();
-        OpenLoginModal(_onSaveCallback, isMandatoryFirstTime: true);
+        OpenLoginModal(_onSaveCallback, isMandatoryFirstTime: true, isProfileSwitchMode: false);
     }
 
     private void OnSubmitClicked()
@@ -705,7 +860,7 @@ public class PilotLoginUI : MonoBehaviour
             if (busy)
                 _submitBtnTMP.text = "<b>DOĞRULANIYOR...</b>";
             else
-                _submitBtnTMP.text = _isRegisterMode ? "<b>HESAP OLUŞTUR VE GİRİŞ YAP</b>" : "<b>GİRİŞ YAP</b>";
+                _submitBtnTMP.text = _isRegisterMode ? "<b>HESAP OLUŞTUR VE GİRİŞ YAP</b>" : (_isProfileSwitchMode ? "<b>PROFİLE GEÇİŞ YAP</b>" : "<b>GİRİŞ YAP</b>");
         }
     }
 
