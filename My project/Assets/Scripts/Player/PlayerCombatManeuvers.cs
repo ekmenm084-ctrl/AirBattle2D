@@ -278,7 +278,7 @@ public class PlayerCombatManeuvers : MonoBehaviour
 
         SpriteRenderer gSr = ghost.AddComponent<SpriteRenderer>();
         gSr.sprite = _sr.sprite;
-        gSr.color = new Color(0f, 0.85f, 1f, 0.65f);
+        gSr.color = GameSettings.GetCockpitAccentBorderColor(0.65f);
         gSr.sortingLayerID = _sr.sortingLayerID;
         gSr.sortingOrder = _sr.sortingOrder - 1;
 

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -15,25 +17,34 @@ public class CockpitThemeIgnore : MonoBehaviour
 
 /// <summary>
 /// Tüm Oyun Genelinde Seçilebilir Kokpit Teması Yöneticisi:
-/// - Varsayılan Siber Mavi (CyberBlue) seçiliyken tüm materyal, metin ve görseller %100 orijinal halinde kalır.
-/// - Radar Yeşili (RadarGreen) veya Altın Karbon (StealthGold) seçildiğinde:
-///   1) Tüm menü arka planları (Ana Menü, Ayarlar, Hangar, Mağaza, Sandıklar, Envanter, Rekorlar, Görevler, Pause, GameOver),
-///      kart çerçeveleri, ikonlar, HUD barları ve dokunmatik kontroller GPU üzerinden seçici renk paletine dönüştürülür.
-///   2) Savaş sahnesindeki fırtına bulutları (BackgroundScroller) URP materyali korunarak seçilen temaya dönüştürülür.
-///   3) Kırmızı (ATEŞ, Zor, Kapat, Düşman Canı) ve Altın (Altın sayacı, Ulti halkası) uyarı/para birimi renkleri bozulmaz.
+/// - Siber Mavi (CyberBlue): Tüm materyaller, ışıklar, metinler ve dokular %100 orijinal halinde kalır.
+/// - Radar Yeşili (RadarGreen) / Altın Karbon (StealthGold):
+///   1) Tüm menülerdeki (Ana Menü, Ayarlar, Modlar, Hangar, Mağaza, Sandıklar, Envanter, Rekorlar, Görevler,
+///      Pilot Dosyası, Pause, GameOver, Upgrade) tüm Image & RawImage bileşenlerine özel tema materyali uygulanır.
+///   2) Savaş sahnesindeki fırtına bulutları (BackgroundScroller) ve URP Global Light 2D atmosfer ışığı temaya uyarlanır.
+///   3) Tüm TextMeshProUGUI mavi/cyan renkleri ve RichText vurgu etiketleri geri dönüşümlü olarak temaya uyarlanır.
 /// </summary>
 public class CockpitThemeDirector : MonoBehaviour
 {
     public static CockpitThemeDirector Instance { get; private set; }
 
-    private static Material _sharedUiThemeMaterial;
     private static Shader _cachedUiShader;
+    private static Material _radarGreenUiMat;
+    private static Material _stealthGoldUiMat;
     private static readonly int ThemeModeProp = Shader.PropertyToID("_ThemeMode");
+    private static readonly int MainTexProp = Shader.PropertyToID("_MainTex");
 
     private readonly HashSet<Graphic> _themedGraphics = new HashSet<Graphic>();
     private readonly Dictionary<TextMeshProUGUI, Color> _originalTmpVertexColors = new Dictionary<TextMeshProUGUI, Color>();
     private static readonly Dictionary<string, Sprite> _themedWorldSpriteCache = new Dictionary<string, Sprite>();
+
     private Color? _originalCameraBgColor;
+    private readonly Dictionary<Component, Color> _originalLight2DColors = new Dictionary<Component, Color>();
+    private static System.Type _light2DType;
+    private static PropertyInfo _light2DColorProp;
+    private static PropertyInfo _light2DTypeProp;
+    private static bool _light2DReflectionResolved;
+
     private float _nextScanTime = 0f;
 
     // Geri dönüşümlü benzersiz zengin metin (RichText) renk kodları (zorluk/altın kodlarıyla çakışmaz)
@@ -42,8 +53,8 @@ public class CockpitThemeDirector : MonoBehaviour
     private const string GOLD_BRIGHT_HEX  = "#F7B733";
     private const string GOLD_SOFT_HEX    = "#FAD375";
 
-    private static readonly string[] CyanBrightHexes = { "#00E5FF", "#00F0FF", "#22D3EE", "#38BDF8", "#08D1EC" };
-    private static readonly string[] CyanSoftHexes   = { "#7DD3FC", "#60A5FA", "#93C5FD", "#82AABF", "#5EEAD4" };
+    private static readonly string[] CyanBrightHexes = { "#00E5FF", "#00F0FF", "#22D3EE", "#38BDF8", "#08D1EC", "#00FFAA" };
+    private static readonly string[] CyanSoftHexes   = { "#7DD3FC", "#60A5FA", "#93C5FD", "#82AABF", "#5EEAD4", "#E0F2FE" };
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
@@ -91,6 +102,7 @@ public class CockpitThemeDirector : MonoBehaviour
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         _originalCameraBgColor = null;
+        _originalLight2DColors.Clear();
         ApplyThemeNow();
     }
 
@@ -103,25 +115,30 @@ public class CockpitThemeDirector : MonoBehaviour
     {
         if (Time.unscaledTime >= _nextScanTime)
         {
-            _nextScanTime = Time.unscaledTime + 0.14f;
+            _nextScanTime = Time.unscaledTime + 0.10f;
             SyncActiveSceneVisuals(includeInactive: false);
         }
     }
 
     public void ApplyThemeNow()
     {
-        _nextScanTime = Time.unscaledTime + 0.14f;
+        _nextScanTime = Time.unscaledTime + 0.10f;
         SyncActiveSceneVisuals(includeInactive: true);
 
-        // Savaş arka planı bulut akışını da anında güncelle
+        // Savaş arka planı bulut akışını ve oyuncu kalkanını anında güncelle
         var scrollers = FindObjectsByType<BackgroundScroller>(FindObjectsInactive.Include);
-        foreach (var sc in scrollers)
+        for (int i = 0; i < scrollers.Length; i++)
         {
-            if (sc != null) sc.RefreshThemeSprite();
+            if (scrollers[i] != null) scrollers[i].RefreshThemeSprite();
+        }
+
+        if (PlayerUpgradeManager.Instance != null)
+        {
+            PlayerUpgradeManager.Instance.RefreshShieldThemeVisual();
         }
     }
 
-    private static Material GetOrCreateUiThemeMaterial(GameSettings.CockpitTheme theme)
+    private static Material GetThemeMaterial(GameSettings.CockpitTheme theme)
     {
         if (theme == GameSettings.CockpitTheme.CyberBlue)
             return null;
@@ -136,17 +153,47 @@ public class CockpitThemeDirector : MonoBehaviour
         if (_cachedUiShader == null)
             return null;
 
-        if (_sharedUiThemeMaterial == null)
+        if (theme == GameSettings.CockpitTheme.RadarGreen)
         {
-            _sharedUiThemeMaterial = new Material(_cachedUiShader)
+            if (_radarGreenUiMat == null)
             {
-                name = "CockpitThemeUI_RuntimeMat",
+                _radarGreenUiMat = new Material(_cachedUiShader)
+                {
+                    name = "CockpitThemeUI_RadarGreen",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
+            _radarGreenUiMat.SetFloat(ThemeModeProp, 1f);
+            return _radarGreenUiMat;
+        }
+
+        if (_stealthGoldUiMat == null)
+        {
+            _stealthGoldUiMat = new Material(_cachedUiShader)
+            {
+                name = "CockpitThemeUI_StealthGold",
                 hideFlags = HideFlags.HideAndDontSave
             };
         }
+        _stealthGoldUiMat.SetFloat(ThemeModeProp, 2f);
+        return _stealthGoldUiMat;
+    }
 
-        _sharedUiThemeMaterial.SetFloat(ThemeModeProp, (int)theme);
-        return _sharedUiThemeMaterial;
+    private static bool IsOurThemeMaterial(Material m)
+    {
+        if (m == null) return false;
+        return m == _radarGreenUiMat || m == _stealthGoldUiMat ||
+               m.name == "CockpitThemeUI_RadarGreen" || m.name == "CockpitThemeUI_StealthGold";
+    }
+
+    private static bool CanOverrideGraphicMaterial(Graphic g)
+    {
+        if (g == null) return false;
+        Material cur = g.material;
+        if (cur == null) return true;
+        if (cur == g.defaultMaterial || cur == Graphic.defaultGraphicMaterial) return true;
+        if (IsOurThemeMaterial(cur)) return true;
+        return false;
     }
 
     private static bool IsIgnored(Transform t)
@@ -164,9 +211,9 @@ public class CockpitThemeDirector : MonoBehaviour
     private void SyncActiveSceneVisuals(bool includeInactive)
     {
         var theme = GameSettings.SelectedCockpitTheme;
-        Material targetMat = GetOrCreateUiThemeMaterial(theme);
+        Material targetMat = GetThemeMaterial(theme);
 
-        // 1. Kamera arka plan rengi (boşluk / kenar güvenlik tonu)
+        // 1. Kamera arka plan rengi ve URP Global Light 2D savaş sahnesi aydınlatması
         Camera cam = Camera.main;
         if (cam != null)
         {
@@ -175,11 +222,13 @@ public class CockpitThemeDirector : MonoBehaviour
 
             cam.backgroundColor = theme switch
             {
-                GameSettings.CockpitTheme.RadarGreen  => new Color(0.02f, 0.08f, 0.05f, 1f),
-                GameSettings.CockpitTheme.StealthGold => new Color(0.07f, 0.05f, 0.03f, 1f),
+                GameSettings.CockpitTheme.RadarGreen  => new Color(0.02f, 0.09f, 0.05f, 1f),
+                GameSettings.CockpitTheme.StealthGold => new Color(0.08f, 0.06f, 0.03f, 1f),
                 _                                     => _originalCameraBgColor.Value
             };
         }
+
+        SyncGlobalLight2D(theme);
 
         // 2. Tüm UI Image ve RawImage bileşenleri (Menü arka planları, kartlar, butonlar, HUD, kontroller)
         var findMode = includeInactive ? FindObjectsInactive.Include : FindObjectsInactive.Exclude;
@@ -190,10 +239,27 @@ public class CockpitThemeDirector : MonoBehaviour
             {
                 foreach (var g in _themedGraphics)
                 {
-                    if (g != null && g.material == _sharedUiThemeMaterial)
+                    if (g != null && IsOurThemeMaterial(g.material))
+                    {
                         g.material = null;
+                        g.SetMaterialDirty();
+                    }
                 }
                 _themedGraphics.Clear();
+            }
+
+            // İhtiyat taraması: daha önce tema materyali almış tüm aktif/inaktif Image'ları temizle
+            if (includeInactive)
+            {
+                Image[] allImgs = FindObjectsByType<Image>(FindObjectsInactive.Include);
+                for (int i = 0; i < allImgs.Length; i++)
+                {
+                    if (allImgs[i] != null && IsOurThemeMaterial(allImgs[i].material))
+                    {
+                        allImgs[i].material = null;
+                        allImgs[i].SetMaterialDirty();
+                    }
+                }
             }
         }
         else
@@ -205,13 +271,20 @@ public class CockpitThemeDirector : MonoBehaviour
                 if (img == null) continue;
                 if (IsIgnored(img.transform))
                 {
-                    if (img.material == targetMat) img.material = null;
+                    if (IsOurThemeMaterial(img.material))
+                    {
+                        img.material = null;
+                        img.SetMaterialDirty();
+                    }
                     continue;
                 }
-                if (img.material == null || img.material == targetMat)
+                if (CanOverrideGraphicMaterial(img))
                 {
                     if (img.material != targetMat)
+                    {
                         img.material = targetMat;
+                        img.SetMaterialDirty();
+                    }
                     _themedGraphics.Add(img);
                 }
             }
@@ -223,13 +296,20 @@ public class CockpitThemeDirector : MonoBehaviour
                 if (rImg == null) continue;
                 if (IsIgnored(rImg.transform))
                 {
-                    if (rImg.material == targetMat) rImg.material = null;
+                    if (IsOurThemeMaterial(rImg.material))
+                    {
+                        rImg.material = null;
+                        rImg.SetMaterialDirty();
+                    }
                     continue;
                 }
-                if (rImg.material == null || rImg.material == targetMat)
+                if (CanOverrideGraphicMaterial(rImg))
                 {
                     if (rImg.material != targetMat)
+                    {
                         rImg.material = targetMat;
+                        rImg.SetMaterialDirty();
+                    }
                     _themedGraphics.Add(rImg);
                 }
             }
@@ -242,6 +322,57 @@ public class CockpitThemeDirector : MonoBehaviour
             TextMeshProUGUI tmp = tmps[i];
             if (tmp == null || IsIgnored(tmp.transform)) continue;
             SyncTmpTheme(tmp, theme);
+        }
+    }
+
+    private void SyncGlobalLight2D(GameSettings.CockpitTheme theme)
+    {
+        if (!_light2DReflectionResolved)
+        {
+            _light2DReflectionResolved = true;
+            _light2DType = System.Type.GetType("UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
+            if (_light2DType != null)
+            {
+                _light2DColorProp = _light2DType.GetProperty("color", BindingFlags.Instance | BindingFlags.Public);
+                _light2DTypeProp  = _light2DType.GetProperty("lightType", BindingFlags.Instance | BindingFlags.Public);
+            }
+        }
+
+        if (_light2DType == null || _light2DColorProp == null) return;
+
+        Object[] lights = FindObjectsByType(_light2DType, FindObjectsInactive.Include);
+        for (int i = 0; i < lights.Length; i++)
+        {
+            Component lightComp = lights[i] as Component;
+            if (lightComp == null) continue;
+
+            // Global Light 2D kontrolü (lightType == Global (4) veya isimde Global)
+            bool isGlobal = lightComp.gameObject.name.IndexOf("Global", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!isGlobal && _light2DTypeProp != null)
+            {
+                try
+                {
+                    int lt = System.Convert.ToInt32(_light2DTypeProp.GetValue(lightComp, null));
+                    if (lt == 4) isGlobal = true;
+                }
+                catch { }
+            }
+            if (!isGlobal) continue;
+
+            if (!_originalLight2DColors.TryGetValue(lightComp, out Color baseLightCol))
+            {
+                baseLightCol = (Color)_light2DColorProp.GetValue(lightComp, null);
+                _originalLight2DColors[lightComp] = baseLightCol;
+            }
+
+            Color targetLightCol = theme switch
+            {
+                GameSettings.CockpitTheme.RadarGreen  => new Color(0.82f, 1.00f, 0.88f, 1f),
+                GameSettings.CockpitTheme.StealthGold => new Color(1.00f, 0.91f, 0.78f, 1f),
+                _                                     => baseLightCol
+            };
+
+            _light2DColorProp.SetValue(lightComp, targetLightCol, null);
         }
     }
 
@@ -260,13 +391,13 @@ public class CockpitThemeDirector : MonoBehaviour
         {
             Color checkCol = _originalTmpVertexColors.TryGetValue(tmp, out Color savedCol) ? savedCol : tmp.color;
             Color.RGBToHSV(checkCol, out float h, out float s, out float v);
-            if (h >= 0.43f && h <= 0.70f && s >= 0.14f)
+            if (h >= 0.40f && h <= 0.72f && s >= 0.12f)
             {
                 if (!_originalTmpVertexColors.ContainsKey(tmp))
                     _originalTmpVertexColors[tmp] = checkCol;
 
                 float targetH = (theme == GameSettings.CockpitTheme.RadarGreen) ? 0.395f : 0.105f;
-                float targetS = Mathf.Clamp01(s * 0.90f);
+                float targetS = Mathf.Clamp01(Mathf.Max(s * 0.92f, 0.55f));
                 Color themed = Color.HSVToRGB(targetH, targetS, v);
                 themed.a = checkCol.a;
                 if (tmp.color != themed)
@@ -293,13 +424,13 @@ public class CockpitThemeDirector : MonoBehaviour
         if (theme == GameSettings.CockpitTheme.CyberBlue)
         {
             if (s.IndexOf(GREEN_BRIGHT_HEX, System.StringComparison.OrdinalIgnoreCase) >= 0)
-                s = s.Replace(GREEN_BRIGHT_HEX, "#00E5FF");
+                s = ReplaceIgnoreCase(s, GREEN_BRIGHT_HEX, "#00E5FF");
             if (s.IndexOf(GOLD_BRIGHT_HEX, System.StringComparison.OrdinalIgnoreCase) >= 0)
-                s = s.Replace(GOLD_BRIGHT_HEX, "#00E5FF");
+                s = ReplaceIgnoreCase(s, GOLD_BRIGHT_HEX, "#00E5FF");
             if (s.IndexOf(GREEN_SOFT_HEX, System.StringComparison.OrdinalIgnoreCase) >= 0)
-                s = s.Replace(GREEN_SOFT_HEX, "#7DD3FC");
+                s = ReplaceIgnoreCase(s, GREEN_SOFT_HEX, "#7DD3FC");
             if (s.IndexOf(GOLD_SOFT_HEX, System.StringComparison.OrdinalIgnoreCase) >= 0)
-                s = s.Replace(GOLD_SOFT_HEX, "#7DD3FC");
+                s = ReplaceIgnoreCase(s, GOLD_SOFT_HEX, "#7DD3FC");
             return s;
         }
 
@@ -354,7 +485,7 @@ public class CockpitThemeDirector : MonoBehaviour
         if (originalSprite == null || theme == GameSettings.CockpitTheme.CyberBlue)
             return originalSprite;
 
-        int objHash = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(originalSprite);
+        int objHash = RuntimeHelpers.GetHashCode(originalSprite);
         string key = $"{objHash}_{originalSprite.name}_{(int)theme}";
         if (_themedWorldSpriteCache.TryGetValue(key, out Sprite cached) && cached != null)
             return cached;
@@ -362,14 +493,15 @@ public class CockpitThemeDirector : MonoBehaviour
         Texture2D srcTex = originalSprite.texture;
         float ppu = originalSprite.pixelsPerUnit > 0f ? originalSprite.pixelsPerUnit : 100f;
 
-        // 1. Öncelik: GPU Blit (CockpitThemeUI.shader ile birebir aynı renk eğrisi, Read/Write kapalı dokularda bile çalışır)
-        Material themeMat = GetOrCreateUiThemeMaterial(theme);
+        // 1. Öncelik: GPU Blit (CockpitThemeUI.shader Pass 1 ile birebir aynı renk eğrisi)
+        Material themeMat = GetThemeMaterial(theme);
         if (srcTex != null && themeMat != null)
         {
             RenderTexture prevActive = RenderTexture.active;
             RenderTexture rt = RenderTexture.GetTemporary(srcTex.width, srcTex.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
             try
             {
+                themeMat.SetTexture(MainTexProp, srcTex);
                 int blitPass = themeMat.passCount > 1 ? 1 : 0;
                 Graphics.Blit(srcTex, rt, themeMat, blitPass);
                 RenderTexture.active = rt;
@@ -441,31 +573,31 @@ public class CockpitThemeDirector : MonoBehaviour
         {
             Color c = cols[i];
             Color.RGBToHSV(c, out float h, out float s, out float v);
-            if (h < 0.415f || h > 0.735f || s < 0.03f) continue;
+            float isRed = Mathf.Max(SmoothStep(0.915f, 0.955f, h), 1f - SmoothStep(0.035f, 0.068f, h)) * SmoothStep(0.32f, 0.52f, s);
+            float isWhite = SmoothStep(0.86f, 0.97f, v) * (1f - SmoothStep(0.04f, 0.12f, s));
+            float protect = Mathf.Clamp01(Mathf.Max(isRed, isWhite));
+            float blueBand = SmoothStep(0.375f, 0.435f, h) * (1f - SmoothStep(0.715f, 0.785f, h));
+            float weight = Mathf.Lerp(0.68f, 1f, blueBand) * (1f - protect);
+            if (weight <= 0.002f) continue;
 
-            float hueMask = SmoothStep(0.415f, 0.465f, h) * (1f - SmoothStep(0.675f, 0.735f, h));
-            float satMask = SmoothStep(0.025f, 0.115f, s);
-            float mask = hueMask * satMask;
-            if (mask <= 0.001f) continue;
-
-            float bright = SmoothStep(0.15f, 0.74f, v);
+            float bright = SmoothStep(0.12f, 0.74f, v);
             float th, ts, tv;
             if (theme == GameSettings.CockpitTheme.RadarGreen)
             {
-                th = Mathf.Lerp(0.418f, 0.392f, bright);
-                ts = Mathf.Clamp01(s * Mathf.Lerp(0.68f, 0.92f, bright));
-                tv = Mathf.Clamp01(v * Mathf.Lerp(0.94f, 1.02f, bright));
+                th = Mathf.Lerp(0.415f, 0.390f, bright);
+                ts = Mathf.Clamp01(Mathf.Max(s * 0.92f, 0.28f * SmoothStep(0.02f, 0.18f, v)));
+                tv = Mathf.Clamp01(v * Mathf.Lerp(0.95f, 1.04f, bright));
             }
             else
             {
-                th = Mathf.Lerp(0.092f, 0.106f, bright);
-                ts = Mathf.Clamp01(s * Mathf.Lerp(0.28f, 0.92f, bright));
-                tv = Mathf.Clamp01(v * Mathf.Lerp(0.90f, 1.04f, bright));
+                th = Mathf.Lerp(0.088f, 0.106f, bright);
+                ts = Mathf.Clamp01(Mathf.Max(s * Mathf.Lerp(0.45f, 1.0f, bright), 0.24f * SmoothStep(0.03f, 0.22f, v)));
+                tv = Mathf.Clamp01(v * Mathf.Lerp(0.92f, 1.06f, bright));
             }
 
             Color tc = Color.HSVToRGB(th, ts, tv);
             tc.a = c.a;
-            cols[i] = Color.Lerp(c, tc, mask);
+            cols[i] = Color.Lerp(c, tc, weight);
         }
         tex.SetPixels(cols);
         tex.Apply();

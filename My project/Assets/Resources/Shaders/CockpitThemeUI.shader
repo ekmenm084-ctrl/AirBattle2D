@@ -2,7 +2,7 @@ Shader "UI/CockpitThemeRemap"
 {
     Properties
     {
-        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
+        _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _ThemeMode ("Theme Mode", Float) = 0
 
@@ -105,7 +105,7 @@ Shader "UI/CockpitThemeRemap"
                 return c.z * lerp(K.xxx, saturate(p - K.xxx), c.y);
             }
 
-            float3 ApplyCockpitThemeSrgb(float3 srgb, float mode)
+            float3 GradeCockpitPaletteSrgb(float3 srgb, float mode)
             {
                 if (mode < 0.5)
                     return srgb;
@@ -115,39 +115,55 @@ Shader "UI/CockpitThemeRemap"
                 float s = hsv.y;
                 float v = hsv.z;
 
-                // Yalnızca oyunun Siber Mavi / Cyan / Koyu Lacivert-Arduvaz (152°..262°) paletini yakala;
-                // Kırmızı (ATEŞ, Zor, Kapat, Can), Altın (Altın sayacı, Alevler, Ulti) ve Yeşil ([KOLAY]) renklere dokunma!
-                float hueMask = smoothstep(0.415, 0.465, h) * (1.0 - smoothstep(0.675, 0.735, h));
-                float satMask = smoothstep(0.025, 0.115, s);
-                float mask = hueMask * satMask;
+                // 1. Korunan İşlevsel Renkler:
+                // - Kırmızı / Kızıl (ATEŞ tuşu, Zor butonu, Kapat, Düşman Canı, Bildirim Rozeti, P2 Joystick)
+                float isRedHue = max(smoothstep(0.915, 0.955, h), 1.0 - smoothstep(0.035, 0.068, h));
+                float redProtect = isRedHue * smoothstep(0.32, 0.52, s);
 
-                if (mask <= 0.001)
+                // - Parlak Saf Altın (Altın para ikonları / sayaçları / Ulti halkası)
+                float isGoldHue = smoothstep(0.095, 0.120, h) * (1.0 - smoothstep(0.155, 0.180, h));
+                float goldProtect = isGoldHue * smoothstep(0.55, 0.75, s) * smoothstep(0.58, 0.78, v);
+
+                // - Saf Parlak Beyaz Yazılar & Krom Harfler (okunabilirliği %100 korur)
+                float whiteProtect = smoothstep(0.84, 0.96, v) * (1.0 - smoothstep(0.04, 0.13, s));
+
+                float protectMask = saturate(max(redProtect, max(goldProtect * 0.85, whiteProtect)));
+
+                // 2. Birincil Siber Mavi / Cyan / Arduvaz-Lacivert Bölgesi (135°..280°) -> %100 Tema Dönüşümü
+                float blueBand = smoothstep(0.375, 0.435, h) * (1.0 - smoothstep(0.715, 0.785, h));
+
+                // 3. Arka Plan Hangar Duvarları, Bulutlar ve Atmosferik Gölgeler -> Bütünsel Tema Atmosferi
+                float ambientWeight = lerp(0.62, 1.0, blueBand) * (1.0 - protectMask);
+                if (ambientWeight <= 0.002)
                     return srgb;
 
-                // Orijinal mavi bant içindeki göreli konum (-1..+1 civarı) hafif ton zenginliğini korur
-                float bandOffset = clamp((h - 0.545) * 0.22, -0.025, 0.025);
+                float brightFactor = smoothstep(0.12, 0.74, v);
+                float midTone = sin(saturate(v) * 3.14159);
+                float bandOffset = clamp((h - 0.545) * 0.18, -0.020, 0.020);
                 float3 targetHsv = hsv;
 
                 if (mode < 1.5)
                 {
-                    // TEMA 1: RADAR YEŞİLİ (F-16 Taktik Gece Görüş & Zümrüt Aviyonik)
-                    float brightFactor = smoothstep(0.14, 0.72, v);
-                    targetHsv.x = frac(lerp(0.418, 0.392, brightFactor) + bandOffset * 0.5 + 1.0);
-                    targetHsv.y = saturate(s * lerp(0.68, 0.92, brightFactor));
-                    targetHsv.z = saturate(v * lerp(0.94, 1.02, brightFactor));
+                    // TEMA 1: RADAR YEŞİLİ (F-16 Gece Görüş & Taktik Zümrüt Kokpit)
+                    targetHsv.x = frac(lerp(0.415, 0.390, brightFactor) + bandOffset * 0.45 + 1.0);
+                    float ambientSatFloor = lerp(0.24, 0.40, midTone) * smoothstep(0.02, 0.18, v);
+                    float boostedSat = max(s * lerp(0.85, 1.05, brightFactor), ambientSatFloor);
+                    targetHsv.y = saturate(lerp(boostedSat * 0.78, boostedSat, blueBand));
+                    targetHsv.z = saturate(v * lerp(0.95, 1.04, brightFactor));
                 }
                 else
                 {
-                    // TEMA 2: ALTIN KARBON (Black Ops Koyu Karbon-Grafit & Kehribar Altın)
-                    float brightFactor = smoothstep(0.16, 0.76, v);
-                    targetHsv.x = frac(lerp(0.092, 0.106, brightFactor) + bandOffset * 0.35 + 1.0);
-                    // Koyu lacivert panelleri çamurlu kahverengi değil gerçek koyu karbon-antrasit yapar; parlak neonları saf altın yapar
-                    targetHsv.y = saturate(s * lerp(0.28, 0.92, brightFactor));
-                    targetHsv.z = saturate(v * lerp(0.90, 1.04, brightFactor));
+                    // TEMA 2: ALTIN KARBON (Black Ops Koyu Karbon & Kehribar Altın)
+                    targetHsv.x = frac(lerp(0.088, 0.106, brightFactor) + bandOffset * 0.35 + 1.0);
+                    float ambientSatFloor = lerp(0.20, 0.44, brightFactor) * smoothstep(0.03, 0.22, v);
+                    float darkCarbonSat = s * lerp(0.42, 1.05, brightFactor);
+                    float boostedSat = max(darkCarbonSat, ambientSatFloor);
+                    targetHsv.y = saturate(lerp(boostedSat * 0.80, boostedSat, blueBand));
+                    targetHsv.z = saturate(v * lerp(0.92, 1.06, brightFactor));
                 }
 
                 float3 themedRgb = HsvToRgb(targetHsv);
-                return lerp(srgb, themedRgb, mask);
+                return lerp(srgb, themedRgb, ambientWeight);
             }
 
             v2f vert(appdata_t v)
@@ -182,7 +198,7 @@ Shader "UI/CockpitThemeRemap"
                 {
                     bool linearSpace = !IsGammaSpace();
                     float3 srgb = linearSpace ? LinearToGammaSpace(max(color.rgb, 0.0)) : color.rgb;
-                    float3 graded = ApplyCockpitThemeSrgb(srgb, _ThemeMode);
+                    float3 graded = GradeCockpitPaletteSrgb(srgb, _ThemeMode);
                     color.rgb = linearSpace ? GammaToLinearSpace(max(graded, 0.0)) : graded;
                 }
 
@@ -270,29 +286,42 @@ Shader "UI/CockpitThemeRemap"
                     float s = hsv.y;
                     float v = hsv.z;
 
-                    float hueMask = smoothstep(0.415, 0.465, h) * (1.0 - smoothstep(0.675, 0.735, h));
-                    float satMask = smoothstep(0.025, 0.115, s);
-                    float mask = hueMask * satMask;
+                    float isRedHue = max(smoothstep(0.915, 0.955, h), 1.0 - smoothstep(0.035, 0.068, h));
+                    float redProtect = isRedHue * smoothstep(0.32, 0.52, s);
+                    float isGoldHue = smoothstep(0.095, 0.120, h) * (1.0 - smoothstep(0.155, 0.180, h));
+                    float goldProtect = isGoldHue * smoothstep(0.55, 0.75, s) * smoothstep(0.58, 0.78, v);
+                    float whiteProtect = smoothstep(0.86, 0.97, v) * (1.0 - smoothstep(0.04, 0.12, s));
+                    float protectMask = saturate(max(redProtect, max(goldProtect * 0.85, whiteProtect)));
 
-                    if (mask > 0.001)
+                    float blueBand = smoothstep(0.375, 0.435, h) * (1.0 - smoothstep(0.715, 0.785, h));
+                    float ambientWeight = lerp(0.68, 1.0, blueBand) * (1.0 - protectMask);
+
+                    if (ambientWeight > 0.002)
                     {
-                        float bandOffset = clamp((h - 0.545) * 0.22, -0.025, 0.025);
+                        float brightFactor = smoothstep(0.12, 0.74, v);
+                        float midTone = sin(saturate(v) * 3.14159);
+                        float bandOffset = clamp((h - 0.545) * 0.18, -0.020, 0.020);
                         float3 targetHsv = hsv;
+
                         if (_ThemeMode < 1.5)
                         {
-                            float brightFactor = smoothstep(0.14, 0.72, v);
-                            targetHsv.x = frac(lerp(0.418, 0.392, brightFactor) + bandOffset * 0.5 + 1.0);
-                            targetHsv.y = saturate(s * lerp(0.68, 0.92, brightFactor));
-                            targetHsv.z = saturate(v * lerp(0.94, 1.02, brightFactor));
+                            targetHsv.x = frac(lerp(0.415, 0.390, brightFactor) + bandOffset * 0.45 + 1.0);
+                            float ambientSatFloor = lerp(0.26, 0.44, midTone) * smoothstep(0.02, 0.18, v);
+                            float boostedSat = max(s * lerp(0.85, 1.05, brightFactor), ambientSatFloor);
+                            targetHsv.y = saturate(lerp(boostedSat * 0.80, boostedSat, blueBand));
+                            targetHsv.z = saturate(v * lerp(0.95, 1.04, brightFactor));
                         }
                         else
                         {
-                            float brightFactor = smoothstep(0.16, 0.76, v);
-                            targetHsv.x = frac(lerp(0.092, 0.106, brightFactor) + bandOffset * 0.35 + 1.0);
-                            targetHsv.y = saturate(s * lerp(0.28, 0.92, brightFactor));
-                            targetHsv.z = saturate(v * lerp(0.90, 1.04, brightFactor));
+                            targetHsv.x = frac(lerp(0.088, 0.106, brightFactor) + bandOffset * 0.35 + 1.0);
+                            float ambientSatFloor = lerp(0.22, 0.46, brightFactor) * smoothstep(0.03, 0.22, v);
+                            float darkCarbonSat = s * lerp(0.45, 1.05, brightFactor);
+                            float boostedSat = max(darkCarbonSat, ambientSatFloor);
+                            targetHsv.y = saturate(lerp(boostedSat * 0.82, boostedSat, blueBand));
+                            targetHsv.z = saturate(v * lerp(0.92, 1.06, brightFactor));
                         }
-                        srgb = lerp(srgb, HsvToRgbB(targetHsv), mask);
+
+                        srgb = lerp(srgb, HsvToRgbB(targetHsv), ambientWeight);
                     }
 
                     color.rgb = linearSpace ? GammaToLinearSpace(max(srgb, 0.0)) : srgb;

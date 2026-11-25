@@ -196,6 +196,18 @@ public class Bullet : MonoBehaviour
                 break;
         }
 
+        // Seçili kokpit teması Siber Mavi dışında ise oyuncu mermi izlerini ve kıvılcımlarını temayla uyumlu hale getir
+        if (GameSettings.SelectedCockpitTheme != GameSettings.CockpitTheme.CyberBlue && !isCritical)
+        {
+            Color themePrimary = GameSettings.GetCockpitHpBarColor();
+            Color themeSecondary = GameSettings.GetCockpitUltiBarColor();
+            _sparkColor = themeSecondary;
+            trailStartColor = Color.Lerp(Color.white, themeSecondary, 0.35f);
+            trailMidColor = new Color(themePrimary.r, themePrimary.g, themePrimary.b, 0.90f);
+            trailEndColor = new Color(themePrimary.r * 0.45f, themePrimary.g * 0.45f, themePrimary.b * 0.45f, 0f);
+            _baseSpriteColor = Color.Lerp(Color.white, themeSecondary, 0.30f);
+        }
+
         if (_sr != null && chosenSprite != null)
         {
             _sr.sprite = chosenSprite;

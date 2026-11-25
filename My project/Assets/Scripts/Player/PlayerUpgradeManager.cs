@@ -180,17 +180,32 @@ public class PlayerUpgradeManager : MonoBehaviour
             if (shieldSprite != null)
             {
                 _shieldRenderer.sprite = shieldSprite;
+                _shieldRenderer.color = new Color(1f, 1f, 1f, 0.85f);
             }
             else
             {
                 // Fallback dinamik parlayan enerji dokusu
                 _shieldRenderer.sprite = CreateFallbackShieldSprite();
+                _shieldRenderer.color = GameSettings.GetCockpitAccentBorderColor(0.85f);
             }
-
-            _shieldRenderer.color = new Color(0f, 0.9f, 1f, 0.85f);
         }
 
+        RefreshShieldThemeVisual();
         _shieldVisualObj.SetActive(hasShield && currentShield > 0f);
+    }
+
+    public void RefreshShieldThemeVisual()
+    {
+        if (_shieldRenderer == null) return;
+        if (shieldSprite != null)
+        {
+            _shieldRenderer.sprite = CockpitThemeDirector.GetThemedWorldSprite(shieldSprite, "shield_bubble", GameSettings.SelectedCockpitTheme);
+            _shieldRenderer.color = new Color(1f, 1f, 1f, 0.85f);
+        }
+        else
+        {
+            _shieldRenderer.color = GameSettings.GetCockpitAccentBorderColor(0.85f);
+        }
     }
 
     private Sprite CreateFallbackShieldSprite()
@@ -211,10 +226,10 @@ public class PlayerUpgradeManager : MonoBehaviour
                 }
                 else
                 {
-                    // Halka şeklinde parlayan kenarlar
+                    // Halka şeklinde parlayan kenarlar (beyaz taban, SpriteRenderer.color ile temalanır)
                     float ring = Mathf.Abs(dist - (radius - 8f)) / 8f;
                     float alpha = Mathf.Clamp01(1f - ring) * 0.9f;
-                    tex.SetPixel(x, y, new Color(0f, 0.9f, 1f, alpha));
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
                 }
             }
         }
@@ -263,11 +278,9 @@ public class PlayerUpgradeManager : MonoBehaviour
     private IEnumerator FlashShieldRoutine(Color flashColor, float duration)
     {
         if (_shieldRenderer == null) yield break;
-        Color original = new Color(0f, 0.9f, 1f, 0.85f);
         _shieldRenderer.color = flashColor;
         yield return new WaitForSecondsRealtime(duration);
-        if (_shieldRenderer != null)
-            _shieldRenderer.color = original;
+        RefreshShieldThemeVisual();
     }
 
     /// <summary>
