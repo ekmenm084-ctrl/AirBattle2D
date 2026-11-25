@@ -22,7 +22,16 @@ public class LeaderboardManager : MonoBehaviour
         TimeAttack = 1,  // Zaman Taarruzu (60s İmha Sayısı)
         BulletHell = 2,  // Mermi Cehennemi (Hayatta Kalma Süresi)
         BossRush = 3,    // Boss Rush (Elenen Boss / Süre Skoru)
-        Hardcore = 4     // Hardcore Modu (Tek Can, 200 HP, İlerlenen Boss Sayısı)
+        Hardcore = 4,    // Hardcore Modu (Tek Can, 200 HP, İlerlenen Boss Sayısı)
+        Campaign = 5     // Harekat Modu (20 Aşamalı Sefer)
+    }
+
+    public enum DifficultyFilter
+    {
+        All = -1,
+        Kolay = 0,
+        Normal = 1,
+        Zor = 2
     }
 
     [Serializable]
@@ -38,6 +47,7 @@ public class LeaderboardManager : MonoBehaviour
         public string extraInfo;
         public string modeDisplayName;
         public string stageDisplayText;
+        public GameSettings.Difficulty difficulty = GameSettings.Difficulty.Normal;
     }
 
     [Serializable]
@@ -183,17 +193,96 @@ public class LeaderboardManager : MonoBehaviour
 
     public bool IsSupabaseConfigured => !string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseAnonKey) && !supabaseUrl.Contains("YOUR_PROJECT_ID");
 
-    public static string GetModeKey(BoardMode mode)
+    public static string GetBaseModeKey(BoardMode mode)
     {
         return mode switch
         {
+            BoardMode.Campaign => "campaign",
             BoardMode.Endless => "endless",
             BoardMode.TimeAttack => "time_attack",
             BoardMode.BulletHell => "bullet_hell",
             BoardMode.BossRush => "boss_rush",
             BoardMode.Hardcore => "hardcore",
-            _ => "endless"
+            _ => "campaign"
         };
+    }
+
+    public static string GetDifficultySuffix(GameSettings.Difficulty diff)
+    {
+        return diff switch
+        {
+            GameSettings.Difficulty.Kolay => "easy",
+            GameSettings.Difficulty.Zor => "hard",
+            _ => "normal"
+        };
+    }
+
+    public static string GetDifficultyLabel(GameSettings.Difficulty diff)
+    {
+        return diff switch
+        {
+            GameSettings.Difficulty.Kolay => "KOLAY",
+            GameSettings.Difficulty.Zor => "ZOR",
+            _ => "NORMAL"
+        };
+    }
+
+    public static string GetDifficultyColoredTag(GameSettings.Difficulty diff)
+    {
+        return diff switch
+        {
+            GameSettings.Difficulty.Kolay => "<color=#4ADE80>[KOLAY]</color>",
+            GameSettings.Difficulty.Zor => "<color=#F87171>[ZOR]</color>",
+            _ => "<color=#FACC15>[NORMAL]</color>"
+        };
+    }
+
+    public static string GetModeKey(BoardMode mode)
+    {
+        return GetModeKey(mode, GameSettings.SelectedDifficulty);
+    }
+
+    public static string GetModeKey(BoardMode mode, GameSettings.Difficulty diff)
+    {
+        return $"{GetBaseModeKey(mode)}_{GetDifficultySuffix(diff)}";
+    }
+
+    public static GameSettings.Difficulty ParseDifficultyFromRecord(string modeKey, string extraInfo)
+    {
+        string m = (modeKey ?? "").ToLowerInvariant();
+        if (m.EndsWith("_easy") || m.Contains("_kolay")) return GameSettings.Difficulty.Kolay;
+        if (m.EndsWith("_hard") || m.Contains("_zor")) return GameSettings.Difficulty.Zor;
+        if (m.EndsWith("_normal")) return GameSettings.Difficulty.Normal;
+
+        string ex = (extraInfo ?? "").ToUpperInvariant();
+        if (ex.Contains("KOLAY") || ex.Contains("EASY")) return GameSettings.Difficulty.Kolay;
+        if (ex.Contains("ZOR") || ex.Contains("HARD")) return GameSettings.Difficulty.Zor;
+        return GameSettings.Difficulty.Normal;
+    }
+
+    public static string StripDifficultySuffix(string modeKey)
+    {
+        if (string.IsNullOrEmpty(modeKey)) return "";
+        string m = modeKey.Trim().ToLowerInvariant();
+        if (m.EndsWith("_easy")) return m.Substring(0, m.Length - 5);
+        if (m.EndsWith("_normal")) return m.Substring(0, m.Length - 7);
+        if (m.EndsWith("_hard")) return m.Substring(0, m.Length - 5);
+        return m;
+    }
+
+    private static string GetLocalDiffPrefKey(BoardMode mode, GameSettings.Difficulty diff)
+    {
+        string basePref = mode switch
+        {
+            BoardMode.Campaign => "AirBattle_CampaignHighScore",
+            BoardMode.Endless => "AirBattle_EndlessHighScore",
+            BoardMode.TimeAttack => "AirBattle_TimeAttackHighScore",
+            BoardMode.BulletHell => "AirBattle_BulletHellBestTime",
+            BoardMode.BossRush => "AirBattle_BossRushHighScore",
+            BoardMode.Hardcore => "AirBattle_HardcoreHighScore",
+            _ => "AirBattle_CampaignHighScore"
+        };
+        return $"{basePref}_{diff}";
     }
 
     [Serializable]
@@ -216,128 +305,148 @@ public class LeaderboardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Mod bitiminde skoru yerel PlayerPrefs'e kaydeder ve oyuncunun en yüksek rekorunu Supabase skor tablosuna aktarır.
+    /// Mod bitiminde skoru aktif zorluk derecesine (Kolay/Normal/Zor) özel olarak hem yerel PlayerPrefs'e
+    /// hem de Supabase skor tablosuna ayrı kayıt olarak aktarır.
     /// </summary>
     public void SubmitScore(BoardMode mode, int score, float timeSeconds = 0f, string extra = "")
     {
-        UpdateLocalRecord(mode, score, timeSeconds);
+        SubmitScoreWithDifficulty(mode, GameSettings.SelectedDifficulty, score, timeSeconds, extra);
+    }
 
-        // Her zaman oyuncunun en iyi rekorunu gönder (düşük bir maç skoru asla yüksek rekoru ezmesin)
-        int bestScore = Mathf.Max(score, GetLocalRecordScore(mode));
+    public void SubmitScoreWithDifficulty(BoardMode mode, GameSettings.Difficulty diff, int score, float timeSeconds = 0f, string extra = "")
+    {
+        UpdateLocalRecord(mode, diff, score, timeSeconds);
+
+        int bestScore = Mathf.Max(score, GetLocalRecordScore(mode, diff));
         float bestTime = mode == BoardMode.BulletHell
-            ? Mathf.Max(timeSeconds, ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f))
+            ? Mathf.Max(timeSeconds, ProfileManager.GetFloat(GetLocalDiffPrefKey(BoardMode.BulletHell, diff), 0f))
             : timeSeconds;
 
         if (bestScore <= 0 && bestTime <= 0f) return;
 
+        string baseTag = string.IsNullOrEmpty(extra) ? GetBaseModeKey(mode).ToUpperInvariant() : extra;
+        string diffTag = GetDifficultyLabel(diff);
+        string taggedExtra = baseTag.Contains(diffTag) ? baseTag : $"{baseTag}|{diffTag}";
+
         if (IsSupabaseConfigured)
         {
-            StartCoroutine(UploadScoreToSupabaseRoutine(mode, bestScore, bestTime, extra));
+            StartCoroutine(UploadScoreToSupabaseRoutine(mode, diff, bestScore, bestTime, taggedExtra));
         }
     }
 
     /// <summary>
-    /// Giriş yapan oyuncunun cihazdaki tüm mod rekorlarını Supabase skor tablosuyla senkronize eder.
+    /// Giriş yapan oyuncunun cihazdaki tüm mod ve zorluk rekorlarını Supabase skor tablosuyla senkronize eder.
     /// </summary>
     public void SyncAllLocalRecordsToSupabase()
     {
         if (!IsSupabaseConfigured) return;
 
-        int endlessBest = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
-        if (endlessBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.Endless, endlessBest, 0f, "SONSUZ"));
+        GameSettings.Difficulty[] diffs = { GameSettings.Difficulty.Kolay, GameSettings.Difficulty.Normal, GameSettings.Difficulty.Zor };
+        BoardMode[] modes = { BoardMode.Campaign, BoardMode.Endless, BoardMode.TimeAttack, BoardMode.BulletHell, BoardMode.BossRush, BoardMode.Hardcore };
 
-        int timeAttackBest = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
-        if (timeAttackBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.TimeAttack, timeAttackBest, 0f, ""));
-
-        float bulletHellBest = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
-        if (bulletHellBest > 1f) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.BulletHell, Mathf.RoundToInt(bulletHellBest), bulletHellBest, ""));
-
-        int bossRushBest = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
-        if (bossRushBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.BossRush, bossRushBest, 0f, "BOSS"));
-
-        int hardcoreBest = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
-        if (hardcoreBest > 0) StartCoroutine(UploadScoreToSupabaseRoutine(BoardMode.Hardcore, hardcoreBest, 0f, "HARDCORE"));
+        foreach (var diff in diffs)
+        {
+            string dLabel = GetDifficultyLabel(diff);
+            foreach (var m in modes)
+            {
+                if (m == BoardMode.BulletHell)
+                {
+                    float bhBest = ProfileManager.GetFloat(GetLocalDiffPrefKey(m, diff), 0f);
+                    if (bhBest > 1f)
+                        StartCoroutine(UploadScoreToSupabaseRoutine(m, diff, Mathf.RoundToInt(bhBest), bhBest, $"BULLET|{dLabel}"));
+                }
+                else
+                {
+                    int mBest = GetLocalRecordScore(m, diff);
+                    if (mBest > 0)
+                    {
+                        string prefix = m == BoardMode.Campaign ? "HAREKAT" : (m == BoardMode.Endless ? "SONSUZ" : m.ToString().ToUpperInvariant());
+                        StartCoroutine(UploadScoreToSupabaseRoutine(m, diff, mBest, 0f, $"{prefix}|{dLabel}"));
+                    }
+                }
+            }
+        }
     }
 
-    private bool UpdateLocalRecord(BoardMode mode, int score, float timeSeconds)
+    private bool UpdateLocalRecord(BoardMode mode, GameSettings.Difficulty diff, int score, float timeSeconds)
     {
         bool isNew = false;
-        switch (mode)
+        string diffKey = GetLocalDiffPrefKey(mode, diff);
+
+        if (mode == BoardMode.BulletHell)
         {
-            case BoardMode.Endless:
-                int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
-                if (score > bestWave)
-                {
-                    ProfileManager.SetInt("AirBattle_EndlessHighScore", score);
-                    ProfileManager.Save();
-                    isNew = true;
-                }
-                break;
-
-            case BoardMode.TimeAttack:
-                int bestKills = ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0);
-                if (score > bestKills)
-                {
-                    ProfileManager.SetInt("AirBattle_TimeAttackHighScore", score);
-                    ProfileManager.Save();
-                    isNew = true;
-                }
-                break;
-
-            case BoardMode.BulletHell:
-                float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
-                if (timeSeconds > bestTime)
-                {
-                    ProfileManager.SetFloat("AirBattle_BulletHellBestTime", timeSeconds);
-                    ProfileManager.Save();
-                    isNew = true;
-                }
-                break;
-
-            case BoardMode.BossRush:
-                int bestBossScore = ProfileManager.GetInt("AirBattle_BossRushHighScore", 0);
-                if (score > bestBossScore)
-                {
-                    ProfileManager.SetInt("AirBattle_BossRushHighScore", score);
-                    ProfileManager.Save();
-                    isNew = true;
-                }
-                break;
-
-            case BoardMode.Hardcore:
-                int bestHc = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
-                if (score > bestHc)
-                {
-                    ProfileManager.SetInt("AirBattle_HardcoreHighScore", score);
-                    ProfileManager.Save();
-                    isNew = true;
-                }
-                break;
+            float bestDiffTime = ProfileManager.GetFloat(diffKey, 0f);
+            if (timeSeconds > bestDiffTime)
+            {
+                ProfileManager.SetFloat(diffKey, timeSeconds);
+                isNew = true;
+            }
+            float bestOverall = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
+            if (timeSeconds > bestOverall)
+            {
+                ProfileManager.SetFloat("AirBattle_BulletHellBestTime", timeSeconds);
+                isNew = true;
+            }
+            if (isNew) ProfileManager.Save();
+            return isNew;
         }
+
+        int curDiffBest = ProfileManager.GetInt(diffKey, 0);
+        if (score > curDiffBest)
+        {
+            ProfileManager.SetInt(diffKey, score);
+            isNew = true;
+        }
+
+        // Genel özet anahtarı da güncel tut
+        string summaryKey = mode switch
+        {
+            BoardMode.Campaign => "AirBattle_CampaignHighScore",
+            BoardMode.Endless => "AirBattle_EndlessHighScore",
+            BoardMode.TimeAttack => "AirBattle_TimeAttackHighScore",
+            BoardMode.BossRush => "AirBattle_BossRushHighScore",
+            BoardMode.Hardcore => "AirBattle_HardcoreHighScore",
+            _ => ""
+        };
+        if (!string.IsNullOrEmpty(summaryKey))
+        {
+            int curSummary = ProfileManager.GetInt(summaryKey, 0);
+            if (score > curSummary)
+            {
+                ProfileManager.SetInt(summaryKey, score);
+                isNew = true;
+            }
+        }
+
+        if (isNew) ProfileManager.Save();
         return isNew;
     }
 
     public int GetLocalRecordScore(BoardMode mode)
     {
-        return mode switch
-        {
-            BoardMode.Endless => ProfileManager.GetInt("AirBattle_EndlessHighScore", 0),
-            BoardMode.TimeAttack => ProfileManager.GetInt("AirBattle_TimeAttackHighScore", 0),
-            BoardMode.BulletHell => Mathf.RoundToInt(ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f)),
-            BoardMode.BossRush => ProfileManager.GetInt("AirBattle_BossRushHighScore", 0),
-            BoardMode.Hardcore => ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0),
-            _ => 0
-        };
+        return GetLocalRecordScore(mode, GameSettings.SelectedDifficulty);
     }
 
-    private IEnumerator UploadScoreToSupabaseRoutine(BoardMode mode, int score, float timeSeconds, string extra)
+    public int GetLocalRecordScore(BoardMode mode, GameSettings.Difficulty diff)
+    {
+        string diffKey = GetLocalDiffPrefKey(mode, diff);
+        if (mode == BoardMode.BulletHell)
+            return Mathf.RoundToInt(ProfileManager.GetFloat(diffKey, 0f));
+
+        int val = ProfileManager.GetInt(diffKey, 0);
+        if (mode == BoardMode.BossRush && val >= 100)
+            val = Mathf.Clamp(val / 100, 1, 4);
+        return val;
+    }
+
+    private IEnumerator UploadScoreToSupabaseRoutine(BoardMode mode, GameSettings.Difficulty diff, int score, float timeSeconds, string extra)
     {
         if (!IsSupabaseConfigured) yield break;
 
         string activePlayer = GetAuthenticatedLeaderboardName();
-        string modeKey = GetModeKey(mode);
+        string modeKey = GetModeKey(mode, diff);
         string rankTitle = GetPilotRankByScore(mode, score);
-        string formatted = FormatScoreText(mode, score, timeSeconds);
+        string formatted = GetStageDisplayText(modeKey, score, timeSeconds, extra);
 
         // 1. Öncelik: Sunucu tarafında rekor korumalı ve hesap bağlantılı submit_pilot_score RPC'si
         string rpcEndpoint = $"{supabaseUrl}/rest/v1/rpc/submit_pilot_score";
@@ -427,35 +536,45 @@ public class LeaderboardManager : MonoBehaviour
         }
     }
 
+    public static string GetBaseModeTitle(string modeKey, string extraInfo = "")
+    {
+        string baseKey = StripDifficultySuffix(modeKey);
+        if (baseKey == "campaign" || baseKey == "story" || baseKey == "harekat")
+            return "HAREKAT";
+
+        if (!string.IsNullOrEmpty(extraInfo) && extraInfo.IndexOf("HAREKAT", StringComparison.OrdinalIgnoreCase) >= 0)
+            return "HAREKAT";
+
+        return baseKey switch
+        {
+            "endless" => "SONSUZ",
+            "boss_rush" => "BOSS RUSH",
+            "time_attack" => "ZAMAN TAARRUZU",
+            "bullet_hell" => "MERMİ FIRTINASI",
+            "hardcore" => "HARDCORE",
+            _ => "HAREKAT"
+        };
+    }
+
     public static string GetModeDisplayName(string modeKey, string extraInfo = "")
     {
-        if (!string.IsNullOrEmpty(extraInfo) && extraInfo.IndexOf("HAREKAT", StringComparison.OrdinalIgnoreCase) >= 0)
-            return "HAREKAT MODU";
-
-        return (modeKey ?? "").ToLowerInvariant() switch
-        {
-            "campaign" or "story" or "harekat" => "HAREKAT MODU",
-            "endless" => "SONSUZ İT DALAŞI",
-            "boss_rush" => "BOSS HAREKATI",
-            "time_attack" => "ZAMAN TAARRUZU",
-            "bullet_hell" => "MERMİ CEHENNEMİ",
-            "hardcore" => "HARDCORE MODU",
-            _ => "HAREKAT MODU"
-        };
+        string baseTitle = GetBaseModeTitle(modeKey, extraInfo);
+        GameSettings.Difficulty diff = ParseDifficultyFromRecord(modeKey, extraInfo);
+        return $"{baseTitle} {GetDifficultyColoredTag(diff)}";
     }
 
     public static string GetStageDisplayText(string modeKey, int score, float timeSeconds = 0f, string extraInfo = "")
     {
-        string modeDisp = GetModeDisplayName(modeKey, extraInfo);
-        if (modeDisp == "HAREKAT MODU")
+        string baseTitle = GetBaseModeTitle(modeKey, extraInfo);
+        if (baseTitle == "HAREKAT")
             return $"{Mathf.Max(1, score)}. BÖLÜM";
-        if (modeDisp == "SONSUZ İT DALAŞI")
+        if (baseTitle == "SONSUZ")
             return $"{Mathf.Max(1, score)}. DALGA";
-        if (modeDisp == "BOSS HAREKATI" || modeDisp == "HARDCORE MODU")
+        if (baseTitle == "BOSS RUSH" || baseTitle == "HARDCORE")
             return $"{Mathf.Max(1, score)}. AŞAMA";
-        if (modeDisp == "ZAMAN TAARRUZU")
+        if (baseTitle == "ZAMAN TAARRUZU")
             return $"{Mathf.Max(1, score)} İMHA";
-        if (modeDisp == "MERMİ CEHENNEMİ")
+        if (baseTitle == "MERMİ FIRTINASI")
         {
             int sec = score > 0 ? score : Mathf.RoundToInt(timeSeconds);
             return $"{Mathf.Max(1, sec)} SN";
@@ -471,37 +590,31 @@ public class LeaderboardManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Tüm oyun modlarındaki gerçek oyuncu rekorlarını Supabase veritabanından çeker
-    /// ve cihazdaki gerçek kayıtlı kullanıcı profilleriyle senkronize eder.
+    /// Tüm oyun modlarındaki gerçek oyuncu rekorlarını zorluk derecesine (Kolay / Normal / Zor / Tümü) göre
+    /// birbirinden bağımsız satırlar olarak Supabase ve yerel profillerden çeker.
     /// </summary>
     public void FetchAllModesLeaderboard(Action<List<LeaderboardEntry>, bool> onComplete)
     {
-        StartCoroutine(FetchAllModesLeaderboardRoutine(onComplete));
+        FetchAllModesLeaderboard(DifficultyFilter.All, onComplete);
     }
 
-    private IEnumerator FetchAllModesLeaderboardRoutine(Action<List<LeaderboardEntry>, bool> onComplete)
+    public void FetchAllModesLeaderboard(DifficultyFilter filter, Action<List<LeaderboardEntry>, bool> onComplete)
+    {
+        StartCoroutine(FetchAllModesLeaderboardRoutine(filter, onComplete));
+    }
+
+    private IEnumerator FetchAllModesLeaderboardRoutine(DifficultyFilter filter, Action<List<LeaderboardEntry>, bool> onComplete)
     {
         string activeUser = PlayerCallsign;
         List<string> knownProfiles = ProfileManager.GetKnownProfiles();
 
-        // Cihazdaki tüm gerçek profillerin doğru rekorlarını Supabase'e UPSERT ederek eski hatalı (örn. totalWaves=69) kayıtları ez
-        if (IsSupabaseConfigured)
-        {
-            foreach (string prof in knownProfiles)
-            {
-                if (string.IsNullOrEmpty(prof) || IsSamplePlaceholderName(prof)) continue;
-                GetBestRecordForProfile(prof, out BoardMode pMode, out int pScore, out string pExtra);
-                int uploadScore = Mathf.Max(1, pScore);
-                yield return StartCoroutine(UploadProfileScoreToSupabaseRoutine(prof, pMode, uploadScore, 0f, pExtra));
-            }
-        }
-
         List<LeaderboardEntry> entries = new List<LeaderboardEntry>();
+        var entryIndexByKey = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         bool isLiveOnline = false;
 
         if (IsSupabaseConfigured)
         {
-            string endpoint = $"{supabaseUrl}/rest/v1/leaderboard?select=*&order=score.desc,time_seconds.asc&limit=30";
+            string endpoint = $"{supabaseUrl}/rest/v1/leaderboard?select=*&order=score.desc,time_seconds.asc&limit=60";
             using (UnityWebRequest req = UnityWebRequest.Get(endpoint))
             {
                 req.timeout = 5;
@@ -519,18 +632,39 @@ public class LeaderboardManager : MonoBehaviour
                         if (records != null && records.Length > 0)
                         {
                             isLiveOnline = true;
-                            var seenUsers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                             for (int i = 0; i < records.Length; i++)
                             {
                                 var r = records[i];
                                 if (r == null || string.IsNullOrEmpty(r.player_name)) continue;
                                 if (IsSamplePlaceholderName(r.player_name)) continue;
 
-                                if (seenUsers.Contains(r.player_name)) continue;
-                                seenUsers.Add(r.player_name);
+                                GameSettings.Difficulty recDiff = ParseDifficultyFromRecord(r.mode, r.extra_info);
+                                if (filter != DifficultyFilter.All && (int)recDiff != (int)filter)
+                                    continue;
+
+                                string baseModeTitle = GetBaseModeTitle(r.mode, r.extra_info);
+                                // Aynı oyuncunun farklı zorluklardaki (Kolay vs Zor) ve farklı modlardaki rekorları ayrı tutulur!
+                                string dedupKey = filter == DifficultyFilter.All
+                                    ? $"{r.player_name}|{recDiff}|{baseModeTitle}"
+                                    : $"{r.player_name}|{recDiff}";
 
                                 int cleanScore = NormalizeModeScore(r.mode, r.score);
+                                if (entryIndexByKey.TryGetValue(dedupKey, out int existIdx))
+                                {
+                                    if (cleanScore > entries[existIdx].score)
+                                    {
+                                        entries[existIdx].score = cleanScore;
+                                        entries[existIdx].timeInSeconds = r.time_seconds;
+                                        entries[existIdx].extraInfo = r.extra_info;
+                                        entries[existIdx].modeDisplayName = GetModeDisplayName(r.mode, r.extra_info);
+                                        entries[existIdx].stageDisplayText = GetStageDisplayText(r.mode, cleanScore, r.time_seconds, r.extra_info);
+                                        entries[existIdx].formattedScore = entries[existIdx].stageDisplayText;
+                                    }
+                                    continue;
+                                }
+
                                 bool isMe = r.player_name.Equals(activeUser, StringComparison.OrdinalIgnoreCase);
+                                entryIndexByKey[dedupKey] = entries.Count;
                                 entries.Add(new LeaderboardEntry
                                 {
                                     rank = entries.Count + 1,
@@ -542,7 +676,8 @@ public class LeaderboardManager : MonoBehaviour
                                     isPlayer = isMe,
                                     extraInfo = r.extra_info,
                                     modeDisplayName = GetModeDisplayName(r.mode, r.extra_info),
-                                    stageDisplayText = GetStageDisplayText(r.mode, cleanScore, r.time_seconds, r.extra_info)
+                                    stageDisplayText = GetStageDisplayText(r.mode, cleanScore, r.time_seconds, r.extra_info),
+                                    difficulty = recDiff
                                 });
                             }
                         }
@@ -555,47 +690,106 @@ public class LeaderboardManager : MonoBehaviour
             }
         }
 
-        // Cihazda kayıtlı gerçek kullanıcı profillerinin yerel doğru değerlerini tabloya kesin olarak uygula
+        // Cihazdaki gerçek kullanıcı profillerinin her zorluk derecesindeki (Kolay / Normal / Zor) yerel rekorlarını ayrı ayrı entegre et
+        GameSettings.Difficulty[] allDiffs = { GameSettings.Difficulty.Kolay, GameSettings.Difficulty.Normal, GameSettings.Difficulty.Zor };
         foreach (string prof in knownProfiles)
         {
             if (string.IsNullOrEmpty(prof) || IsSamplePlaceholderName(prof)) continue;
-            GetBestRecordForProfile(prof, out BoardMode pMode, out int pScore, out string pExtra);
-            int finalLocalScore = Mathf.Max(1, pScore);
-
-            string pModeKey = GetModeKey(pMode);
-            LeaderboardEntry existing = entries.Find(e => e.playerName.Equals(prof, StringComparison.OrdinalIgnoreCase));
             bool isMe = prof.Equals(activeUser, StringComparison.OrdinalIgnoreCase);
+            bool addedAnyForProf = false;
 
-            if (existing != null)
+            foreach (var diff in allDiffs)
             {
-                if (isMe) existing.isPlayer = true;
-                // Yerel profilin gerçek rekorunu her zaman esas al (veritabanında eski şişkin bir sayı kalmışsa bile düzelt)
-                existing.score = finalLocalScore;
-                existing.extraInfo = pExtra;
-                existing.modeDisplayName = GetModeDisplayName(pModeKey, pExtra);
-                existing.stageDisplayText = GetStageDisplayText(pModeKey, finalLocalScore, 0f, pExtra);
-                existing.formattedScore = existing.stageDisplayText;
-            }
-            else
-            {
-                entries.Add(new LeaderboardEntry
+                if (filter != DifficultyFilter.All && (int)diff != (int)filter)
+                    continue;
+
+                if (TryGetBestProfileRecordForDifficulty(prof, diff, out BoardMode pMode, out int pScore, out float pTime, out string pExtra))
                 {
-                    rank = entries.Count + 1,
-                    playerName = prof,
-                    score = finalLocalScore,
-                    timeInSeconds = 0f,
-                    formattedScore = GetStageDisplayText(pModeKey, finalLocalScore, 0f, pExtra),
-                    rankTitle = GetPilotRankByScore(pMode, finalLocalScore),
-                    isPlayer = isMe,
-                    extraInfo = pExtra,
-                    modeDisplayName = GetModeDisplayName(pModeKey, pExtra),
-                    stageDisplayText = GetStageDisplayText(pModeKey, finalLocalScore, 0f, pExtra)
-                });
+                    addedAnyForProf = true;
+                    string pModeKey = GetModeKey(pMode, diff);
+                    string baseModeTitle = GetBaseModeTitle(pModeKey, pExtra);
+                    string dedupKey = filter == DifficultyFilter.All
+                        ? $"{prof}|{diff}|{baseModeTitle}"
+                        : $"{prof}|{diff}";
+
+                    if (entryIndexByKey.TryGetValue(dedupKey, out int existIdx))
+                    {
+                        if (isMe) entries[existIdx].isPlayer = true;
+                        if (pScore > entries[existIdx].score)
+                        {
+                            entries[existIdx].score = pScore;
+                            entries[existIdx].timeInSeconds = pTime;
+                            entries[existIdx].extraInfo = pExtra;
+                            entries[existIdx].modeDisplayName = GetModeDisplayName(pModeKey, pExtra);
+                            entries[existIdx].stageDisplayText = GetStageDisplayText(pModeKey, pScore, pTime, pExtra);
+                            entries[existIdx].formattedScore = entries[existIdx].stageDisplayText;
+                        }
+                    }
+                    else
+                    {
+                        entryIndexByKey[dedupKey] = entries.Count;
+                        entries.Add(new LeaderboardEntry
+                        {
+                            rank = entries.Count + 1,
+                            playerName = prof,
+                            score = pScore,
+                            timeInSeconds = pTime,
+                            formattedScore = GetStageDisplayText(pModeKey, pScore, pTime, pExtra),
+                            rankTitle = GetPilotRankByScore(pMode, pScore),
+                            isPlayer = isMe,
+                            extraInfo = pExtra,
+                            modeDisplayName = GetModeDisplayName(pModeKey, pExtra),
+                            stageDisplayText = GetStageDisplayText(pModeKey, pScore, pTime, pExtra),
+                            difficulty = diff
+                        });
+                    }
+                }
+            }
+
+            // Eski sürümden kalma (zorluk soneki henüz yazılmamış) özet rekor varsa yalnızca Normal zorluk altına yedekle
+            if (!addedAnyForProf && (filter == DifficultyFilter.All || filter == DifficultyFilter.Normal))
+            {
+                GetLegacyBestRecordForProfile(prof, out BoardMode legMode, out int legScore, out string legExtra);
+                if (legScore > 0)
+                {
+                    string legModeKey = GetModeKey(legMode, GameSettings.Difficulty.Normal);
+                    string baseModeTitle = GetBaseModeTitle(legModeKey, legExtra);
+                    string dedupKey = filter == DifficultyFilter.All
+                        ? $"{prof}|{GameSettings.Difficulty.Normal}|{baseModeTitle}"
+                        : $"{prof}|{GameSettings.Difficulty.Normal}";
+
+                    if (!entryIndexByKey.ContainsKey(dedupKey))
+                    {
+                        entryIndexByKey[dedupKey] = entries.Count;
+                        entries.Add(new LeaderboardEntry
+                        {
+                            rank = entries.Count + 1,
+                            playerName = prof,
+                            score = legScore,
+                            timeInSeconds = 0f,
+                            formattedScore = GetStageDisplayText(legModeKey, legScore, 0f, legExtra),
+                            rankTitle = GetPilotRankByScore(legMode, legScore),
+                            isPlayer = isMe,
+                            extraInfo = legExtra,
+                            modeDisplayName = GetModeDisplayName(legModeKey, legExtra),
+                            stageDisplayText = GetStageDisplayText(legModeKey, legScore, 0f, legExtra),
+                            difficulty = GameSettings.Difficulty.Normal
+                        });
+                    }
+                }
             }
         }
 
-        // Skorlara göre büyükten küçüğe sırala
-        entries.Sort((a, b) => b.score.CompareTo(a.score));
+        // Sıralama: TÜMÜ sekmesinde Zor > Normal > Kolay öncelikli, ardından skor büyüklüğüne göre; tekil zorluk sekmelerinde doğrudan skora göre
+        entries.Sort((a, b) =>
+        {
+            if (filter == DifficultyFilter.All && a.difficulty != b.difficulty)
+                return ((int)b.difficulty).CompareTo((int)a.difficulty);
+            int cmp = b.score.CompareTo(a.score);
+            if (cmp != 0) return cmp;
+            return ((int)b.difficulty).CompareTo((int)a.difficulty);
+        });
+
         for (int i = 0; i < entries.Count; i++)
         {
             entries[i].rank = i + 1;
@@ -606,7 +800,7 @@ public class LeaderboardManager : MonoBehaviour
 
     private static int NormalizeModeScore(string modeKey, int rawScore)
     {
-        string m = (modeKey ?? "").ToLowerInvariant();
+        string m = StripDifficultySuffix(modeKey);
         if (m == "boss_rush")
         {
             if (rawScore >= 100) return Mathf.Clamp(rawScore / 100, 1, 4);
@@ -615,47 +809,78 @@ public class LeaderboardManager : MonoBehaviour
         return Mathf.Max(1, rawScore);
     }
 
-    private IEnumerator UploadProfileScoreToSupabaseRoutine(string profileName, BoardMode mode, int score, float timeSeconds, string extra)
+    private bool TryGetBestProfileRecordForDifficulty(
+        string profileName,
+        GameSettings.Difficulty diff,
+        out BoardMode bestMode,
+        out int bestScore,
+        out float bestTime,
+        out string extraInfo)
     {
-        if (!IsSupabaseConfigured || string.IsNullOrEmpty(profileName)) yield break;
+        bestMode = BoardMode.Campaign;
+        bestScore = 0;
+        bestTime = 0f;
+        string dLabel = GetDifficultyLabel(diff);
+        extraInfo = $"HAREKAT|{dLabel}";
 
-        string endpoint = $"{supabaseUrl}/rest/v1/leaderboard";
-        string modeKey = GetModeKey(mode);
-        string rankTitle = GetPilotRankByScore(mode, score);
-        string formatted = GetStageDisplayText(modeKey, score, timeSeconds, extra);
+        int campaign = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, $"AirBattle_CampaignHighScore_{diff}"), 0);
+        int endless = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, $"AirBattle_EndlessHighScore_{diff}"), 0);
+        int timeAtk = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, $"AirBattle_TimeAttackHighScore_{diff}"), 0);
+        float bhFloat = PlayerPrefs.GetFloat(ProfileManager.GetPrefKeyFor(profileName, $"AirBattle_BulletHellBestTime_{diff}"), 0f);
+        int bulletHell = Mathf.RoundToInt(bhFloat);
+        int bossRushRaw = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, $"AirBattle_BossRushHighScore_{diff}"), 0);
+        int bossRush = bossRushRaw >= 100 ? Mathf.Clamp(bossRushRaw / 100, 1, 4) : Mathf.Clamp(bossRushRaw, 0, 4);
+        int hardcore = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, $"AirBattle_HardcoreHighScore_{diff}"), 0);
 
-        SupabaseScoreRecord record = new SupabaseScoreRecord
+        if (endless > 0 && endless >= campaign)
         {
-            player_name = profileName,
-            mode = modeKey,
-            score = score,
-            time_seconds = timeSeconds,
-            formatted_score = formatted,
-            rank_title = rankTitle,
-            extra_info = extra
-        };
-
-        string jsonBody = JsonUtility.ToJson(record);
-
-        using (UnityWebRequest req = new UnityWebRequest(endpoint, "POST"))
-        {
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
-            req.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            req.downloadHandler = new DownloadHandlerBuffer();
-            req.timeout = 5;
-
-            req.SetRequestHeader("apikey", supabaseAnonKey);
-            req.SetRequestHeader("Authorization", $"Bearer {supabaseAnonKey}");
-            req.SetRequestHeader("Content-Type", "application/json");
-            req.SetRequestHeader("Prefer", "resolution=merge-duplicates");
-
-            yield return req.SendWebRequest();
+            bestMode = BoardMode.Endless;
+            bestScore = endless;
+            extraInfo = $"SONSUZ|{dLabel}";
+            return true;
         }
+        if (campaign > 0)
+        {
+            bestMode = BoardMode.Campaign;
+            bestScore = Mathf.Clamp(campaign, 1, 20);
+            extraInfo = $"HAREKAT|{dLabel}";
+            return true;
+        }
+        if (hardcore > 0)
+        {
+            bestMode = BoardMode.Hardcore;
+            bestScore = hardcore;
+            extraInfo = $"HARDCORE|{dLabel}";
+            return true;
+        }
+        if (bossRush > 0)
+        {
+            bestMode = BoardMode.BossRush;
+            bestScore = bossRush;
+            extraInfo = $"BOSS|{dLabel}";
+            return true;
+        }
+        if (timeAtk > 0)
+        {
+            bestMode = BoardMode.TimeAttack;
+            bestScore = timeAtk;
+            extraInfo = $"TIME|{dLabel}";
+            return true;
+        }
+        if (bulletHell > 0)
+        {
+            bestMode = BoardMode.BulletHell;
+            bestScore = bulletHell;
+            bestTime = bhFloat;
+            extraInfo = $"BULLET|{dLabel}";
+            return true;
+        }
+
+        return false;
     }
 
-    private void GetBestRecordForProfile(string profileName, out BoardMode bestMode, out int bestScore, out string extraInfo)
+    private void GetLegacyBestRecordForProfile(string profileName, out BoardMode bestMode, out int bestScore, out string extraInfo)
     {
-        // Yalnızca gerçek tek-seferlik oyun modu rekorlarını oku (AirBattle_Total_Waves gibi kümülatif toplamları ASLA kullanma!)
         int campaign = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_CampaignHighScore"), 0);
         int endless = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_EndlessHighScore"), 0);
         int timeAtk = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_TimeAttackHighScore"), 0);
@@ -664,110 +889,47 @@ public class LeaderboardManager : MonoBehaviour
         int bossRush = bossRushRaw >= 100 ? Mathf.Clamp(bossRushRaw / 100, 1, 4) : Mathf.Clamp(bossRushRaw, 0, 4);
         int hardcore = PlayerPrefs.GetInt(ProfileManager.GetPrefKeyFor(profileName, "AirBattle_HardcoreHighScore"), 0);
 
-        // Eğer aktif profil ise oyuncunun şu an seçili olan aktif oyun modundaki gerçek rekoruna öncelik ver
-        bool isActiveProfile = profileName.Equals(PlayerCallsign, StringComparison.OrdinalIgnoreCase);
-        if (isActiveProfile)
-        {
-            switch (GameSettings.SelectedMode)
-            {
-                case GameSettings.GameMode.Endless:
-                    bestMode = BoardMode.Endless;
-                    bestScore = Mathf.Max(1, endless);
-                    extraInfo = "SONSUZ";
-                    return;
-
-                case GameSettings.GameMode.Solo:
-                    bestMode = BoardMode.Endless;
-                    int stage = campaign > 0 ? Mathf.Clamp(campaign, 1, 20) : Mathf.Clamp(Mathf.Max(1, endless), 1, 20);
-                    bestScore = stage;
-                    extraInfo = "HAREKAT";
-                    return;
-
-                case GameSettings.GameMode.BossRush:
-                    if (bossRush > 0)
-                    {
-                        bestMode = BoardMode.BossRush;
-                        bestScore = bossRush;
-                        extraInfo = "BOSS";
-                        return;
-                    }
-                    break;
-
-                case GameSettings.GameMode.Hardcore:
-                    if (hardcore > 0)
-                    {
-                        bestMode = BoardMode.Hardcore;
-                        bestScore = hardcore;
-                        extraInfo = "HARDCORE";
-                        return;
-                    }
-                    break;
-
-                case GameSettings.GameMode.TimeAttack:
-                    if (timeAtk > 0)
-                    {
-                        bestMode = BoardMode.TimeAttack;
-                        bestScore = timeAtk;
-                        extraInfo = "TIME";
-                        return;
-                    }
-                    break;
-
-                case GameSettings.GameMode.BulletHell:
-                    if (bulletHell > 0)
-                    {
-                        bestMode = BoardMode.BulletHell;
-                        bestScore = bulletHell;
-                        extraInfo = "BULLET";
-                        return;
-                    }
-                    break;
-            }
-        }
-
-        // Varsayılan: Harekat Modu veya Sonsuz İt Dalaşı gerçek rekoru
-        if (campaign > 0 && campaign >= endless)
-        {
-            bestMode = BoardMode.Endless;
-            bestScore = Mathf.Clamp(campaign, 1, 20);
-            extraInfo = "HAREKAT";
-        }
-        else if (endless > 0)
+        if (endless > campaign && endless > 0)
         {
             bestMode = BoardMode.Endless;
             bestScore = endless;
-            bool isEndlessSelected = (GameSettings.SelectedMode == GameSettings.GameMode.Endless);
-            extraInfo = (isEndlessSelected || endless > 20) ? "SONSUZ" : "HAREKAT";
+            extraInfo = "SONSUZ|NORMAL";
+        }
+        else if (campaign > 0)
+        {
+            bestMode = BoardMode.Campaign;
+            bestScore = Mathf.Clamp(campaign, 1, 20);
+            extraInfo = "HAREKAT|NORMAL";
         }
         else if (bossRush > 0)
         {
             bestMode = BoardMode.BossRush;
             bestScore = bossRush;
-            extraInfo = "BOSS";
+            extraInfo = "BOSS|NORMAL";
         }
         else if (hardcore > 0)
         {
             bestMode = BoardMode.Hardcore;
             bestScore = hardcore;
-            extraInfo = "HARDCORE";
+            extraInfo = "HARDCORE|NORMAL";
         }
         else if (timeAtk > 0)
         {
             bestMode = BoardMode.TimeAttack;
             bestScore = timeAtk;
-            extraInfo = "TIME";
+            extraInfo = "TIME|NORMAL";
         }
         else if (bulletHell > 0)
         {
             bestMode = BoardMode.BulletHell;
             bestScore = bulletHell;
-            extraInfo = "BULLET";
+            extraInfo = "BULLET|NORMAL";
         }
         else
         {
-            bestMode = BoardMode.Endless;
-            bestScore = 1;
-            extraInfo = (GameSettings.SelectedMode == GameSettings.GameMode.Endless) ? "SONSUZ" : "HAREKAT";
+            bestMode = BoardMode.Campaign;
+            bestScore = 0;
+            extraInfo = "HAREKAT|NORMAL";
         }
     }
 
@@ -919,6 +1081,8 @@ public class LeaderboardManager : MonoBehaviour
     {
         switch (mode)
         {
+            case BoardMode.Campaign:
+                return $"{score}. BÖLÜM";
             case BoardMode.Endless:
                 return $"DALGA {score}";
             case BoardMode.TimeAttack:
@@ -940,6 +1104,13 @@ public class LeaderboardManager : MonoBehaviour
     {
         switch (mode)
         {
+            case BoardMode.Campaign:
+                if (score >= 20) return "BAŞKOMUTAN AS";
+                if (score >= 15) return "HAVA ALBAYI";
+                if (score >= 10) return "FİLO BİNBAŞISI";
+                if (score >= 5)  return "KIDEMLİ YÜZBAŞI";
+                return "TEĞMEN PİLOT";
+
             case BoardMode.Endless:
                 if (score >= 40) return "BAŞKOMUTAN AS";
                 if (score >= 25) return "HAVA ALBAYI";

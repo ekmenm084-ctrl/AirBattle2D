@@ -18,7 +18,14 @@ public class LeaderboardUI : MonoBehaviour
 
     private GameObject _panelRoot;
     private LeaderboardManager.BoardMode _currentMode = LeaderboardManager.BoardMode.Endless;
+    private LeaderboardManager.DifficultyFilter _difficultyFilter = LeaderboardManager.DifficultyFilter.All;
     private Action _onCloseCallback;
+
+    private Button _filterAllBtn;
+    private Button _filterEasyBtn;
+    private Button _filterNormalBtn;
+    private Button _filterHardBtn;
+    private TextMeshProUGUI _emptyStateTMP;
 
     private Transform _rowsContainer;
     private readonly List<GameObject> _spawnedRows = new List<GameObject>();
@@ -191,6 +198,114 @@ public class LeaderboardUI : MonoBehaviour
             new Color(0.20f, 0.90f, 0.45f, 0.18f),
             new Color(0.15f, 0.75f, 0.35f, 0.35f),
             OnNextMissionClicked);
+
+        // Alt Orta Zorluk Derecesi Ayırma Sekmeleri: [ TÜMÜ ] | [ KOLAY ] | [ NORMAL ] | [ ZOR ]
+        _filterAllBtn = CreateDifficultyFilterTab("FilterAllBtn", "TÜMÜ", new Vector2(-330f, -458f), () => SetDifficultyFilter(LeaderboardManager.DifficultyFilter.All));
+        _filterEasyBtn = CreateDifficultyFilterTab("FilterEasyBtn", "KOLAY", new Vector2(-110f, -458f), () => SetDifficultyFilter(LeaderboardManager.DifficultyFilter.Kolay));
+        _filterNormalBtn = CreateDifficultyFilterTab("FilterNormalBtn", "NORMAL", new Vector2(110f, -458f), () => SetDifficultyFilter(LeaderboardManager.DifficultyFilter.Normal));
+        _filterHardBtn = CreateDifficultyFilterTab("FilterHardBtn", "ZOR", new Vector2(330f, -458f), () => SetDifficultyFilter(LeaderboardManager.DifficultyFilter.Zor));
+
+        // Kayıt Yok Bilgilendirmesi
+        GameObject emptyObj = new GameObject("EmptyStateText", typeof(RectTransform));
+        emptyObj.transform.SetParent(_panelRoot.transform, false);
+        RectTransform eRt = emptyObj.GetComponent<RectTransform>();
+        eRt.anchorMin = new Vector2(0.5f, 0.5f);
+        eRt.anchorMax = new Vector2(0.5f, 0.5f);
+        eRt.pivot = new Vector2(0.5f, 0.5f);
+        eRt.anchoredPosition = new Vector2(0f, -40f);
+        eRt.sizeDelta = new Vector2(960f, 80f);
+
+        _emptyStateTMP = emptyObj.AddComponent<TextMeshProUGUI>();
+        _emptyStateTMP.font = MainMenuManager.GetTacticalFont();
+        _emptyStateTMP.fontSize = 25f;
+        _emptyStateTMP.fontStyle = FontStyles.Bold;
+        _emptyStateTMP.alignment = TextAlignmentOptions.Center;
+        _emptyStateTMP.color = new Color(0.60f, 0.72f, 0.84f, 0.90f);
+        _emptyStateTMP.raycastTarget = false;
+        _emptyStateTMP.gameObject.SetActive(false);
+
+        UpdateDifficultyFilterVisuals();
+    }
+
+    private Button CreateDifficultyFilterTab(string objName, string label, Vector2 centerPos1080, UnityEngine.Events.UnityAction onClick)
+    {
+        GameObject btnObj = new GameObject(objName, typeof(RectTransform));
+        btnObj.transform.SetParent(_panelRoot.transform, false);
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
+        HangarUI.SetNormalizedRect1080p(rt, centerPos1080, new Vector2(204f, 58f));
+
+        Image img = btnObj.AddComponent<Image>();
+        img.type = Image.Type.Sliced;
+        img.color = Color.white;
+
+        Button btn = btnObj.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.onClick.AddListener(() =>
+        {
+            AudioManager.Instance?.PlayButtonClick();
+            onClick?.Invoke();
+        });
+
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        txtObj.transform.SetParent(btnObj.transform, false);
+        RectTransform tRt = txtObj.GetComponent<RectTransform>();
+        tRt.anchorMin = Vector2.zero;
+        tRt.anchorMax = Vector2.one;
+        tRt.offsetMin = Vector2.zero;
+        tRt.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.font = MainMenuManager.GetTacticalFont();
+        tmp.text = label;
+        tmp.fontSize = 20f;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.characterSpacing = 1.4f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.raycastTarget = false;
+
+        return btn;
+    }
+
+    private void SetDifficultyFilter(LeaderboardManager.DifficultyFilter filter)
+    {
+        _difficultyFilter = filter;
+        UpdateDifficultyFilterVisuals();
+        RefreshScores();
+    }
+
+    private void UpdateDifficultyFilterVisuals()
+    {
+        StyleFilterTab(_filterAllBtn, "TÜMÜ", _difficultyFilter == LeaderboardManager.DifficultyFilter.All,
+            new Color(0.08f, 0.20f, 0.30f, 0.98f), new Color(0f, 0.88f, 1f, 1f), Color.white);
+        StyleFilterTab(_filterEasyBtn, "KOLAY", _difficultyFilter == LeaderboardManager.DifficultyFilter.Kolay,
+            new Color(0.08f, 0.24f, 0.16f, 0.98f), new Color(0.29f, 0.87f, 0.50f, 1f), new Color(0.55f, 0.96f, 0.68f));
+        StyleFilterTab(_filterNormalBtn, "NORMAL", _difficultyFilter == LeaderboardManager.DifficultyFilter.Normal,
+            new Color(0.26f, 0.20f, 0.06f, 0.98f), new Color(0.98f, 0.80f, 0.08f, 1f), new Color(1f, 0.90f, 0.45f));
+        StyleFilterTab(_filterHardBtn, "ZOR", _difficultyFilter == LeaderboardManager.DifficultyFilter.Zor,
+            new Color(0.28f, 0.08f, 0.10f, 0.98f), new Color(0.97f, 0.44f, 0.44f, 1f), new Color(1f, 0.65f, 0.65f));
+    }
+
+    private static void StyleFilterTab(Button btn, string title, bool active, Color activeFill, Color activeBorder, Color activeText)
+    {
+        if (btn == null) return;
+        Image img = btn.GetComponent<Image>();
+        if (img != null)
+        {
+            string key = active
+                ? $"lb_diff_act_{activeBorder.r:F2}_{activeBorder.g:F2}_{activeBorder.b:F2}"
+                : "lb_diff_inact";
+            img.sprite = active
+                ? MainMenuManager.GetRoundedBoxSprite(key, activeFill, activeBorder, 10, 2)
+                : MainMenuManager.GetRoundedBoxSprite(key, new Color(0.05f, 0.09f, 0.14f, 0.92f), new Color(0.18f, 0.28f, 0.38f, 0.85f), 10, 1);
+            img.type = Image.Type.Sliced;
+        }
+        TextMeshProUGUI tmp = btn.GetComponentInChildren<TextMeshProUGUI>();
+        if (tmp != null)
+        {
+            tmp.text = active ? $"» {title}" : title;
+            tmp.color = active ? activeText : new Color(0.60f, 0.70f, 0.80f, 0.88f);
+        }
     }
 
     private void OnNextMissionClicked()
@@ -208,7 +323,8 @@ public class LeaderboardUI : MonoBehaviour
         LeaderboardManager lm = LeaderboardManager.EnsureInstance();
         if (lm == null) return;
 
-        lm.FetchAllModesLeaderboard((entries, isOnline) =>
+        UpdateDifficultyFilterVisuals();
+        lm.FetchAllModesLeaderboard(_difficultyFilter, (entries, isOnline) =>
         {
             DisplayLeaderboardEntries(entries);
         });
@@ -223,7 +339,24 @@ public class LeaderboardUI : MonoBehaviour
         _spawnedRows.Clear();
 
         if (entries == null || entries.Count == 0)
+        {
+            if (_emptyStateTMP != null)
+            {
+                string filterName = _difficultyFilter switch
+                {
+                    LeaderboardManager.DifficultyFilter.Kolay => "KOLAY",
+                    LeaderboardManager.DifficultyFilter.Normal => "NORMAL",
+                    LeaderboardManager.DifficultyFilter.Zor => "ZOR",
+                    _ => "SEÇİLİ"
+                };
+                _emptyStateTMP.text = $"{filterName} ZORLUK DERECESİNDE HENÜZ KAYITLI REKOR BULUNMUYOR.";
+                _emptyStateTMP.gameObject.SetActive(true);
+            }
             return;
+        }
+
+        if (_emptyStateTMP != null)
+            _emptyStateTMP.gameObject.SetActive(false);
 
         int maxRows = Mathf.Min(ROW_CENTER_Y_1080.Length, entries.Count);
         for (int i = 0; i < maxRows; i++)
@@ -304,17 +437,25 @@ public class LeaderboardUI : MonoBehaviour
             28f,
             Color.white);
 
-        // 3. Sütun: AKTİF OYUN MODU -> x = 990..1330 -> centerX = +200.0f, width = 340
-        string modeDisp = !string.IsNullOrEmpty(entry.modeDisplayName) ? entry.modeDisplayName : "HAREKAT MODU";
-        CreateCellText(
+        // 3. Sütun: AKTİF OYUN MODU + ZORLUK ETİKETİ -> centerX = +200.0f, width = 368
+        string modeDisp = !string.IsNullOrEmpty(entry.modeDisplayName)
+            ? entry.modeDisplayName
+            : $"HAREKAT {LeaderboardManager.GetDifficultyColoredTag(entry.difficulty)}";
+        TextMeshProUGUI modeTmp = CreateCellText(
             rowObj.transform,
             "ModeCell",
             modeDisp,
             new Vector2(200.0f, 0f),
-            new Vector2(340f, 70f),
+            new Vector2(368f, 70f),
             TextAlignmentOptions.Center,
-            27f,
-            entry.isPlayer ? new Color(0.85f, 0.92f, 0.98f) : new Color(0.74f, 0.80f, 0.86f));
+            25f,
+            entry.isPlayer ? new Color(0.88f, 0.94f, 1.0f) : new Color(0.76f, 0.82f, 0.88f));
+        if (modeTmp != null)
+        {
+            modeTmp.enableAutoSizing = true;
+            modeTmp.fontSizeMin = 18.5f;
+            modeTmp.fontSizeMax = 25f;
+        }
 
         // 4. Sütun: EN YÜKSEK AŞAMA -> x = 1355..1645 -> centerX = +540.0f, width = 290
         string stageDisp = !string.IsNullOrEmpty(entry.stageDisplayText) ? entry.stageDisplayText : entry.formattedScore;
@@ -331,7 +472,7 @@ public class LeaderboardUI : MonoBehaviour
         return rowObj;
     }
 
-    private static void CreateCellText(
+    private static TextMeshProUGUI CreateCellText(
         Transform parent,
         string name,
         string text,
@@ -362,5 +503,6 @@ public class LeaderboardUI : MonoBehaviour
         tmp.textWrappingMode = TextWrappingModes.NoWrap;
         tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.raycastTarget = false;
+        return tmp;
     }
 }

@@ -1533,7 +1533,7 @@ public class GameManager : MonoBehaviour
                     ProfileManager.SetInt("AirBattle_CampaignHighScore", currentStage);
                     PlayerPrefs.Save();
                 }
-                lm.SubmitScore(LeaderboardManager.BoardMode.Endless, currentStage, 0f, "HAREKAT");
+                lm.SubmitScore(LeaderboardManager.BoardMode.Campaign, currentStage, 0f, "HAREKAT");
                 break;
 
             case GameMode.Endless:
