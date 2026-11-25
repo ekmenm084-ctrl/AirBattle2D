@@ -70,8 +70,12 @@ public class TwoPlayerInputRouter : MonoBehaviour
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online) ||
                         (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
 
-        bool isPaused = AudioSettingsUI.IsGamePaused || (GameOverUI.Instance != null && GameOverUI.Instance.IsShowing);
+        bool isPaused = AudioSettingsUI.IsGamePaused || (GameOverUI.Instance != null && GameOverUI.Instance.IsShowing) || (Time.timeScale <= 0.001f);
         bool shouldShow = isOnline && !isMenuOpen && !isPaused;
+        if (!shouldShow)
+        {
+            _p2ArrowHorizInput = 0f;
+        }
         if (p2ControlsRoot != null && p2ControlsRoot.activeSelf != shouldShow)
         {
             p2ControlsRoot.SetActive(shouldShow);

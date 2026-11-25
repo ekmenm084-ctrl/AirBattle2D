@@ -84,6 +84,23 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
         ApplyMilitaryFireStyling();
     }
 
+    private void OnDisable()
+    {
+        _isPressed = false;
+        if (_image != null) _image.color = Color.white;
+        transform.localScale = Vector3.one;
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            _isPressed = false;
+            if (_image != null) _image.color = Color.white;
+            transform.localScale = Vector3.one;
+        }
+    }
+
     private void Start()
     {
         ApplyMilitaryFireStyling();
@@ -92,6 +109,17 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 
     private void Update()
     {
+        if (AudioSettingsUI.IsGamePaused || Time.timeScale <= 0.001f)
+        {
+            if (_isPressed)
+            {
+                _isPressed = false;
+                if (_image != null) _image.color = Color.white;
+                transform.localScale = Vector3.one;
+            }
+            return;
+        }
+
         if (_isPressed)
         {
             if (targetShooter == null) FindTargetShooterIfNull();
@@ -217,7 +245,10 @@ public class FireButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
             tmp.raycastTarget = false;
         }
 
-        transform.SetAsLastSibling();
+        if (!AudioSettingsUI.IsGamePaused && (GameOverUI.Instance == null || !GameOverUI.Instance.IsShowing))
+        {
+            transform.SetAsLastSibling();
+        }
     }
 
     public void OnPointerDown(PointerEventData eventData)

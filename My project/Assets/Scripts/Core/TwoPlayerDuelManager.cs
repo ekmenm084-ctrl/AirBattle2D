@@ -50,6 +50,22 @@ public class TwoPlayerDuelManager : MonoBehaviour
         Instance = this;
     }
 
+    private void Update()
+    {
+        if (_duelScoreboardObj != null)
+        {
+            bool hideOverlay = !IsDuelActive ||
+                               AudioSettingsUI.IsGamePaused ||
+                               (GameOverUI.Instance != null && GameOverUI.Instance.IsShowing) ||
+                               (MainMenuManager.Instance != null && MainMenuManager.Instance.gameObject.activeInHierarchy);
+            bool shouldShow = !hideOverlay;
+            if (_duelScoreboardObj.activeSelf != shouldShow)
+            {
+                _duelScoreboardObj.SetActive(shouldShow);
+            }
+        }
+    }
+
     public static TwoPlayerDuelManager EnsureInstance()
     {
         if (Instance != null) return Instance;

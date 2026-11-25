@@ -267,6 +267,9 @@ public class MainMenuManager : MonoBehaviour
     /// </summary>
     public static bool IsPortraitDuelModeActive()
     {
+        if (AutoPlayOnSceneLoad && GameSettings.SelectedMode == GameSettings.GameMode.Online)
+            return true;
+
         bool menuOpen = (Instance != null && Instance.gameObject.activeInHierarchy);
         if (menuOpen) return false;
 
@@ -301,36 +304,44 @@ public class MainMenuManager : MonoBehaviour
         }
         else
         {
-            // Menüler ve Tek Kişilik Modlar: Ekranı kesin olarak Yatay (Landscape) moda kilitle
+            // Menüler ve Tek Kişilik Modlar: Ekranı kesin olarak Yatay (Landscape) moda geçir
+            // Not: Ekran henüz dikeydeyse hemen ardından AutoRotation atanmaz; aksi halde dikey tutulan telefonda dönüş iptal olur!
             Screen.autorotateToPortrait = false;
             Screen.autorotateToPortraitUpsideDown = false;
             Screen.autorotateToLandscapeLeft = true;
             Screen.autorotateToLandscapeRight = true;
-            if (Screen.orientation != ScreenOrientation.LandscapeLeft && Screen.orientation != ScreenOrientation.LandscapeRight)
+            if (Screen.width < Screen.height ||
+                (Screen.orientation != ScreenOrientation.LandscapeLeft && Screen.orientation != ScreenOrientation.LandscapeRight))
             {
                 Screen.orientation = ScreenOrientation.LandscapeLeft;
             }
-            Screen.orientation = ScreenOrientation.AutoRotation;
+            else
+            {
+                Screen.orientation = ScreenOrientation.AutoRotation;
+            }
         }
 
 #if UNITY_EDITOR
         TrySwitchEditorGameViewAspect(portraitDuel);
 #endif
 
-        // Kamera dikey/yatay saha yüksekliği (Dikey düelloda uzun dikey koridor: 8.2, normal yatayda: 5.0)
+        // Kamera dikey/yatay saha yüksekliği ve merkez sıfırlaması (sarsıntı/yön değişimi kaymasını kesin önler)
+        CameraShake.StopAllAndReset();
         Camera cam = Camera.main;
-        if (cam != null && cam.orthographic)
+        if (cam != null)
         {
-            cam.orthographicSize = portraitDuel ? 8.2f : 5.0f;
+            if (cam.orthographic)
+                cam.orthographicSize = portraitDuel ? 8.2f : 5.0f;
+            cam.transform.position = new Vector3(0f, 0f, cam.transform.position.z);
         }
 
-        // Sahnedeki tüm Canvas nesnelerine yönle uyumlu ölçekleme uygula
+        // Sahnedeki tüm kök Canvas nesnelerine yönle uyumlu ölçekleme uygula
         Canvas[] allCanvases = FindObjectsOfType<Canvas>(true);
         if (allCanvases == null || allCanvases.Length == 0) return;
 
         foreach (var canvas in allCanvases)
         {
-            if (canvas == null) continue;
+            if (canvas == null || !canvas.isRootCanvas) continue;
             CanvasScaler scaler = canvas.GetComponent<CanvasScaler>();
             if (scaler == null) scaler = canvas.gameObject.AddComponent<CanvasScaler>();
 
@@ -344,9 +355,10 @@ public class MainMenuManager : MonoBehaviour
             else
             {
                 scaler.referenceResolution = new Vector2(1920f, 1080f);
-                float currentAspect = (Screen.height > 0) ? ((float)Screen.width / Screen.height) : (16f / 9f);
-                // 16:9 ve daha geniş ekranlarda 1080p yüksekliği koru (orijinal görünüm), dar pencerelerde ise yatay taşmayı önle
-                scaler.matchWidthOrHeight = (currentAspect < (1920f / 1080f)) ? 0f : 1f;
+                // Eğer ekran henüz dikeyden yataya dönme aşamasındaysa (Screen.width < Screen.height), yanlışlıkla 0f kilitleme!
+                bool alreadyLandscape = (Screen.width >= Screen.height) && (Screen.height > 0);
+                float currentAspect = alreadyLandscape ? ((float)Screen.width / Screen.height) : (16f / 9f);
+                scaler.matchWidthOrHeight = (alreadyLandscape && currentAspect < (1920f / 1080f)) ? 0f : 1f;
             }
             scaler.dynamicPixelsPerUnit = 3f;
             scaler.referencePixelsPerUnit = 100f;
@@ -477,8 +489,19 @@ public class MainMenuManager : MonoBehaviour
     }
 #endif
 
+    private int _lastMenuScreenW = -1;
+    private int _lastMenuScreenH = -1;
+
     private void Update()
     {
+        // Dikey 1v1 modundan ana menüye dönüldüğünde ekran çözünürlüğü 1-2 kare gecikmeli dönerse Canvas ölçeğini anında senkronize et
+        if (Screen.width != _lastMenuScreenW || Screen.height != _lastMenuScreenH)
+        {
+            _lastMenuScreenW = Screen.width;
+            _lastMenuScreenH = Screen.height;
+            ApplyScreenOrientationAndCanvas(portraitDuel: false);
+        }
+
         // Menü aktifken oyun içi dokunmatik kontrollerin ve sinematik alt yazıların ekrana sızmasını kesin olarak engelle
         SetTouchControlsVisibility(false, false);
         StoryCampaignManager.EnsureInstance()?.HideCinematicIfMenuOpen();

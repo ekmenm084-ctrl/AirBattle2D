@@ -17,7 +17,8 @@ public class CameraShake : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            _originalPos = transform.position;
+            _originalPos = new Vector3(0f, 0f, transform.position.z);
+            transform.position = _originalPos;
         }
         else if (Instance != this)
         {
@@ -39,10 +40,29 @@ public class CameraShake : MonoBehaviour
             if (Instance == null)
             {
                 Instance = mainCam.gameObject.AddComponent<CameraShake>();
-                Instance._originalPos = mainCam.transform.position;
             }
+            Instance._originalPos = new Vector3(0f, 0f, mainCam.transform.position.z);
         }
         return Instance;
+    }
+
+    public static void StopAllAndReset()
+    {
+        if (Instance != null)
+        {
+            if (Instance._shakeCoroutine != null)
+            {
+                Instance.StopCoroutine(Instance._shakeCoroutine);
+                Instance._shakeCoroutine = null;
+            }
+            Instance._originalPos = new Vector3(0f, 0f, Instance.transform.position.z);
+            Instance.transform.position = Instance._originalPos;
+        }
+        else if (Camera.main != null)
+        {
+            Vector3 p = Camera.main.transform.position;
+            Camera.main.transform.position = new Vector3(0f, 0f, p.z);
+        }
     }
 
     public static void Shake(float intensity, float duration)

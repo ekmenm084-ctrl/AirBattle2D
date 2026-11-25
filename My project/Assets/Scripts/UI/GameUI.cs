@@ -1355,12 +1355,16 @@ public class GameUI : MonoBehaviour
 
 
 
+    private int _lastHudScreenW = -1;
+    private int _lastHudScreenH = -1;
+
     private void Update()
     {
         MainMenuManager menu = FindObjectOfType<MainMenuManager>(true);
         bool isMenuOpen = (menu != null && menu.gameObject.activeInHierarchy && menu.IsAnyMenuPanelOpen());
         bool isCinematicActive = (StoryCampaignManager.Instance != null && StoryCampaignManager.Instance.IsCinematicActive);
-        bool shouldHideAll = isMenuOpen || isCinematicActive;
+        bool isPausedOrModal = AudioSettingsUI.IsGamePaused || (GameOverUI.Instance != null && GameOverUI.Instance.IsShowing);
+        bool shouldHideAll = isMenuOpen || isCinematicActive || isPausedOrModal;
 
         if (shouldHideAll)
         {
@@ -1369,12 +1373,18 @@ public class GameUI : MonoBehaviour
             if (_ultiBarObj != null && _ultiBarObj.activeSelf) _ultiBarObj.SetActive(false);
             if (_dodgeBtnObj != null && _dodgeBtnObj.activeSelf) _dodgeBtnObj.SetActive(false);
             if (_ultiBtnObj != null && _ultiBtnObj.activeSelf) _ultiBtnObj.SetActive(false);
+            if (_missileBtnObj != null && _missileBtnObj.activeSelf) _missileBtnObj.SetActive(false);
             if (_comboHUDObj != null && _comboHUDObj.activeSelf) _comboHUDObj.SetActive(false);
             if (_goldHUDObj != null && _goldHUDObj.activeSelf) _goldHUDObj.SetActive(false);
             if (_waveBadgeObj != null && _waveBadgeObj.activeSelf) _waveBadgeObj.SetActive(false);
             if (_airspaceBannerObj != null && _airspaceBannerObj.activeSelf) _airspaceBannerObj.SetActive(false);
             if (_waveAlertObj != null && _waveAlertObj.activeSelf) _waveAlertObj.SetActive(false);
             return;
+        }
+
+        if (_missileBtnObj != null && !_missileBtnObj.activeSelf)
+        {
+            _missileBtnObj.SetActive(true);
         }
 
         if (_waveBadgeObj != null)
@@ -1419,8 +1429,11 @@ public class GameUI : MonoBehaviour
 
         bool isTwoPlayerMode = (GameManager.Instance != null && GameManager.Instance.CurrentMode == GameManager.GameMode.TwoPlayer);
         bool portraitDuelNow = MainMenuManager.IsPortraitDuelModeActive();
-        if (portraitDuelNow != _lastPortraitDuelLayout)
+        if (portraitDuelNow != _lastPortraitDuelLayout || Screen.width != _lastHudScreenW || Screen.height != _lastHudScreenH)
         {
+            _lastHudScreenW = Screen.width;
+            _lastHudScreenH = Screen.height;
+            MainMenuManager.ApplyScreenOrientationAndCanvas(portraitDuelNow);
             RefreshLayoutForCurrentOrientation();
         }
 
