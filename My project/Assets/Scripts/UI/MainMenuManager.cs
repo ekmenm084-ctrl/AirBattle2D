@@ -344,7 +344,9 @@ public class MainMenuManager : MonoBehaviour
             else
             {
                 scaler.referenceResolution = new Vector2(1920f, 1080f);
-                scaler.matchWidthOrHeight = 1f; // 1080p yüksekliği koru, tüm yatay ekran oranlarına uyum sağla
+                float currentAspect = (Screen.height > 0) ? ((float)Screen.width / Screen.height) : (16f / 9f);
+                // 16:9 ve daha geniş ekranlarda 1080p yüksekliği koru (orijinal görünüm), dar pencerelerde ise yatay taşmayı önle
+                scaler.matchWidthOrHeight = (currentAspect < (1920f / 1080f)) ? 0f : 1f;
             }
             scaler.dynamicPixelsPerUnit = 3f;
             scaler.referencePixelsPerUnit = 100f;
@@ -354,6 +356,32 @@ public class MainMenuManager : MonoBehaviour
 #if UNITY_EDITOR
     private static bool? _lastEditorPortraitState = null;
 
+    [UnityEditor.InitializeOnLoadMethod]
+    private static void RestoreEditorGameViewOnReload()
+    {
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (!UnityEditor.EditorApplication.isPlaying || !IsPortraitDuelModeActive())
+            {
+                _lastEditorPortraitState = null;
+                TrySwitchEditorGameViewAspect(false);
+            }
+        };
+
+        UnityEditor.EditorApplication.playModeStateChanged -= OnEditorPlayModeChanged;
+        UnityEditor.EditorApplication.playModeStateChanged += OnEditorPlayModeChanged;
+    }
+
+    private static void OnEditorPlayModeChanged(UnityEditor.PlayModeStateChange state)
+    {
+        if (state == UnityEditor.PlayModeStateChange.EnteredEditMode ||
+            state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+        {
+            _lastEditorPortraitState = null;
+            TrySwitchEditorGameViewAspect(false);
+        }
+    }
+
     private static void TrySwitchEditorGameViewAspect(bool portrait)
     {
         if (_lastEditorPortraitState.HasValue && _lastEditorPortraitState.Value == portrait)
@@ -362,7 +390,7 @@ public class MainMenuManager : MonoBehaviour
 
         try
         {
-            System.Reflection.Assembly editorAsm = System.Type.GetType("UnityEditor.Editor,UnityEditor")?.Assembly;
+            System.Reflection.Assembly editorAsm = typeof(UnityEditor.Editor).Assembly;
             if (editorAsm == null) return;
 
             System.Type gvSizesType = editorAsm.GetType("UnityEditor.GameViewSizes");
@@ -378,49 +406,71 @@ public class MainMenuManager : MonoBehaviour
             System.Type groupType = currentGroup.GetType();
             int totalCount = (int)groupType.GetMethod("GetTotalCount").Invoke(currentGroup, null);
             System.Reflection.MethodInfo getGameViewSize = groupType.GetMethod("GetGameViewSize");
+            System.Type gvsEnumType = editorAsm.GetType("UnityEditor.GameViewSizeType");
+            object aspectRatioEnumVal = System.Enum.Parse(gvsEnumType, "AspectRatio");
 
-            int targetW = portrait ? 1080 : 1920;
-            int targetH = portrait ? 1920 : 1080;
-            int foundIdx = -1;
+            int targetIdx = 0; // 0 = Free Aspect (Unity'nin orijinal pencereye tam sığan varsayılan görünümü; asla taşma yapmaz)
 
-            for (int i = 0; i < totalCount; i++)
+            if (portrait)
             {
-                object gvs = getGameViewSize.Invoke(currentGroup, new object[] { i });
-                if (gvs == null) continue;
-                int w = (int)gvs.GetType().GetProperty("width").GetValue(gvs, null);
-                int h = (int)gvs.GetType().GetProperty("height").GetValue(gvs, null);
-                if (w == targetW && h == targetH)
+                // 2 Kişilik Dikey Modda FixedResolution (1080x1920) yerine pencereye tam oturan 9:16 AspectRatio seç
+                int foundPortraitAspect = -1;
+                for (int i = 0; i < totalCount; i++)
                 {
-                    foundIdx = i;
-                    break;
-                }
-            }
-
-            if (foundIdx < 0)
-            {
-                System.Type gvsType = editorAsm.GetType("UnityEditor.GameViewSize");
-                System.Type gvsEnumType = editorAsm.GetType("UnityEditor.GameViewSizeType");
-                object fixedResVal = System.Enum.Parse(gvsEnumType, "FixedResolution");
-                string label = portrait ? "AirBattle 2P Dikey (1080x1920)" : "AirBattle Yatay (1920x1080)";
-                object newSize = System.Activator.CreateInstance(gvsType, new object[] { fixedResVal, targetW, targetH, label });
-                groupType.GetMethod("AddCustomSize").Invoke(currentGroup, new object[] { newSize });
-                foundIdx = (int)groupType.GetMethod("GetTotalCount").Invoke(currentGroup, null) - 1;
-            }
-
-            if (foundIdx >= 0)
-            {
-                System.Type gvType = editorAsm.GetType("UnityEditor.GameView");
-                UnityEngine.Object[] gvsList = Resources.FindObjectsOfTypeAll(gvType);
-                System.Reflection.PropertyInfo selProp = gvType.GetProperty("selectedSizeIndex",
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
-                foreach (var gv in gvsList)
-                {
-                    if (gv != null && selProp != null)
+                    object gvs = getGameViewSize.Invoke(currentGroup, new object[] { i });
+                    if (gvs == null) continue;
+                    object st = gvs.GetType().GetProperty("sizeType")?.GetValue(gvs, null);
+                    int w = (int)gvs.GetType().GetProperty("width").GetValue(gvs, null);
+                    int h = (int)gvs.GetType().GetProperty("height").GetValue(gvs, null);
+                    if (st != null && st.Equals(aspectRatioEnumVal) && w == 9 && h == 16)
                     {
-                        selProp.SetValue(gv, foundIdx, null);
-                        gvType.GetMethod("Repaint", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)?.Invoke(gv, null);
+                        foundPortraitAspect = i;
+                        break;
                     }
                 }
+
+                if (foundPortraitAspect < 0)
+                {
+                    System.Type gvsType = editorAsm.GetType("UnityEditor.GameViewSize");
+                    object newSize = System.Activator.CreateInstance(gvsType, new object[] { aspectRatioEnumVal, 9, 16, "9:16 Portrait" });
+                    groupType.GetMethod("AddCustomSize").Invoke(currentGroup, new object[] { newSize });
+                    foundPortraitAspect = (int)groupType.GetMethod("GetTotalCount").Invoke(currentGroup, null) - 1;
+                }
+
+                if (foundPortraitAspect >= 0)
+                    targetIdx = foundPortraitAspect;
+            }
+
+            System.Type gvType = editorAsm.GetType("UnityEditor.GameView");
+            UnityEngine.Object[] gvsList = Resources.FindObjectsOfTypeAll(gvType);
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            System.Reflection.MethodInfo sizeCb = gvType.GetMethod("SizeSelectionCallback", flags);
+            System.Reflection.PropertyInfo selProp = gvType.GetProperty("selectedSizeIndex", flags);
+            System.Reflection.PropertyInfo minScaleProp = gvType.GetProperty("minScale", flags);
+            System.Reflection.MethodInfo snapZoomMethod = gvType.GetMethod("SnapZoom", flags);
+            System.Reflection.MethodInfo repaintMethod = gvType.GetMethod("Repaint", flags);
+
+            foreach (var gv in gvsList)
+            {
+                if (gv == null) continue;
+
+                if (sizeCb != null)
+                {
+                    sizeCb.Invoke(gv, new object[] { targetIdx, null });
+                }
+                else if (selProp != null)
+                {
+                    selProp.SetValue(gv, targetIdx, null);
+                }
+
+                // Yakınlaştırma (Scale) kaydırıcısını pencereye tam sığacak minScale değerine sıfırla (1x taşmasını kesin önler)
+                if (minScaleProp != null && snapZoomMethod != null)
+                {
+                    float minScale = (float)minScaleProp.GetValue(gv, null);
+                    snapZoomMethod.Invoke(gv, new object[] { minScale });
+                }
+
+                repaintMethod?.Invoke(gv, null);
             }
         }
         catch { }
