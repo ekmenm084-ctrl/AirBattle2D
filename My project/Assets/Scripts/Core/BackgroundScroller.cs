@@ -16,8 +16,8 @@ public class BackgroundScroller : MonoBehaviour
 
     [Header("Şimşek Ayarları")]
     public bool enableLightning = true;
-    public float minLightningInterval = 5f;
-    public float maxLightningInterval = 10f;
+    public float minLightningInterval = 11f;
+    public float maxLightningInterval = 18f;
     public Color normalColor = Color.white;
     public Color lightningTint = new Color(0.72f, 0.90f, 1.0f, 1f);
 
@@ -135,7 +135,9 @@ public class BackgroundScroller : MonoBehaviour
     {
         while (true)
         {
-            float waitSec = Random.Range(minLightningInterval, maxLightningInterval);
+            float minWait = Mathf.Max(10.5f, minLightningInterval);
+            float maxWait = Mathf.Max(minWait + 5.0f, maxLightningInterval);
+            float waitSec = Random.Range(minWait, maxWait);
             yield return new WaitForSeconds(waitSec);
 
             yield return StartCoroutine(FlashSequence());
@@ -146,20 +148,20 @@ public class BackgroundScroller : MonoBehaviour
     {
         if (_sr1 == null || _sr2 == null) yield break;
 
-        // 1. Öncü Darbe (Pre-strike)
-        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.40f));
+        // 1. Öncü Darbe (Pre-strike - yumuşatılmış yoğunluk)
+        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.20f));
         yield return new WaitForSeconds(0.04f);
         SetSpriteColors(normalColor);
         yield return new WaitForSeconds(0.06f);
 
-        // 2. Ana Parlama (Bright Flash)
-        SetSpriteColors(Color.white * 1.30f);
-        yield return new WaitForSeconds(0.08f);
+        // 2. Ana Parlama (Bright Flash - göz yormayan hafif parlama)
+        SetSpriteColors(normalColor * 1.12f);
+        yield return new WaitForSeconds(0.07f);
 
         // 3. Art Parıltı Titremesi (Afterglow Flicker)
-        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.45f));
+        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.22f));
         yield return new WaitForSeconds(0.05f);
-        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.20f));
+        SetSpriteColors(Color.Lerp(normalColor, lightningTint, 0.10f));
         yield return new WaitForSeconds(0.07f);
 
         // 4. Doğal Sönümlenme (Smooth Fade)

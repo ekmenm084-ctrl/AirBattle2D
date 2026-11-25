@@ -22,8 +22,8 @@ public class DynamicStormBackground : MonoBehaviour
 
     [Header("Şimşek Ayarları")]
     public bool enableLightning = true;
-    public float minLightningInterval = 4.5f;   // İki şimşek arası min bekleme
-    public float maxLightningInterval = 8.5f;   // İki şimşek arası maks bekleme
+    public float minLightningInterval = 11.0f;  // İki şimşek arası min bekleme (azaltılmış sıklık)
+    public float maxLightningInterval = 18.0f;  // İki şimşek arası maks bekleme
     public Color lightningTint = new Color(0.70f, 0.88f, 1.0f, 1f);
 
     private RectTransform _bg1Rt;
@@ -172,25 +172,27 @@ public class DynamicStormBackground : MonoBehaviour
     {
         while (true)
         {
-            float waitSec = Random.Range(minLightningInterval, maxLightningInterval);
+            float minWait = Mathf.Max(10.5f, minLightningInterval);
+            float maxWait = Mathf.Max(minWait + 5.0f, maxLightningInterval);
+            float waitSec = Random.Range(minWait, maxWait);
             yield return new WaitForSecondsRealtime(waitSec);
 
             if (_lightningOverlay == null) yield break;
 
-            // 1. Öncü Darbe (Pre-Strike)
-            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.28f));
+            // 1. Öncü Darbe (Pre-Strike - yumuşatılmış şeffaflık)
+            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.13f));
             yield return new WaitForSecondsRealtime(0.04f);
             SetOverlay(new Color(0f, 0f, 0f, 0f));
             yield return new WaitForSecondsRealtime(0.06f);
 
-            // 2. Ana Parlama (Bright Flash)
-            SetOverlay(new Color(1f, 1f, 1f, 0.55f));
-            yield return new WaitForSecondsRealtime(0.09f);
+            // 2. Ana Parlama (Bright Flash - göz yormayan hafif parlama)
+            SetOverlay(new Color(1f, 1f, 1f, 0.24f));
+            yield return new WaitForSecondsRealtime(0.08f);
 
             // 3. Art Parıltı Titremesi (Afterglow Flicker)
-            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.32f));
-            yield return new WaitForSecondsRealtime(0.05f);
             SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.15f));
+            yield return new WaitForSecondsRealtime(0.05f);
+            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.07f));
             yield return new WaitForSecondsRealtime(0.07f);
 
             // 4. Doğal Sönümlenme (Smooth Fade)
