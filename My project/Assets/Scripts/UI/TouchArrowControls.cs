@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
@@ -340,11 +341,69 @@ public class TouchArrowControls : MonoBehaviour
         }
 
         if (leftButtonObj != null)
+        {
             _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>() ?? leftButtonObj.AddComponent<CanvasGroup>();
+            Image lImg = leftButtonObj.GetComponent<Image>();
+            if (lImg != null) lImg.raycastTarget = false;
+            EventTrigger oldTrig = leftButtonObj.GetComponent<EventTrigger>();
+            if (oldTrig != null) Destroy(oldTrig);
+        }
         if (rightButtonObj != null)
+        {
             _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>() ?? rightButtonObj.AddComponent<CanvasGroup>();
+            Image rImg = rightButtonObj.GetComponent<Image>();
+            if (rImg != null) rImg.raycastTarget = false;
+            EventTrigger oldTrig = rightButtonObj.GetComponent<EventTrigger>();
+            if (oldTrig != null) Destroy(oldTrig);
+        }
+
+        EnsureExpandedArrowTouchZone();
 
         UpdateVisibility();
+    }
+
+    /// <summary>
+    /// Sol ve sağ ok butonlarının etrafını, aralarındaki boşluğu ve ekranın sol alt köşesini (540x320 px)
+    /// kesintisiz tek parça dokunma alanı olarak kaplar; parmak kaydırma (slide) ve kenar dokunuşlarında kontrol kaybını sıfırlar.
+    /// </summary>
+    private void EnsureExpandedArrowTouchZone()
+    {
+        if (_rootContainer == null) return;
+
+        Transform existing = _rootContainer.transform.Find("ArrowExpandedTouchZone");
+        GameObject zoneObj = existing != null ? existing.gameObject : new GameObject("ArrowExpandedTouchZone", typeof(RectTransform));
+        if (existing == null)
+        {
+            zoneObj.transform.SetParent(_rootContainer.transform, false);
+        }
+        zoneObj.transform.SetAsLastSibling();
+
+        RectTransform zRt = zoneObj.GetComponent<RectTransform>();
+        zRt.anchorMin = new Vector2(0f, 0f);
+        zRt.anchorMax = new Vector2(0f, 0f);
+        zRt.pivot = new Vector2(0f, 0f);
+        // _rootContainer (28, 22) konumunda olduğu için (-28, -22) tam olarak ekranın (0, 0) en sol-alt köşesinden başlar
+        zRt.anchoredPosition = new Vector2(-28f, -22f);
+        zRt.sizeDelta = new Vector2(540f, 320f);
+
+        Image zImg = zoneObj.GetComponent<Image>() ?? zoneObj.AddComponent<Image>();
+        zImg.sprite = null;
+        zImg.color = new Color(0f, 0f, 0f, 0f);
+        zImg.raycastTarget = true;
+
+        ArrowExpandedTouchPad pad = zoneObj.GetComponent<ArrowExpandedTouchPad>() ?? zoneObj.AddComponent<ArrowExpandedTouchPad>();
+        // Sol buton merkezi Canvas X=124, Sağ buton merkezi Canvas X=326 -> Tam orta ayrım çizgisi = 225px
+        pad.Bind(this, zRt, splitLocalX: 225f);
+    }
+
+    internal void SetTouchPadState(bool leftPressed, bool rightPressed, bool playClick)
+    {
+        if (playClick && ((leftPressed && !_isLeftPressed) || (rightPressed && !_isRightPressed)))
+        {
+            AudioManager.Instance?.PlayButtonClick();
+        }
+        _isLeftPressed = leftPressed;
+        _isRightPressed = rightPressed;
     }
 
     private GameObject CreateArrowButton(Transform parent, string name, Vector2 pos, string spriteResName, bool isLeft)
@@ -374,43 +433,7 @@ public class TouchArrowControls : MonoBehaviour
             bg.type = Image.Type.Sliced;
             bg.color = Color.white;
         }
-
-        // Dokunmatik Girdi Dinleyicisi
-        EventTrigger trigger = btnObj.AddComponent<EventTrigger>();
-
-        // PointerDown
-        var downEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
-        downEntry.callback.AddListener((data) =>
-        {
-            if (isLeft) _isLeftPressed = true;
-            else _isRightPressed = true;
-            bg.color = new Color(0.80f, 1f, 1f, 1f);
-            btnObj.transform.localScale = Vector3.one * 1.08f;
-            AudioManager.Instance?.PlayButtonClick();
-        });
-        trigger.triggers.Add(downEntry);
-
-        // PointerUp
-        var upEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerUp };
-        upEntry.callback.AddListener((data) =>
-        {
-            if (isLeft) _isLeftPressed = false;
-            else _isRightPressed = false;
-            bg.color = Color.white;
-            btnObj.transform.localScale = Vector3.one;
-        });
-        trigger.triggers.Add(upEntry);
-
-        // PointerExit
-        var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
-        exitEntry.callback.AddListener((data) =>
-        {
-            if (isLeft) _isLeftPressed = false;
-            else _isRightPressed = false;
-            bg.color = Color.white;
-            btnObj.transform.localScale = Vector3.one;
-        });
-        trigger.triggers.Add(exitEntry);
+        bg.raycastTarget = false; // Tüm dokunuşlar kesintisiz ArrowExpandedTouchZone tarafından yakalanır
 
         return btnObj;
     }
@@ -533,5 +556,87 @@ public class TouchArrowControls : MonoBehaviour
         Instance = ctrl;
         ctrl.EnsureArrowUI();
         return ctrl;
+    }
+}
+
+/// <summary>
+/// Sol ve Sağ yön tuşları için genişletilmiş kesintisiz dokunmatik yüzey:
+/// - Boşluksuz sol/sağ algılama, parmağı kaldırmadan yön değiştirme (slide roll-over)
+/// - Parmak buton dışına kaysa dahi bırakana kadar kontrolü koparmama garantisi.
+/// </summary>
+public class ArrowExpandedTouchPad : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IPointerCancelHandler
+{
+    private TouchArrowControls _owner;
+    private RectTransform _zoneRt;
+    private float _splitLocalX = 225f;
+    private readonly Dictionary<int, float> _activePointers = new Dictionary<int, float>();
+
+    public void Bind(TouchArrowControls owner, RectTransform zoneRt, float splitLocalX)
+    {
+        _owner = owner;
+        _zoneRt = zoneRt;
+        _splitLocalX = splitLocalX;
+    }
+
+    private void OnDisable()
+    {
+        _activePointers.Clear();
+        _owner?.SetTouchPadState(false, false, playClick: false);
+    }
+
+    public void OnPointerDown(PointerEventData eventData)
+    {
+        UpdatePointer(eventData, playClick: true);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (_activePointers.ContainsKey(eventData.pointerId))
+        {
+            UpdatePointer(eventData, playClick: true);
+        }
+    }
+
+    public void OnPointerUp(PointerEventData eventData)
+    {
+        if (_activePointers.Remove(eventData.pointerId))
+        {
+            SyncState(playClick: false);
+        }
+    }
+
+    public void OnPointerCancel(PointerEventData eventData)
+    {
+        if (_activePointers.Remove(eventData.pointerId))
+        {
+            SyncState(playClick: false);
+        }
+    }
+
+    private void UpdatePointer(PointerEventData eventData, bool playClick)
+    {
+        if (_zoneRt == null) _zoneRt = GetComponent<RectTransform>();
+        if (_zoneRt == null) return;
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(_zoneRt, eventData.position, eventData.pressEventCamera, out Vector2 localPt))
+        {
+            _activePointers[eventData.pointerId] = localPt.x;
+            SyncState(playClick);
+        }
+    }
+
+    private void SyncState(bool playClick)
+    {
+        if (_owner == null) return;
+
+        bool left = false;
+        bool right = false;
+        foreach (var kvp in _activePointers)
+        {
+            if (kvp.Value < _splitLocalX) left = true;
+            else right = true;
+        }
+
+        _owner.SetTouchPadState(left, right, playClick);
     }
 }

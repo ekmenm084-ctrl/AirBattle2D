@@ -11,7 +11,7 @@ using UnityEngine.EventSystems;
 /// - Pusula azimut çentikleri, radar halkaları ve taktik kanatçık yön okları.
 /// - Dokunulduğunda parlayan ve büyüyen dokunsal (tactile) tepki.
 /// </summary>
-public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IPointerCancelHandler
 {
     [Header("Joystick Parçaları")]
     public RectTransform background;  // Dış taban çemberi
@@ -27,18 +27,20 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
     public Color themeColor = new Color(0f, 0.85f, 1f, 1f);
 
     [Range(0f, 1f)]
-    public float deadZone = 0.08f;
+    public float deadZone = 0.05f;
 
     public Vector2 InputDirection { get; private set; }
 
     private float _radius = 150f;
     private Image _bgImage;
     private Image _handleImage;
+    private RectTransform _touchZoneRt;
     private CanvasGroup _canvasGroup;
     private PlaneController _trackedPlane;
     private Canvas _parentCanvas;
     private RectTransform _canvasRt;
     private Vector3 _targetHandleScale = Vector3.one;
+    private int _activePointerId = int.MinValue;
 
     private void Awake()
     {
@@ -52,6 +54,11 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
     private void OnEnable()
     {
         ApplyProfessionalStyling();
+    }
+
+    private void OnDisable()
+    {
+        ResetJoystickState();
     }
 
     private void Start()
@@ -202,9 +209,13 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             background.sizeDelta = new Vector2(330f, 330f);
             _radius = 150f;
 
+            // Genişletilmiş görünmez dokunma alanı (köşe boşlukları ve çevre taşmalarını eksiksiz yakalar: 490x450)
+            EnsureExpandedTouchZone();
+
             _bgImage = background.GetComponent<Image>();
             if (_bgImage != null)
             {
+                _bgImage.raycastTarget = true;
                 if (baseSprite != null)
                 {
                     _bgImage.sprite = baseSprite;
@@ -234,6 +245,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             _handleImage = handle.GetComponent<Image>();
             if (_handleImage != null)
             {
+                _handleImage.raycastTarget = false;
                 if (handleSprite != null)
                 {
                     _handleImage.sprite = handleSprite;
@@ -285,8 +297,38 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
         return null;
     }
 
+    private void EnsureExpandedTouchZone()
+    {
+        if (background == null) return;
+
+        Transform existing = background.Find("JoystickTouchZone");
+        GameObject zoneObj = existing != null ? existing.gameObject : new GameObject("JoystickTouchZone", typeof(RectTransform));
+        if (existing == null)
+        {
+            zoneObj.transform.SetParent(background, false);
+            zoneObj.transform.SetAsFirstSibling();
+        }
+
+        _touchZoneRt = zoneObj.GetComponent<RectTransform>();
+        _touchZoneRt.anchorMin = new Vector2(0.5f, 0.5f);
+        _touchZoneRt.anchorMax = new Vector2(0.5f, 0.5f);
+        _touchZoneRt.pivot = new Vector2(0.5f, 0.5f);
+        // Sol alt köşeyi (0,0) tamamen içine alır ve sağa/yukarıya geniş dokunma payı bırakır (Toplam 500x460 px alan)
+        _touchZoneRt.anchoredPosition = new Vector2(68f, 50f);
+        _touchZoneRt.sizeDelta = new Vector2(500f, 460f);
+
+        Image zoneImg = zoneObj.GetComponent<Image>() ?? zoneObj.AddComponent<Image>();
+        zoneImg.sprite = null;
+        zoneImg.color = new Color(0f, 0f, 0f, 0f);
+        zoneImg.raycastTarget = true;
+    }
+
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (_activePointerId != int.MinValue && _activePointerId != eventData.pointerId)
+            return;
+
+        _activePointerId = eventData.pointerId;
         _targetHandleScale = Vector3.one * 1.15f; // Dokunulduğunda hafifçe büyür
         OnDrag(eventData);
 
@@ -296,6 +338,9 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (_activePointerId != int.MinValue && eventData.pointerId != _activePointerId)
+            return;
+
         Vector2 localPos;
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
             background, eventData.position, eventData.pressEventCamera, out localPos))
@@ -304,13 +349,36 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             if (handle != null)
                 handle.anchoredPosition = clamped;
 
-            Vector2 normalized = clamped / _radius;
-            InputDirection = normalized.magnitude < deadZone ? Vector2.zero : normalized;
+            // Görsel yarıçapın %70'inde tam hıza ulaşarak gecikmesiz ve keskin yön kontrolü sağlar
+            float fullSpeedRadius = _radius * 0.70f;
+            float effectiveDeadZone = Mathf.Min(deadZone, 0.05f);
+            Vector2 responsive = new Vector2(
+                Mathf.Clamp(localPos.x / fullSpeedRadius, -1f, 1f),
+                Mathf.Clamp(localPos.y / fullSpeedRadius, -1f, 1f)
+            );
+            InputDirection = responsive.magnitude < effectiveDeadZone ? Vector2.zero : Vector2.ClampMagnitude(responsive, 1f);
         }
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (_activePointerId != int.MinValue && eventData.pointerId != _activePointerId)
+            return;
+
+        ResetJoystickState();
+    }
+
+    public void OnPointerCancel(PointerEventData eventData)
+    {
+        if (_activePointerId != int.MinValue && eventData.pointerId != _activePointerId)
+            return;
+
+        ResetJoystickState();
+    }
+
+    private void ResetJoystickState()
+    {
+        _activePointerId = int.MinValue;
         _targetHandleScale = Vector3.one; // Bırakılınca normal boyuta döner
         InputDirection = Vector2.zero;
 
