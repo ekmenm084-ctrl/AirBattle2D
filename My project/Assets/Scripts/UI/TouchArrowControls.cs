@@ -27,6 +27,10 @@ public class TouchArrowControls : MonoBehaviour
     private bool _isRightPressed = false;
     private GameObject _rootContainer;
     private GameObject _p1JoystickObj;
+    private CanvasGroup _leftCanvasGroup;
+    private CanvasGroup _rightCanvasGroup;
+    private PlaneController _p1Plane;
+    private RectTransform _canvasRt;
 
     private void Awake()
     {
@@ -103,6 +107,93 @@ public class TouchArrowControls : MonoBehaviour
         catch { }
 
         UpdateVisibility();
+        UpdatePlaneAlignmentTransparency();
+    }
+
+    /// <summary>
+    /// Uçak sol/sağ yön tuşlarının hizasına geldiğinde butonları şeffaflaştırarak uçağın kapanmasını önler.
+    /// </summary>
+    private void UpdatePlaneAlignmentTransparency()
+    {
+        if (_rootContainer == null || !_rootContainer.activeSelf) return;
+
+        if (_p1Plane == null || !_p1Plane.gameObject.activeInHierarchy)
+        {
+            var planes = FindObjectsByType<PlaneController>(FindObjectsInactive.Exclude);
+            foreach (var pc in planes)
+            {
+                if (pc != null && pc.isPlayer1)
+                {
+                    _p1Plane = pc;
+                    break;
+                }
+            }
+        }
+
+        if (_canvasRt == null)
+        {
+            Canvas canvas = _rootContainer.GetComponentInParent<Canvas>();
+            if (canvas != null) _canvasRt = canvas.GetComponent<RectTransform>();
+        }
+
+        float leftTargetAlpha = 1f;
+        float rightTargetAlpha = 1f;
+        Camera cam = Camera.main;
+
+        if (_p1Plane != null && cam != null && _canvasRt != null)
+        {
+            Vector3 screenPt = cam.WorldToScreenPoint(_p1Plane.transform.position);
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRt, screenPt, null, out Vector2 planeCanvasLocal))
+            {
+                Vector2 canvasSize = _canvasRt.rect.size;
+                float planeXFromLeft = planeCanvasLocal.x + (canvasSize.x * 0.5f);
+
+                // Uçağın kanat açıklığı + kanat dronu payı (~145px)
+                float wingReachPx = 145f;
+                float fadeDistancePx = 135f;
+                float planeMinX = planeXFromLeft - wingReachPx;
+                float planeMaxX = planeXFromLeft + wingReachPx;
+
+                RectTransform rRt = _rootContainer.GetComponent<RectTransform>();
+                float rootX = rRt != null ? rRt.anchoredPosition.x : 28f;
+
+                if (leftButtonObj != null)
+                {
+                    RectTransform lRt = leftButtonObj.GetComponent<RectTransform>();
+                    float cX = rootX + (lRt != null ? lRt.anchoredPosition.x : 96f);
+                    float halfW = (lRt != null ? lRt.sizeDelta.x : 184f) * 0.5f;
+                    float gap = 0f;
+                    if (planeMinX > cX + halfW) gap = planeMinX - (cX + halfW);
+                    else if (planeMaxX < cX - halfW) gap = (cX - halfW) - planeMaxX;
+                    leftTargetAlpha = Mathf.Lerp(0.18f, 1.0f, Mathf.Clamp01(gap / fadeDistancePx));
+                }
+
+                if (rightButtonObj != null)
+                {
+                    RectTransform rrRt = rightButtonObj.GetComponent<RectTransform>();
+                    float cX = rootX + (rrRt != null ? rrRt.anchoredPosition.x : 298f);
+                    float halfW = (rrRt != null ? rrRt.sizeDelta.x : 184f) * 0.5f;
+                    float gap = 0f;
+                    if (planeMinX > cX + halfW) gap = planeMinX - (cX + halfW);
+                    else if (planeMaxX < cX - halfW) gap = (cX - halfW) - planeMaxX;
+                    rightTargetAlpha = Mathf.Lerp(0.18f, 1.0f, Mathf.Clamp01(gap / fadeDistancePx));
+                }
+            }
+        }
+
+        if (leftButtonObj != null)
+        {
+            if (_leftCanvasGroup == null)
+                _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>() ?? leftButtonObj.AddComponent<CanvasGroup>();
+            _leftCanvasGroup.alpha = Mathf.Lerp(_leftCanvasGroup.alpha, leftTargetAlpha, Time.unscaledDeltaTime * 14f);
+        }
+
+        if (rightButtonObj != null)
+        {
+            if (_rightCanvasGroup == null)
+                _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>() ?? rightButtonObj.AddComponent<CanvasGroup>();
+            _rightCanvasGroup.alpha = Mathf.Lerp(_rightCanvasGroup.alpha, rightTargetAlpha, Time.unscaledDeltaTime * 14f);
+        }
     }
 
     private void FindP1Joystick()
@@ -202,13 +293,13 @@ public class TouchArrowControls : MonoBehaviour
         }
 
         RectTransform rRt = _rootContainer.GetComponent<RectTransform>() ?? _rootContainer.AddComponent<RectTransform>();
-        rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe
+        rRt.anchorMin = new Vector2(0f, 0f); // Sol Alt Köşe (Alt kenara yakın, uçağın üst gövdesini açık bırakan yerleşim)
         rRt.anchorMax = new Vector2(0f, 0f);
         rRt.pivot = new Vector2(0f, 0f);
-        rRt.anchoredPosition = new Vector2(75f, 60f);
-        rRt.sizeDelta = new Vector2(380f, 210f);
+        rRt.anchoredPosition = new Vector2(28f, 22f);
+        rRt.sizeDelta = new Vector2(396f, 184f);
 
-        // 1. SOL OK BUTONU (◀) - Boyut: 130x120
+        // 1. SOL OK BUTONU (◀) - 2 kademe büyütülmüş boyut: 184x168
         Transform leftT = _rootContainer.transform.Find("Btn_ArrowLeft");
         if (leftT != null)
         {
@@ -216,8 +307,8 @@ public class TouchArrowControls : MonoBehaviour
             RectTransform lrt = leftButtonObj.GetComponent<RectTransform>();
             if (lrt != null)
             {
-                lrt.anchoredPosition = new Vector2(95f, 105f);
-                lrt.sizeDelta = new Vector2(130f, 120f);
+                lrt.anchoredPosition = new Vector2(96f, 88f);
+                lrt.sizeDelta = new Vector2(184f, 168f);
             }
             Transform lbl = leftT.Find("Label");
             if (lbl != null) Destroy(lbl.gameObject);
@@ -225,10 +316,10 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             leftButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowLeft", 
-                new Vector2(95f, 105f), "btn_arrow_left", isLeft: true);
+                new Vector2(96f, 88f), "btn_arrow_left", isLeft: true);
         }
 
-        // 2. SAĞ OK BUTONU (▶) - Boyut: 130x120
+        // 2. SAĞ OK BUTONU (▶) - 2 kademe büyütülmüş boyut: 184x168
         Transform rightT = _rootContainer.transform.Find("Btn_ArrowRight");
         if (rightT != null)
         {
@@ -236,8 +327,8 @@ public class TouchArrowControls : MonoBehaviour
             RectTransform rrt = rightButtonObj.GetComponent<RectTransform>();
             if (rrt != null)
             {
-                rrt.anchoredPosition = new Vector2(245f, 105f);
-                rrt.sizeDelta = new Vector2(130f, 120f);
+                rrt.anchoredPosition = new Vector2(298f, 88f);
+                rrt.sizeDelta = new Vector2(184f, 168f);
             }
             Transform lbl = rightT.Find("Label");
             if (lbl != null) Destroy(lbl.gameObject);
@@ -245,8 +336,13 @@ public class TouchArrowControls : MonoBehaviour
         else
         {
             rightButtonObj = CreateArrowButton(_rootContainer.transform, "Btn_ArrowRight", 
-                new Vector2(245f, 105f), "btn_arrow_right", isLeft: false);
+                new Vector2(298f, 88f), "btn_arrow_right", isLeft: false);
         }
+
+        if (leftButtonObj != null)
+            _leftCanvasGroup = leftButtonObj.GetComponent<CanvasGroup>() ?? leftButtonObj.AddComponent<CanvasGroup>();
+        if (rightButtonObj != null)
+            _rightCanvasGroup = rightButtonObj.GetComponent<CanvasGroup>() ?? rightButtonObj.AddComponent<CanvasGroup>();
 
         UpdateVisibility();
     }
@@ -261,7 +357,7 @@ public class TouchArrowControls : MonoBehaviour
         rt.anchorMax = new Vector2(0f, 0f);
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = pos;
-        rt.sizeDelta = new Vector2(130f, 120f); // Geniş, dokunması çok konforlu askeri alan
+        rt.sizeDelta = new Vector2(184f, 168f); // 2 kademe büyütülmüş konforlu askeri dokunma alanı
 
         Image bg = btnObj.AddComponent<Image>();
         Sprite arrowSpr = GetArrowSprite(spriteResName, isLeft);

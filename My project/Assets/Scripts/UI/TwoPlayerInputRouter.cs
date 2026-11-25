@@ -125,8 +125,8 @@ public class TwoPlayerInputRouter : MonoBehaviour
             joyRt.anchorMin = new Vector2(1f, 1f); // Ekran Sağ Üst (P2'nin Sol Eli)
             joyRt.anchorMax = new Vector2(1f, 1f);
             joyRt.pivot = new Vector2(0.5f, 0.5f);
-            joyRt.anchoredPosition = new Vector2(-170f, -170f);
-            joyRt.sizeDelta = new Vector2(240f, 240f);
+            joyRt.anchoredPosition = new Vector2(-182f, -210f);
+            joyRt.sizeDelta = new Vector2(330f, 330f);
             joyRt.localEulerAngles = new Vector3(0f, 0f, 180f); // P2 için 180° ters
 
             Image joyBgImg = joyObj.AddComponent<Image>();
@@ -137,7 +137,7 @@ public class TwoPlayerInputRouter : MonoBehaviour
             handleObj.transform.SetParent(joyObj.transform, false);
 
             RectTransform handleRt = handleObj.GetComponent<RectTransform>();
-            handleRt.sizeDelta = new Vector2(100f, 100f);
+            handleRt.sizeDelta = new Vector2(138f, 138f);
             handleRt.anchoredPosition = Vector2.zero;
 
             Image handleImg = handleObj.AddComponent<Image>();

@@ -653,15 +653,15 @@ public class AudioSettingsUI : MonoBehaviour
 
     private void BuildControlSchemePreview()
     {
-        // 1. Sanal Joystick Önizlemesi (Gimbal Çemberi + Başlık)
+        // 1. Sanal Joystick Önizlemesi (Gimbal Çemberi + Başlık - 2 kademe büyütülmüş gerçek boyut)
         _pauseJoystickPreviewObj = new GameObject("PauseJoystickPreview", typeof(RectTransform));
         _pauseJoystickPreviewObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform jRt = _pauseJoystickPreviewObj.GetComponent<RectTransform>();
         jRt.anchorMin = new Vector2(0f, 0f);
         jRt.anchorMax = new Vector2(0f, 0f);
         jRt.pivot = new Vector2(0.5f, 0.5f);
-        jRt.anchoredPosition = new Vector2(170f, 170f);
-        jRt.sizeDelta = new Vector2(240f, 240f);
+        jRt.anchoredPosition = new Vector2(182f, 180f);
+        jRt.sizeDelta = new Vector2(330f, 330f);
 
         Image jBg = _pauseJoystickPreviewObj.AddComponent<Image>();
         Sprite jBase = Resources.Load<Sprite>("joystick_base_p1") ?? LoadLocalSprite("joystick_base_p1.png");
@@ -679,7 +679,7 @@ public class AudioSettingsUI : MonoBehaviour
         hRt.anchorMax = new Vector2(0.5f, 0.5f);
         hRt.pivot = new Vector2(0.5f, 0.5f);
         hRt.anchoredPosition = Vector2.zero;
-        hRt.sizeDelta = new Vector2(100f, 100f);
+        hRt.sizeDelta = new Vector2(138f, 138f);
 
         Image hImg = jHandle.AddComponent<Image>();
         Sprite jHnd = Resources.Load<Sprite>("joystick_handle_p1") ?? LoadLocalSprite("joystick_handle_p1.png");
@@ -690,15 +690,15 @@ public class AudioSettingsUI : MonoBehaviour
             hImg.color = Color.white;
         }
 
-        // 2. Sol / Sağ Ok Tuşları Önizlemesi ([ ◀ ] ve [ ▶ ])
+        // 2. Sol / Sağ Ok Tuşları Önizlemesi ([ ◀ ] ve [ ▶ ] - 2 kademe büyütülmüş gerçek boyut)
         _pauseArrowsPreviewObj = new GameObject("PauseArrowsPreview", typeof(RectTransform));
         _pauseArrowsPreviewObj.transform.SetParent(settingsPanelObj.transform, false);
         RectTransform aRt = _pauseArrowsPreviewObj.GetComponent<RectTransform>();
         aRt.anchorMin = new Vector2(0f, 0f);
         aRt.anchorMax = new Vector2(0f, 0f);
         aRt.pivot = new Vector2(0f, 0f);
-        aRt.anchoredPosition = new Vector2(75f, 60f);
-        aRt.sizeDelta = new Vector2(380f, 210f);
+        aRt.anchoredPosition = new Vector2(28f, 22f);
+        aRt.sizeDelta = new Vector2(396f, 184f);
 
         // Sol Ok Butonu
         GameObject leftArrow = new GameObject("LeftArrow", typeof(RectTransform));
@@ -707,8 +707,8 @@ public class AudioSettingsUI : MonoBehaviour
         lRt.anchorMin = new Vector2(0f, 0f);
         lRt.anchorMax = new Vector2(0f, 0f);
         lRt.pivot = new Vector2(0.5f, 0.5f);
-        lRt.anchoredPosition = new Vector2(95f, 105f);
-        lRt.sizeDelta = new Vector2(130f, 120f);
+        lRt.anchoredPosition = new Vector2(96f, 88f);
+        lRt.sizeDelta = new Vector2(184f, 168f);
         Image lImg = leftArrow.AddComponent<Image>();
         Sprite lSpr = Resources.Load<Sprite>("btn_arrow_left") ?? LoadLocalSprite("btn_arrow_left.png");
         if (lSpr != null)
@@ -725,8 +725,8 @@ public class AudioSettingsUI : MonoBehaviour
         rRt.anchorMin = new Vector2(0f, 0f);
         rRt.anchorMax = new Vector2(0f, 0f);
         rRt.pivot = new Vector2(0.5f, 0.5f);
-        rRt.anchoredPosition = new Vector2(245f, 105f);
-        rRt.sizeDelta = new Vector2(130f, 120f);
+        rRt.anchoredPosition = new Vector2(298f, 88f);
+        rRt.sizeDelta = new Vector2(184f, 168f);
         Image rImg = rightArrow.AddComponent<Image>();
         Sprite rSpr = Resources.Load<Sprite>("btn_arrow_right") ?? LoadLocalSprite("btn_arrow_right.png");
         if (rSpr != null)

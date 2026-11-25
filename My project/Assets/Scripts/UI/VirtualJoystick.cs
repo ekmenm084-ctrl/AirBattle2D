@@ -31,9 +31,13 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
     public Vector2 InputDirection { get; private set; }
 
-    private float _radius = 110f;
+    private float _radius = 150f;
     private Image _bgImage;
     private Image _handleImage;
+    private CanvasGroup _canvasGroup;
+    private PlaneController _trackedPlane;
+    private Canvas _parentCanvas;
+    private RectTransform _canvasRt;
     private Vector3 _targetHandleScale = Vector3.one;
 
     private void Awake()
@@ -41,12 +45,19 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
         if (background == null)
             background = GetComponent<RectTransform>();
 
-        _radius = 110f;
+        _radius = 150f;
+        EnsureCanvasGroup();
+    }
+
+    private void OnEnable()
+    {
+        ApplyProfessionalStyling();
     }
 
     private void Start()
     {
         ApplyProfessionalStyling();
+        FindTrackedPlane();
     }
 
     private void Update()
@@ -56,6 +67,104 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
         {
             handle.localScale = Vector3.Lerp(handle.localScale, _targetHandleScale, Time.unscaledDeltaTime * 15f);
         }
+
+        UpdatePlaneAlignmentTransparency();
+    }
+
+    private void EnsureCanvasGroup()
+    {
+        if (background == null) return;
+        if (_canvasGroup == null)
+        {
+            _canvasGroup = background.GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+                _canvasGroup = background.gameObject.AddComponent<CanvasGroup>();
+        }
+        _canvasGroup.interactable = true;
+        _canvasGroup.blocksRaycasts = true;
+    }
+
+    private void FindTrackedPlane()
+    {
+        var planes = FindObjectsOfType<PlaneController>();
+        foreach (var pc in planes)
+        {
+            if (pc != null && pc.isPlayer1 == isPlayer1)
+            {
+                _trackedPlane = pc;
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Uçak joystick hizasına geldiğinde joystick'i şeffaflaştırarak uçağın kapanmasını önler.
+    /// </summary>
+    private void UpdatePlaneAlignmentTransparency()
+    {
+        EnsureCanvasGroup();
+        if (_canvasGroup == null || background == null) return;
+
+        if (_trackedPlane == null || !_trackedPlane.gameObject.activeInHierarchy)
+            FindTrackedPlane();
+
+        if (_parentCanvas == null)
+        {
+            _parentCanvas = GetComponentInParent<Canvas>();
+            if (_parentCanvas != null)
+                _canvasRt = _parentCanvas.GetComponent<RectTransform>();
+        }
+
+        float targetAlpha = 1f;
+        Camera cam = Camera.main;
+
+        if (_trackedPlane != null && cam != null && _canvasRt != null)
+        {
+            Vector3 screenPt = cam.WorldToScreenPoint(_trackedPlane.transform.position);
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRt, screenPt, null, out Vector2 planeCanvasLocal))
+            {
+                Vector2 canvasSize = _canvasRt.rect.size;
+                float planeXFromLeft = planeCanvasLocal.x + (canvasSize.x * 0.5f);
+
+                // Uçağın kanat açıklığı + kanat dronu payı (~145px)
+                float wingReachPx = 145f;
+                float fadeDistancePx = 140f;
+
+                if (isPlayer1)
+                {
+                    // P1 Sol Alt Joystick X aralığı: [17 .. 347]
+                    float joyLeft = background.anchoredPosition.x - (background.sizeDelta.x * 0.5f);
+                    float joyRight = background.anchoredPosition.x + (background.sizeDelta.x * 0.5f);
+                    float planeMinX = planeXFromLeft - wingReachPx;
+                    float planeMaxX = planeXFromLeft + wingReachPx;
+
+                    float gap = 0f;
+                    if (planeMinX > joyRight) gap = planeMinX - joyRight;
+                    else if (planeMaxX < joyLeft) gap = joyLeft - planeMaxX;
+
+                    float t = Mathf.Clamp01(gap / fadeDistancePx);
+                    targetAlpha = Mathf.Lerp(0.18f, 1.0f, t);
+                }
+                else
+                {
+                    // P2 Sağ Üst Joystick X aralığı
+                    float joyCenterFromLeft = canvasSize.x + background.anchoredPosition.x;
+                    float joyLeft = joyCenterFromLeft - (background.sizeDelta.x * 0.5f);
+                    float joyRight = joyCenterFromLeft + (background.sizeDelta.x * 0.5f);
+                    float planeMinX = planeXFromLeft - wingReachPx;
+                    float planeMaxX = planeXFromLeft + wingReachPx;
+
+                    float gap = 0f;
+                    if (planeMaxX < joyLeft) gap = joyLeft - planeMaxX;
+                    else if (planeMinX > joyRight) gap = planeMinX - joyRight;
+
+                    float t = Mathf.Clamp01(gap / fadeDistancePx);
+                    targetAlpha = Mathf.Lerp(0.18f, 1.0f, t);
+                }
+            }
+        }
+
+        _canvasGroup.alpha = Mathf.Lerp(_canvasGroup.alpha, targetAlpha, Time.unscaledDeltaTime * 14f);
     }
 
     /// <summary>
@@ -64,6 +173,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
     public void ApplyProfessionalStyling()
     {
         TryLoadCustomSprites();
+        EnsureCanvasGroup();
 
         if (background != null)
         {
@@ -71,26 +181,26 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
             {
                 if (isPlayer1)
                 {
-                    // P1: Sol Alt Köşe (170, 170) - Tam nizami ferah yerleşim
+                    // P1: Sol Alt Köşe (182, 180) - 2 kademe büyütülmüş ergonomik yerleşim
                     background.anchorMin = new Vector2(0f, 0f);
                     background.anchorMax = new Vector2(0f, 0f);
                     background.pivot = new Vector2(0.5f, 0.5f);
-                    background.anchoredPosition = new Vector2(170f, 170f);
+                    background.anchoredPosition = new Vector2(182f, 180f);
                     background.localEulerAngles = Vector3.zero;
                 }
                 else
                 {
-                    // P2: Sağ Üst Köşe (-170, -170), Karşı oyuncu için 180° ters açılı
+                    // P2: Sağ Üst Köşe (-182, -210), Karşı oyuncu için 180° ters açılı
                     background.anchorMin = new Vector2(1f, 1f);
                     background.anchorMax = new Vector2(1f, 1f);
                     background.pivot = new Vector2(0.5f, 0.5f);
-                    background.anchoredPosition = new Vector2(-170f, -170f);
+                    background.anchoredPosition = new Vector2(-182f, -210f);
                     background.localEulerAngles = new Vector3(0f, 0f, 180f);
                 }
             }
 
-            background.sizeDelta = new Vector2(240f, 240f);
-            _radius = 110f;
+            background.sizeDelta = new Vector2(330f, 330f);
+            _radius = 150f;
 
             _bgImage = background.GetComponent<Image>();
             if (_bgImage != null)
@@ -118,7 +228,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 
         if (handle != null)
         {
-            handle.sizeDelta = new Vector2(100f, 100f);
+            handle.sizeDelta = new Vector2(138f, 138f);
             handle.anchoredPosition = Vector2.zero;
 
             _handleImage = handle.GetComponent<Image>();
