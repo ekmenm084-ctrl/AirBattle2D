@@ -482,23 +482,18 @@ public class TouchArrowControls : MonoBehaviour
     /// </summary>
     private Sprite GetArrowSprite(string resName, bool isLeft)
     {
-        var theme = GameSettings.SelectedCockpitTheme;
-        string cacheKey = $"{resName}_{(int)theme}";
-        if (_themedArrowSpriteCache.TryGetValue(cacheKey, out var cached) && cached != null)
+        if (_themedArrowSpriteCache.TryGetValue(resName, out var cached) && cached != null)
             return cached;
 
-        if (theme == GameSettings.CockpitTheme.CyberBlue)
+        // 1. Resources üzerinden yükleme dene
+        Sprite spr = Resources.Load<Sprite>(resName);
+        if (spr != null)
         {
-            // 1. Resources üzerinden yükleme dene (Orijinal 1:1 sprite)
-            Sprite spr = Resources.Load<Sprite>(resName);
-            if (spr != null)
-            {
-                _themedArrowSpriteCache[cacheKey] = spr;
-                return spr;
-            }
+            _themedArrowSpriteCache[resName] = spr;
+            return spr;
         }
 
-        // 2. Doğrudan dosya yolundan okunabilir Texture2D yükleme
+        // 2. Doğrudan dosya yolundan Texture2D yükleme
         try
         {
             string[] candidatePaths = {
@@ -514,12 +509,8 @@ public class TouchArrowControls : MonoBehaviour
                     Texture2D tex = new Texture2D(256, 256, TextureFormat.RGBA32, false);
                     if (tex.LoadImage(bytes))
                     {
-                        if (theme != GameSettings.CockpitTheme.CyberBlue)
-                        {
-                            ApplyCockpitThemeToCyanTexture(tex, theme);
-                        }
                         Sprite built = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
-                        _themedArrowSpriteCache[cacheKey] = built;
+                        _themedArrowSpriteCache[resName] = built;
                         return built;
                     }
                 }
@@ -527,61 +518,10 @@ public class TouchArrowControls : MonoBehaviour
         }
         catch { }
 
-        if (theme != GameSettings.CockpitTheme.CyberBlue)
-        {
-            Sprite procThemed = GenerateProceduralArrowSprite(isLeft);
-            if (procThemed != null && procThemed.texture != null)
-            {
-                ApplyCockpitThemeToCyanTexture(procThemed.texture, theme);
-            }
-            _themedArrowSpriteCache[cacheKey] = procThemed;
-            return procThemed;
-        }
-
-        Sprite fallbackRes = Resources.Load<Sprite>(resName);
-        if (fallbackRes != null)
-        {
-            _themedArrowSpriteCache[cacheKey] = fallbackRes;
-            return fallbackRes;
-        }
-
-        // 3. Runtime Yüksek Kaliteli Cyber Cyan Neon Ok Fallback Çizimi
+        // 3. Runtime Yüksek Kaliteli Cyber Cyan Neon Ok Fallback Çizimi (CockpitThemeUI shader ile temalanır)
         Sprite fallbackProc = GenerateProceduralArrowSprite(isLeft);
-        _themedArrowSpriteCache[cacheKey] = fallbackProc;
+        _themedArrowSpriteCache[resName] = fallbackProc;
         return fallbackProc;
-    }
-
-    private static void ApplyCockpitThemeToCyanTexture(Texture2D tex, GameSettings.CockpitTheme theme)
-    {
-        if (tex == null || theme == GameSettings.CockpitTheme.CyberBlue) return;
-        Color[] pixels = tex.GetPixels();
-        for (int i = 0; i < pixels.Length; i++)
-        {
-            Color p = pixels[i];
-            if (p.a <= 0.004f) continue;
-
-            float cyanEnergy = Mathf.Max(p.g, p.b);
-            float whiteHighlight = p.r; // Beyaz parlama kanalı korunur
-
-            if (theme == GameSettings.CockpitTheme.RadarGreen)
-            {
-                pixels[i] = new Color(
-                    Mathf.Clamp01(whiteHighlight * 0.75f + cyanEnergy * 0.14f),
-                    Mathf.Clamp01(cyanEnergy * 0.96f + whiteHighlight * 0.20f),
-                    Mathf.Clamp01(whiteHighlight * 0.65f + cyanEnergy * 0.42f),
-                    p.a);
-            }
-            else if (theme == GameSettings.CockpitTheme.StealthGold)
-            {
-                pixels[i] = new Color(
-                    Mathf.Clamp01(cyanEnergy * 0.98f + whiteHighlight * 0.20f),
-                    Mathf.Clamp01(cyanEnergy * 0.68f + whiteHighlight * 0.30f),
-                    Mathf.Clamp01(whiteHighlight * 0.65f + cyanEnergy * 0.14f),
-                    p.a);
-            }
-        }
-        tex.SetPixels(pixels);
-        tex.Apply();
     }
 
     /// <summary>

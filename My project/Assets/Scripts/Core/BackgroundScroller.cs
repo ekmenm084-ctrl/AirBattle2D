@@ -24,6 +24,7 @@ public class BackgroundScroller : MonoBehaviour
     private SpriteRenderer _sr1;
     private SpriteRenderer _sr2;
     private GameObject _layer2Obj;
+    private Sprite _originalSprite;
 
     private float _spriteHeightWorld;
     private int _lastScreenW;
@@ -56,7 +57,7 @@ public class BackgroundScroller : MonoBehaviour
         }
     }
 
-    private Color EffectiveNormalColor => normalColor * GameSettings.GetCockpitSkyTint();
+    private Color EffectiveNormalColor => normalColor;
 
     private Color EffectiveLightningTint =>
         GameSettings.SelectedCockpitTheme == GameSettings.CockpitTheme.CyberBlue
@@ -65,6 +66,19 @@ public class BackgroundScroller : MonoBehaviour
 
     private void HandleCockpitThemeChanged(GameSettings.CockpitTheme _)
     {
+        RefreshThemeSprite();
+    }
+
+    public void RefreshThemeSprite()
+    {
+        if (_sr1 == null) _sr1 = GetComponent<SpriteRenderer>();
+        if (_sr1 == null) return;
+        if (_originalSprite == null) _originalSprite = _sr1.sprite;
+        if (_originalSprite == null) return;
+
+        Sprite themed = CockpitThemeDirector.GetThemedWorldSprite(_originalSprite, "game_background", GameSettings.SelectedCockpitTheme);
+        _sr1.sprite = themed;
+        if (_sr2 != null) _sr2.sprite = themed;
         SetSpriteColors(EffectiveNormalColor);
     }
 
@@ -73,6 +87,9 @@ public class BackgroundScroller : MonoBehaviour
         // 1. Kök nesnedeki orijinal SpriteRenderer'ı al (Daima AKTİF tut, URP materyali bozulmasın)
         _sr1 = GetComponent<SpriteRenderer>();
         if (_sr1 == null || _sr1.sprite == null) return;
+        if (_originalSprite == null) _originalSprite = _sr1.sprite;
+        Sprite activeSpr = CockpitThemeDirector.GetThemedWorldSprite(_originalSprite, "game_background", GameSettings.SelectedCockpitTheme);
+        _sr1.sprite = activeSpr;
         _sr1.enabled = true;
         _sr1.color = EffectiveNormalColor;
 

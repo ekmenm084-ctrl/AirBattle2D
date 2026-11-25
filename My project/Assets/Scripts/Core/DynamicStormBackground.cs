@@ -179,20 +179,24 @@ public class DynamicStormBackground : MonoBehaviour
 
             if (_lightningOverlay == null) yield break;
 
+            Color activeTint = GameSettings.SelectedCockpitTheme == GameSettings.CockpitTheme.CyberBlue
+                ? lightningTint
+                : GameSettings.GetCockpitLightningTint();
+
             // 1. Öncü Darbe (Pre-Strike - yumuşatılmış şeffaflık)
-            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.13f));
+            SetOverlay(new Color(activeTint.r, activeTint.g, activeTint.b, 0.13f));
             yield return new WaitForSecondsRealtime(0.04f);
             SetOverlay(new Color(0f, 0f, 0f, 0f));
             yield return new WaitForSecondsRealtime(0.06f);
 
             // 2. Ana Parlama (Bright Flash - göz yormayan hafif parlama)
-            SetOverlay(new Color(1f, 1f, 1f, 0.24f));
+            SetOverlay(new Color(activeTint.r, activeTint.g, activeTint.b, 0.22f));
             yield return new WaitForSecondsRealtime(0.08f);
 
             // 3. Art Parıltı Titremesi (Afterglow Flicker)
-            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.15f));
+            SetOverlay(new Color(activeTint.r, activeTint.g, activeTint.b, 0.15f));
             yield return new WaitForSecondsRealtime(0.05f);
-            SetOverlay(new Color(lightningTint.r, lightningTint.g, lightningTint.b, 0.07f));
+            SetOverlay(new Color(activeTint.r, activeTint.g, activeTint.b, 0.07f));
             yield return new WaitForSecondsRealtime(0.07f);
 
             // 4. Doğal Sönümlenme (Smooth Fade)

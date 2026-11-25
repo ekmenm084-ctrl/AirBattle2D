@@ -2005,6 +2005,7 @@ public class MainMenuManager : MonoBehaviour
     {
         GameObject btnObj = new GameObject(objName, typeof(RectTransform));
         btnObj.transform.SetParent(parent, false);
+        btnObj.AddComponent<CockpitThemeIgnore>();
 
         // Sağ %69'luk alanda 3 eşit taktik sekme
         float startX = 0.305f + index * 0.228f;
@@ -2049,11 +2050,14 @@ public class MainMenuManager : MonoBehaviour
     private void BindCockpitThemePill(Button btn, GameSettings.CockpitTheme theme)
     {
         if (btn == null) return;
+        if (btn.GetComponent<CockpitThemeIgnore>() == null)
+            btn.gameObject.AddComponent<CockpitThemeIgnore>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
         {
             GameSettings.SetCockpitTheme(theme);
             UpdateUIFeedback();
+            CockpitThemeDirector.EnsureInstance()?.ApplyThemeNow();
             AudioManager.Instance?.PlayButtonClick();
         });
     }
@@ -2967,6 +2971,8 @@ public class MainMenuManager : MonoBehaviour
             new Color(0.26f, 0.18f, 0.05f, 0.96f),
             "cockpit_pill_gold",
             activeTheme == GameSettings.CockpitTheme.StealthGold);
+
+        CockpitThemeDirector.EnsureInstance();
     }
 
     private void UpdateModeCardVisual(Button btn, bool isSelected, string text, bool isLeftAligned)
