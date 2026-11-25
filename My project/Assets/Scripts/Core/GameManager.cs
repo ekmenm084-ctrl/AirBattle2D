@@ -31,8 +31,11 @@ public class GameManager : MonoBehaviour
     public int timeAttackKills = 0;
     private Coroutine _timeAttackCoroutine;
 
-    [Header("Seferde Kazanılan Altın")]
+    [Header("Seferde Kazanılan Altın & İstatistikler")]
     public int sessionGoldEarned = 0;
+    public int sessionKills = 0;
+    public int sessionScore = 0;
+    public bool sessionReviveUsed = false;
 
     [Header("Oyuncu Can Hakları (Solo Mod)")]
     public int player1Lives = 3;
@@ -107,8 +110,12 @@ public class GameManager : MonoBehaviour
         gameEnded = false;
         _matchStarted = true;
         sessionGoldEarned = 0;
+        sessionKills = 0;
+        sessionScore = 0;
+        sessionReviveUsed = false;
         GameSettings.LoadSettings();
         CombatComboManager.EnsureInstance().ResetSession();
+        gameOverUI = GameOverUI.EnsureInstance();
 
         bool isOnline = (GameSettings.SelectedMode == GameSettings.GameMode.Online);
         if (isOnline)
@@ -570,10 +577,7 @@ public class GameManager : MonoBehaviour
                 }
 
                 gameEnded = true;
-                if (gameOverUI != null)
-                    gameOverUI.Show("OYUNCU 2 KAZANDI!");
-                else
-                    StartCoroutine(ReturnToMainMenuRoutine(1.8f));
+                OpenGameOverModal(isVictory: true, customTitle: "OYUNCU 2 KAZANDI", customSubtitle: "2 OYUNCULU DÜELLO SONA ERDİ", delay: 0.6f);
                 return;
             }
 
@@ -592,7 +596,6 @@ public class GameManager : MonoBehaviour
                 {
                     gameEnded = true;
                     if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
-                    CleanUpBulletHellPlane();
 
                     float bestTime = ProfileManager.GetFloat("AirBattle_BulletHellBestTime", 0f);
                     bool newRecord = bulletHellTime > bestTime;
@@ -607,19 +610,7 @@ public class GameManager : MonoBehaviour
                     HangarManager.EnsureInstance()?.AddGold(reward);
                     sessionGoldEarned += reward;
 
-                    int m = (int)(bulletHellTime / 60);
-                    int s = (int)(bulletHellTime % 60);
-                    int bm = (int)(bestTime / 60);
-                    int bs = (int)(bestTime % 60);
-
-                    string defeatMsg = newRecord
-                        ? $"<b><color=#2ECC71>YENİ HAYATTA KALMA REKORU!</color></b>\nSÜRE: {m:00}:{s:00}\nÖNCEKİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"
-                        : $"HAYATTA KALMA SONLANDI!\nSÜRE: {m:00}:{s:00}\nEN İYİ REKOR: {bm:00}:{bs:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>";
-
-                    if (gameOverUI != null)
-                        gameOverUI.Show(AppendComboSummary(defeatMsg));
-                    else
-                        StartCoroutine(ReturnToMainMenuRoutine(2.8f));
+                    OpenGameOverModal(isVictory: false, customTitle: "UÇAK DÜŞTÜ", customSubtitle: "GÖREV SONLANDI", delay: 0.55f);
                 }
                 return;
             }
@@ -654,49 +645,22 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // Can Hakkı tükendi: Oyun biter
+                // Can Hakkı tükendi: UÇAK DÜŞTÜ taktik uyarı menüsünü aç (asla otomatik ana ekrana atma!)
                 gameEnded = true;
                 SaveAndSubmitActiveScore(isFinal: true);
-                string defeatMsg = "";
 
-                if (CurrentMode == GameMode.Endless || CurrentMode == GameMode.SoloVsAI)
-                {
-                    int bestWave = ProfileManager.GetInt("AirBattle_EndlessHighScore", 0);
-                    string modeTag = (CurrentMode == GameMode.Endless) ? "SONSUZ MOD" : "HAREKÂT";
-                    if (currentPlaneIndex >= bestWave)
-                    {
-                        defeatMsg = $"YENİ REKOR KIRILDI!\n{modeTag}: DALGA {currentPlaneIndex}\nÖNCEKİ REKOR: {bestWave}";
-                    }
-                    else
-                    {
-                        defeatMsg = $"GÖREV BAŞARISIZ!\n{modeTag}: DALGA {currentPlaneIndex}\nEN YÜKSEK REKOR: {bestWave}";
-                    }
-                }
-                else if (CurrentMode == GameMode.BossRush)
-                {
-                    defeatMsg = $"BOSS RUSH BAŞARISIZ!\nELENEN BOSS: {currentPlaneIndex - 1} / 4";
-                }
-                else if (CurrentMode == GameMode.Hardcore)
+                if (CurrentMode == GameMode.Hardcore)
                 {
                     int defeatedBosses = Mathf.Max(0, currentPlaneIndex - 1);
-                    int bestHardcore = ProfileManager.GetInt("AirBattle_HardcoreHighScore", 0);
                     int rewardGold = defeatedBosses * 60;
-                    HangarManager.EnsureInstance()?.AddGold(rewardGold);
-                    sessionGoldEarned += rewardGold;
-
-                    defeatMsg = (defeatedBosses >= bestHardcore)
-                        ? $"[!] <b><color=#FF2222>YENİ HARDCORE REKORU!</color></b> [!]\n<color=#FFD54F>İMHA EDİLEN BOSS: {defeatedBosses}</color>\nÖNCEKİ REKOR: {bestHardcore}\n<color=#2ECC71>+{rewardGold} ALTIN KAZANILDI!</color>"
-                        : $"[!] <b>HARDCORE GÖREVİ SONA ERDİ</b> [!]\nİMHA EDİLEN BOSS: {defeatedBosses}\nEN İYİ REKOR: {bestHardcore}\n<color=#FFE082>+{rewardGold} ALTIN KAZANILDI!</color>";
-                }
-                else
-                {
-                    defeatMsg = $"GÖREV BAŞARISIZ!\nTÜM CAN HAKLARI TÜKENDİ!\nİLERLEME: UÇAK {currentPlaneIndex} / {MaxPlanes}";
+                    if (rewardGold > 0)
+                    {
+                        HangarManager.EnsureInstance()?.AddGold(rewardGold);
+                        sessionGoldEarned += rewardGold;
+                    }
                 }
 
-                if (gameOverUI != null)
-                    gameOverUI.Show(AppendComboSummary(defeatMsg));
-                else
-                    StartCoroutine(ReturnToMainMenuRoutine(2.0f));
+                OpenGameOverModal(isVictory: false, customTitle: "UÇAK DÜŞTÜ", customSubtitle: "GÖREV SONLANDI", delay: 0.55f);
             }
             return;
         }
@@ -711,15 +675,13 @@ public class GameManager : MonoBehaviour
             }
 
             gameEnded = true;
-            if (gameOverUI != null)
-                gameOverUI.Show("OYUNCU 1 KAZANDI!");
-            else
-                StartCoroutine(ReturnToMainMenuRoutine(1.8f));
+            OpenGameOverModal(isVictory: true, customTitle: "OYUNCU 1 KAZANDI", customSubtitle: "2 OYUNCULU DÜELLO SONA ERDİ", delay: 0.6f);
         }
         else
         {
             if (CurrentMode == GameMode.BulletHell)
             {
+                RegisterCombatKill(isBoss: true);
                 gameEnded = true;
                 if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
                 CleanUpBulletHellPlane();
@@ -737,19 +699,15 @@ public class GameManager : MonoBehaviour
                 }
                 LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BulletHell, (int)bulletHellTime, bulletHellTime);
 
-                int m = (int)(bulletHellTime / 60f);
-                int s = (int)(bulletHellTime % 60f);
-                if (gameOverUI != null)
-                    gameOverUI.Show(AppendComboSummary($"İNANILMAZ ZAFER!\nCEHENNEM KALESİ İMHA EDİLDİ!\nSÜRE: {m:00}:{s:00}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"));
-
                 AudioManager.Instance?.PlayRewardFanfare();
-                StartCoroutine(ReturnToMainMenuRoutine(3.5f));
+                OpenGameOverModal(isVictory: true, customTitle: "CEHENNEM KALESİ DÜŞTÜ", customSubtitle: "GÖREV BAŞARIYLA TAMAMLANDI", delay: 0.8f);
                 return;
             }
             else if (CurrentMode == GameMode.TimeAttack)
             {
                 timeAttackKills++;
                 bool isBoss = (timeAttackKills % 5 == 0);
+                RegisterCombatKill(isBoss: isBoss);
                 PlayerCombatManeuvers.Instance?.AddUltiEnergy(isBoss ? 20f : 10f);
                 float bonusSec = isBoss ? 8.0f : 4.0f;
                 timeAttackRemaining += bonusSec;
@@ -789,6 +747,7 @@ public class GameManager : MonoBehaviour
             // BOSS RUSH VE SOLO MOD ZAFER KONTROLÜ
             if (CurrentMode == GameMode.BossRush && currentPlaneIndex >= 4)
             {
+                RegisterCombatKill(isBoss: true);
                 CombatComboManager combo = CombatComboManager.EnsureInstance();
                 combo.AddCombo(5, deadPlane != null ? deadPlane.transform.position : default);
                 combo.EvaluateFlawlessWaveBonus(currentPlaneIndex, isBoss: true);
@@ -800,6 +759,7 @@ public class GameManager : MonoBehaviour
             else if (CurrentMode == GameMode.SoloVsAI && currentPlaneIndex >= MaxPlanes)
             {
                 // 20. UÇAK (FİNAL BOSS) DA DÜŞTÜ! TAM ZAFER!
+                RegisterCombatKill(isBoss: true);
                 gameEnded = true;
                 RadioChatterManager.Instance?.PlayBossDown();
                 SaveAndSubmitActiveScore(isFinal: true);
@@ -821,12 +781,16 @@ public class GameManager : MonoBehaviour
                 }
 
                 StoryCampaignManager.AdvanceToNextCampaign();
-                StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() => { });
+                StoryCampaignManager.EnsureInstance()?.PlayCampaignEnding(() =>
+                {
+                    OpenGameOverModal(isVictory: true, customTitle: "ZAFER KAZANILDI", customSubtitle: "HAREKÂT BAŞARIYLA TAMAMLANDI", delay: 0.1f);
+                });
             }
             else
             {
                 int justDefeated = currentPlaneIndex;
                 bool wasBoss = IsBossPlane(justDefeated);
+                RegisterCombatKill(isBoss: wasBoss);
                 CombatComboManager combo = CombatComboManager.EnsureInstance();
                 Vector3 deadPos = deadPlane != null ? deadPlane.transform.position : default;
 
@@ -1086,11 +1050,7 @@ public class GameManager : MonoBehaviour
         LeaderboardManager.EnsureInstance()?.SubmitScore(LeaderboardManager.BoardMode.BossRush, 4, 0f, "BOSS");
 
         AudioManager.Instance?.PlayRewardFanfare();
-
-        if (gameOverUI != null)
-            gameOverUI.Show(AppendComboSummary($"TEBRİKLER AS PİLOT!\nBOSS RUSH TAMAMLANDI!\n+{rushReward} ALTIN KAZANILDI!"));
-        else
-            StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+        OpenGameOverModal(isVictory: true, customTitle: "BOSS RUSH ZAFERİ", customSubtitle: "TÜM DEV BOSSLAR İMHA EDİLDİ", delay: 0.2f);
     }
 
     // ==========================================
@@ -1333,17 +1293,111 @@ public class GameManager : MonoBehaviour
         sessionGoldEarned += reward;
 
         PlayerProfileManager.EnsureInstance()?.RecordWaveCleared(timeAttackKills);
-        AudioManager.Instance?.PlayRewardFanfare();
+        if (isTimeUp)
+            AudioManager.Instance?.PlayRewardFanfare();
 
-        string title = isTimeUp ? "SÜRE DOLDU! HAREKAT BİTTİ!" : "GÖREV BAŞARISIZ! UÇAK DÜŞTÜ!";
-        string recordMsg = newRecord
-            ? $"<b><color=#2ECC71>YENİ REKOR!</color></b>\nTOPLAM İMHA: {timeAttackKills} UÇAK"
-            : $"TOPLAM İMHA: {timeAttackKills} UÇAK\nEN YÜKSEK REKOR: {bestKills}";
-
-        if (gameOverUI != null)
-            gameOverUI.Show(AppendComboSummary($"{title}\n{recordMsg}\n<color=#FFE082>+{reward} ALTIN KAZANILDI!</color>"));
+        if (isTimeUp)
+        {
+            OpenGameOverModal(isVictory: false, customTitle: "SÜRE DOLDU", customSubtitle: "ZAMAN TAARRUZU SONLANDI", delay: 0.25f);
+        }
         else
-            StartCoroutine(ReturnToMainMenuRoutine(3.0f));
+        {
+            OpenGameOverModal(isVictory: false, customTitle: "UÇAK DÜŞTÜ", customSubtitle: "GÖREV SONLANDI", delay: 0.55f);
+        }
+    }
+
+    public void RegisterCombatKill(bool isBoss, bool isSwarm = false)
+    {
+        sessionKills++;
+        float mult = CombatComboManager.Instance != null ? CombatComboManager.Instance.GetMultiplier() : 1f;
+        int basePts = isSwarm ? 185 : (isBoss ? 1850 : (520 + currentPlaneIndex * 45));
+        sessionScore += Mathf.RoundToInt(basePts * mult);
+
+        int best = ProfileManager.GetInt("AirBattle_BestCombatScore", 0);
+        if (sessionScore > best)
+        {
+            ProfileManager.SetInt("AirBattle_BestCombatScore", sessionScore);
+        }
+    }
+
+    public int GetDisplayCombatScore()
+    {
+        int bonusFromSurvival = (CurrentMode == GameMode.BulletHell) ? Mathf.RoundToInt(bulletHellTime * 115f) : 0;
+        int grazeBonus = CombatComboManager.Instance != null ? (CombatComboManager.Instance.totalGrazes * 45) : 0;
+        return Mathf.Max(sessionScore + bonusFromSurvival + grazeBonus, sessionGoldEarned * 12);
+    }
+
+    private void OpenGameOverModal(bool isVictory, string customTitle, string customSubtitle, float delay = 0.55f)
+    {
+        StartCoroutine(OpenGameOverModalRoutine(isVictory, customTitle, customSubtitle, delay));
+    }
+
+    private IEnumerator OpenGameOverModalRoutine(bool isVictory, string customTitle, string customSubtitle, float delay)
+    {
+        if (delay > 0.01f)
+            yield return new WaitForSecondsRealtime(delay);
+
+        gameOverUI = GameOverUI.EnsureInstance();
+        if (gameOverUI != null)
+        {
+            if (isVictory)
+                gameOverUI.ShowVictory(customTitle, customSubtitle);
+            else
+                gameOverUI.ShowCrashScreen(customTitle, customSubtitle);
+        }
+    }
+
+    /// <summary>
+    /// "REKLAM İZLE VE DEVAM ET (Canlan + 3 sn Kalkan)" seçildiğinde oyuncuyu savaş alanında canlandırır.
+    /// </summary>
+    public void RevivePlayerWithShield(float shieldSeconds = 3.0f)
+    {
+        sessionReviveUsed = true;
+        gameEnded = false;
+        player1Lives = Mathf.Max(1, player1Lives);
+
+        Time.timeScale = 1.0f;
+        Time.fixedDeltaTime = 0.02f;
+
+        // Sahadaki tehlikeli düşman mermilerini temizle ki doğar doğmaz isabet almasın
+        var bullets = FindObjectsOfType<Bullet>();
+        foreach (var b in bullets)
+        {
+            if (b != null && (plane1Health == null || b.owner != plane1Health.gameObject))
+            {
+                Destroy(b.gameObject);
+            }
+        }
+
+        if (plane1Health != null)
+        {
+            plane1Health.gameObject.SetActive(true);
+            plane1Health.transform.position = new Vector3(0f, -3.5f, 0f);
+            float restoreHp = Mathf.Max(100f, plane1Health.maxHealth);
+            plane1Health.ResetHealth(restoreHp);
+            plane1Health.TriggerInvulnerability(shieldSeconds);
+
+            PlayerUpgradeManager.EnsureInstance()?.GrantShield(60f);
+            DroneManager.EnsureInstance()?.SpawnDronesForPlayer(plane1Health.transform);
+            VFXManager.SpawnHitSparks(plane1Health.transform.position, Color.cyan);
+            AudioManager.Instance?.PlayRewardFanfare();
+        }
+
+        if (CurrentMode == GameMode.BulletHell)
+        {
+            if (_bulletHellCoroutine != null) StopCoroutine(_bulletHellCoroutine);
+            _bulletHellCoroutine = StartCoroutine(BulletHellDirectorRoutine());
+        }
+        else if (CurrentMode == GameMode.TimeAttack)
+        {
+            timeAttackRemaining = Mathf.Max(timeAttackRemaining, 15f);
+            if (_timeAttackCoroutine != null) StopCoroutine(_timeAttackCoroutine);
+            _timeAttackCoroutine = StartCoroutine(TimeAttackCountdownRoutine());
+        }
+
+        TouchArrowControls.Instance?.UpdateVisibility();
+        var gameUI = FindObjectOfType<GameUI>();
+        gameUI?.UpdateHealthBars();
     }
 
     private string AppendComboSummary(string baseMessage)

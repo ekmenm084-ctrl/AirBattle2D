@@ -374,7 +374,10 @@ public class SwarmEnemy : MonoBehaviour
 
             HangarManager.EnsureInstance()?.AddGold(finalGold);
             if (GameManager.Instance != null)
+            {
                 GameManager.Instance.sessionGoldEarned += finalGold;
+                GameManager.Instance.RegisterCombatKill(isBoss: false, isSwarm: true);
+            }
 
             PlayerCombatManeuvers.Instance?.AddUltiEnergy(ultiGain);
             DailyOpsManager.EnsureInstance()?.RecordEvent(DailyOpsManager.OpsEventType.SwarmDroneKill, 1);

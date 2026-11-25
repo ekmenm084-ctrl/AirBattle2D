@@ -71,7 +71,8 @@ public class AudioSettingsUI : MonoBehaviour
 
         if (soundButtonObj != null)
         {
-            bool shouldShow = !isMenuOpen && !_isPaused;
+            bool isGameOverOpen = (GameOverUI.Instance != null && GameOverUI.Instance.IsShowing);
+            bool shouldShow = !isMenuOpen && !_isPaused && !isGameOverOpen;
             if (soundButtonObj.activeSelf != shouldShow)
             {
                 soundButtonObj.SetActive(shouldShow);

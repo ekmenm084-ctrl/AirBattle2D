@@ -308,14 +308,10 @@ public class TwoPlayerDuelManager : MonoBehaviour
             GameManager.Instance.SetGameEnded(true);
         }
 
-        GameOverUI gameOver = FindObjectOfType<GameOverUI>();
+        GameOverUI gameOver = GameOverUI.EnsureInstance();
         if (gameOver != null)
         {
-            string msg = $"★ 2 OYUNCULU HAVA DÜELLOSU TAMAMLANDI ★\n\n" +
-                         $"ŞAMPİYON: <color=#{ColorUtility.ToHtmlStringRGB(champColor)}><b>{championTitle}</b></color>\n" +
-                         $"FİNAL SKORU: {p1Score} - {p2Score} (Best of 3)\n\n" +
-                         $"<color=#FFE082>+{goldPrize} HANGAR ALTINI KAZANILDI!</color>";
-            gameOver.Show(msg);
+            gameOver.ShowVictory($"{championTitle} KAZANDI", $"SERİ SKORU: {p1Score} - {p2Score} (Best of 3)");
         }
     }
 
